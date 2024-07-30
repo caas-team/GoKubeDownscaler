@@ -80,7 +80,7 @@ jobs:
 
       - name: Sign Push
         run: |
-          cosign sign --key env://COSIGN_KEY --tlog-upload=false ghcr.io/caas-team/py-kube-downscaler@${{ steps.build-push.outputs.digest }}
-          cosign sign --key env://COSIGN_KEY --tlog-upload=false mtr.devops.telekom.de/caas/py-kube-downscaler@${{ steps.build-push.outputs.digest }}
+          cosign sign --key env://COSIGN_KEY --tlog-upload=false ghcr.io/caas-team/GoKubeDownscaler@${{ steps.build-push.outputs.digest }}
+          cosign sign --key env://COSIGN_KEY --tlog-upload=false mtr.devops.telekom.de/caas/go-kube-downscaler@${{ steps.build-push.outputs.digest }}
         env:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
