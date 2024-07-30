@@ -17,4 +17,5 @@ cd GoKubeDownscaler
 brew install pre-commit
 pre-commit install
 brew install golangci-lint
+brew install gofumpt
 ```
