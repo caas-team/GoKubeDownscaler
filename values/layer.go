@@ -7,7 +7,6 @@ import (
 )
 
 var (
-	errMaxGracePeriodExceeded   = errors.New("error: gracePeriod is longer than allowed by maxGracePeriod")
 	errForceUpAndDownTime       = errors.New("error: both forceUptime and forceDowntime are defined")
 	errUpAndDownTime            = errors.New("error: both uptime and downtime are defined")
 	errTimeAndPeriod            = errors.New("error: both a time and a period is defined")
@@ -15,15 +14,23 @@ var (
 	errNoScalingProvided        = errors.New("error: no layer provided scaling")
 )
 
-type scaling int
+const undefined = -1 // undefined represents an undefined integer value
+
+type Scaling int
 
 const (
-	ScalingNone         scaling = iota // no scaling set in this layer, go to next layer
+	ScalingNone         Scaling = iota // no scaling set in this layer, go to next layer
 	ScalingIncompatible                // incompatible scaling fields set, error
 	ScalingIgnore                      // not scaling
 	ScalingDown                        // scaling down
 	ScalingUp                          // scaling up
 )
+
+func NewLayer() Layer {
+	return Layer{
+		DownscaleReplicas: undefined,
+	}
+}
 
 type Layer struct {
 	DownscalePeriod   TimeSpans // periods to downscale in
@@ -45,18 +52,14 @@ func (l Layer) isScalingExcluded() bool {
 }
 
 // checkForIncompatibleFields checks if there are incompatible fields
-func (l Layer) checkForIncompatibleFields(maxGracePeriod time.Duration) error {
+func (l Layer) checkForIncompatibleFields() error {
 	// force down and uptime
 	if l.ForceDowntime && l.ForceUptime {
 		return errForceUpAndDownTime
 	}
 	// downscale replicas invalid
-	if l.DownscaleReplicas <= 0 {
+	if l.DownscaleReplicas != undefined && l.DownscaleReplicas < 0 {
 		return errInvalidDownscaleReplicas
-	}
-	// grace period > max grace period
-	if maxGracePeriod != 0 && time.Duration(l.GracePeriod) > maxGracePeriod {
-		return errMaxGracePeriodExceeded
 	}
 	// up- and downtime
 	if l.UpTime != nil && l.DownTime != nil {
@@ -71,7 +74,7 @@ func (l Layer) checkForIncompatibleFields(maxGracePeriod time.Duration) error {
 }
 
 // getCurrentScaling gets the current scaling, not checking for incompatibility
-func (l Layer) getCurrentScaling() scaling {
+func (l Layer) getCurrentScaling() Scaling {
 	// check overwrites
 	if l.isScalingExcluded() {
 		return ScalingIgnore
@@ -114,9 +117,9 @@ func (l Layer) getCurrentScaling() scaling {
 type Layers []Layer
 
 // GetCurrentScaling gets the current scaling of the first layer that implements scaling
-func (l Layers) GetCurrentScaling(maxGracePeriod time.Duration) (scaling, error) {
+func (l Layers) GetCurrentScaling() (Scaling, error) {
 	for _, layer := range l {
-		err := layer.checkForIncompatibleFields(maxGracePeriod)
+		err := layer.checkForIncompatibleFields()
 		if err != nil {
 			return ScalingIncompatible, fmt.Errorf("error found incompatible fields: %w", err)
 		}
@@ -129,4 +132,18 @@ func (l Layers) GetCurrentScaling(maxGracePeriod time.Duration) (scaling, error)
 		return layerScaling, nil
 	}
 	return ScalingNone, errNoScalingProvided
+}
+
+// GetDownscaleReplicas get the downscale replicas of the first layer that implements downscale replicas
+func (l Layers) GetDownscaleReplicas() (int, error) {
+	for _, layer := range l {
+
+		downscaleReplicas := layer.DownscaleReplicas
+		if downscaleReplicas == undefined {
+			continue
+		}
+
+		return downscaleReplicas, nil
+	}
+	return 0, errNoScalingProvided
 }

@@ -19,3 +19,9 @@ repos:
         args: [-l, -w]
       - id: golangci-lint-repo-mod
         args: [--config, .golangci.yaml, --, --fix]
+  - repo: local
+    hooks:
+      - id: prevent-todo-comments
+        name: prevent todo comments
+        entry: '\/\/ *(TODO|FIXME)\b'
+        language: pygrep
