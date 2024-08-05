@@ -11,11 +11,12 @@ var (
 	errUpAndDownTime            = errors.New("error: both uptime and downtime are defined")
 	errTimeAndPeriod            = errors.New("error: both a time and a period is defined")
 	errInvalidDownscaleReplicas = errors.New("error: downscale replicas value is invalid")
-	errNoScalingProvided        = errors.New("error: no layer provided scaling")
+	errValueNotSet              = errors.New("error: value isn't set")
 )
 
-const undefined = -1 // undefined represents an undefined integer value
+const Undefined = -1 // Undefined represents an undefined integer value
 
+// Scaling is a enum that describes the current scaling
 type Scaling int
 
 const (
@@ -26,39 +27,41 @@ const (
 	ScalingUp                          // scaling up
 )
 
-func NewLayer() Layer {
-	return Layer{
-		DownscaleReplicas: undefined,
+// NewLayer gets a new layer with the default values
+func NewLayer() layer {
+	return layer{
+		DownscaleReplicas: Undefined,
 	}
 }
 
-type Layer struct {
-	DownscalePeriod   TimeSpans // periods to downscale in
-	DownTime          TimeSpans // within these timespans workloads will be scaled down, outside of them they will be scaled up
-	UpscalePeriod     TimeSpans // periods to upscale in
-	UpTime            TimeSpans // within these timespans workloads will be scaled up, outside of them they will be scaled down
-	Exclude           bool      // if workload should be excluded
-	ExcludeUntil      time.Time // until when the workload should be excluded
-	ForceUptime       bool      // force workload into a uptime state
-	ForceDowntime     bool      // force workload into a downtime state
-	DownscaleReplicas int       // the replicas to scale down to
-	GracePeriod       Duration  // grace period until new deployments will be scaled down
-	TimeAnnotation    string    // annotation to use for grace-period instead of creation time
+// layer represents a value layer
+type layer struct {
+	DownscalePeriod   timeSpans    // periods to downscale in
+	DownTime          timeSpans    // within these timespans workloads will be scaled down, outside of them they will be scaled up
+	UpscalePeriod     timeSpans    // periods to upscale in
+	UpTime            timeSpans    // within these timespans workloads will be scaled up, outside of them they will be scaled down
+	Exclude           triStateBool // if workload should be excluded
+	ExcludeUntil      time.Time    // until when the workload should be excluded
+	ForceUptime       bool         // force workload into a uptime state
+	ForceDowntime     bool         // force workload into a downtime state
+	DownscaleReplicas int          // the replicas to scale down to
+	GracePeriod       Duration     // grace period until new deployments will be scaled down // NOT_IMPLEMENTED
+	TimeAnnotation    string       // annotation to use for grace-period instead of creation time // NOT_IMPLEMENTED
 }
 
 // isScalingExcluded checks if scaling is excluded
-func (l Layer) isScalingExcluded() bool {
-	return l.Exclude || l.ExcludeUntil.After(time.Now())
+func (l layer) isScalingExcluded() bool {
+	return (l.Exclude.isSet && l.Exclude.value) || l.ExcludeUntil.After(time.Now())
 }
 
 // checkForIncompatibleFields checks if there are incompatible fields
-func (l Layer) checkForIncompatibleFields() error {
+func (l layer) checkForIncompatibleFields() error {
 	// force down and uptime
 	if l.ForceDowntime && l.ForceUptime {
 		return errForceUpAndDownTime
 	}
 	// downscale replicas invalid
-	if l.DownscaleReplicas != undefined && l.DownscaleReplicas < 0 {
+	if l.DownscaleReplicas != Undefined && l.DownscaleReplicas < 0 {
 		return errInvalidDownscaleReplicas
 	}
 	// up- and downtime
@@ -74,11 +77,8 @@ func (l Layer) checkForIncompatibleFields() error {
 }
 
 // getCurrentScaling gets the current scaling, not checking for incompatibility
-func (l Layer) getCurrentScaling() Scaling {
+func (l layer) getCurrentScaling() Scaling {
 	// check overwrites
-	if l.isScalingExcluded() {
-		return ScalingIgnore
-	}
 	if l.ForceDowntime {
 		return ScalingDown
 	}
@@ -114,7 +114,7 @@ func (l Layer) getCurrentScaling() Scaling {
 	return ScalingNone
 }
 
-type Layers []Layer
+type Layers []layer
 
 // GetCurrentScaling gets the current scaling of the first layer that implements scaling
 func (l Layers) GetCurrentScaling() (Scaling, error) {
@@ -131,19 +131,33 @@ func (l Layers) GetCurrentScaling() (Scaling, error) {
 
 		return layerScaling, nil
 	}
-	return ScalingNone, errNoScalingProvided
+	return ScalingNone, errValueNotSet
 }
 
-// GetDownscaleReplicas get the downscale replicas of the first layer that implements downscale replicas
+// GetDownscaleReplicas gets the downscale replicas of the first layer that implements downscale replicas
 func (l Layers) GetDownscaleReplicas() (int, error) {
 	for _, layer := range l {
 
 		downscaleReplicas := layer.DownscaleReplicas
-		if downscaleReplicas == undefined {
+		if downscaleReplicas == Undefined {
 			continue
 		}
 
 		return downscaleReplicas, nil
 	}
-	return 0, errNoScalingProvided
+	return 0, errValueNotSet
+}
+
+// GetExcluded checks if any layer excludes
+func (l Layers) GetExcluded() bool {
+	for _, layer := range l {
+
+		excluded := layer.isScalingExcluded()
+		if !excluded {
+			continue
+		}
+
+		return true
+	}
+	return false
 }

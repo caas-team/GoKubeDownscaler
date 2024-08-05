@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 	"time"
 
 	"github.com/caas-team/gokubedownscaler/api/kubernetes"
+	"github.com/caas-team/gokubedownscaler/scalable"
 	"github.com/caas-team/gokubedownscaler/values"
 )
 
@@ -15,36 +17,36 @@ var (
 	layerCli = values.NewLayer()
 	layerEnv = values.NewLayer()
 
-	dryRun            bool              = false                                               // if the downscaler should take actions or just print them out
-	debug             bool              = false                                               // if debug information should be printed
-	once              bool              = false                                               // if the scan should only run once
-	interval          values.Duration   = values.Duration(30 * time.Second)                   // how long to wait between scans
-	namespaces        values.StringList = values.StringList{""}                               // list of namespaces to restrict the downscaler to
-	resources         values.StringList = values.StringList{"deployments"}                    // list of resources to restrict the downscaler to
-	excludeNamespaces values.StringList = values.StringList{"kube-system", "kube-downscaler"} // list of namespaces to ignore while downscaling
-	excludeWorkloads  values.StringList                                                       // list of workload names to ignore while downscaling
-	kubeconfig        string                                                                  // optional kubeconfig to use for testing purposes instead of the in-cluster config
+	dryRun            = false                                               // if the downscaler should take actions or just print them out // NOT_IMPLEMENTED
+	debug             = false                                               // if debug information should be printed
+	once              = false                                               // if the scan should only run once
+	interval          = values.Duration(30 * time.Second)                   // how long to wait between scans
+	namespaces        = values.StringList{""}                               // list of namespaces to restrict the downscaler to
+	resources         = values.StringList{"deployments"}                    // list of resources to restrict the downscaler to
+	excludeNamespaces = values.StringList{"kube-system", "kube-downscaler"} // list of namespaces to ignore while downscaling // NOT_IMPLEMENTED
+	excludeWorkloads  values.StringList                                     // list of workload names to ignore while downscaling // NOT_IMPLEMENTED
+	kubeconfig        string                                                // optional kubeconfig to use for testing purposes instead of the in-cluster config
 )
 
 func init() {
 	// cli layer values
-	flag.Var(&layerCli.DownscalePeriod, "downscale-period", "")
-	flag.Var(&layerCli.DownTime, "default-downtime", "")
-	flag.Var(&layerCli.UpscalePeriod, "upscale-period", "")
-	flag.Var(&layerCli.UpTime, "default-uptime", "")
-	flag.BoolVar(&layerCli.Exclude, "explicit-include", false, "")
-	flag.IntVar(&layerCli.DownscaleReplicas, "downtime-replicas", 0, "")
-	flag.Var(&layerCli.GracePeriod, "grace-period", "")
-	flag.StringVar(&layerCli.TimeAnnotation, "deployment-time-annotation", "", "")
+	flag.Var(&layerCli.DownscalePeriod, "downscale-period", "period to scale down in (default: never, incompatible: UpscaleTime, DownscaleTime)")
+	flag.Var(&layerCli.DownTime, "default-downtime", "timespans where workloads will be scaled down, outside of them they will be scaled up (default: never, incompatible: UpscalePeriod, DownscalePeriod)")
+	flag.Var(&layerCli.UpscalePeriod, "upscale-period", "periods to scale up in (default: never, incompatible: UpscaleTime, DownscaleTime)")
+	flag.Var(&layerCli.UpTime, "default-uptime", "timespans where workloads will be scaled up, outside of them they will be scaled down (default: never, incompatible: UpscalePeriod, DownscalePeriod)")
+	flag.Var(&layerCli.Exclude, "explicit-include", "sets exclude on cli layer to true, makes it so namespaces or deployments have to specify downscaler/exclude=false (default: false)")
+	flag.IntVar(&layerCli.DownscaleReplicas, "downtime-replicas", 0, "the replicas to scale down to (default: 0)")
+	flag.Var(&layerCli.GracePeriod, "grace-period", "the grace period between creation of workload until first downscale (default: 15min)")                       // NOT_IMPLEMENTED: default not implemented
+	flag.StringVar(&layerCli.TimeAnnotation, "deployment-time-annotation", "", "the annotation to use instead of creation time for grace period (default: none)") // NOT_IMPLEMENTED: not implemented to ignore ""
 
 	// cli runtime configuration
 	flag.BoolVar(&dryRun, "dry-run", false, "print actions instead of doing them (default: false)")
 	flag.BoolVar(&debug, "debug", false, "print more debug information (default: false)")
 	flag.BoolVar(&once, "once", false, "run scan only once (default: false)")
 	flag.Var(&interval, "interval", "time between scans (default: 30s)")
-	flag.Var(&namespaces, "namespace", "restrict the downscaler to the specified namespaces (default: all)")
-	flag.Var(&resources, "include-resources", "restricts the downscaler to the specified resource types (default: deployments, incompatible: exclude-resources)")
-	flag.Var(&excludeNamespaces, "exclude-namespaces", "exclude namespaces from being scaled (default: kube-system,kube-downscaler)")
+	flag.Var(&namespaces, "namespace", "restrict the downscaler to the specified namespaces (default: all, incompatible: exclude-namespaces)")
+	flag.Var(&resources, "include-resources", "restricts the downscaler to the specified resource types (default: deployments)")
+	flag.Var(&excludeNamespaces, "exclude-namespaces", "exclude namespaces from being scaled (default: kube-system,kube-downscaler, incompatible: namespaces)")
 	flag.Var(&excludeWorkloads, "exclude-deployments", "exclude deployments from being scaled (optional)")
 	flag.StringVar(&kubeconfig, "k", "", "kubeconfig to use instead of the in-cluster config (optional)")
 
@@ -78,6 +80,8 @@ func main() {
 	}
 
 	for {
+		slog.Debug("scanning workloads")
+
 		workloads, err := client.GetWorkloads(namespaces, resources, ctx)
 		if err != nil {
 			slog.Error("failed to get workloads", "error", err)
@@ -85,64 +89,76 @@ func main() {
 		}
 
 		for _, workload := range workloads {
-			namespaceAnnotations, err := client.GetNamespaceAnnotations(workload.GetNamespace(), ctx)
-			if err != nil {
-				slog.Error("failed to get namespace annotations", "error", err)
-				os.Exit(1)
-			}
-			layerWorkload, err := values.GetLayerFromAnnotations(workload.GetAnnotations())
-			if err != nil {
-				slog.Error("failed to parse layer from annotations", "error", err)
-				os.Exit(1)
-			}
-			layerNamespace, err := values.GetLayerFromAnnotations(namespaceAnnotations)
-			if err != nil {
-				slog.Error("failed to parse layer from annotations", "error", err)
-				os.Exit(1)
-			}
+			slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-			layers := values.Layers{layerWorkload, layerNamespace, layerCli, layerEnv}
-
-			scaling, err := layers.GetCurrentScaling()
+			err := scan(workload, client, ctx)
 			if err != nil {
-				slog.Error("failed to get current scaling for workload", "error", err)
+				slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 				os.Exit(1)
 			}
-			if scaling == values.ScalingIncompatible {
-				slog.Error("scaling is incompatible, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-				continue
-			}
-			if scaling == values.ScalingIgnore {
-				slog.Debug("scaling is ignored, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-				continue
-			}
-			if scaling == values.ScalingDown {
-				slog.Debug("downscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-				downscaleReplicas, err := layers.GetDownscaleReplicas()
-				if err != nil {
-					slog.Error("failed to parse layer from annotations", "error", err)
-					os.Exit(1)
-				}
-				err = client.DownscaleWorkload(downscaleReplicas, workload, ctx)
-				if err != nil {
-					slog.Error("failed to parse layer from annotations", "error", err)
-					os.Exit(1)
-				}
-			}
-			if scaling == values.ScalingUp {
-				slog.Debug("upscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-				err := client.UpscaleWorkload(workload, ctx)
-				if err != nil {
-					slog.Error("failed to parse layer from annotations", "error", err)
-					os.Exit(1)
-				}
-			}
-
+			slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		}
 
 		if once {
+			slog.Debug("once is set to true, exiting")
 			break
 		}
+		slog.Debug("waiting until next scan", "interval", interval)
 		time.Sleep(time.Duration(interval))
 	}
+}
+
+// scan runs a scan on the worklod, determining the scaling and acting on it
+func scan(workload scalable.Workload, client kubernetes.Client, ctx context.Context) error {
+	namespaceAnnotations, err := client.GetNamespaceAnnotations(workload.GetNamespace(), ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get namespace annotations: %w", err)
+	}
+	layerWorkload, err := values.GetLayerFromAnnotations(workload.GetAnnotations())
+	if err != nil {
+		return fmt.Errorf("failed to parse workload layer from annotations: %w", err)
+	}
+	layerNamespace, err := values.GetLayerFromAnnotations(namespaceAnnotations)
+	if err != nil {
+		return fmt.Errorf("failed to parse namespace layer from annotations: %w", err)
+	}
+
+	layers := values.Layers{layerWorkload, layerNamespace, layerCli, layerEnv}
+
+	if layers.GetExcluded() {
+		slog.Debug("workload is excluded, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	scaling, err := layers.GetCurrentScaling()
+	if err != nil {
+		return fmt.Errorf("failed to get current scaling for workload: %w", err)
+	}
+	if scaling == values.ScalingIncompatible {
+		slog.Error("scaling is incompatible, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+	if scaling == values.ScalingIgnore {
+		slog.Debug("scaling is ignored, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+	if scaling == values.ScalingDown {
+		slog.Debug("downscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		downscaleReplicas, err := layers.GetDownscaleReplicas()
+		if err != nil {
+			return fmt.Errorf("failed to get downscale replicas: %w", err)
+		}
+		err = client.DownscaleWorkload(downscaleReplicas, workload, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to downscale workload: %w", err)
+		}
+	}
+	if scaling == values.ScalingUp {
+		slog.Debug("upscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		err := client.UpscaleWorkload(workload, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to upscale workload: %w", err)
+		}
+	}
+	return nil
 }

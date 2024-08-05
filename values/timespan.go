@@ -14,10 +14,10 @@ type TimeSpan interface {
 	isTimeInSpan(time.Time) bool
 }
 
-type TimeSpans []TimeSpan
+type timeSpans []TimeSpan
 
 // inTimeSpans checks if current time is in one of the timespans or not
-func (t *TimeSpans) inTimeSpans() bool {
+func (t *timeSpans) inTimeSpans() bool {
 	for _, timespan := range *t {
 		if !timespan.isTimeInSpan(time.Now()) {
 			continue
@@ -27,7 +27,7 @@ func (t *TimeSpans) inTimeSpans() bool {
 	return false
 }
 
-func (t *TimeSpans) Set(value string) error {
+func (t *timeSpans) Set(value string) error {
 	spans := strings.Split(value, ",")
 	var timespans []TimeSpan
 	for _, timespanText := range spans {
@@ -48,11 +48,11 @@ func (t *TimeSpans) Set(value string) error {
 		}
 		timespans = append(timespans, timespan)
 	}
-	*t = TimeSpans(timespans)
+	*t = timeSpans(timespans)
 	return nil
 }
 
-func (t *TimeSpans) String() string {
+func (t *timeSpans) String() string {
 	return fmt.Sprint(*t)
 }
 
@@ -130,6 +130,7 @@ func (t relativeTimeSpan) isTimeOfDayInRange(timeOfDay time.Time) bool {
 	return t.timeFrom.Before(timeOfDay) && t.timeTo.After(timeOfDay)
 }
 
+// isTimeInSpan check if the time is in the span
 func (t relativeTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 	targetTime = targetTime.In(t.timezone)
 	timeOfDay := targetTime.Truncate(24 * time.Hour)
@@ -142,14 +143,17 @@ type absoluteTimeSpan struct {
 	to   time.Time
 }
 
+// isTimeInSpan check if the time is in the span
 func (t absoluteTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 	return t.from.Before(targetTime) && t.to.After(targetTime)
 }
 
+// isAbsoluteTimestamp checks if timestamp string is absolute
 func isAbsoluteTimestamp(timestamp string) bool {
 	return strings.Contains(timestamp, " - ")
 }
 
+// getWeekday gets the weekday from the given string
 func getWeekday(weekday string) (time.Weekday, error) {
 	weekdays := map[string]time.Weekday{
 		"sun": time.Sunday,

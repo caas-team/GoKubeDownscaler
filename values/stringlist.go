@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// StringList is a alias for []string with a Set funciton for the flag package
 type StringList []string
 
 func (s *StringList) Set(value string) error {
