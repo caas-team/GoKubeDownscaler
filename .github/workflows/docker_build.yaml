@@ -38,8 +38,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            mtr.devops.telekom.de/caas/py-kube-downscaler
-            ghcr.io/caas-team/py-kube-downscaler
+            mtr.devops.telekom.de/caas/go-kube-downscaler
+            ghcr.io/caas-team/GoKubeDownscaler
           tags: |
             ${{ env.TAG1 }}
             ${{ env.TAG2 }}
