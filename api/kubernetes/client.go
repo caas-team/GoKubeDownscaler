@@ -91,10 +91,7 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 		return nil
 	}
 
-	err = workload.SetReplicas(replicas)
-	if err != nil {
-		return fmt.Errorf("failed to scale workload: %w", err)
-	}
+	workload.SetReplicas(replicas)
 	err = c.setOriginalReplicas(originalReplicas, workload)
 	if err != nil {
 		return fmt.Errorf("failed to set original replicas annotation: %w", err)
@@ -103,6 +100,7 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
+	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 	return nil
 }
 
@@ -125,10 +123,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 		return nil
 	}
 
-	err = workload.SetReplicas(originalReplicas)
-	if err != nil {
-		return fmt.Errorf("failed to scale workload: %w", err)
-	}
+	workload.SetReplicas(originalReplicas)
 	err = c.removeOriginalReplicas(workload)
 	if err != nil {
 		return fmt.Errorf("failed to set original replicas annotation: %w", err)
@@ -137,6 +132,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
+	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 	return nil
 }
 

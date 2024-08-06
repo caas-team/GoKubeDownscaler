@@ -31,6 +31,8 @@ func (t *timeSpans) Set(value string) error {
 	spans := strings.Split(value, ",")
 	var timespans []TimeSpan
 	for _, timespanText := range spans {
+		timespanText = strings.TrimSpace(timespanText)
+
 		if isAbsoluteTimestamp(timespanText) {
 			// parse as absolute timestamp
 			timespan, err := parseAbsoluteTimeSpan(timespanText)
@@ -73,7 +75,7 @@ func parseAbsoluteTimeSpan(timespan string) (absoluteTimeSpan, error) {
 	}, nil
 }
 
-func parseRelativeTimeSpan(timespanString string) (relativeTimeSpan, error) {
+func parseRelativeTimeSpan(timespanString string) (*relativeTimeSpan, error) {
 	timespan := relativeTimeSpan{}
 
 	parts := strings.Split(timespanString, " ")
@@ -84,26 +86,26 @@ func parseRelativeTimeSpan(timespanString string) (relativeTimeSpan, error) {
 	var err error
 	timespan.timezone, err = time.LoadLocation(timezone)
 	if err != nil {
-		return timespan, fmt.Errorf("failed to parse timezon: %w", err)
+		return nil, fmt.Errorf("failed to parse timezon: %w", err)
 	}
 	timespan.timeFrom, err = time.ParseInLocation("15:04", timeSpan[0], timespan.timezone)
 	if err != nil {
-		return timespan, fmt.Errorf("failed to parse time: %w", err)
+		return nil, fmt.Errorf("failed to parse time: %w", err)
 	}
-	timespan.timeTo, err = time.ParseInLocation("15:04", timeSpan[0], timespan.timezone)
+	timespan.timeTo, err = time.ParseInLocation("15:04", timeSpan[1], timespan.timezone)
 	if err != nil {
-		return timespan, fmt.Errorf("failed to parse time: %w", err)
+		return nil, fmt.Errorf("failed to parse time: %w", err)
 	}
 	timespan.weekdayFrom, err = getWeekday(weekdaySpan[0])
 	if err != nil {
-		return timespan, fmt.Errorf("failed to parse weekday: %w", err)
+		return nil, fmt.Errorf("failed to parse weekday: %w", err)
 	}
 	timespan.weekdayTo, err = getWeekday(weekdaySpan[1])
 	if err != nil {
-		return timespan, fmt.Errorf("failed to parse weekday: %w", err)
+		return nil, fmt.Errorf("failed to parse weekday: %w", err)
 	}
 
-	return timespan, nil
+	return &timespan, nil
 }
 
 type relativeTimeSpan struct {
@@ -125,15 +127,15 @@ func (t relativeTimeSpan) isWeekdayInRange(weekday time.Weekday) bool {
 // isTimeOfDayInRange checks if the time falls into the time of day range
 func (t relativeTimeSpan) isTimeOfDayInRange(timeOfDay time.Time) bool {
 	if t.timeFrom.After(t.timeTo) { // check if range wraps across days
-		return timeOfDay.After(t.timeFrom) || timeOfDay.Before(t.timeTo)
+		return timeOfDay.After(t.timeFrom) || timeOfDay.Equal(t.timeFrom) || timeOfDay.Before(t.timeTo)
 	}
-	return t.timeFrom.Before(timeOfDay) && t.timeTo.After(timeOfDay)
+	return (t.timeFrom.Before(timeOfDay) || t.timeFrom.Equal(timeOfDay)) && t.timeTo.After(timeOfDay)
 }
 
 // isTimeInSpan check if the time is in the span
 func (t relativeTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 	targetTime = targetTime.In(t.timezone)
-	timeOfDay := targetTime.Truncate(24 * time.Hour)
+	timeOfDay := getTimeOfDay(targetTime)
 	weekday := targetTime.Weekday()
 	return t.isTimeOfDayInRange(timeOfDay) && t.isWeekdayInRange(weekday)
 }
@@ -145,7 +147,7 @@ type absoluteTimeSpan struct {
 
 // isTimeInSpan check if the time is in the span
 func (t absoluteTimeSpan) isTimeInSpan(targetTime time.Time) bool {
-	return t.from.Before(targetTime) && t.to.After(targetTime)
+	return (t.from.Before(targetTime) || t.from.Equal(targetTime)) && t.to.After(targetTime)
 }
 
 // isAbsoluteTimestamp checks if timestamp string is absolute
@@ -170,4 +172,15 @@ func getWeekday(weekday string) (time.Weekday, error) {
 	}
 
 	return 0, errInvalidWeekday
+}
+
+// getTimeOfDay gets the time of day of the given time
+func getTimeOfDay(targetTime time.Time) time.Time {
+	return time.Date(0, time.January, 1,
+		targetTime.Hour(),
+		targetTime.Minute(),
+		targetTime.Second(),
+		targetTime.Nanosecond(),
+		targetTime.Location(),
+	)
 }

@@ -29,5 +29,5 @@ func (d *Duration) Set(value string) error {
 }
 
 func (d *Duration) String() string {
-	return fmt.Sprint(*d)
+	return fmt.Sprint(time.Duration(*d).String())
 }

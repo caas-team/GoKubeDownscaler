@@ -31,7 +31,7 @@ type Workload interface {
 	// SetAnnotations sets the annotations on the resource. Changes won't be made on kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
 	// SetReplicas sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
-	SetReplicas(replicas int) error
+	SetReplicas(replicas int)
 	// GetCurrentReplicas gets the current amount of replicas of the resource
 	GetCurrentReplicas() (int, error)
 	// Update updates the resource with all changes made to it. It should only be called once on a resource

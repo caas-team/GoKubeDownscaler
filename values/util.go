@@ -27,7 +27,7 @@ const (
 )
 
 // GetLayerFromAnnotations makes a layer and fills it with all values from the annotations
-func GetLayerFromAnnotations(annotations map[string]string) (layer, error) {
+func GetLayerFromAnnotations(annotations map[string]string) (Layer, error) {
 	result := NewLayer()
 	var err error
 
@@ -107,7 +107,7 @@ func GetEnvValue(key string, value flag.Value) error {
 }
 
 // GetLayerFromEnv makes a layer and fills it with all values from environment variables
-func GetLayerFromEnv() (layer, error) {
+func GetLayerFromEnv() (Layer, error) {
 	result := NewLayer()
 	err := GetEnvValue(envUpscalePeriod, &result.UpscalePeriod)
 	if err != nil {

@@ -16,11 +16,11 @@ var (
 
 const Undefined = -1 // Undefined represents an undefined integer value
 
-// Scaling is a enum that describes the current scaling
-type Scaling int
+// scaling is a enum that describes the current scaling
+type scaling int
 
 const (
-	ScalingNone         Scaling = iota // no scaling set in this layer, go to next layer
+	scalingNone         scaling = iota // no scaling set in this layer, go to next layer
 	ScalingIncompatible                // incompatible scaling fields set, error
 	ScalingIgnore                      // not scaling
 	ScalingDown                        // scaling down
@@ -28,14 +28,14 @@ const (
 )
 
 // NewLayer gets a new layer with the default values
-func NewLayer() layer {
-	return layer{
+func NewLayer() Layer {
+	return Layer{
 		DownscaleReplicas: Undefined,
 	}
 }
 
-// layer represents a value layer
-type layer struct {
+// Layer represents a value Layer
+type Layer struct {
 	DownscalePeriod   timeSpans    // periods to downscale in
 	DownTime          timeSpans    // within these timespans workloads will be scaled down, outside of them they will be scaled up
 	UpscalePeriod     timeSpans    // periods to upscale in
@@ -50,12 +50,12 @@ type layer struct {
 }
 
 // isScalingExcluded checks if scaling is excluded
-func (l layer) isScalingExcluded() bool {
+func (l Layer) isScalingExcluded() bool {
 	return (l.Exclude.isSet && l.Exclude.value) || l.ExcludeUntil.After(time.Now())
 }
 
 // checkForIncompatibleFields checks if there are incompatible fields
-func (l layer) checkForIncompatibleFields() error {
+func (l Layer) checkForIncompatibleFields() error {
 	// force down and uptime
 	if l.ForceDowntime && l.ForceUptime {
 		return errForceUpAndDownTime
@@ -77,7 +77,7 @@ func (l layer) checkForIncompatibleFields() error {
 }
 
 // getCurrentScaling gets the current scaling, not checking for incompatibility
-func (l layer) getCurrentScaling() Scaling {
+func (l Layer) getCurrentScaling() scaling {
 	// check overwrites
 	if l.ForceDowntime {
 		return ScalingDown
@@ -106,18 +106,18 @@ func (l layer) getCurrentScaling() Scaling {
 			return ScalingDown
 		}
 		if l.UpscalePeriod.inTimeSpans() {
-			return ScalingDown
+			return ScalingUp
 		}
 		return ScalingIgnore
 	}
 
-	return ScalingNone
+	return scalingNone
 }
 
-type Layers []layer
+type Layers []Layer
 
 // GetCurrentScaling gets the current scaling of the first layer that implements scaling
-func (l Layers) GetCurrentScaling() (Scaling, error) {
+func (l Layers) GetCurrentScaling() (scaling, error) {
 	for _, layer := range l {
 		err := layer.checkForIncompatibleFields()
 		if err != nil {
@@ -125,13 +125,13 @@ func (l Layers) GetCurrentScaling() (Scaling, error) {
 		}
 
 		layerScaling := layer.getCurrentScaling()
-		if layerScaling == ScalingNone {
+		if layerScaling == scalingNone {
 			continue
 		}
 
 		return layerScaling, nil
 	}
-	return ScalingNone, errValueNotSet
+	return scalingNone, errValueNotSet
 }
 
 // GetDownscaleReplicas gets the downscale replicas of the first layer that implements downscale replicas
