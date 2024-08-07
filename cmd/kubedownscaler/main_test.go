@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	client "github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
-	"github.com/caas-team/gokubedownscaler/internal/scalable"
-	"github.com/caas-team/gokubedownscaler/internal/values"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

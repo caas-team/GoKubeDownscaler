@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
-	"github.com/caas-team/gokubedownscaler/internal/scalable"
-	"github.com/caas-team/gokubedownscaler/internal/values"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 )
 
 var (

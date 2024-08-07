@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"strconv"
 
-	"github.com/caas-team/gokubedownscaler/internal/scalable"
-	"github.com/caas-team/gokubedownscaler/internal/values"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
