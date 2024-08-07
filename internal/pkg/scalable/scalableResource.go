@@ -12,7 +12,7 @@ var (
 	errNoReplicasSpecified       = errors.New("error: workload has no replicas set")
 )
 
-// getResourceFunc is a function that gets a specific resoruce as a scalableResource
+// getResourceFunc is a function that gets a specific resource as a scalableResource
 type getResourceFunc func(namespace string, clientset *kubernetes.Clientset, ctx context.Context) ([]Workload, error)
 
 // GetResource maps the resource name to a implementation specific getResourceFunc
