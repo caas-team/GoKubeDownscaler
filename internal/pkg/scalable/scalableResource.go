@@ -16,7 +16,7 @@ var (
 type getResourceFunc func(namespace string, clientset *kubernetes.Clientset, ctx context.Context) ([]Workload, error)
 
 // GetResource maps the resource name to a implementation specific getResourceFunc
-var GetResource map[string]getResourceFunc = map[string]getResourceFunc{
+var GetResource = map[string]getResourceFunc{
 	"deployments": getDeployments,
 }
 
