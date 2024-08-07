@@ -86,23 +86,23 @@ func parseRelativeTimeSpan(timespanString string) (*relativeTimeSpan, error) {
 	var err error
 	timespan.timezone, err = time.LoadLocation(timezone)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse timezon: %w", err)
+		return nil, fmt.Errorf("failed to parse timezone: %w", err)
 	}
 	timespan.timeFrom, err = time.ParseInLocation("15:04", timeSpan[0], timespan.timezone)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse time: %w", err)
+		return nil, fmt.Errorf("failed to parse 'timeFrom': %w", err)
 	}
 	timespan.timeTo, err = time.ParseInLocation("15:04", timeSpan[1], timespan.timezone)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse time: %w", err)
+		return nil, fmt.Errorf("failed to parse 'timeTo': %w", err)
 	}
 	timespan.weekdayFrom, err = getWeekday(weekdaySpan[0])
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse weekday: %w", err)
+		return nil, fmt.Errorf("failed to parse 'weekdayFrom': %w", err)
 	}
 	timespan.weekdayTo, err = getWeekday(weekdaySpan[1])
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse weekday: %w", err)
+		return nil, fmt.Errorf("failed to parse 'weekdayTo': %w", err)
 	}
 
 	return &timespan, nil

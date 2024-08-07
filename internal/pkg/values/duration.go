@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Duration is a alias for time.Duration with an Set function that allows for durations without unit
+// Duration is an alias for time.Duration with a Set function that allows for durations without a unit
 type Duration time.Duration
 
 // Set converts the string value into a duration

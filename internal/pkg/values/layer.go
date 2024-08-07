@@ -16,7 +16,7 @@ var (
 
 const Undefined = -1 // Undefined represents an undefined integer value
 
-// scaling is a enum that describes the current scaling
+// scaling is an enum that describes the current scaling
 type scaling int
 
 const (
@@ -148,7 +148,7 @@ func (l Layers) GetDownscaleReplicas() (int, error) {
 	return 0, errValueNotSet
 }
 
-// GetExcluded checks if any layer excludes
+// GetExcluded checks if any layer excludes scaling
 func (l Layers) GetExcluded() bool {
 	for _, layer := range l {
 
