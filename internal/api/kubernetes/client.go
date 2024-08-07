@@ -92,10 +92,7 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 	}
 
 	workload.SetReplicas(replicas)
-	err = c.setOriginalReplicas(originalReplicas, workload)
-	if err != nil {
-		return fmt.Errorf("failed to set original replicas annotation: %w", err)
-	}
+	c.setOriginalReplicas(originalReplicas, workload)
 	err = workload.Update(c.clientset, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
@@ -108,7 +105,7 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
 	currentReplicas, err := workload.GetCurrentReplicas()
 	if err != nil {
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+		return fmt.Errorf("failed to get current replicas for workload: %w", err)
 	}
 	originalReplicas, err := c.getOriginalReplicas(workload)
 	if err != nil {
@@ -124,10 +121,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 	}
 
 	workload.SetReplicas(originalReplicas)
-	err = c.removeOriginalReplicas(workload)
-	if err != nil {
-		return fmt.Errorf("failed to set original replicas annotation: %w", err)
-	}
+	c.removeOriginalReplicas(workload)
 	err = workload.Update(c.clientset, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
@@ -137,14 +131,13 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 }
 
 // setOriginalReplicas sets the original replicas annotation on the workload
-func (c client) setOriginalReplicas(originalReplicas int, workload scalable.Workload) error {
+func (c client) setOriginalReplicas(originalReplicas int, workload scalable.Workload) {
 	annotations := workload.GetAnnotations()
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
 	annotations[annotationOriginalReplicas] = fmt.Sprintf("%d", originalReplicas)
 	workload.SetAnnotations(annotations)
-	return nil
 }
 
 // getOriginalReplicas gets the original replicas annotation on the workload. nil is undefined
@@ -156,14 +149,13 @@ func (c client) getOriginalReplicas(workload scalable.Workload) (int, error) {
 	}
 	originalReplicas, err := strconv.Atoi(originalReplicasString)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get original replicas: %w", err)
+		return 0, fmt.Errorf("failed to parse original replicas annotation on workload: %w", err)
 	}
 	return originalReplicas, nil
 }
 
-func (c client) removeOriginalReplicas(workload scalable.Workload) error {
+func (c client) removeOriginalReplicas(workload scalable.Workload) {
 	annotations := workload.GetAnnotations()
 	delete(annotations, annotationOriginalReplicas)
 	workload.SetAnnotations(annotations)
-	return nil
 }

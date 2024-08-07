@@ -74,7 +74,7 @@ func main() {
 
 	client, err := kubernetes.NewClient(kubeconfig)
 	if err != nil {
-		slog.Error("failed to get new client", "error", err)
+		slog.Error("failed to create new kubernetes client", "error", err)
 		os.Exit(1)
 	}
 
