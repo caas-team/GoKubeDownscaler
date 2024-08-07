@@ -39,7 +39,7 @@ jobs:
         with:
           images: |
             mtr.devops.telekom.de/caas/go-kube-downscaler
-            ghcr.io/caas-team/GoKubeDownscaler
+            ghcr.io/caas-team/gokubedownscaler
           tags: |
             ${{ env.TAG1 }}
             ${{ env.TAG2 }}
@@ -80,7 +80,7 @@ jobs:
 
       - name: Sign Push
         run: |
-          cosign sign --key env://COSIGN_KEY --tlog-upload=false ghcr.io/caas-team/GoKubeDownscaler@${{ steps.build-push.outputs.digest }}
+          cosign sign --key env://COSIGN_KEY --tlog-upload=false ghcr.io/caas-team/gokubedownscaler@${{ steps.build-push.outputs.digest }}
           cosign sign --key env://COSIGN_KEY --tlog-upload=false mtr.devops.telekom.de/caas/go-kube-downscaler@${{ steps.build-push.outputs.digest }}
         env:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
