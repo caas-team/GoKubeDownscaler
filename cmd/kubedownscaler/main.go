@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/caas-team/gokubedownscaler/api/kubernetes"
-	"github.com/caas-team/gokubedownscaler/scalable"
-	"github.com/caas-team/gokubedownscaler/values"
+	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
+	"github.com/caas-team/gokubedownscaler/internal/scalable"
+	"github.com/caas-team/gokubedownscaler/internal/values"
 )
 
 var (

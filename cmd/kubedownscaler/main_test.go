@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	client "github.com/caas-team/gokubedownscaler/api/kubernetes"
-	"github.com/caas-team/gokubedownscaler/scalable"
-	"github.com/caas-team/gokubedownscaler/values"
+	client "github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
+	"github.com/caas-team/gokubedownscaler/internal/scalable"
+	"github.com/caas-team/gokubedownscaler/internal/values"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
