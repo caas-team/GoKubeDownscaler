@@ -1,4 +1,7 @@
+# Contribution Manifest
+
 - [Branches and Commits](#branches-and-commits)
+- [Code and Structure](#code-and-structure)
 - [Issues](#issues)
 - [Pull Requests](#pull-requests)
 - [Pre Commit](#pre-commit)
@@ -32,6 +35,11 @@ Commits:
 | ------------ | ------- |
 | sw           | switch  |
 | rm           | remove  |
+
+## Code and Structure
+
+Try to stick to golang best practices and standarts.
+Package structure standards can be found here: https://github.com/golang-standards/project-layout
 
 ## Issues
 
