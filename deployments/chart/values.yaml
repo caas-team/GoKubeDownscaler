@@ -1,0 +1,79 @@
+replicaCount: 1
+
+image:
+  repository: mtr.devops.telekom.de/caas/go-kube-downscaler
+  tag: "dev" # Dynamically set from CI
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "go-kube-downscaler"
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  supplementalGroups: [1000]
+
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  privileged: false
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 900Mi
+  requests:
+    cpu: 200m
+    memory: 300Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Used to configure the env
+configMapName: go-kube-downscaler
+
+roleName: go-kube-downscaler
+roleBindingName: go-kube-downscaler
+
+# Namespaces being excluded from the 'downscale for non-work hours'
+# DEFAULT_UPTIME: "Mon-Fri 07:30-20:30 CET"
+excludedNamespaces:
+  - go-kube-downscaler
+  - kube-downscaler
+  - kube-system
+
+# Additional config in the configmap.
+# Add configmap lines via the multiline Operator |
+# e.g.:
+# extraConfig: |
+#   DOWNSCALE_PERIOD: "Mon-Sun 19:00-20:00 Europe/Berlin"
+extraConfig: ""
