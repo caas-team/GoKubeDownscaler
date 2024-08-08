@@ -23,7 +23,7 @@ Commits:
 | feat     | feat: add more workload types   | A new feature                                                                        |
 | fix      | fix: stop tests from failing    | A fix of a bug                                                                       |
 | chore    | chore: rm unneeded consts       | An annoying task, that has/had to be done                                            |
-| refactor | refactor: improved error logs   | Change that don't change any functionality                                           |
+| refactor | refactor: improved error logs   | Changes that don't change any functionality                                           |
 | revert   | revert: #5ff385d2               | A change that reverts a previous commit                                              |
 | docs     | docs: added a readme            | Changes to documentation only                                                        |
 | perf     | perf: sw to concurrent scanning | A change that only improves performance                                              |
@@ -38,13 +38,13 @@ Commits:
 
 ## Code and Structure
 
-Try to stick to golang best practices and standarts.
+Try to stick to golang best practices and standards.
 Package structure standards can be found here: https://github.com/golang-standards/project-layout
 
 ## Issues
 
 If applicable use the issue template. This ensures a consistent structure which makes it easier to find important details.
-Issues which aren't ready for processing, you can mark them as a draft by writing "Draft: " infront of the issue name.
+Issues which aren't ready for processing, can be marked as a draft by writing "Draft: " infront of the issue name.
 
 ## Pull Requests
 
@@ -53,4 +53,4 @@ Set yourself and any other collaborators as assignee.
 
 ## Pre Commit
 
-It is recommended to install pre-commit. This insures that formatting is consistent, you don't commit to protected branches and you don't accedentally commit broken code or new functionality without changing the tests. The installation process is in the [README](README.md#setting-up-pre-commit)
+It is recommended to install pre-commit. This insures that formatting is consistent, you don't commit to protected branches and you don't accidentally commit broken code or new functionality without changing the tests. The installation process is in the [README](README.md#setting-up-pre-commit)
