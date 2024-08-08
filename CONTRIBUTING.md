@@ -1,0 +1,48 @@
+- [Branches and Commits](#branches-and-commits)
+- [Issues](#issues)
+- [Pull Requests](#pull-requests)
+- [Pre Commit](#pre-commit)
+
+## Branches and Commits
+
+### Structure
+
+Branches:
+`type/description-message`
+
+Commits:
+`type: description message`
+
+### Types
+
+| Type     | Example                         | Description                                                                          |
+| -------- | ------------------------------- | ------------------------------------------------------------------------------------ |
+| feat     | feat: add more workload types   | A new feature                                                                        |
+| fix      | fix: stop tests from failing    | A fix of a bug                                                                       |
+| chore    | chore: rm unneeded consts       | An annoying task, that has/had to be done                                            |
+| refactor | refactor: improved error logs   | Change that don't change any functionality                                           |
+| revert   | revert: #5ff385d2               | A change that reverts a previous commit                                              |
+| docs     | docs: added a readme            | Changes to documentation only                                                        |
+| perf     | perf: sw to concurrent scanning | A change that only improves performance                                              |
+| style    | style: rm leading spaces        | A change which makes the code look better without changing the code (eg. formatting) |
+
+### Common Abbreviations
+
+| Abbreviation | Meaning |
+| ------------ | ------- |
+| sw           | switch  |
+| rm           | remove  |
+
+## Issues
+
+If applicable use the issue template. This ensures a consistent structure which makes it easier to find important details.
+Issues which aren't ready for processing, you can mark them as a draft by writing "Draft: " infront of the issue name.
+
+## Pull Requests
+
+Use the Pull Request Template. This ensures a consistent structure which makes it easier to find important details.
+Set yourself and any other collaborators as assignee.
+
+## Pre Commit
+
+It is recommended to install pre-commit. This insures that formatting is consistent, you don't commit to protected branches and you don't accedentally commit broken code or new functionality without changing the tests. The installation process is in the [README](README.md#setting-up-pre-commit)
