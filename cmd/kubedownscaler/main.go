@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log/slog"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
@@ -87,16 +88,23 @@ func main() {
 			os.Exit(1)
 		}
 
+		var wg sync.WaitGroup
 		for _, workload := range workloads {
-			slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			wg.Add(1)
+			go func() {
+				slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+				defer wg.Done()
 
-			ok := scanWorkload(workload, client, ctx, layerCli, layerEnv)
-			if !ok {
-				slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-				continue
-			}
-			slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+				ok := scanWorkload(workload, client, ctx, layerCli, layerEnv)
+				if !ok {
+					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+					return
+				}
+
+				slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			}()
 		}
+		wg.Wait()
 
 		if once {
 			slog.Debug("once is set to true, exiting")
