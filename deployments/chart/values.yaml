@@ -8,6 +8,9 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+constrainedDownscaler: false
+constrainedNamespaces: []
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -15,7 +18,7 @@ serviceAccount:
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: "go-kube-downscaler"
+  name: ""
 
 podAnnotations: {}
 
@@ -60,9 +63,6 @@ affinity: {}
 
 # Used to configure the env
 configMapName: go-kube-downscaler
-
-roleName: go-kube-downscaler
-roleBindingName: go-kube-downscaler
 
 # Namespaces being excluded from the 'downscale for non-work hours'
 # DEFAULT_UPTIME: "Mon-Fri 07:30-20:30 CET"

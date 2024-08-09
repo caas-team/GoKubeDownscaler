@@ -1,0 +1,122 @@
+{{- if .Values.constrainedDownscaler }}
+{{- if not .Values.constrainedNamespaces }}
+{{- fail "Error: 'constrainedNamespaces' must not be empty or null when 'constrainedDownscaler' is true." }}
+{{- end }}
+
+{{- $releaseNamespace := .Release.Namespace }}
+{{- $name := include "go-kube-downscaler.name" . }}
+{{- $serviceAccountName := include "go-kube-downscaler.serviceAccountName" . }}
+{{- range $namespace := .Values.constrainedNamespaces }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $name }}
+  namespace: {{ $namespace }}
+rules:
+- apiGroups:
+    - ""
+  resources:
+    - pods
+    - namespaces
+  verbs:
+    - get
+    - watch
+    - list
+- apiGroups:
+    - apps
+  resources:
+    - deployments
+    - statefulsets
+    - daemonsets
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+- apiGroups:
+    - argoproj.io
+  resources:
+    - rollouts
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+- apiGroups:
+    - autoscaling
+  resources:
+    - horizontalpodautoscalers
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+- apiGroups:
+    - batch
+  resources:
+    - cronjobs
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+- apiGroups:
+    - keda.sh
+  resources:
+    - scaledobjects
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+- apiGroups:
+    - zalando.org
+  resources:
+    - stacks
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+- apiGroups:
+    - ""
+  resources:
+    - events
+  verbs:
+    - get
+    - create
+    - watch
+    - list
+    - update
+    - patch
+- apiGroups:
+    - policy
+  resources:
+    - poddisruptionbudgets
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $name }}
+  namespace: {{ $namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $serviceAccountName }}
+    namespace: {{ $releaseNamespace }}
+{{- end }}
