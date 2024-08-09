@@ -1,8 +1,8 @@
 replicaCount: 1
 
 image:
-  repository: mtr.devops.telekom.de/caas/go-kube-downscaler
-  tag: "dev" # Dynamically set from CI
+  repository: ghcr.io/caas-team/go-kube-downscaler
+  tag: "" # Dynamically set from CI
 
 imagePullSecrets: []
 nameOverride: ""
