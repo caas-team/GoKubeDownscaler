@@ -124,12 +124,12 @@ func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx cont
 		slog.Error("failed to get namespace annotations", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return false
 	}
-	layerWorkload, err := values.GetLayerFromAnnotations(workload.GetAnnotations(), resourceLogger.Error, ctx)
+	layerWorkload, err := values.GetLayerFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx)
 	if err != nil {
 		slog.Error("failed to parse workload layer from annotations", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return false
 	}
-	layerNamespace, err := values.GetLayerFromAnnotations(namespaceAnnotations, resourceLogger.Error, ctx)
+	layerNamespace, err := values.GetLayerFromAnnotations(namespaceAnnotations, resourceLogger, ctx)
 	if err != nil {
 		slog.Error("failed to parse namespace layer from annotations", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return false
