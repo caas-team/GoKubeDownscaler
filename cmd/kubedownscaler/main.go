@@ -139,7 +139,7 @@ func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx cont
 
 	if layers.GetExcluded() {
 		slog.Debug("workload is excluded, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return false
+		return true
 	}
 
 	scaling, err := layers.GetCurrentScaling()
@@ -153,7 +153,7 @@ func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx cont
 	}
 	if scaling == values.ScalingIgnore {
 		slog.Debug("scaling is ignored, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return false
+		return true
 	}
 	if scaling == values.ScalingDown {
 		slog.Debug("downscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
