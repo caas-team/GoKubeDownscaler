@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"context"
+	"crypto/sha1"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -9,12 +10,15 @@ import (
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 const (
 	annotationOriginalReplicas = "downscaler/original-replicas"
+
+	componentName = "kubedownscaler"
 )
 
 var errResourceNotSupported = errors.New("error: specified rescource type is not supported")
@@ -29,6 +33,8 @@ type Client interface {
 	DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
+	// AddErrorEvent creates a new event on the workload
+	AddErrorEvent(reason string, id string, message string, workload scalable.Workload, ctx context.Context) error
 }
 
 // NewClient makes a new Client
@@ -158,4 +164,50 @@ func (c client) removeOriginalReplicas(workload scalable.Workload) {
 	annotations := workload.GetAnnotations()
 	delete(annotations, annotationOriginalReplicas)
 	workload.SetAnnotations(annotations)
+}
+
+// AddErrorEvent creates or updates a new event on the workload
+func (c client) AddErrorEvent(reason, id, message string, workload scalable.Workload, ctx context.Context) error {
+	hash := sha1.Sum([]byte(fmt.Sprintf("%s.%s", id, message)))
+	name := fmt.Sprintf("%s.%s.%.3x", workload.GetName(), reason, hash)
+	eventsClient := c.clientset.CoreV1().Events(workload.GetNamespace())
+
+	// check if event already exists
+
+	if event, err := eventsClient.Get(ctx, name, metav1.GetOptions{}); err == nil && event != nil {
+		// update event
+		event.Count += 1
+		event.LastTimestamp = metav1.Now()
+		_, err := eventsClient.Update(ctx, event, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to update event: %w", err)
+		}
+		return nil
+	}
+
+	// create event
+	_, err := c.clientset.CoreV1().Events(workload.GetNamespace()).Create(ctx, &corev1.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: workload.GetNamespace(),
+		},
+		InvolvedObject: corev1.ObjectReference{
+			Kind:       workload.GetObjectKind().GroupVersionKind().Kind,
+			Namespace:  workload.GetNamespace(),
+			Name:       workload.GetName(),
+			UID:        workload.GetUID(),
+			APIVersion: workload.GetObjectKind().GroupVersionKind().GroupVersion().String(),
+		},
+		Reason:         reason,
+		Message:        message,
+		Type:           corev1.EventTypeWarning,
+		Source:         corev1.EventSource{Component: componentName},
+		FirstTimestamp: metav1.Now(),
+		LastTimestamp:  metav1.Now(),
+		Count:          1,
+	}, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to create event: %w", err)
+	}
+	return nil
 }
