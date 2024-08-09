@@ -28,3 +28,6 @@ func (t *triStateBool) String() string {
 	}
 	return fmt.Sprint(t.value)
 }
+
+// IsBoolFlag makes the argument not have a value
+func (b *triStateBool) IsBoolFlag() bool { return true }

@@ -8,6 +8,7 @@ import (
 )
 
 var errInvalidWeekday = errors.New("error: specified weekday is invalid")
+var errRelativeTimespanInvalid = errors.New("error: specified relative timespan is invalid")
 
 type TimeSpan interface {
 	// inTimeSpan checks if time is in the timespan or not
@@ -79,8 +80,18 @@ func parseRelativeTimeSpan(timespanString string) (*relativeTimeSpan, error) {
 	timespan := relativeTimeSpan{}
 
 	parts := strings.Split(timespanString, " ")
+	if len(parts) != 3 {
+		return nil, errRelativeTimespanInvalid
+	}
+
 	weekdaySpan := strings.Split(parts[0], "-")
+	if len(weekdaySpan) != 2 {
+		return nil, errRelativeTimespanInvalid
+	}
 	timeSpan := strings.Split(parts[1], "-")
+	if len(timeSpan) != 2 {
+		return nil, errRelativeTimespanInvalid
+	}
 	timezone := parts[2]
 
 	var err error

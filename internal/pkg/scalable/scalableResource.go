@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -28,6 +30,10 @@ type Workload interface {
 	GetNamespace() string
 	// GetName gets the name of the resource
 	GetName() string
+	// GetUID gets the uid of the workload
+	GetUID() types.UID
+	// GetObjectKind gets the ObjectKind of the workload
+	GetObjectKind() schema.ObjectKind
 	// SetAnnotations sets the annotations on the resource. Changes won't be made on kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
 	// SetReplicas sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
