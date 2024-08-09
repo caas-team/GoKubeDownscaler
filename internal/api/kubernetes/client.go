@@ -173,7 +173,6 @@ func (c client) AddErrorEvent(reason, id, message string, workload scalable.Work
 	eventsClient := c.clientset.CoreV1().Events(workload.GetNamespace())
 
 	// check if event already exists
-
 	if event, err := eventsClient.Get(ctx, name, metav1.GetOptions{}); err == nil && event != nil {
 		// update event
 		event.Count += 1
