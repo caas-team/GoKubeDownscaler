@@ -4,11 +4,8 @@ metadata:
   name: {{ include "go-kube-downscaler.fullname" . }}
   labels:
     {{- include "go-kube-downscaler.labels" . | nindent 4 }}
-  namespace: {{ .Release.Namespace }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
       {{- include "go-kube-downscaler.selectorLabels" . | nindent 6 }}
@@ -31,6 +28,14 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
