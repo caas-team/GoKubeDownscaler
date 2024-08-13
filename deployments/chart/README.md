@@ -114,7 +114,7 @@ helm install go-kube-downscaler caas-team/go-kube-downscaler
 
 You can alternatively clone this repository, change the current directory to the GoKubeDownscaler repository and run:
 ```bash
-helm install go-kube-downscaler ./chart
+helm install go-kube-downscaler ./deployments/chart
 ```
 
 **Make sure to adjust the values.yaml as needed or use a custom values.yaml file.**
