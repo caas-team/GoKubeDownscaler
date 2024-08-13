@@ -57,7 +57,7 @@ Here is a brief overview of all the values contained in this chart:
 
 - <a id="arguments"></a>`arguments`: Defines command line arguments for the container.
 
-- <a id="includedResources"></a>`includedResources`: Defines all the resources that the go-kube-downscaler is supposed to be able to handle.
+- <a id="includedResources"></a>`includedResources`: Defines all the resources that the go-kube-downscaler is supposed to be able to handle. This list can not be empty.
 
 - <a id="fullnameOverride"></a>`fullnameOverride`: Overrides the full names of the created kubernetes resources with the provided name if set.
 
