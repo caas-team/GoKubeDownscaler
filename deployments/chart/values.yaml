@@ -4,6 +4,21 @@ image:
   repository: ghcr.io/caas-team/gokubedownscaler
   tag: "" # Dynamically set from CI
 
+arguments:
+#  - --interval=60
+
+includedResources:
+  - deployments
+  - statefulsets
+  - daemonsets
+  - rollouts
+  - horizontalpodautoscalers
+  - jobs
+  - cronjobs
+  - scaledobjects
+  - stacks
+  - poddisruptionbudgets
+
 fullnameOverride: ""
 nameOverride: ""
 

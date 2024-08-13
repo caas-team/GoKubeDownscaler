@@ -12,6 +12,8 @@ Here you can find a brief overview of the charts components and a quick installa
   - [Values](#values)
     - [replicaCount](#replicaCount)
     - [image](#image)
+    - [arguments](#arguments)
+    - [includedResources](#includedResources)
     - [nameOverride](#nameOverride)
     - [fullnameOverride](#fullnameOverride)
     - [constrainedDownscaler](#constrainedDownscaler)
@@ -31,7 +33,7 @@ The deployment.yaml file creates the main Deployment of the go-kube-downscaler w
 
 ### Serviceaccount
 
-The serviceaccount.yaml file creates a ServiceAccount that will be used to assign the needed permissions to the go-kube-downscaler.
+The serviceaccount.yaml file creates a ServiceAccount that will be used by the go-kube-downscaler to interact with kubernetes.
 
 ### Configmap
 
@@ -53,6 +55,10 @@ Here is a brief overview of all the values contained in this chart:
 
 - <a id="image"></a>`image`: Contains the repository URL and the image tag for the image you want to use.
 
+- <a id="arguments"></a>`arguments`: Defines command line arguments for the container.
+
+- <a id="includedResources"></a>`includedResources`: Defines all the resources that the go-kube-downscaler is supposed to be able to handle.
+
 - <a id="fullnameOverride"></a>`fullnameOverride`: Overrides the full names of the created kubernetes resources with the provided name if set.
 
 - <a id="nameOverride"></a>`nameOverride`: Overrides the chart name for the created kubernetes resources.
@@ -71,7 +77,7 @@ Here is a brief overview of all the values contained in this chart:
 
 - <a id="nodeSelector"></a>`nodeSelector`: Defines labels of nodes that you want the deployment to schedule them on.
 
-- <a id="tolerations"></a>`tolerations`:
+- <a id="tolerations"></a>`tolerations`: Adds tolerations to the pods of the deployment to be able to be scheduled on nodes with matching taints. (More info [here](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/))
 
 - <a id="affinity"></a>`affinity`: Defines rules for node affinity and pod affinity/anti-affinity. (More info [here](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/))
 
@@ -79,7 +85,7 @@ Here is a brief overview of all the values contained in this chart:
 
 - <a id="excludedNamespaces"></a>`excludedNamespaces`: A list of namespaces that are supposed to be excluded from the downscaling process of the go-kube-downscaler.
 
-- <a id="extraConfig"></a>`extraConfig`: Adds additional configurations to the ConfigMap.
+- <a id="extraConfig"></a>`extraConfig`: Adds additional specified environment variables to the ConfigMap.
 
 The default values can be found [here](./values.yaml).
 

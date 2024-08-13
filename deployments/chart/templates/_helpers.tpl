@@ -52,3 +52,206 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Create defined permissions for roles
+*/}}
+{{- define "go-kube-downscaler.permissions" -}}
+- apiGroups:
+    - ""
+  resources:
+    - pods
+    - namespaces
+  verbs:
+    - get
+    - watch
+    - list
+- apiGroups:
+    - ""
+  resources:
+    - events
+  verbs:
+    - get
+    - create
+    - watch
+    - list
+    - update
+    - patch
+{{- if not .Values.constrainedDownscaler }}
+- apiGroups:
+  - constraints.gatekeeper.sh
+  resources:
+  - kubedownscalerjobsconstraint
+  verbs:
+  - get
+  - create
+  - watch
+  - list
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - kyverno.io
+  resources:
+  - policies
+  resourceNames:
+  - kube-downscaler-jobs-policy
+  verbs:
+  - get
+  - create
+  - watch
+  - list
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - kyverno.io
+  resources:
+  - policies
+  verbs:
+  - get
+  - create
+  - watch
+  - list
+- apiGroups:
+  - templates.gatekeeper.sh
+  resources:
+  - constrainttemplate
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+{{- end }}
+{{- range $resource := .Values.includedResources }}
+{{- if eq $resource "deployments" }}
+- apiGroups:
+    - apps
+  resources:
+    - deployments
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+{{- end }}
+{{- if eq $resource "statefulsets" }}
+- apiGroups:
+    - apps
+  resources:
+    - statefulsets
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+{{- end }}
+{{- if eq $resource "daemonsets" }}
+- apiGroups:
+    - apps
+  resources:
+    - daemonsets
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+{{- end }}
+{{- if eq $resource "rollouts" }}
+- apiGroups:
+    - argoproj.io
+  resources:
+    - rollouts
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+{{- end }}
+{{- if eq $resource "horizontalpodautoscalers" }}
+- apiGroups:
+    - autoscaling
+  resources:
+    - horizontalpodautoscalers
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+{{- end }}
+{{- if eq $resource "jobs" }}
+- apiGroups:
+    - batch
+  resources:
+    - jobs
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+{{- end }}
+{{- if eq $resource "cronjobs" }}
+- apiGroups:
+    - batch
+  resources:
+    - cronjobs
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+{{- end }}
+{{- if eq $resource "scaledobjects" }}
+- apiGroups:
+    - keda.sh
+  resources:
+    - scaledobjects
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+{{- end }}
+{{- if eq $resource "stacks" }}
+- apiGroups:
+    - zalando.org
+  resources:
+    - stacks
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+{{- end }}
+{{- if eq $resource "poddisruptionbudgets" }}
+- apiGroups:
+    - policy
+  resources:
+    - poddisruptionbudgets
+  verbs:
+    - get
+    - watch
+    - list
+    - update
+    - patch
+{{- end }}
+{{- end }}
+{{- end }}
