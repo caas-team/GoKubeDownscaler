@@ -31,6 +31,11 @@ func (m *MockClient) UpscaleWorkload(workload scalable.Workload, ctx context.Con
 	return args.Error(0)
 }
 
+func (m *MockClient) AddErrorEvent(reason string, id string, message string, workload scalable.Workload, ctx context.Context) error {
+	args := m.Called(reason, id, message, workload, ctx)
+	return args.Error(0)
+}
+
 type MockWorkload struct {
 	scalable.Workload
 	mock.Mock

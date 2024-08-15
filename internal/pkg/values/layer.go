@@ -49,9 +49,15 @@ type Layer struct {
 	TimeAnnotation    string       // annotation to use for grace-period instead of creation time // NOT_IMPLEMENTED
 }
 
-// isScalingExcluded checks if scaling is excluded
-func (l Layer) isScalingExcluded() bool {
-	return (l.Exclude.isSet && l.Exclude.value) || l.ExcludeUntil.After(time.Now())
+// isScalingExcluded checks if scaling is excluded, nil represents a not set state
+func (l Layer) isScalingExcluded() *bool {
+	if l.Exclude.isSet {
+		return &l.Exclude.value
+	}
+	if ok := l.ExcludeUntil.After(time.Now()); ok {
+		return &ok
+	}
+	return nil
 }
 
 // checkForIncompatibleFields checks if there are incompatible fields
@@ -153,11 +159,11 @@ func (l Layers) GetExcluded() bool {
 	for _, layer := range l {
 
 		excluded := layer.isScalingExcluded()
-		if !excluded {
+		if excluded == nil {
 			continue
 		}
 
-		return true
+		return *excluded
 	}
 	return false
 }

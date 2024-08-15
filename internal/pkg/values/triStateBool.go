@@ -28,3 +28,6 @@ func (t *triStateBool) String() string {
 	}
 	return fmt.Sprint(t.value)
 }
+
+// IsBoolFlag is there to make triStateBool implement flag.boolFlag, which lets the cli argument not need a value resulting in a "true" value
+func (b *triStateBool) IsBoolFlag() bool { return true }

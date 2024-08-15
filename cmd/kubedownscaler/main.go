@@ -97,7 +97,7 @@ func main() {
 
 				ok := scanWorkload(workload, client, ctx, layerCli, layerEnv)
 				if !ok {
-					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+					slog.Error("failed to scan workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
 				}
 
@@ -117,17 +117,19 @@ func main() {
 
 // scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload
 func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx context.Context, layerCli, layerEnv values.Layer) bool {
+	resourceLogger := kubernetes.NewResourceLogger(client, workload)
+
 	namespaceAnnotations, err := client.GetNamespaceAnnotations(workload.GetNamespace(), ctx)
 	if err != nil {
 		slog.Error("failed to get namespace annotations", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return false
 	}
-	layerWorkload, err := values.GetLayerFromAnnotations(workload.GetAnnotations())
+	layerWorkload, err := values.GetLayerFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx)
 	if err != nil {
 		slog.Error("failed to parse workload layer from annotations", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return false
 	}
-	layerNamespace, err := values.GetLayerFromAnnotations(namespaceAnnotations)
+	layerNamespace, err := values.GetLayerFromAnnotations(namespaceAnnotations, resourceLogger, ctx)
 	if err != nil {
 		slog.Error("failed to parse namespace layer from annotations", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return false
@@ -137,7 +139,7 @@ func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx cont
 
 	if layers.GetExcluded() {
 		slog.Debug("workload is excluded, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return false
+		return true
 	}
 
 	scaling, err := layers.GetCurrentScaling()
@@ -151,7 +153,7 @@ func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx cont
 	}
 	if scaling == values.ScalingIgnore {
 		slog.Debug("scaling is ignored, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return false
+		return true
 	}
 	if scaling == values.ScalingDown {
 		slog.Debug("downscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
