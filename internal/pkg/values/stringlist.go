@@ -8,8 +8,11 @@ import (
 // StringList is an alias for []string with a Set funciton for the flag package
 type StringList []string
 
-func (s *StringList) Set(value string) error {
-	*s = strings.Split(value, ",")
+func (s *StringList) Set(text string) error {
+	values := strings.Split(text, ",")
+	for _, value := range values {
+		*s = append(*s, strings.TrimSpace(value))
+	}
 	return nil
 }
 

@@ -207,13 +207,25 @@ func TestRelativeTimeSpan_isTimeOfDayInRange(t *testing.T) {
 			wantResult: true,
 		},
 		{
-			name:       "all day reverse",
+			name:       "24 never",
 			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(24 * time.Hour), timeTo: zeroTime},
 			timeOfDay:  zeroTime.Add(18 * time.Hour),
 			wantResult: false,
 		},
 		{
-			name:       "never",
+			name:       "24 never overlap to next day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(24 * time.Hour), timeTo: zeroTime},
+			timeOfDay:  zeroTime.Add(24*time.Hour - time.Nanosecond),
+			wantResult: false,
+		},
+		{
+			name:       "24 never start of day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(24 * time.Hour), timeTo: zeroTime},
+			timeOfDay:  zeroTime,
+			wantResult: false,
+		},
+		{
+			name:       "0 never",
 			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime},
 			timeOfDay:  zeroTime,
 			wantResult: false,
