@@ -320,7 +320,7 @@ func TestAbsoluteTimeSpan_isTimeInSpan(t *testing.T) {
 }
 
 func TestParseAbsoluteTimeSpan(t *testing.T) {
-	time1 := time.Now().Truncate(time.Second)
+	time1 := time.Date(2024, time.February, 27, 0, 0, 0, 0, time.UTC)
 	time2 := time1.Add(48 * time.Hour)
 
 	tests := []struct {
@@ -369,7 +369,7 @@ func TestParseAbsoluteTimeSpan(t *testing.T) {
 }
 
 func TestIsAbsoluteTimestamp(t *testing.T) {
-	time1 := time.Now().Truncate(time.Second)
+	time1 := time.Date(2024, time.February, 27, 0, 0, 0, 0, time.UTC)
 	time2 := time1.Add(48 * time.Hour)
 
 	tests := []struct {
