@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -108,14 +109,16 @@ func parseRelativeTimeSpan(timespanString string) (*relativeTimeSpan, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse timezone: %w", err)
 	}
-	timespan.timeFrom, err = time.ParseInLocation("15:04", timeSpan[0], timespan.timezone)
+
+	timespan.timeFrom, err = parseDayTime(timeSpan[0], timespan.timezone)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse 'timeFrom': %w", err)
+		return nil, fmt.Errorf("failed to parse time of day from: %w", err)
 	}
-	timespan.timeTo, err = time.ParseInLocation("15:04", timeSpan[1], timespan.timezone)
+	timespan.timeTo, err = parseDayTime(timeSpan[1], timespan.timezone)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse 'timeTo': %w", err)
+		return nil, fmt.Errorf("failed to parse time of day to: %w", err)
 	}
+
 	timespan.weekdayFrom, err = getWeekday(weekdaySpan[0])
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse 'weekdayFrom': %w", err)
@@ -192,6 +195,20 @@ func getWeekday(weekday string) (time.Weekday, error) {
 	}
 
 	return 0, errInvalidWeekday
+}
+
+// parseDayTime parses the given time of day string to a zero date time
+func parseDayTime(daytime string, timezone *time.Location) (time.Time, error) {
+	parts := strings.Split(daytime, ":")
+	hour, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to parse hour of daytime: %w", err)
+	}
+	minute, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to parse minute of daytime: %w", err)
+	}
+	return time.Date(0, time.January, 1, hour, minute, 0, 0, timezone), nil
 }
 
 // getTimeOfDay gets the time of day of the given time

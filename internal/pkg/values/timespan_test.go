@@ -49,9 +49,21 @@ func TestParseRelativeTimeSpan(t *testing.T) {
 		},
 		{
 			name:           "invalid Time",
-			timespanString: "Mon-Fri 03:00-04:0 UTC",
+			timespanString: "Mon-Fri 03:00-04-00 UTC",
 			wantResult:     nil,
 			wantErr:        true,
+		},
+		{
+			name:           "all day",
+			timespanString: "Mon-Fri 00:00-24:00 UTC",
+			wantResult: &relativeTimeSpan{
+				timezone:    time.UTC,
+				weekdayFrom: time.Monday,
+				weekdayTo:   time.Friday,
+				timeFrom:    zeroTime,
+				timeTo:      zeroTime.Add(24 * time.Hour),
+			},
+			wantErr: false,
 		},
 	}
 
@@ -162,6 +174,24 @@ func TestRelativeTimeSpan_isTimeOfDayInRange(t *testing.T) {
 			name:       "reverse from in range",
 			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(18 * time.Hour), timeTo: zeroTime.Add(4 * time.Hour)},
 			timeOfDay:  zeroTime.Add(18 * time.Hour),
+			wantResult: true,
+		},
+		{
+			name:       "all day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime.Add(24 * time.Hour)},
+			timeOfDay:  zeroTime.Add(18 * time.Hour),
+			wantResult: true,
+		},
+		{
+			name:       "all day overlap to next day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime.Add(24 * time.Hour)},
+			timeOfDay:  zeroTime.Add(24*time.Hour - time.Nanosecond),
+			wantResult: true,
+		},
+		{
+			name:       "all day start of day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime.Add(24 * time.Hour)},
+			timeOfDay:  zeroTime,
 			wantResult: true,
 		},
 	}
