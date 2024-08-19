@@ -11,6 +11,7 @@ import (
 
 var errInvalidWeekday = errors.New("error: specified weekday is invalid")
 var errRelativeTimespanInvalid = errors.New("error: specified relative timespan is invalid")
+var errTimeOfDayOutOfRange = errors.New("error: the time of day has fields that are out of rane")
 
 // rfc339Regex is a regex that matches an rfc339 timestamp
 const rfc3339Regex = `(.+Z|.+[+-]\d{2}:\d{2})`
@@ -204,9 +205,15 @@ func parseDayTime(daytime string, timezone *time.Location) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, fmt.Errorf("failed to parse hour of daytime: %w", err)
 	}
+	if hour < 0 || hour > 24 {
+		return time.Time{}, errTimeOfDayOutOfRange
+	}
 	minute, err := strconv.Atoi(parts[1])
 	if err != nil {
 		return time.Time{}, fmt.Errorf("failed to parse minute of daytime: %w", err)
+	}
+	if minute < 0 || minute >= 60 {
+		return time.Time{}, errTimeOfDayOutOfRange
 	}
 	return time.Date(0, time.January, 1, hour, minute, 0, 0, timezone), nil
 }
