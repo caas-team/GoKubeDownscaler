@@ -1,6 +1,7 @@
 package values
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -247,6 +248,94 @@ func TestAbsoluteTimeSpan_isTimeInSpan(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			gotResult := test.timespan.isTimeInSpan(test.time)
+			assert.Equal(t, test.wantResult, gotResult)
+		})
+	}
+}
+
+func TestParseAbsoluteTimeSpan(t *testing.T) {
+	time1 := time.Now().Truncate(time.Second)
+	time2 := time1.Add(48 * time.Hour)
+
+	tests := []struct {
+		name           string
+		timespanString string
+		wantResult     absoluteTimeSpan
+		wantErr        bool
+	}{
+		{
+			name:           "valid no spaces",
+			timespanString: fmt.Sprintf("%s-%s", time1.Format(time.RFC3339), time2.Format(time.RFC3339)),
+			wantResult: absoluteTimeSpan{
+				from: time1,
+				to:   time2,
+			},
+			wantErr: false,
+		},
+		{
+			name:           "valid with spaces",
+			timespanString: fmt.Sprintf("%s - %s", time1.Format(time.RFC3339), time2.Format(time.RFC3339)),
+			wantResult: absoluteTimeSpan{
+				from: time1,
+				to:   time2,
+			},
+			wantErr: false,
+		},
+		{
+			name:           "invalid",
+			timespanString: "2024-07Z - 2024-07-29T16:00:00+02:00",
+			wantResult:     absoluteTimeSpan{},
+			wantErr:        true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			gotResult, gotErr := parseAbsoluteTimeSpan(test.timespanString)
+			if test.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.NoError(t, gotErr)
+			}
+			assert.Equal(t, test.wantResult, gotResult)
+		})
+	}
+}
+
+func TestIsAbsoluteTimestamp(t *testing.T) {
+	time1 := time.Now().Truncate(time.Second)
+	time2 := time1.Add(48 * time.Hour)
+
+	tests := []struct {
+		name           string
+		timespanString string
+		wantResult     bool
+	}{
+		{
+			name:           "absolute timespan no spaces",
+			timespanString: fmt.Sprintf("%s-%s", time1.Format(time.RFC3339), time2.Format(time.RFC3339)),
+			wantResult:     true,
+		},
+		{
+			name:           "absolute timespan with spaces",
+			timespanString: fmt.Sprintf("%s - %s", time1.Format(time.RFC3339), time2.Format(time.RFC3339)),
+			wantResult:     true,
+		},
+		{
+			name:           "relative timespan",
+			timespanString: "Mon-Fri 07:30-20:30 Europe/Berlin",
+			wantResult:     false,
+		},
+		{
+			name:           "not a timespan",
+			timespanString: "09:00-16:00",
+			wantResult:     false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			gotResult := isAbsoluteTimestamp(test.timespanString)
 			assert.Equal(t, test.wantResult, gotResult)
 		})
 	}

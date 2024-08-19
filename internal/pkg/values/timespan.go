@@ -3,12 +3,19 @@ package values
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 )
 
 var errInvalidWeekday = errors.New("error: specified weekday is invalid")
 var errRelativeTimespanInvalid = errors.New("error: specified relative timespan is invalid")
+
+// rfc339Regex is a regex that matches an rfc339 timestamp
+const rfc3339Regex = `(.+Z|.+[+-]\d{2}:\d{2})`
+
+// absoluteTimeSpanRegex matches a absolute timespan. It's groups are the two rfc3339 timestamps
+var absoluteTimeSpanRegex = regexp.MustCompile(fmt.Sprintf(`^%s *- *%s$`, rfc3339Regex, rfc3339Regex))
 
 type TimeSpan interface {
 	// inTimeSpan checks if time is in the timespan or not
@@ -59,13 +66,15 @@ func (t *timeSpans) String() string {
 	return fmt.Sprint(*t)
 }
 
+// parseAbsoluteTimespans parses an absolute timespan. will panic if timespan is not an absolute timespan
 func parseAbsoluteTimeSpan(timespan string) (absoluteTimeSpan, error) {
-	timestamps := strings.Split(timespan, " - ")
-	fromTime, err := time.Parse(time.RFC3339, timestamps[0])
+	timestamps := absoluteTimeSpanRegex.FindStringSubmatch(timespan)[1:]
+
+	fromTime, err := time.Parse(time.RFC3339, strings.TrimSpace(timestamps[0]))
 	if err != nil {
 		return absoluteTimeSpan{}, fmt.Errorf("failed to parse rfc3339 timestamp: %w", err)
 	}
-	toTime, err := time.Parse(time.RFC3339, timestamps[1])
+	toTime, err := time.Parse(time.RFC3339, strings.TrimSpace(timestamps[1]))
 	if err != nil {
 		return absoluteTimeSpan{}, fmt.Errorf("failed to parse rfc3339 timestamp: %w", err)
 	}
@@ -163,7 +172,7 @@ func (t absoluteTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 
 // isAbsoluteTimestamp checks if timestamp string is absolute
 func isAbsoluteTimestamp(timestamp string) bool {
-	return strings.Contains(timestamp, " - ")
+	return absoluteTimeSpanRegex.Match([]byte(timestamp))
 }
 
 // getWeekday gets the weekday from the given string
