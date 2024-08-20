@@ -10,9 +10,12 @@
 A vertical autoscaler for Kubernetes workloads.
 This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team/py-kube-downscaler) with improvements and quality of life changes.
 
+<!-- Don't use any heading smaller than h4(####) -->
+
 ## Table of contents
 
-- [Use Cases](#use-cases)
+<!-- Keep this updated. Do not add h4(####) or smaller in this list -->
+
 - [Scalable Resources](#scalable-resources)
   - [Deployments](#deployments)
 - [Concepts](#concepts)
@@ -20,7 +23,10 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [Values](#values)
 - [Installation](#installation)
 - [Configuration](#configuration)
+  - [Duration](#duration)
+  - [Timespans](#timespans)
   - [Arguments](#arguments)
+  - [Environment Variables](#environment-variables)
   - [Annotations](#annotations)
 - [Migrating from py-kube-downscaler](#migrating-from-py-kube-downscaler)
 - [Differences to py-kube-downscaler](#differences-to-py-kube-downscaler)
@@ -28,10 +34,6 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [Cloning the Repository](#cloning-the-repository)
   - [Setting up Pre-Commit](#setting-up-pre-commit)
   - [Testing the downscaler](#testing-the-downscaler)
-
-## Use Cases
-
-- Downscaling during non-work hours/times of day with low traffic
 
 ## Scalable Resources
 
@@ -46,33 +48,130 @@ These are the resources the Downscaler can scale:
 
 ### Layers
 
-<!-- TODO this -->
+Layers are layers of values. If the highest Layer doesn't have a value, it falls through it and tries to get it from the next lower layer.
+
+#### Layer Hierarchy
+
+1. [Workload Layer](#workload-layer)
+2. [Namespace Layer](#namespace-layer)
+3. [CLI Layer](#cli-layer)
+4. [ENV Layer](#env-layer)
+
+#### Workload Layer
+
+Defined by the [annotations](#annotations) on the [workload](#scalable-resources).
+
+#### Namespace Layer
+
+Defined by the [annotations](#annotations) on the namespace.
+
+#### CLI Layer
+
+Defined by the [command line arguments](#arguments) at startup.
+
+#### ENV Layer
+
+Defined by the [environemt variables](#environment-variables) at startup.
+
+<!-- TODO Layers -->
 
 ### Values
 
-<!-- TODO this -->
+- <span id="downscale-period">downscale-period</span>:
+  - comma seperated list of [timespans](#timespans)
+  - within these periods the [workload](#scalable-resources) will be scaled down
+- <span id="downtime">downtime</span>:
+  - comma seperated list of [timespans](#timespans)
+  - within these timespans the [workload](#scalable-resources) will be scaled down, outside of them it will be scaled up
+- <span id="upscale-period">downscale-period</span>:
+  - comma seperated list of [timespans](#timespans)
+  - within these periods the [workload](#scalable-resources) will be scaled up
+- <span id="uptime">downtime</span>:
+  - comma seperated list of [timespans](#timespans)
+  - within these timespans the [workload](#scalable-resources) will be scaled up, outside of them it will be scaled down
+- <span id="exclude">exclude</span>:
+  - boolean
+  - when true, the [workload](#scalable-resources) will be excluded/ignored while scaling
+- <span id="exclude-until">exclude-until</span>:
+  - RFC3339 Timestamp
+  - the [workload](#scalable-resources) will be excluded until this time
+- <span id="force-uptime">force-uptime</span>:
+  - boolean
+  - if set to true the [workload](#scalable-resources) will be forced into an uptime state
+- <span id="force-downtime">force-downtime</span>:
+  - boolean
+  - if set to true the [workload](#scalable-resources) will be forced into an downtime state
+- <span id="downscale-replicas">downscale-replicas</span>:
+  - int
+  - the replicas that the [workload](#scalable-resources) should have while downscaled
+- <span id="grace-period">grace-period</span>:
+  - [duration](#duration)
+  - the duration a [workload](#scalable-resources) has to exist until it is first scaled
+- <span id="time-annotation">time-annotation</span>:
+  - string key of an annotation with an RFC3339 Timestamp
+  - when set grace-period will use the timestamp in the annotation instead of the creation time of the workload
 
 ## Installation
 
-Installation is done via a [Helm Chart](./deployments/chart/README.md)
+Installation is done via the [Helm Chart](./deployments/chart/README.md)
 
 ## Configuration
 
+### Duration
+
+A duration can be defined either by an integer representing seconds
+
+```text
+"120" # 120 seconds (2 minutes)
+"900" # 900 seconds (15 minutes)
+```
+
+Or by a duration strings:
+
+```text
+"1h30m" # 1 hour and 30 minutes
+"1.5h"  # 1 ½ hours (1 hour and 30 minutes)
+"2m"    # 2 minutes
+"10s"   # 10 seconds
+"300s"  # 300 seconds
+```
+
+Other units:
+
+```text
+"ns"      # nanoseconds
+"us"/"µs" # microseconds
+"ms"      # milliseconds
+"s"       # seconds
+"m"       # minutes
+"h"       # hours
+```
+
+For more info please refer to the [official documentation](https://pkg.go.dev/time#ParseDuration)
+
+### Timespans
+
+<!-- TODO Timespans -->
+
 ### Arguments
 
-<!-- TODO this -->
+<!-- TODO Arguments -->
+
+### Environment Variables
+
+<!-- TODO Environment Variables -->
 
 ### Annotations
 
-<!-- TODO this -->
+<!-- TODO Annotations -->
 
 ## Migrating from py-kube-downscaler
 
-<!-- TODO this -->
+<!-- TODO Migrating from py-kube-downscaler -->
 
 ## Differences to py-kube-downscaler
 
-<!-- TODO this -->
+<!-- TODO Differences to py-kube-downscaler -->
 
 ## Developing
 
