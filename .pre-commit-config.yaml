@@ -25,3 +25,9 @@ repos:
         name: prevent todo comments
         entry: '\/\/ *(TODO|FIXME)\b'
         language: pygrep
+        files: \.go$
+      - id: prevent-too-small-headings
+        name: prevent too small headings
+        entry: "^##### "
+        language: pygrep
+        files: README\.md$
