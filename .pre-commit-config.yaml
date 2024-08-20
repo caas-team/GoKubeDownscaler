@@ -19,6 +19,11 @@ repos:
         args: [-l, -w]
       - id: golangci-lint-repo-mod
         args: [--config, .golangci.yaml, --, --fix]
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.0.1
+    hooks:
+      - id: prettier
+        files: \.md$
   - repo: local
     hooks:
       - id: prevent-todo-comments
@@ -30,9 +35,9 @@ repos:
         name: prevent too small headings
         entry: "^##### "
         language: pygrep
-        files: README\.md$
+        files: \.md$
       - id: prevent-overly-nested-hierarchy
         name: prevent overly nested hierarchy
         entry: "^    - "
         language: pygrep
-        files: README\.md$
+        files: \.md$

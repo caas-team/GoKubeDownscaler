@@ -23,11 +23,10 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [Values](#values)
 - [Installation](#installation)
 - [Configuration](#configuration)
-  - [Duration](#duration)
-  - [Timespans](#timespans)
+  - [Annotations](#annotations)
   - [Arguments](#arguments)
   - [Environment Variables](#environment-variables)
-  - [Annotations](#annotations)
+  - [Types](#types)
 - [Migrating from py-kube-downscaler](#migrating-from-py-kube-downscaler)
 - [Differences to py-kube-downscaler](#differences-to-py-kube-downscaler)
 - [Developing](#developing)
@@ -73,22 +72,26 @@ Defined by the [command line arguments](#arguments) at startup.
 
 Defined by the [environemt variables](#environment-variables) at startup.
 
-<!-- TODO Layers -->
+<!-- TODO Layers (more info on specific layers?) -->
 
 ### Values
 
 - <span id="downscale-period">downscale-period</span>:
   - comma seperated list of [timespans](#timespans)
   - within these periods the [workload](#scalable-resources) will be scaled down
+  - incompatible with [downtime](#downtime), [uptime](#uptime)
 - <span id="downtime">downtime</span>:
   - comma seperated list of [timespans](#timespans)
   - within these timespans the [workload](#scalable-resources) will be scaled down, outside of them it will be scaled up
+  - incompatible with [downscale-period](#downscale-period), [upscale-period](#upscale-period), [uptime](#uptime)
 - <span id="upscale-period">downscale-period</span>:
   - comma seperated list of [timespans](#timespans)
   - within these periods the [workload](#scalable-resources) will be scaled up
+  - incompatible with [downtime](#downtime), [uptime](#uptime)
 - <span id="uptime">downtime</span>:
   - comma seperated list of [timespans](#timespans)
   - within these timespans the [workload](#scalable-resources) will be scaled up, outside of them it will be scaled down
+  - incompatible with [downscale-period](#downscale-period), [upscale-period](#upscale-period), [downtime](#downtime)
 - <span id="exclude">exclude</span>:
   - boolean
   - when true, the [workload](#scalable-resources) will be excluded/ignored while scaling
@@ -98,9 +101,11 @@ Defined by the [environemt variables](#environment-variables) at startup.
 - <span id="force-uptime">force-uptime</span>:
   - boolean
   - if set to true the [workload](#scalable-resources) will be forced into an uptime state
+  - incompatible with [force-downtime](#force-downtime)
 - <span id="force-downtime">force-downtime</span>:
   - boolean
   - if set to true the [workload](#scalable-resources) will be forced into an downtime state
+  - incompatible with [force-uptime](#force-uptime)
 - <span id="downscale-replicas">downscale-replicas</span>:
   - int
   - the replicas that the [workload](#scalable-resources) should have while downscaled
@@ -117,7 +122,25 @@ Installation is done via the [Helm Chart](./deployments/chart/README.md)
 
 ## Configuration
 
-### Duration
+### Annotations
+
+<!-- TODO Annotations -->
+
+#### Arguments
+
+<!-- TODO Arguments -->
+
+### Environment Variables
+
+<!-- TODO Environment Variables -->
+
+### Types
+
+#### Timespans
+
+<!-- TODO Timespans -->
+
+#### Duration
 
 A duration can be defined either by an integer representing seconds
 
@@ -148,22 +171,6 @@ Other units:
 ```
 
 For more info please refer to the [official documentation](https://pkg.go.dev/time#ParseDuration)
-
-### Timespans
-
-<!-- TODO Timespans -->
-
-### Arguments
-
-<!-- TODO Arguments -->
-
-### Environment Variables
-
-<!-- TODO Environment Variables -->
-
-### Annotations
-
-<!-- TODO Annotations -->
 
 ## Migrating from py-kube-downscaler
 
