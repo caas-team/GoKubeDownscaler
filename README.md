@@ -1,11 +1,9 @@
 # GoKubeDownscaler
 
-<div style="display: flex; gap: 1rem; flex-wrap: nowrap; overflow-x: auto;">
-    <a href="/../../releases/" title="GitHub Release" style="flex-shrink: 0;"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/caas-team/GoKubeDownscaler?style=flat"></a>
-    <a href="./LICENSE" title="GitHub License" style="flex-shrink: 0;"><img alt="GitHub License" src="https://img.shields.io/github/license/caas-team/GoKubeDownscaler?style=flat"></a>
-    <a href="/../../graphs/contributors" title="Contributers" style="flex-shrink: 0;"><img alt="Contributers" src="https://img.shields.io/github/contributors/caas-team/GoKubeDownscaler?style=flat"></a>
-    <a href="/../../stargazers" title="Stars" style="flex-shrink: 0;"><img alt="Stars" src="https://img.shields.io/github/stars/caas-team/GoKubeDownscaler?style=flat"></a>
-</div>
+<a href="/../../releases/" title="GitHub Release" ><img alt="GitHub Release" src="https://img.shields.io/github/v/release/caas-team/GoKubeDownscaler?style=flat"></a>
+<a href="./LICENSE" title="GitHub License"><img alt="GitHub License" src="https://img.shields.io/github/license/caas-team/GoKubeDownscaler?style=flat"></a>
+<a href="/../../graphs/contributors" title="Contributers" ><img alt="Contributers" src="https://img.shields.io/github/contributors/caas-team/GoKubeDownscaler?style=flat"></a>
+<a href="/../../stargazers" title="Stars"><img alt="Stars" src="https://img.shields.io/github/stars/caas-team/GoKubeDownscaler?style=flat"></a>
 
 A vertical autoscaler for Kubernetes workloads.
 This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team/py-kube-downscaler) with improvements and quality of life changes.
