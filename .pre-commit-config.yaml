@@ -31,3 +31,8 @@ repos:
         entry: "^##### "
         language: pygrep
         files: README\.md$
+      - id: prevent-overly-nested-hierarchy
+        name: prevent overly nested hierarchy
+        entry: "^    - "
+        language: pygrep
+        files: README\.md$
