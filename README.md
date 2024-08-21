@@ -73,7 +73,7 @@ Defined by the [environemt variables](#environment-variables) at startup.
 
 #### Examples
 
-> [!Info]
+> [!Note]
 > A process line with "(...)" is a compacted form of showing the process on each layer
 
 ```text
