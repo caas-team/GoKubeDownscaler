@@ -28,16 +28,16 @@ repos:
     hooks:
       - id: prevent-todo-comments
         name: prevent todo comments
-        entry: '\/\/ *(TODO|FIXME)\b'
+        entry: '\/\/ *(TODO|FIXME)\b' # matches a golang comment beginning with "TODO" or "FIXME"
         language: pygrep
         files: \.go$
       - id: prevent-too-small-headings
         name: prevent too small headings
-        entry: "^##### "
+        entry: "^#{5,} " # matches a h5 or smaller markdown heading
         language: pygrep
         files: \.md$
       - id: prevent-overly-nested-hierarchy
         name: prevent overly nested hierarchy
-        entry: "^    - "
+        entry: "^    - " # matches a markdown list with 6 indentation spaces (3 indentations)
         language: pygrep
         files: \.md$

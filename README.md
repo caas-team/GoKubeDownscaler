@@ -24,7 +24,8 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [Annotations](#annotations)
   - [Arguments](#arguments)
   - [Environment Variables](#environment-variables)
-  - [Types](#types)
+  - [Timespans](#timespans)
+  - [Duration](#duration)
 - [Migrating from py-kube-downscaler](#migrating-from-py-kube-downscaler)
 - [Differences to py-kube-downscaler](#differences-to-py-kube-downscaler)
 - [Developing](#developing)
@@ -70,7 +71,66 @@ Defined by the [command line arguments](#arguments) at startup.
 
 Defined by the [environemt variables](#environment-variables) at startup.
 
-<!-- TODO Layers (more info on specific layers?) -->
+#### Examples
+
+> [!Info]
+> A process line with "(...)" is a compacted form of showing the process on each layer
+
+```text
+--- Layers
+Workload: (no annotations)
+Namespace: exclude=true
+CLI: (defaults)
+ENV: (no env vars)
+--- Process:
+Exclution not specified on workload layer, going to next layer
+Exclution set to true on namespace layer, excluding workload
+--- Result:
+Workload is excluded, no changes will be made to it
+```
+
+```text
+--- Layers
+Workload: exclude=false
+Namespace: exclude=true
+CLI: downtime="Mon-Fri 08:00-16:00 Europe/Berlin"
+ENV: (no env vars)
+--- Process:
+Exclution set to false on workload layer, not excluding workload
+No forced scaling found on any layer (...)
+No scaling specified on Workload layer, going to next layer
+No scaling specified on Namespace layer, going to next layer
+Scaling "downtime" specified on CLI layer, scaling according to the downtime schedule on the cli layer
+--- Result:
+Workload will be scaled according to the downtime schedule on the cli layer
+```
+
+```text
+--- Layers
+Workload: uptime="Mon-Fri 08:00-16:00 Europe/Berlin"
+Namespace: force-downtime=true
+CLI: downtime="Mon-Fri 20:00-08:00 PST"
+ENV: (no env vars)
+--- Process:
+Exclution not set on any layer (...)
+Forced scaling found on namespace layer, forcing downscale (...)
+--- Result:
+Workload will be forced into a down-scaled state
+```
+
+```text
+--- Layers
+Workload: uptime="Mon-Fri 08:00-16:00 Europe/Berlin"
+Namespace: force-downtime=true
+CLI: downtime="Mon-Fri 20:00-08:00 PST"
+ENV: (no env vars)
+--- Process:
+Exclution not set on any layer (...)
+No forced scaling found on any layer (...)
+Scaling "uptime" set on workload layer, scaling according to the uptime schedule on the cli layer
+--- Result:
+Workload will be scaled according to the uptime schedule on the cli layer
+```
 
 ### Values
 
@@ -132,13 +192,75 @@ Installation is done via the [Helm Chart](./deployments/chart/README.md)
 
 <!-- TODO Environment Variables -->
 
-### Types
+### Timespans
 
-#### Timespans
+There are two different kinds of Timespans.
 
-<!-- TODO Timespans -->
+- Absolute Timespans: a timespan defined by two RFC3339 timestamps
+- Relative Timespans: reoccuring on a schedule
 
-#### Duration
+#### Configuration of an Absolute Timespan:
+
+```text
+<RFC3339-Timestamp>-<RFC3339-Timestamp>
+or
+<RFC3339-Timestamp> - <RFC3339-Timestamp>
+```
+
+eg.: `2024-07-29T08:30:00Z - 2024-07-29T16:00:00+02:00`
+
+#### Configuration of a Relative Timespan
+
+```text
+<Weekday-From>-<Weekday-To> <Time-Of-Day-From>-<Time-Of-Day-To> <Timezone>
+```
+
+eg.:
+
+```text
+Mon-Fri 08:00-20:00 Europe/Berlin    # From Monday to Friday: from 08:00 to 20:00
+Sat-Sun 00:00-24:00 UTC              # On The Weekend: the entire day
+Mon-Fri 20:00-08:00 PST              # From Monday to Friday: from Midnight to 08:00 and from 20:00 until end of day
+Mon-Sun 00:00-00:00 America/New_York # The timespan never matches, this would not do anything
+Mon-Tue 20:00-24:00 CEST             # On Monday and Tuesday: from 20:00 to midnight
+Mon-Tue 20:00-00:00 Europe/Amsterdam # On Monday and Tuesday: from 20:00 to midnight
+```
+
+Valid Values:
+
+- Weekdays: (case-insensitive)
+  - Mon
+  - Tue
+  - Wed
+  - Thu
+  - Fri
+  - Sat
+  - Sun
+- Timezones: all from the [IANA Time Zone database](https://www.iana.org/time-zones)
+- Time of day: 00:00 - 24:00
+
+#### Multiple/Complex Timespans
+
+In some cases you need to define multiple Timespans. You can do this like this:
+
+```
+<TIMESPAN>,<TIMESPAN>,<TIMESPAN>
+```
+
+OR with optional spaces:
+
+```
+<TIMESPAN>, <TIMESPAN>, <TIMESPAN>
+```
+
+The timespans can be absolute, relative or mixed.
+Eg.: downscale over the weekend and at night:
+
+```
+Sat-Sun 00:00-24:00 Europe/Berlin, Mon-Fri 20:00-07:00 Europe/Berlin
+```
+
+### Duration
 
 A duration can be defined either by an integer representing seconds
 
