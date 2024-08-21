@@ -16,9 +16,6 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
 
 - [Scalable Resources](#scalable-resources)
   - [Deployments](#deployments)
-- [Concepts](#concepts)
-  - [Layers](#layers)
-  - [Values](#values)
 - [Installation](#installation)
 - [Configuration](#configuration)
   - [Annotations](#annotations)
@@ -26,6 +23,9 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [Environment Variables](#environment-variables)
   - [Timespans](#timespans)
   - [Duration](#duration)
+- [Concepts](#concepts)
+  - [Layers](#layers)
+  - [Values](#values)
 - [Migrating from py-kube-downscaler](#migrating-from-py-kube-downscaler)
 - [Differences to py-kube-downscaler](#differences-to-py-kube-downscaler)
 - [Developing](#developing)
@@ -42,138 +42,6 @@ These are the resources the Downscaler can scale:
 - <span id="deployments">Deployments</span>:
   - sets the replica count to the downscale replicas
 
-## Concepts
-
-### Layers
-
-Layers are layers of values. If the highest Layer doesn't have a value, it falls through it and tries to get it from the next lower layer.
-
-#### Layer Hierarchy
-
-1. [Workload Layer](#workload-layer)
-2. [Namespace Layer](#namespace-layer)
-3. [CLI Layer](#cli-layer)
-4. [ENV Layer](#env-layer)
-
-#### Workload Layer
-
-Defined by the [annotations](#annotations) on the [workload](#scalable-resources).
-
-#### Namespace Layer
-
-Defined by the [annotations](#annotations) on the namespace.
-
-#### CLI Layer
-
-Defined by the [command line arguments](#arguments) at startup.
-
-#### ENV Layer
-
-Defined by the [environemt variables](#environment-variables) at startup.
-
-#### Examples
-
-> [!Note]
-> A process line with "(...)" is a compacted form of showing the process on each layer
-
-```text
---- Layers
-Workload: (no annotations)
-Namespace: exclude=true
-CLI: (defaults)
-ENV: (no env vars)
---- Process:
-Exclution not specified on workload layer, going to next layer
-Exclution set to true on namespace layer, excluding workload
---- Result:
-Workload is excluded, no changes will be made to it
-```
-
-```text
---- Layers
-Workload: exclude=false
-Namespace: exclude=true
-CLI: downtime="Mon-Fri 08:00-16:00 Europe/Berlin"
-ENV: (no env vars)
---- Process:
-Exclution set to false on workload layer, not excluding workload
-No forced scaling found on any layer (...)
-No scaling specified on Workload layer, going to next layer
-No scaling specified on Namespace layer, going to next layer
-Scaling "downtime" specified on CLI layer, scaling according to the downtime schedule on the cli layer
---- Result:
-Workload will be scaled according to the downtime schedule on the cli layer
-```
-
-```text
---- Layers
-Workload: uptime="Mon-Fri 08:00-16:00 Europe/Berlin"
-Namespace: force-downtime=true
-CLI: downtime="Mon-Fri 20:00-08:00 PST"
-ENV: (no env vars)
---- Process:
-Exclution not set on any layer (...)
-Forced scaling found on namespace layer, forcing downscale (...)
---- Result:
-Workload will be forced into a down-scaled state
-```
-
-```text
---- Layers
-Workload: uptime="Mon-Fri 08:00-16:00 Europe/Berlin"
-Namespace: force-downtime=true
-CLI: downtime="Mon-Fri 20:00-08:00 PST"
-ENV: (no env vars)
---- Process:
-Exclution not set on any layer (...)
-No forced scaling found on any layer (...)
-Scaling "uptime" set on workload layer, scaling according to the uptime schedule on the cli layer
---- Result:
-Workload will be scaled according to the uptime schedule on the cli layer
-```
-
-### Values
-
-- <span id="downscale-period">downscale-period</span>:
-  - comma seperated list of [timespans](#timespans)
-  - within these periods the [workload](#scalable-resources) will be scaled down
-  - incompatible with [downtime](#downtime), [uptime](#uptime)
-- <span id="downtime">downtime</span>:
-  - comma seperated list of [timespans](#timespans)
-  - within these timespans the [workload](#scalable-resources) will be scaled down, outside of them it will be scaled up
-  - incompatible with [downscale-period](#downscale-period), [upscale-period](#upscale-period), [uptime](#uptime)
-- <span id="upscale-period">downscale-period</span>:
-  - comma seperated list of [timespans](#timespans)
-  - within these periods the [workload](#scalable-resources) will be scaled up
-  - incompatible with [downtime](#downtime), [uptime](#uptime)
-- <span id="uptime">downtime</span>:
-  - comma seperated list of [timespans](#timespans)
-  - within these timespans the [workload](#scalable-resources) will be scaled up, outside of them it will be scaled down
-  - incompatible with [downscale-period](#downscale-period), [upscale-period](#upscale-period), [downtime](#downtime)
-- <span id="exclude">exclude</span>:
-  - boolean
-  - when true, the [workload](#scalable-resources) will be excluded/ignored while scaling
-- <span id="exclude-until">exclude-until</span>:
-  - RFC3339 Timestamp
-  - the [workload](#scalable-resources) will be excluded until this time
-- <span id="force-uptime">force-uptime</span>:
-  - boolean
-  - if set to true the [workload](#scalable-resources) will be forced into an uptime state
-  - incompatible with [force-downtime](#force-downtime)
-- <span id="force-downtime">force-downtime</span>:
-  - boolean
-  - if set to true the [workload](#scalable-resources) will be forced into an downtime state
-  - incompatible with [force-uptime](#force-uptime)
-- <span id="downscale-replicas">downscale-replicas</span>:
-  - int
-  - the replicas that the [workload](#scalable-resources) should have while downscaled
-- <span id="grace-period">grace-period</span>:
-  - [duration](#duration)
-  - the duration a [workload](#scalable-resources) has to exist until it is first scaled
-- <span id="time-annotation">time-annotation</span>:
-  - string key of an annotation with an RFC3339 Timestamp
-  - when set grace-period will use the timestamp in the annotation instead of the creation time of the workload
-
 ## Installation
 
 Installation is done via the [Helm Chart](./deployments/chart/README.md)
@@ -184,7 +52,7 @@ Installation is done via the [Helm Chart](./deployments/chart/README.md)
 
 <!-- TODO Annotations -->
 
-#### Arguments
+### Arguments
 
 <!-- TODO Arguments -->
 
@@ -289,6 +157,138 @@ Other units:
 "m"       # minutes
 "h"       # hours
 ```
+
+## Concepts
+
+### Layers
+
+Layers are layers of values. If the highest Layer doesn't have a value, it falls through it and tries to get it from the next lower layer.
+
+#### Layer Hierarchy
+
+1. [Workload Layer](#workload-layer)
+2. [Namespace Layer](#namespace-layer)
+3. [CLI Layer](#cli-layer)
+4. [ENV Layer](#env-layer)
+
+#### Workload Layer
+
+Defined by the [annotations](#annotations) on the [workload](#scalable-resources).
+
+#### Namespace Layer
+
+Defined by the [annotations](#annotations) on the namespace.
+
+#### CLI Layer
+
+Defined by the [command line arguments](#arguments) at startup.
+
+#### ENV Layer
+
+Defined by the [environemt variables](#environment-variables) at startup.
+
+#### Examples
+
+> [!Note]
+> A process line with "(...)" is a compacted form, instead of showing the process on each layer
+
+```text
+--- Layers
+Workload: (no annotations)
+Namespace: exclude=true
+CLI: (defaults)
+ENV: (no env vars)
+--- Process:
+Exclution not specified on workload layer, going to next layer
+Exclution set to true on namespace layer, excluding workload
+--- Result:
+Workload is excluded, no changes will be made to it
+```
+
+```text
+--- Layers
+Workload: exclude=false
+Namespace: exclude=true
+CLI: downtime="Mon-Fri 08:00-16:00 Europe/Berlin"
+ENV: (no env vars)
+--- Process:
+Exclution set to false on workload layer, not excluding workload
+No forced scaling found on any layer (...)
+No scaling specified on Workload layer, going to next layer
+No scaling specified on Namespace layer, going to next layer
+Scaling "downtime" specified on CLI layer, scaling according to the downtime schedule on the cli layer
+--- Result:
+Workload will be scaled according to the downtime schedule on the cli layer
+```
+
+```text
+--- Layers
+Workload: uptime="Mon-Fri 08:00-16:00 Europe/Berlin"
+Namespace: force-downtime=true
+CLI: downtime="Mon-Fri 20:00-08:00 PST"
+ENV: (no env vars)
+--- Process:
+Exclution not set on any layer (...)
+Forced scaling found on namespace layer, forcing downscale (...)
+--- Result:
+Workload will be forced into a down-scaled state
+```
+
+```text
+--- Layers
+Workload: uptime="Mon-Fri 08:00-16:00 Europe/Berlin"
+Namespace: force-downtime=true
+CLI: downtime="Mon-Fri 20:00-08:00 PST"
+ENV: (no env vars)
+--- Process:
+Exclution not set on any layer (...)
+No forced scaling found on any layer (...)
+Scaling "uptime" set on workload layer, scaling according to the uptime schedule on the cli layer
+--- Result:
+Workload will be scaled according to the uptime schedule on the cli layer
+```
+
+### Values
+
+- <span id="downscale-period">downscale-period</span>:
+  - comma seperated list of [timespans](#timespans)
+  - within these periods the [workload](#scalable-resources) will be scaled down
+  - incompatible with [downtime](#downtime), [uptime](#uptime)
+- <span id="downtime">downtime</span>:
+  - comma seperated list of [timespans](#timespans)
+  - within these timespans the [workload](#scalable-resources) will be scaled down, outside of them it will be scaled up
+  - incompatible with [downscale-period](#downscale-period), [upscale-period](#upscale-period), [uptime](#uptime)
+- <span id="upscale-period">downscale-period</span>:
+  - comma seperated list of [timespans](#timespans)
+  - within these periods the [workload](#scalable-resources) will be scaled up
+  - incompatible with [downtime](#downtime), [uptime](#uptime)
+- <span id="uptime">downtime</span>:
+  - comma seperated list of [timespans](#timespans)
+  - within these timespans the [workload](#scalable-resources) will be scaled up, outside of them it will be scaled down
+  - incompatible with [downscale-period](#downscale-period), [upscale-period](#upscale-period), [downtime](#downtime)
+- <span id="exclude">exclude</span>:
+  - boolean
+  - when true, the [workload](#scalable-resources) will be excluded/ignored while scaling
+- <span id="exclude-until">exclude-until</span>:
+  - RFC3339 Timestamp
+  - the [workload](#scalable-resources) will be excluded until this time
+- <span id="force-uptime">force-uptime</span>:
+  - boolean
+  - if set to true the [workload](#scalable-resources) will be forced into an uptime state
+  - incompatible with [force-downtime](#force-downtime)
+- <span id="force-downtime">force-downtime</span>:
+  - boolean
+  - if set to true the [workload](#scalable-resources) will be forced into an downtime state
+  - incompatible with [force-uptime](#force-uptime)
+- <span id="downscale-replicas">downscale-replicas</span>:
+  - int
+  - the replicas that the [workload](#scalable-resources) should have while downscaled
+- <span id="grace-period">grace-period</span>:
+  - [duration](#duration)
+  - the duration a [workload](#scalable-resources) has to exist until it is first scaled
+- <span id="time-annotation">time-annotation</span>:
+  - string key of an annotation with an RFC3339 Timestamp
+  - when set grace-period will use the timestamp in the annotation instead of the creation time of the workload
 
 For more info please refer to the [official documentation](https://pkg.go.dev/time#ParseDuration)
 
