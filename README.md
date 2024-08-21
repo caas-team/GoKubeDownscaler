@@ -12,7 +12,9 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
 
 ## Table of contents
 
-<!-- Keep this updated. Do not add h4(####) or smaller in this list -->
+<!-- Keep this updated -->
+<!-- Do add any heading bigger than h4 (####). If it shouldn't be on the list, it shouldn't be a heading -->
+<!-- Do not add h4 or smaller in this list. If it should be on here but is h4 or smaller, you should restructure -->
 
 - [Scalable Resources](#scalable-resources)
   - [Deployments](#deployments)
@@ -27,7 +29,7 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [Layers](#layers)
   - [Values](#values)
 - [Migrating from py-kube-downscaler](#migrating-from-py-kube-downscaler)
-  - [Differences to py-kube-downscaler](#differences-to-py-kube-downscaler)
+- [Differences to py-kube-downscaler](#differences-to-py-kube-downscaler)
 - [Developing](#developing)
   - [Cloning the Repository](#cloning-the-repository)
   - [Setting up Pre-Commit](#setting-up-pre-commit)
@@ -388,7 +390,7 @@ For more info please refer to the [official documentation](https://pkg.go.dev/ti
 
 <!-- TODO Migrating from py-kube-downscaler -->
 
-### Differences to py-kube-downscaler
+## Differences to py-kube-downscaler
 
 Incompatibility instead of priority:
 
