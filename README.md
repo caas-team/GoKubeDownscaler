@@ -8,7 +8,7 @@
 A vertical autoscaler for Kubernetes workloads.
 This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team/py-kube-downscaler) with improvements and quality of life changes.
 
-<!-- Don't use any heading smaller than h4(####) -->
+<!-- Don't use any heading or html tag with id smaller/deeper than h4(####) -->
 
 ## Table of contents
 
@@ -37,7 +37,7 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
 
 These are the resources the Downscaler can scale:
 
-<!-- Keep this list updated -->
+<!-- Keep this list updated as more scalable resources are implemented -->
 
 - <span id="deployments">Deployments</span>:
   - sets the replica count to the downscale replicas
@@ -50,15 +50,109 @@ Installation is done via the [Helm Chart](./deployments/chart/README.md)
 
 ### Annotations
 
-<!-- TODO Annotations -->
+Annotations can be applied to the workload or the namespace. See the [layers concept](#layers) for more details on which of the layers [values](#values) will be used.
+
+- <span id="downscaler/downscale-period">downscaler/downscale-period</span>:
+  - sets the [downscale-period](#downscale-period) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
+- <span id="downscaler/downtime">downscaler/downtime</span>:
+  - sets the [downtime](#downtime) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
+- <span id="downscaler/upscale-period">downscaler/upscale-period</span>:
+  - sets the [upscale-period](#upscale-period) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
+- <span id="downscaler/uptime">downscaler/uptime</span>:
+  - sets the [uptime](#uptime) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
+- <span id="downscaler/upscale-period">downscaler/upscale-period</span>:
+  - sets the [upscale-period](#upscale-period) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
+- <span id="downscaler/exclude">downscaler/exclude</span>:
+  - sets the [exclude](#exclude) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
+- <span id="downscaler/exclude-until">downscaler/exclude-until</span>:
+  - sets the [exclude-until](#exclude-until) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
+- <span id="downscaler/force-uptime">downscaler/force-uptime</span>:
+  - sets the [force-uptime](#force-uptime) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
+- <span id="downscaler/force-downtime">downscaler/force-downtime</span>:
+  - sets the [force-downtime](#force-downtime) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
+- <span id="downscaler/downscale-replicas">downscaler/downscale-replicas</span>:
+  - sets the [downscale-replicas](#downscale-replicas) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
+- <span id="downscaler/grace-period">downscaler/grace-period</span>:
+  - sets the [grace-period](#grace-period) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
 
 ### Arguments
 
-<!-- TODO Arguments -->
+CLI arguements set [layer values](#values) and runtime configuration at the start of the program. See the [layers concept](#layers) for more details on which of the layers [values](#values) will be used.
+
+Layer Values:
+
+- <span id="--upscale-period">--upscale-period</span>:
+  - sets the [upscale-period](#upscale-period) value on the [cli layer](#cli-layer)
+- <span id="--default-uptime">--default-uptime</span>:
+  - sets the [default-uptime](#default-uptime) value on the [cli layer](#cli-layer)
+- <span id="--downscale-period">--downscale-period</span>:
+  - sets the [downscale-period](#downscale-period) value on the [cli layer](#cli-layer)
+- <span id="--default-downtime">--default-downtime</span>:
+  - sets the [default-downtime](#default-downtime) value on the [cli layer](#cli-layer)
+- <span id="--downtime-replicas">--downtime-replicas</span>:
+  - sets the [downscale replicas](#downscale-replicas) value on the [cli layer](#cli-layer)
+- <span id="--explicit-include">--explicit-include</span>:
+  - sets the [exclude value](#exclude) on the [cli layer](#cli-layer) to true, which excludes every workload unless the exclude value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer is set to false
+
+Runtime Configuration:
+
+- <span id="--dry-run">--dry-run</span>:
+  - boolean
+  - sets the downscaler into dry run mode, which makes it just print what it would have done, instead of actually doing it
+  - default: false
+- <span id="--debug">--debug</span>:
+  - boolean
+  - makes the downscaler print debug information
+  - default: false
+- <span id="--once">--once</span>:
+  - boolean
+  - makes the downscaler exit after one scan
+  - default: false
+- <span id="--interval">--interval</span>:
+  - [duration](#duration)
+  - sets the time between scans
+  - default: 30s
+- <span id="--namespace">--namespace</span>:
+  - comma seperated list of namespaces (`some-ns,other-ns` or `some-ns, other-ns`)
+  - makes the downscaler only get the specified namespaces
+  - default: all namespaces
+- <span id="--include-resources">--include-resources</span>:
+  - comma seperated list of [scalable resources](#scalable-resources) (`deployments,statefulsets` or `deployments, statefulsets`)
+  - restricts the downscaler to only scale workloads of this resource kind
+  - default: deployments
+- <span id="--exclude-namespaces">--exclude-namespaces</span>:
+  - comma seperated list of namespaces (`some-ns,other-ns` or `some-ns, other-ns`)
+  - makes the downscaler exclude the specified namespaces
+  - default: kube-system, kube-downscaler
+- <span id="--matching-labels">--matching-labels</span>:
+  - comma seperated list of labels with their value (`some-label=val,other-label=value` or `some-label=val, other-label=value`)
+  - makes the downscaler only include workloads which have any label that machtes any of the specified labels and values
+  - default: none
+- <span id="time-annotation">time-annotation</span>:
+  - key of annotation with an RFC3339 Timestamp
+  - when set grace-period will use the timestamp in the annotation instead of the creation time of the workload
 
 ### Environment Variables
 
-<!-- TODO Environment Variables -->
+Environment Variables set [layer values](#values) and runtime configuration at the start of the program. See the [layers concept](#layers) for more details on which of the layers [values](#values) will be used.
+
+Layer Values:
+
+- <span id="upscale-period-env">UPSCALE_PERIOD</span>:
+  - sets the [upscale-period](#upscale-period) value on the [env layer](#env-layer)
+- <span id="uptime-env">DEFAULT_UPTIME</span>:
+  - sets the [uptime](#uptime) value on the [env layer](#env-layer)
+- <span id="downscale-period-env">DOWNSCALE_PERIOD</span>:
+  - sets the [downscale-period](#downscale-period) value on the [env layer](#env-layer)
+- <span id="downtime-env">DEFAULT_DOWNTIME</span>:
+  - sets the [downtime](#downtime) value on the [env layer](#env-layer)
+
+Runtime Configuration:
+
+- <span id="exclude-namespaces-env">EXCLUDE_NAMESPACES</span>:
+  - overwrites the values set by the [--exclude-namespaces](#--exclude-namespaces) cli argument
+- <span id="exclude-deployments-env">EXCLUDE_DEPLOYMENTS</span>:
+  - overwrites the values set by the [--exclude-deployments](#--exclude-deployments) cli argument
 
 ### Timespans
 
@@ -262,7 +356,7 @@ Workload will be scaled according to the uptime schedule on the cli layer
   - comma seperated list of [timespans](#timespans)
   - within these periods the [workload](#scalable-resources) will be scaled up
   - incompatible with [downtime](#downtime), [uptime](#uptime)
-- <span id="uptime">downtime</span>:
+- <span id="uptime">uptime</span>:
   - comma seperated list of [timespans](#timespans)
   - within these timespans the [workload](#scalable-resources) will be scaled up, outside of them it will be scaled down
   - incompatible with [downscale-period](#downscale-period), [upscale-period](#upscale-period), [downtime](#downtime)
@@ -286,9 +380,6 @@ Workload will be scaled according to the uptime schedule on the cli layer
 - <span id="grace-period">grace-period</span>:
   - [duration](#duration)
   - the duration a [workload](#scalable-resources) has to exist until it is first scaled
-- <span id="time-annotation">time-annotation</span>:
-  - string key of an annotation with an RFC3339 Timestamp
-  - when set grace-period will use the timestamp in the annotation instead of the creation time of the workload
 
 For more info please refer to the [official documentation](https://pkg.go.dev/time#ParseDuration)
 
