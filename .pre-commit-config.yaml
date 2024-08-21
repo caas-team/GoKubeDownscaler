@@ -41,3 +41,8 @@ repos:
         entry: "^    - " # matches a markdown list with 6 indentation spaces (3 indentations)
         language: pygrep
         files: \.md$
+      - id: prevent-invalid-alert-types
+        name: prevent invalid alert types
+        entry: '(?i)^> \[!(?!\b(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\b).+\]' # matches a github markdown callout/alert that doesn't use one of the supported keywords
+        language: pygrep
+        files: \.md$
