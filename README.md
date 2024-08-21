@@ -27,7 +27,7 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [Layers](#layers)
   - [Values](#values)
 - [Migrating from py-kube-downscaler](#migrating-from-py-kube-downscaler)
-- [Differences to py-kube-downscaler](#differences-to-py-kube-downscaler)
+  - [Differences to py-kube-downscaler](#differences-to-py-kube-downscaler)
 - [Developing](#developing)
   - [Cloning the Repository](#cloning-the-repository)
   - [Setting up Pre-Commit](#setting-up-pre-commit)
@@ -131,6 +131,7 @@ Runtime Configuration:
 - <span id="time-annotation">time-annotation</span>:
   - key of annotation with an RFC3339 Timestamp
   - when set grace-period will use the timestamp in the annotation instead of the creation time of the workload
+  - default: none (uses the workloads creation time)
 
 ### Environment Variables
 
@@ -161,7 +162,7 @@ There are two different kinds of Timespans.
 - Absolute Timespans: a timespan defined by two RFC3339 timestamps
 - Relative Timespans: reoccuring on a schedule
 
-#### Configuration of an Absolute Timespan:
+#### Configuration of an Absolute Timespan
 
 ```text
 <RFC3339-Timestamp>-<RFC3339-Timestamp>
@@ -387,9 +388,57 @@ For more info please refer to the [official documentation](https://pkg.go.dev/ti
 
 <!-- TODO Migrating from py-kube-downscaler -->
 
-## Differences to py-kube-downscaler
+### Differences to py-kube-downscaler
 
-<!-- TODO Differences to py-kube-downscaler -->
+Incompatibility instead of priority:
+
+- some values are now incompatible instead of using one over the other
+- backwards compatible: shouldn't break anything in most cases
+
+Duration units:
+
+- instead of integers representing seconds you can also use duration strings see [Duration](#duration) for more information
+- backwards compatible: fully compatible, integer seconds are still supported
+
+Layer system:
+
+- Makes it easier and more uniform to know what configuration is going to be used. All annotations can now also be easily applied to namespaces
+- backwards compatible: shouldn't break anything in most cases
+
+[--explicit-include](#--explicit-include) cli argument:
+
+- a simple way to explicitly include single workloads. See [--explicit-include](#--explicit-include) for more details.
+- backwards compatible: fully compatible, no prior behaviour was changed
+
+Comfort spaces:
+
+- allows for spaces in configuration to make the configuration more readable. (applies to: any comma seperated list, [absolute timespans](#configuration-of-an-absolute-timespan))
+- backwards compatible: fully compatible, you can still use the configuration without spaces
+
+Uniform timestamp:
+
+- all timestamps are RFC3339 this is more optimized for golang, more consistent and also used by kubernetes itself
+- backwards compatible: mostly, unless you used a short form of ISO 8601 eg. `2023-08-12`, `2023-233` or `2023-W34-1` it should be totally fine to not change anything
+
+Overlapping [relative timespans](#configuration-of-a-relative-timespan) into next day:
+
+- timespans can overlap into the "next" day (eg. `Mon-Fri 20:00-06:00 UTC`). See [Relative Timespans](#configuration-of-a-relative-timespan)
+- backwards compatible: fully compatible, this didn't change any existing functionallity
+
+Actual Exclution:
+
+- [excluding a workload](#exclude) won't force the workload to be upscaled
+- backwards compatible: should be fully compatible, unless your implementation relies on this
+
+IANA Timezones:
+
+- the downscaler uses the [IANA timezone database](https://www.iana.org/time-zones)
+- backwards compatible: fully compatible, "Olson timezones" is just a less used synonym for the IANA time zone database
+
+Workload error events:
+
+- errors with the configuration of a [workload](#scalable-resources) are shown as events on the workload
+- backwards compatible: fully compatible, doesn't change any existing functionality
 
 ## Developing
 
