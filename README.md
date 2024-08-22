@@ -4,6 +4,7 @@
 <a href="./LICENSE" title="GitHub License"><img alt="GitHub License" src="https://img.shields.io/github/license/caas-team/GoKubeDownscaler?style=flat"></a>
 <a href="/../../graphs/contributors" title="Contributers"><img alt="Contributers" src="https://img.shields.io/github/contributors/caas-team/GoKubeDownscaler?style=flat"></a>
 <a href="/../../stargazers" title="Stars"><img alt="Stars" src="https://img.shields.io/github/stars/caas-team/GoKubeDownscaler?style=flat"></a>
+<a href="https://communityinviter.com/apps/kube-downscaler/kube-downscaler" title="Slack Workspace"><img alt="Slack Workspace" src="https://img.shields.io/badge/slack-kube--downscaler-dark_green?style=flat&logo=slack"></a>
 
 A vertical autoscaler for Kubernetes workloads.
 This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team/py-kube-downscaler) with improvements and quality of life changes.
