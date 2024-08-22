@@ -29,7 +29,9 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [Layers](#layers)
   - [Values](#values)
 - [Migrating from py-kube-downscaler](#migrating-from-py-kube-downscaler)
-- [Differences to py-kube-downscaler](#differences-to-py-kube-downscaler)
+  - [Basic Migration](#basic-migration)
+  - [Edge Cases](#edge-cases)
+  - [Differences to py-kube-downscaler](#differences-to-py-kube-downscaler)
 - [Developing](#developing)
   - [Cloning the Repository](#cloning-the-repository)
   - [Setting up Pre-Commit](#setting-up-pre-commit)
@@ -43,6 +45,13 @@ These are the resources the Downscaler can scale:
 
 - <span id="deployments">Deployments</span>:
   - sets the replica count to the downscale replicas
+
+<!-- resources with known downscale behaviour: (uncomment once implemented)
+- <span id="horizontal-pod-autoscalers">Horizontal Pod Autoscalers (HPA)</span>:
+  - sets the minReplicas of the HPA to the [downscale replicas](#downscale-replicas). will throw an error if the downscale replicas is >1
+- <span id="cronjobs">CronJobs</span>:
+  - sets the cronjobs suspend property to true
+-->
 
 ## Installation
 
@@ -94,7 +103,7 @@ Layer Values:
 - <span id="--downtime-replicas">--downtime-replicas</span>:
   - sets the [downscale replicas](#downscale-replicas) value on the [cli layer](#cli-layer)
 - <span id="--explicit-include">--explicit-include</span>:
-  - sets the [exclude value](#exclude) on the [cli layer](#cli-layer) to true, which excludes every workload unless the exclude value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer is set to false
+  - sets the [exclude value](#exclude) on the [cli layer](#cli-layer) to true, which excludes every workload unless the exclude value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer is set to false. See the [layers concept](#layers) for more details.
 
 Runtime Configuration:
 
@@ -153,9 +162,9 @@ Layer Values:
 Runtime Configuration:
 
 - <span id="exclude-namespaces-env">EXCLUDE_NAMESPACES</span>:
-  - overwrites the values set by the [--exclude-namespaces](#--exclude-namespaces) cli argument
+  - overwrites the value set by the [--exclude-namespaces](#--exclude-namespaces) cli argument
 - <span id="exclude-deployments-env">EXCLUDE_DEPLOYMENTS</span>:
-  - overwrites the values set by the [--exclude-deployments](#--exclude-deployments) cli argument
+  - overwrites the value set by the [--exclude-deployments](#--exclude-deployments) cli argument
 
 ### Timespans
 
@@ -296,8 +305,8 @@ Namespace: exclude=true
 CLI: (defaults)
 ENV: (no env vars)
 --- Process:
-Exclution not specified on workload layer, going to next layer
-Exclution set to true on namespace layer, excluding workload
+Exclusion not specified on workload layer, going to next layer
+Exclusion set to true on namespace layer, excluding workload
 --- Result:
 Workload is excluded, no changes will be made to it
 ```
@@ -309,7 +318,7 @@ Namespace: exclude=true
 CLI: downtime="Mon-Fri 08:00-16:00 Europe/Berlin"
 ENV: (no env vars)
 --- Process:
-Exclution set to false on workload layer, not excluding workload
+Exclusion set to false on workload layer, not excluding workload
 No forced scaling found on any layer (...)
 No scaling specified on Workload layer, going to next layer
 No scaling specified on Namespace layer, going to next layer
@@ -325,7 +334,7 @@ Namespace: force-downtime=true
 CLI: downtime="Mon-Fri 20:00-08:00 PST"
 ENV: (no env vars)
 --- Process:
-Exclution not set on any layer (...)
+Exclusion not set on any layer (...)
 Forced scaling found on namespace layer, forcing downscale (...)
 --- Result:
 Workload will be forced into a down-scaled state
@@ -338,7 +347,7 @@ Namespace: force-downtime=true
 CLI: downtime="Mon-Fri 20:00-08:00 PST"
 ENV: (no env vars)
 --- Process:
-Exclution not set on any layer (...)
+Exclusion not set on any layer (...)
 No forced scaling found on any layer (...)
 Scaling "uptime" set on workload layer, scaling according to the uptime schedule on the cli layer
 --- Result:
@@ -388,56 +397,75 @@ For more info please refer to the [official documentation](https://pkg.go.dev/ti
 
 ## Migrating from py-kube-downscaler
 
-<!-- TODO Migrating from py-kube-downscaler -->
+### Basic migration
 
-## Differences to py-kube-downscaler
+<!-- TODO Basic migration -->
 
-Incompatibility instead of priority:
+### Edge cases
+
+If you had an implementation that used some of the quirks of the py-kube-downscaler you might need to change those.
+
+Some cases where this might be needed include:
+
+- [Incompatibility instead of priority](#diff-incompatible)
+  - eg. if you had a program that dynamically added a uptime annotation on a workload with a downtime annotation because you relied on the uptime annotation taking over
+- [Layer system](#diff-layer-system)
+  - eg. the behaviour of excluding a namespace resulting in all workloads in it being excluded is not quite the same, as the workload could overwrite this by setting exclude to false
+- [A pod that upscales the whole cluster](https://github.com/caas-team/py-kube-downscaler/blob/main/README.md?plain=1#L90)
+  - this behaviour is no longer available
+- [RFC3339 timestamp](#diff-uniform-timestamp)
+  - if you used the short form versions of the ISO 8601 timestamp (`2023-08-12`, `2023-233` or `2023-W34-1`)
+- [Actual exclusion](#diff-actual-exclusion)
+  - eg. if you had a program that dynamically excluded a namespace and need it to then go in an upscaled state
+
+### Differences to py-kube-downscaler
+
+<span id="diff-incompatible">Incompatibility instead of priority</span>:
 
 - some values are now incompatible instead of using one over the other
 - backwards compatible: shouldn't break anything in most cases
 
-Duration units:
+<span id="diff-duration-units">Duration units</span>:
 
 - instead of integers representing seconds you can also use duration strings see [Duration](#duration) for more information
 - backwards compatible: fully compatible, integer seconds are still supported
 
-Layer system:
+<span id="diff-layer-system">Layer system</span>:
 
-- Makes it easier and more uniform to know what configuration is going to be used. All annotations can now also be easily applied to namespaces
+- Makes it easier and more uniform to know what configuration is going to be used. All annotations can now also be easily applied to namespaces.
 - backwards compatible: shouldn't break anything in most cases
 
-[--explicit-include](#--explicit-include) cli argument:
+<span id="diff-explicit-include">[--explicit-include](#--explicit-include) cli argument</span>:
 
 - a simple way to explicitly include single workloads. See [--explicit-include](#--explicit-include) for more details.
 - backwards compatible: fully compatible, no prior behaviour was changed
 
-Comfort spaces:
+<span id="diff-comfort-spaces">Comfort spaces</span>:
 
 - allows for spaces in configuration to make the configuration more readable. (applies to: any comma seperated list, [absolute timespans](#configuration-of-an-absolute-timespan))
 - backwards compatible: fully compatible, you can still use the configuration without spaces
 
-Uniform timestamp:
+<span id="diff-uniform-timestamp">Uniform timestamp</span>:
 
 - all timestamps are RFC3339 this is more optimized for golang, more consistent and also used by kubernetes itself
 - backwards compatible: mostly, unless you used a short form of ISO 8601 eg. `2023-08-12`, `2023-233` or `2023-W34-1` it should be totally fine to not change anything
 
-Overlapping [relative timespans](#configuration-of-a-relative-timespan) into next day:
+<span id="diff-overlapping-days">Overlapping [relative timespans](#configuration-of-a-relative-timespan) into next day</span>:
 
 - timespans can overlap into the "next" day (eg. `Mon-Fri 20:00-06:00 UTC`). See [Relative Timespans](#configuration-of-a-relative-timespan)
 - backwards compatible: fully compatible, this didn't change any existing functionallity
 
-Actual Exclution:
+<span id="diff-actual-exclusion">Actual exclusion</span>:
 
 - [excluding a workload](#exclude) won't force the workload to be upscaled
 - backwards compatible: should be fully compatible, unless your implementation relies on this
 
-IANA Timezones:
+<span id="diff-iana-timezones">IANA Timezones</span>:
 
 - the downscaler uses the [IANA timezone database](https://www.iana.org/time-zones)
-- backwards compatible: fully compatible, "Olson timezones" is just a less used synonym for the IANA time zone database
+- backwards compatible: fully compatible, "Olson timezones" is just a lesser known synonym for the IANA time zone database
 
-Workload error events:
+<span id="diff-workload-errors">Workload error events</span>:
 
 - errors with the configuration of a [workload](#scalable-resources) are shown as events on the workload
 - backwards compatible: fully compatible, doesn't change any existing functionality
