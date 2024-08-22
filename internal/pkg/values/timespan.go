@@ -176,7 +176,7 @@ func (t absoluteTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 
 // isAbsoluteTimestamp checks if timestamp string is absolute
 func isAbsoluteTimestamp(timestamp string) bool {
-	return absoluteTimeSpanRegex.Match([]byte(timestamp))
+	return absoluteTimeSpanRegex.MatchString(timestamp)
 }
 
 // getWeekday gets the weekday from the given string
