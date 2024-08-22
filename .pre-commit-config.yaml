@@ -38,7 +38,7 @@ repos:
         files: \.md$
       - id: prevent-overly-nested-hierarchy
         name: prevent overly nested hierarchy
-        entry: "^ {4,}- " # matches a markdown list with 4 indentation spaces (2 indentations) or more
+        entry: "^(  ){2,}- " # matches a markdown list with 2 or more indentations
         language: pygrep
         files: \.md$
       - id: prevent-invalid-alert-types
