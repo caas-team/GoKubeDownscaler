@@ -1,8 +1,8 @@
 # GoKubeDownscaler
 
-<a href="/../../releases/" title="GitHub Release" ><img alt="GitHub Release" src="https://img.shields.io/github/v/release/caas-team/GoKubeDownscaler?style=flat"></a>
+<a href="/../../releases/" title="GitHub Release"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/caas-team/GoKubeDownscaler?style=flat"></a>
 <a href="./LICENSE" title="GitHub License"><img alt="GitHub License" src="https://img.shields.io/github/license/caas-team/GoKubeDownscaler?style=flat"></a>
-<a href="/../../graphs/contributors" title="Contributers" ><img alt="Contributers" src="https://img.shields.io/github/contributors/caas-team/GoKubeDownscaler?style=flat"></a>
+<a href="/../../graphs/contributors" title="Contributers"><img alt="Contributers" src="https://img.shields.io/github/contributors/caas-team/GoKubeDownscaler?style=flat"></a>
 <a href="/../../stargazers" title="Stars"><img alt="Stars" src="https://img.shields.io/github/stars/caas-team/GoKubeDownscaler?style=flat"></a>
 
 A vertical autoscaler for Kubernetes workloads.
@@ -399,7 +399,15 @@ For more info please refer to the [official documentation](https://pkg.go.dev/ti
 
 ### Basic migration
 
-<!-- TODO Basic migration -->
+1. Remove the old kube-downscaler
+
+```bash
+helm uninstall py-kube-downscaler
+```
+
+2. Make sure all programs/non-default uses support the [breaking changes](#edge-cases)
+3. Make sure all timestamps are [RFC 3339](#diff-uniform-timestamp) compatible
+4. [Install the new downscaler](#installation)
 
 ### Edge cases
 
