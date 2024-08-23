@@ -19,7 +19,8 @@ type getResourceFunc func(namespace string, clientset *kubernetes.Clientset, ctx
 
 // GetResource maps the resource name to a implementation specific getResourceFunc
 var GetResource = map[string]getResourceFunc{
-	"deployments": getDeployments,
+	"deployments":  getDeployments,
+	"statefulsets": getStatefulSets,
 }
 
 // Workload is a interface for a scalable resource. It holds all resource specific functions

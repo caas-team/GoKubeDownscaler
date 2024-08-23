@@ -7,8 +7,10 @@ import (
 	"time"
 )
 
-var errInvalidWeekday = errors.New("error: specified weekday is invalid")
-var errRelativeTimespanInvalid = errors.New("error: specified relative timespan is invalid")
+var (
+	errInvalidWeekday          = errors.New("error: specified weekday is invalid")
+	errRelativeTimespanInvalid = errors.New("error: specified relative timespan is invalid")
+)
 
 type TimeSpan interface {
 	// inTimeSpan checks if time is in the timespan or not
