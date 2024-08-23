@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
+	"k8s.io/client-go/dynamic"
 	"log/slog"
 	"strconv"
 
@@ -49,12 +50,17 @@ func NewClient(kubeconfig string) (client, error) {
 	if err != nil {
 		return kubeclient, fmt.Errorf("failed to get clientset for kubernetes: %w", err)
 	}
+	kubeclient.dynamicClient, err = dynamic.NewForConfig(config)
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to get dynamic client for crds: %w", err)
+	}
 	return kubeclient, nil
 }
 
 // client is a kubernetes client with downscaling specific functions
 type client struct {
-	clientset *kubernetes.Clientset
+	clientset     *kubernetes.Clientset
+	dynamicClient dynamic.Interface
 }
 
 // GetNamespaceAnnotations gets the annotations of the workload's namespace
@@ -71,11 +77,12 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 	var results []scalable.Workload
 	for _, namespace := range namespaces {
 		for _, resourceType := range resourceTypes {
+			slog.Debug("getting workloads from resource type", "resourceType", resourceType)
 			getWorkload, ok := scalable.GetResource[resourceType]
 			if !ok {
 				return nil, errResourceNotSupported
 			}
-			workloads, err := getWorkload(namespace, c.clientset, ctx)
+			workloads, err := getWorkload(namespace, c.clientset, c.dynamicClient, ctx)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get workloads: %w", err)
 			}
@@ -88,6 +95,79 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 
 // DownscaleWorkload downscales the workload to the specified replicas
 func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error {
+	switch w := workload.(type) {
+	case scalable.BatchWorkload:
+		return c.DownscaleBatchWorkload(w, ctx)
+
+	case scalable.AppWorkload:
+		return c.DownscaleAppWorkload(replicas, w, ctx)
+
+	case scalable.DaemonWorkload:
+		return c.DownscaleDaemonWorkload(w, ctx)
+
+	case scalable.PolicyWorkload:
+		return c.DownscalePolicyWorkload(replicas, w, ctx)
+
+	case scalable.AutoscalingWorkload:
+		return c.DownscaleAutoscalingWorkload(replicas, w, ctx)
+
+	case scalable.KedaWorkload:
+		return c.DownscaleKedaWorkload(replicas, w, ctx)
+
+	default:
+		return fmt.Errorf("failed to correctly identify the workload")
+	}
+}
+
+// DownscalePolicyWorkload is the downscale function dedicated to v1/policy Workloads
+func (c client) DownscalePolicyWorkload(replicas int, workload scalable.PolicyWorkload, ctx context.Context) error {
+
+	minAvailableValue, minAvailableExists, errMinAvailable := workload.GetMinAvailableIfExistAndNotPercentageValue()
+	maxUnavailableValue, maxUnavailableExists, errMaxUnavailable := workload.GetMaxUnavailableIfExistAndNotPercentageValue()
+
+	if errMinAvailable != nil {
+		return fmt.Errorf("failed to get original minAvailable for workload: %w", errMinAvailable)
+	}
+
+	if errMaxUnavailable != nil {
+		return fmt.Errorf("failed to get original maxUnavailable for workload: %w", errMaxUnavailable)
+	}
+
+	if minAvailableExists {
+		intMinAvailableValue := int(minAvailableValue)
+		if intMinAvailableValue == replicas {
+			slog.Debug("workload is already at downscale values, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			return nil
+		}
+		workload.SetMinAvailable(replicas)
+		c.setOriginalReplicas(intMinAvailableValue, workload)
+		err := workload.Update(c.clientset, c.dynamicClient, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update workload: %w", err)
+		}
+		slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	} else if maxUnavailableExists {
+		intMaxUnavailableValue := int(maxUnavailableValue)
+		if intMaxUnavailableValue == replicas {
+			slog.Debug("workload is already at downscale values, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			return nil
+		}
+		workload.SetMaxUnavailable(replicas)
+		c.setOriginalReplicas(intMaxUnavailableValue, workload)
+		err := workload.Update(c.clientset, c.dynamicClient, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update workload: %w", err)
+		}
+		slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	} else {
+		return fmt.Errorf("the workload does not have minimum available or max unavailable value for this policy workload")
+	}
+}
+
+// DownscaleAppWorkload is the dedicated downscale function for apps/v1 workloads, excluding daemonsets
+func (c client) DownscaleAppWorkload(replicas int, workload scalable.AppWorkload, ctx context.Context) error {
 	originalReplicas, err := workload.GetCurrentReplicas()
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
@@ -99,7 +179,70 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 
 	workload.SetReplicas(replicas)
 	c.setOriginalReplicas(originalReplicas, workload)
-	err = workload.Update(c.clientset, ctx)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
+// DownscaleBatchWorkload is the dedicated downscale function for batch/v1 workloads
+func (c client) DownscaleBatchWorkload(workload scalable.BatchWorkload, ctx context.Context) error {
+	const suspend = true
+
+	originalSuspend, err := workload.GetSuspend()
+	if err != nil {
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+	if originalSuspend == suspend {
+		slog.Debug("workload is already downscaled, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	workload.SetSuspend(suspend)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
+// DownscaleDaemonWorkload is the dedicated downscale function for apps/v1 daemonsets workloads
+func (c client) DownscaleDaemonWorkload(workload scalable.DaemonWorkload, ctx context.Context) error {
+	nodeSelectorExists, err := workload.NodeSelectorExists("kube-downscaler-non-existent", "true")
+	if err != nil {
+		return fmt.Errorf("failed to downscale the workload: %w. Make sure you didn't specify a kubedownscaler reserved node selector", err)
+	}
+	if nodeSelectorExists {
+		slog.Debug("workload is already downscaled, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	workload.SetNodeSelector("kube-downscaler-non-existent", "true")
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
+// DownscaleDaemonWorkload is the dedicated downscale function for autoscaling/v2 workloads
+func (c client) DownscaleAutoscalingWorkload(replicas int, workload scalable.AutoscalingWorkload, ctx context.Context) error {
+	originalReplicas, err := workload.GetMinReplicas()
+	if err != nil {
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+	if originalReplicas == replicas {
+		slog.Debug("workload is already at downscale replicas, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	workload.SetMinReplicas(replicas)
+	c.setOriginalReplicas(originalReplicas, workload)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
@@ -109,6 +252,110 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 
 // UpscaleWorkload upscales the workload to the original replicas
 func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
+	switch w := workload.(type) {
+	case scalable.BatchWorkload:
+		return c.UpscaleBatchWorkload(w, ctx)
+
+	case scalable.AppWorkload:
+		return c.UpscaleAppWorkload(w, ctx)
+
+	case scalable.DaemonWorkload:
+		return c.UpscaleDaemonWorkload(w, ctx)
+
+	case scalable.PolicyWorkload:
+		return c.UpscalePolicyWorkload(w, ctx)
+
+	case scalable.AutoscalingWorkload:
+		return c.UpscaleAutoscalingWorkload(w, ctx)
+
+	case scalable.KedaWorkload:
+		return c.UpscaleKedaWorkload(w, ctx)
+
+	default:
+		return fmt.Errorf("failed to correctly identify the workload")
+	}
+
+}
+
+// UpscaleBatchWorkload is the dedicated upscale function for batch/v1 workloads
+func (c client) UpscaleBatchWorkload(workload scalable.BatchWorkload, ctx context.Context) error {
+	const suspend = false
+
+	currentSuspend, err := workload.GetSuspend()
+	if err != nil {
+		return fmt.Errorf("failed to get current replicas for workload: %w", err)
+	}
+	if currentSuspend == suspend {
+		slog.Debug("workload is already upscaled, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	workload.SetSuspend(suspend)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
+// UpscalePolicyWorkload is the dedicated upscale function for policy/v1 workloads
+func (c client) UpscalePolicyWorkload(workload scalable.PolicyWorkload, ctx context.Context) error {
+	minAvailableValue, minAvailableExists, errMinAvailable := workload.GetMinAvailableIfExistAndNotPercentageValue()
+	maxUnavailableValue, maxUnavailableExists, errMaxUnavailable := workload.GetMaxUnavailableIfExistAndNotPercentageValue()
+
+	if errMinAvailable != nil {
+		return fmt.Errorf("failed to get original minAvailable for workload: %w", errMinAvailable)
+	}
+
+	if errMaxUnavailable != nil {
+		return fmt.Errorf("failed to get original maxUnavailable for workload: %w", errMaxUnavailable)
+	}
+
+	originalReplicas, err := c.getOriginalReplicas(workload)
+	if err != nil {
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+	if originalReplicas == values.Undefined {
+		slog.Debug("original replicas is not set, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	if minAvailableExists {
+		intMinAvailableValue := int(minAvailableValue)
+		if originalReplicas == intMinAvailableValue {
+			slog.Debug("workload is already at original values, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			return nil
+		}
+		workload.SetMinAvailable(originalReplicas)
+		c.removeOriginalReplicas(workload)
+		err = workload.Update(c.clientset, c.dynamicClient, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update workload: %w", err)
+		}
+		slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	} else if maxUnavailableExists {
+		intMaxUnavailableValue := int(maxUnavailableValue)
+		if originalReplicas == intMaxUnavailableValue {
+			slog.Debug("workload is already at original values, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			return nil
+		}
+		workload.SetMaxUnavailable(originalReplicas)
+		c.removeOriginalReplicas(workload)
+		err = workload.Update(c.clientset, c.dynamicClient, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update workload: %w", err)
+		}
+		slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	} else {
+		return fmt.Errorf("workload is already at max unavailable replicas")
+	}
+}
+
+// UpscaleDaemonWorkload is the dedicated upscale function for apps/v1 workloads except daemonsets
+func (c client) UpscaleAppWorkload(workload scalable.AppWorkload, ctx context.Context) error {
 	currentReplicas, err := workload.GetCurrentReplicas()
 	if err != nil {
 		return fmt.Errorf("failed to get current replicas for workload: %w", err)
@@ -128,7 +375,59 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 
 	workload.SetReplicas(originalReplicas)
 	c.removeOriginalReplicas(workload)
-	err = workload.Update(c.clientset, ctx)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
+// UpscaleDaemonWorkload is the dedicated upscale function for apps/v1 daemonsets workloads
+func (c client) UpscaleDaemonWorkload(workload scalable.DaemonWorkload, ctx context.Context) error {
+	nodeSelectorExists, err := workload.NodeSelectorExists("kube-downscaler-non-existent", "true")
+	if err != nil {
+		return fmt.Errorf("failed to upscale the workload: %w. Make sure you didn't specify a kubedownscaler reserved node selector", err)
+	}
+	if !nodeSelectorExists {
+		slog.Debug("workload is already upscaled, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	err = workload.RemoveNodeSelector("kube-downscaler-non-existent")
+	if err != nil {
+		return fmt.Errorf("failed to remove node selector from the workload: %w", err)
+	}
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
+// UpscaleAutoscalingWorkload is the dedicated downscale function for autoscaling/v2 workloads
+func (c client) UpscaleAutoscalingWorkload(workload scalable.AutoscalingWorkload, ctx context.Context) error {
+	currentReplicas, err := workload.GetMinReplicas()
+	if err != nil {
+		return fmt.Errorf("failed to get current replicas for workload: %w", err)
+	}
+	originalReplicas, err := c.getOriginalReplicas(workload)
+	if err != nil {
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+	if originalReplicas == values.Undefined {
+		slog.Debug("original replicas is not set, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+	if originalReplicas == currentReplicas {
+		slog.Debug("workload is already at original replicas, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	workload.SetMinReplicas(originalReplicas)
+	c.removeOriginalReplicas(workload)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
@@ -209,4 +508,62 @@ func (c client) AddErrorEvent(reason, id, message string, workload scalable.Work
 		return fmt.Errorf("failed to create event: %w", err)
 	}
 	return nil
+}
+
+func (c client) UpscaleKedaWorkload(workload scalable.KedaWorkload, ctx context.Context) error {
+	_, pauseAnnotationExists, err := workload.GetPauseScaledObjectAnnotationReplicasIfExistsAndValid()
+	if err != nil {
+		return fmt.Errorf("failed to get pause scaledobject annotation: %w", err)
+	}
+	if !pauseAnnotationExists {
+		return fmt.Errorf("the workload is already upscaled: %w", err)
+	}
+
+	originalReplicas, err := c.getOriginalReplicas(workload)
+	if err != nil {
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+	if originalReplicas == values.Undefined {
+		slog.Debug("original replicas is not set, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	c.removeOriginalReplicas(workload)
+	err = workload.RemovePauseScaledObjectAnnotation()
+	if err != nil {
+		fmt.Errorf("failed to remove pause scaledobject annotation: %w", err)
+	}
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
+func (c client) DownscaleKedaWorkload(replicas int, workload scalable.KedaWorkload, ctx context.Context) error {
+	pauseAnnotationReplicas, pauseAnnotationExists, err := workload.GetPauseScaledObjectAnnotationReplicasIfExistsAndValid()
+	if err != nil {
+		return fmt.Errorf("failed to get pause scaledobject annotation: %w", err)
+	}
+	if pauseAnnotationExists && pauseAnnotationReplicas == replicas {
+		c.setOriginalReplicas(replicas, workload)
+		err = workload.Update(c.clientset, c.dynamicClient, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update workload: %w", err)
+		}
+		slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	} else if (pauseAnnotationExists && pauseAnnotationReplicas != replicas) || !pauseAnnotationExists {
+		replicasStr := strconv.Itoa(replicas)
+		c.setOriginalReplicas(replicas, workload)
+		workload.SetPauseScaledObjectAnnotation(replicasStr)
+		err = workload.Update(c.clientset, c.dynamicClient, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update workload: %w", err)
+		}
+		slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+	return fmt.Errorf("invalid downscaling case for scaledobject")
 }
