@@ -1,6 +1,7 @@
 package values
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -12,6 +13,7 @@ var (
 	errTimeAndPeriod            = errors.New("error: both a time and a period is defined")
 	errInvalidDownscaleReplicas = errors.New("error: downscale replicas value is invalid")
 	errValueNotSet              = errors.New("error: value isn't set")
+	errAnnotationNotSet         = errors.New("error: annotation isn't set on workload")
 )
 
 const Undefined = -1 // Undefined represents an undefined integer value
@@ -31,6 +33,7 @@ const (
 func NewLayer() Layer {
 	return Layer{
 		DownscaleReplicas: Undefined,
+		GracePeriod:       Undefined,
 	}
 }
 
@@ -166,4 +169,45 @@ func (l Layers) GetExcluded() bool {
 		return *excluded
 	}
 	return false
+}
+
+// GetGracePeriod gets the grace period of the uppermost layer that has it set
+func (l Layers) GetOnGracePeriod(workloadAnnotations map[string]string, creationTime time.Time, logEvent resourceLogger, ctx context.Context) (bool, error) {
+	// get grace period
+	var gracePeriod Duration = 0
+	for _, layer := range l {
+		if layer.GracePeriod == Undefined {
+			continue
+		}
+		gracePeriod = layer.GracePeriod
+		break
+	}
+	if gracePeriod == Undefined {
+		return false, nil
+	}
+
+	// get time annotation
+	var timeAnnotation string
+	for _, layer := range l {
+		if layer.TimeAnnotation == "" {
+			continue
+		}
+		timeAnnotation = layer.TimeAnnotation
+		break
+	}
+	if timeAnnotation != "" {
+		timeString, ok := workloadAnnotations[timeAnnotation]
+		if !ok {
+			logEvent.ErrorInvalidAnnotation(timeAnnotation, fmt.Sprintf("annotation %q not present on this workload", timeAnnotation), ctx)
+			return false, errAnnotationNotSet
+		}
+		var err error
+		creationTime, err = time.Parse(time.RFC3339, timeString)
+		if err != nil {
+			logEvent.ErrorInvalidAnnotation(timeAnnotation, fmt.Sprintf("failed to parse %q annotation as RFC3339 timestamp: %s", timeAnnotation, err.Error()), ctx)
+			return false, fmt.Errorf("failed to parse timestamp in annotation: %w", err)
+		}
+	}
+	gracePeriodUntil := creationTime.Add(time.Duration(gracePeriod))
+	return time.Now().Before(gracePeriodUntil), nil
 }

@@ -42,6 +42,9 @@ var (
 )
 
 func init() {
+	// set defaults for layers
+	layerCli.GracePeriod = values.Duration(15 * time.Minute)
+
 	// cli layer values
 	flag.Var(&layerCli.DownscalePeriod, "downscale-period", "period to scale down in (default: never, incompatible: UpscaleTime, DownscaleTime)")
 	flag.Var(&layerCli.DownTime, "default-downtime", "timespans where workloads will be scaled down, outside of them they will be scaled up (default: never, incompatible: UpscalePeriod, DownscalePeriod)")
@@ -49,7 +52,7 @@ func init() {
 	flag.Var(&layerCli.UpTime, "default-uptime", "timespans where workloads will be scaled up, outside of them they will be scaled down (default: never, incompatible: UpscalePeriod, DownscalePeriod)")
 	flag.Var(&layerCli.Exclude, "explicit-include", "sets exclude on cli layer to true, makes it so namespaces or deployments have to specify downscaler/exclude=false (default: false)")
 	flag.IntVar(&layerCli.DownscaleReplicas, "downtime-replicas", 0, "the replicas to scale down to (default: 0)")
-	flag.Var(&layerCli.GracePeriod, "grace-period", "the grace period between creation of workload until first downscale (default: 15min)")                       // NOT_IMPLEMENTED: default not implemented
+	flag.Var(&layerCli.GracePeriod, "grace-period", "the grace period between creation of workload until first downscale (default: 15min)")
 	flag.StringVar(&layerCli.TimeAnnotation, "deployment-time-annotation", "", "the annotation to use instead of creation time for grace period (default: none)") // NOT_IMPLEMENTED: not implemented to ignore ""
 
 	// cli runtime configuration
@@ -149,6 +152,14 @@ func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx cont
 
 	layers := values.Layers{layerWorkload, layerNamespace, layerCli, layerEnv}
 
+	ok, err := layers.GetOnGracePeriod(workload.GetAnnotations(), workload.GetCreationTimestamp().Time, resourceLogger, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get if workload is on grace period: %w", err)
+	}
+	if ok {
+		slog.Debug("workload is on grace period, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
 	if layers.GetExcluded() {
 		slog.Debug("workload is excluded, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return nil

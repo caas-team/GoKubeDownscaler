@@ -33,8 +33,8 @@ type Client interface {
 	DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
-	// AddErrorEvent creates a new event on the workload
-	AddErrorEvent(reason string, id string, message string, workload scalable.Workload, ctx context.Context) error
+	// addErrorEvent creates a new event on the workload
+	addErrorEvent(reason string, id string, message string, workload scalable.Workload, ctx context.Context) error
 }
 
 // NewClient makes a new Client
@@ -169,8 +169,8 @@ func (c client) removeOriginalReplicas(workload scalable.Workload) {
 	workload.SetAnnotations(annotations)
 }
 
-// AddErrorEvent creates or updates a new event on the workload
-func (c client) AddErrorEvent(reason, id, message string, workload scalable.Workload, ctx context.Context) error {
+// addErrorEvent creates or updates a new event on the workload
+func (c client) addErrorEvent(reason, id, message string, workload scalable.Workload, ctx context.Context) error {
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s.%s", id, message)))
 	name := fmt.Sprintf("%s.%s.%x", workload.GetName(), reason, hash)
 	eventsClient := c.clientset.CoreV1().Events(workload.GetNamespace())

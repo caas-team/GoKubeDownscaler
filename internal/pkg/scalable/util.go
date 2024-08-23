@@ -6,6 +6,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 )
 
+// FilterMatchingLabels filters the workloads out if their labels don't match one of the includeLabels
 func FilterMatchingLabels(workloads []Workload, includeLabels values.RegexList) []Workload {
 	var results []Workload
 	if includeLabels == nil {

@@ -40,70 +40,70 @@ func GetLayerFromAnnotations(annotations map[string]string, logEvent resourceLog
 	if downscalePeriod, ok := annotations[annotationDownscalePeriod]; ok {
 		err = result.DownscalePeriod.Set(downscalePeriod)
 		if err != nil {
-			logEvent.ErrorInvalidAnnotation(annotationDownscalePeriod, fmt.Sprintf("failed to parse %q annotaion: %s", annotationDownscalePeriod, err.Error()), ctx)
+			logEvent.ErrorInvalidAnnotation(annotationDownscalePeriod, fmt.Sprintf("failed to parse %q annotation: %s", annotationDownscalePeriod, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationDownscalePeriod, err)
 		}
 	}
 	if downtime, ok := annotations[annotationDowntime]; ok {
 		err = result.DownTime.Set(downtime)
 		if err != nil {
-			logEvent.ErrorInvalidAnnotation(annotationDowntime, fmt.Sprintf("failed to parse %q annotaion: %s", annotationDowntime, err.Error()), ctx)
+			logEvent.ErrorInvalidAnnotation(annotationDowntime, fmt.Sprintf("failed to parse %q annotation: %s", annotationDowntime, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationDowntime, err)
 		}
 	}
 	if upscalePeriod, ok := annotations[annotationUpscalePeriod]; ok {
 		err = result.UpscalePeriod.Set(upscalePeriod)
 		if err != nil {
-			logEvent.ErrorInvalidAnnotation(annotationUpscalePeriod, fmt.Sprintf("failed to parse %q annotaion: %s", annotationUpscalePeriod, err.Error()), ctx)
+			logEvent.ErrorInvalidAnnotation(annotationUpscalePeriod, fmt.Sprintf("failed to parse %q annotation: %s", annotationUpscalePeriod, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationUpscalePeriod, err)
 		}
 	}
 	if uptime, ok := annotations[annotationUptime]; ok {
 		err = result.UpTime.Set(uptime)
 		if err != nil {
-			logEvent.ErrorInvalidAnnotation(annotationUptime, fmt.Sprintf("failed to parse %q annotaion: %s", annotationUptime, err.Error()), ctx)
+			logEvent.ErrorInvalidAnnotation(annotationUptime, fmt.Sprintf("failed to parse %q annotation: %s", annotationUptime, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationUptime, err)
 		}
 	}
 	if exclude, ok := annotations[annotationExclude]; ok {
 		err = result.Exclude.Set(exclude)
 		if err != nil {
-			logEvent.ErrorInvalidAnnotation(annotationExclude, fmt.Sprintf("failed to parse %q annotaion: %s", annotationExclude, err.Error()), ctx)
+			logEvent.ErrorInvalidAnnotation(annotationExclude, fmt.Sprintf("failed to parse %q annotation: %s", annotationExclude, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationExclude, err)
 		}
 	}
 	if excludeUntil, ok := annotations[annotationExcludeUntil]; ok {
 		result.ExcludeUntil, err = time.Parse(time.RFC3339, excludeUntil)
 		if err != nil {
-			logEvent.ErrorInvalidAnnotation(annotationExcludeUntil, fmt.Sprintf("failed to parse %q annotaion: %s", annotationExcludeUntil, err.Error()), ctx)
+			logEvent.ErrorInvalidAnnotation(annotationExcludeUntil, fmt.Sprintf("failed to parse %q annotation: %s", annotationExcludeUntil, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationExcludeUntil, err)
 		}
 	}
 	if forceUptime, ok := annotations[annotationForceUptime]; ok {
 		result.ForceUptime, err = strconv.ParseBool(forceUptime)
 		if err != nil {
-			logEvent.ErrorInvalidAnnotation(annotationForceUptime, fmt.Sprintf("failed to parse %q annotaion: %s", annotationForceUptime, err.Error()), ctx)
+			logEvent.ErrorInvalidAnnotation(annotationForceUptime, fmt.Sprintf("failed to parse %q annotation: %s", annotationForceUptime, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationForceUptime, err)
 		}
 	}
 	if forceDowntime, ok := annotations[annotationForceDowntime]; ok {
 		result.ForceDowntime, err = strconv.ParseBool(forceDowntime)
 		if err != nil {
-			logEvent.ErrorInvalidAnnotation(annotationForceDowntime, fmt.Sprintf("failed to parse %q annotaion: %s", annotationForceDowntime, err.Error()), ctx)
+			logEvent.ErrorInvalidAnnotation(annotationForceDowntime, fmt.Sprintf("failed to parse %q annotation: %s", annotationForceDowntime, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationForceDowntime, err)
 		}
 	}
 	if downscaleReplicas, ok := annotations[annotationDownscaleReplicas]; ok {
 		result.DownscaleReplicas, err = strconv.Atoi(downscaleReplicas)
 		if err != nil {
-			logEvent.ErrorInvalidAnnotation(annotationDownscaleReplicas, fmt.Sprintf("failed to parse %q annotaion: %s", annotationDownscaleReplicas, err.Error()), ctx)
+			logEvent.ErrorInvalidAnnotation(annotationDownscaleReplicas, fmt.Sprintf("failed to parse %q annotation: %s", annotationDownscaleReplicas, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationDownscaleReplicas, err)
 		}
 	}
 	if gracePeriod, ok := annotations[annotationGracePeriod]; ok {
 		err = result.GracePeriod.Set(gracePeriod)
 		if err != nil {
-			logEvent.ErrorInvalidAnnotation(annotationGracePeriod, fmt.Sprintf("failed to parse %q annotaion: %s", annotationGracePeriod, err.Error()), ctx)
+			logEvent.ErrorInvalidAnnotation(annotationGracePeriod, fmt.Sprintf("failed to parse %q annotation: %s", annotationGracePeriod, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationGracePeriod, err)
 		}
 	}

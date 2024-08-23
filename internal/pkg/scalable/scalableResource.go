@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -36,6 +37,8 @@ type Workload interface {
 	GetObjectKind() schema.ObjectKind
 	// GetLabels gets the labels of the workload
 	GetLabels() map[string]string
+	// GetCreationTimestamp gets the creation timestamp of the workload
+	GetCreationTimestamp() metav1.Time
 	// SetAnnotations sets the annotations on the resource. Changes won't be made on kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
 	// SetReplicas sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
