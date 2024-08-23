@@ -48,8 +48,7 @@ type Layer struct {
 	ForceUptime       bool         // force workload into a uptime state
 	ForceDowntime     bool         // force workload into a downtime state
 	DownscaleReplicas int          // the replicas to scale down to
-	GracePeriod       Duration     // grace period until new deployments will be scaled down // NOT_IMPLEMENTED
-	TimeAnnotation    string       // annotation to use for grace-period instead of creation time // NOT_IMPLEMENTED
+	GracePeriod       Duration     // grace period until new deployments will be scaled down
 }
 
 // isScalingExcluded checks if scaling is excluded, nil represents a not set state
@@ -172,7 +171,7 @@ func (l Layers) GetExcluded() bool {
 }
 
 // GetGracePeriod gets the grace period of the uppermost layer that has it set
-func (l Layers) GetOnGracePeriod(workloadAnnotations map[string]string, creationTime time.Time, logEvent resourceLogger, ctx context.Context) (bool, error) {
+func (l Layers) GetOnGracePeriod(timeAnnotation string, workloadAnnotations map[string]string, creationTime time.Time, logEvent resourceLogger, ctx context.Context) (bool, error) {
 	// get grace period
 	var gracePeriod Duration = 0
 	for _, layer := range l {
@@ -186,15 +185,6 @@ func (l Layers) GetOnGracePeriod(workloadAnnotations map[string]string, creation
 		return false, nil
 	}
 
-	// get time annotation
-	var timeAnnotation string
-	for _, layer := range l {
-		if layer.TimeAnnotation == "" {
-			continue
-		}
-		timeAnnotation = layer.TimeAnnotation
-		break
-	}
 	if timeAnnotation != "" {
 		timeString, ok := workloadAnnotations[timeAnnotation]
 		if !ok {

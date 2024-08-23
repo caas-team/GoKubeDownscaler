@@ -37,6 +37,8 @@ var (
 	excludeWorkloads values.RegexList
 	// workloads have to match one of these labels to be scaled
 	includeLabels values.RegexList
+	// annotation to use for grace-period instead of creation time
+	timeAnnotation string
 	// optional kubeconfig to use for testing purposes instead of the in-cluster config
 	kubeconfig string
 )
@@ -53,7 +55,6 @@ func init() {
 	flag.Var(&layerCli.Exclude, "explicit-include", "sets exclude on cli layer to true, makes it so namespaces or deployments have to specify downscaler/exclude=false (default: false)")
 	flag.IntVar(&layerCli.DownscaleReplicas, "downtime-replicas", 0, "the replicas to scale down to (default: 0)")
 	flag.Var(&layerCli.GracePeriod, "grace-period", "the grace period between creation of workload until first downscale (default: 15min)")
-	flag.StringVar(&layerCli.TimeAnnotation, "deployment-time-annotation", "", "the annotation to use instead of creation time for grace period (default: none)") // NOT_IMPLEMENTED: not implemented to ignore ""
 
 	// cli runtime configuration
 	flag.BoolVar(&dryRun, "dry-run", false, "print actions instead of doing them (default: false)")
@@ -66,6 +67,7 @@ func init() {
 	flag.Var(&excludeWorkloads, "exclude-deployments", "exclude deployments from being scaled (optional)")
 	flag.Var(&includeLabels, "matching-labels", "restricts the downscaler to workloads with these labels (default: all)")
 	flag.StringVar(&kubeconfig, "k", "", "kubeconfig to use instead of the in-cluster config (optional)")
+	flag.StringVar(&timeAnnotation, "deployment-time-annotation", "", "the annotation to use instead of creation time for grace period (optional)")
 
 	// env runtime configuration
 	err := values.GetEnvValue("EXCLUDE_NAMESPACES", &excludeNamespaces)
@@ -152,7 +154,7 @@ func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx cont
 
 	layers := values.Layers{layerWorkload, layerNamespace, layerCli, layerEnv}
 
-	ok, err := layers.GetOnGracePeriod(workload.GetAnnotations(), workload.GetCreationTimestamp().Time, resourceLogger, ctx)
+	ok, err := layers.GetOnGracePeriod(timeAnnotation, workload.GetAnnotations(), workload.GetCreationTimestamp().Time, resourceLogger, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get if workload is on grace period: %w", err)
 	}
