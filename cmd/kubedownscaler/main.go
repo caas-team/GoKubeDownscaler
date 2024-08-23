@@ -27,13 +27,15 @@ var (
 	// how long to wait between scans
 	interval = values.Duration(30 * time.Second)
 	// list of namespaces to restrict the downscaler to
-	namespaces = values.StringList{""} // "" matches all namespaces
+	includeNamespaces values.StringList
 	// list of resources to restrict the downscaler to
-	resources = values.StringList{"deployments"}
+	includeResources = values.StringList{"deployments"}
 	// list of namespaces to ignore while downscaling // NOT_IMPLEMENTED
 	excludeNamespaces = values.RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")}
 	// list of workload names to ignore while downscaling // NOT_IMPLEMENTED
 	excludeWorkloads values.RegexList
+	// workloads have to match one of these labels to be scaled
+	includeLabels values.RegexList
 	// optional kubeconfig to use for testing purposes instead of the in-cluster config
 	kubeconfig string
 )
@@ -54,10 +56,11 @@ func init() {
 	flag.BoolVar(&debug, "debug", false, "print more debug information (default: false)")
 	flag.BoolVar(&once, "once", false, "run scan only once (default: false)")
 	flag.Var(&interval, "interval", "time between scans (default: 30s)")
-	flag.Var(&namespaces, "namespace", "restrict the downscaler to the specified namespaces (default: all, incompatible: exclude-namespaces)")
-	flag.Var(&resources, "include-resources", "restricts the downscaler to the specified resource types (default: deployments)")
-	flag.Var(&excludeNamespaces, "exclude-namespaces", "exclude namespaces from being scaled (default: kube-system,kube-downscaler, incompatible: namespaces)")
+	flag.Var(&includeNamespaces, "namespace", "restrict the downscaler to the specified namespaces (default: all)")
+	flag.Var(&includeResources, "include-resources", "restricts the downscaler to the specified resource types (default: deployments)")
+	flag.Var(&excludeNamespaces, "exclude-namespaces", "exclude namespaces from being scaled (default: kube-system,kube-downscaler)")
 	flag.Var(&excludeWorkloads, "exclude-deployments", "exclude deployments from being scaled (optional)")
+	flag.Var(&includeLabels, "matching-labels", "restricts the downscaler to workloads with these labels (default: all)")
 	flag.StringVar(&kubeconfig, "k", "", "kubeconfig to use instead of the in-cluster config (optional)")
 
 	// env runtime configuration
@@ -92,7 +95,7 @@ func main() {
 	for {
 		slog.Debug("scanning workloads")
 
-		workloads, err := client.GetWorkloads(namespaces, resources, ctx)
+		workloads, err := client.GetWorkloads(includeNamespaces, includeResources, includeLabels, ctx)
 		if err != nil {
 			slog.Error("failed to get workloads", "error", err)
 			os.Exit(1)

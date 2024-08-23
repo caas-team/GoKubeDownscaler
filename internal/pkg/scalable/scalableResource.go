@@ -34,6 +34,8 @@ type Workload interface {
 	GetUID() types.UID
 	// GetObjectKind gets the ObjectKind of the workload
 	GetObjectKind() schema.ObjectKind
+	// GetLabels gets the labels of the workload
+	GetLabels() map[string]string
 	// SetAnnotations sets the annotations on the resource. Changes won't be made on kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
 	// SetReplicas sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called

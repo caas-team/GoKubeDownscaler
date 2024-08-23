@@ -28,7 +28,7 @@ type Client interface {
 	// GetNamespaceAnnotations gets the annotations of the workload's namespace
 	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
-	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
+	GetWorkloads(namespaces []string, resourceTypes []string, includeLabels values.RegexList, ctx context.Context) ([]scalable.Workload, error)
 	// DownscaleWorkload downscales the workload to the specified replicas
 	DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error
 	// UpscaleWorkload upscales the workload to the original replicas
@@ -67,19 +67,22 @@ func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (
 }
 
 // GetWorkloads gets all workloads of the specified resources for the specified namespaces
-func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error) {
+func (c client) GetWorkloads(namespaces []string, resourceTypes []string, includeLabels values.RegexList, ctx context.Context) ([]scalable.Workload, error) {
 	var results []scalable.Workload
+	if namespaces == nil {
+		namespaces = append(namespaces, "")
+	}
 	for _, namespace := range namespaces {
 		for _, resourceType := range resourceTypes {
-			getWorkload, ok := scalable.GetResource[resourceType]
+			getWorkloads, ok := scalable.GetResource[resourceType]
 			if !ok {
 				return nil, errResourceNotSupported
 			}
-			workloads, err := getWorkload(namespace, c.clientset, ctx)
+			workloads, err := getWorkloads(namespace, c.clientset, ctx)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get workloads: %w", err)
 			}
-			results = append(results, workloads...)
+			results = append(results, scalable.GetMatchingLabel(workloads, includeLabels)...)
 		}
 	}
 
