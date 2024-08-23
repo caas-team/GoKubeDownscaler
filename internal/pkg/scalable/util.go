@@ -6,7 +6,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 )
 
-func GetMatchingLabel(workloads []Workload, includeLabels values.RegexList) []Workload {
+func FilterMatchingLabels(workloads []Workload, includeLabels values.RegexList) []Workload {
 	var results []Workload
 	if includeLabels == nil {
 		results = append(results, workloads...)

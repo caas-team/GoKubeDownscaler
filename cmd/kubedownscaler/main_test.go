@@ -76,9 +76,9 @@ func TestScanWorkload(t *testing.T) {
 	mockClient.On("GetNamespaceAnnotations", "test-namespace", ctx).Return(map[string]string{}, nil)
 	mockClient.On("DownscaleWorkload", 0, mockWorkload, ctx).Return(nil)
 
-	ok := scanWorkload(mockWorkload, mockClient, ctx, layerCli, layerEnv)
+	err := scanWorkload(mockWorkload, mockClient, ctx, layerCli, layerEnv)
 
-	assert.True(t, ok)
+	assert.NoError(t, err)
 
 	mockClient.AssertExpectations(t)
 	mockWorkload.AssertExpectations(t)

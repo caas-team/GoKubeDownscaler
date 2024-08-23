@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 	"regexp"
@@ -95,11 +96,12 @@ func main() {
 	for {
 		slog.Debug("scanning workloads")
 
-		workloads, err := client.GetWorkloads(includeNamespaces, includeResources, includeLabels, ctx)
+		workloads, err := client.GetWorkloads(includeNamespaces, includeResources, ctx)
 		if err != nil {
 			slog.Error("failed to get workloads", "error", err)
 			os.Exit(1)
 		}
+		workloads = scalable.FilterMatchingLabels(workloads, includeLabels)
 
 		var wg sync.WaitGroup
 		for _, workload := range workloads {
@@ -108,9 +110,9 @@ func main() {
 				slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 				defer wg.Done()
 
-				ok := scanWorkload(workload, client, ctx, layerCli, layerEnv)
-				if !ok {
-					slog.Error("failed to scan workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+				err := scanWorkload(workload, client, ctx, layerCli, layerEnv)
+				if err != nil {
+					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
 				}
 
@@ -129,65 +131,57 @@ func main() {
 }
 
 // scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload
-func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx context.Context, layerCli, layerEnv values.Layer) bool {
+func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx context.Context, layerCli, layerEnv values.Layer) error {
 	resourceLogger := kubernetes.NewResourceLogger(client, workload)
 
 	namespaceAnnotations, err := client.GetNamespaceAnnotations(workload.GetNamespace(), ctx)
 	if err != nil {
-		slog.Error("failed to get namespace annotations", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return false
+		return fmt.Errorf("failed to get namespace annotations: %w", err)
 	}
 	layerWorkload, err := values.GetLayerFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx)
 	if err != nil {
-		slog.Error("failed to parse workload layer from annotations", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return false
+		return fmt.Errorf("failed to parse workload layer from annotations: %w", err)
 	}
 	layerNamespace, err := values.GetLayerFromAnnotations(namespaceAnnotations, resourceLogger, ctx)
 	if err != nil {
-		slog.Error("failed to parse namespace layer from annotations", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return false
+		return fmt.Errorf("failed to parse namespace layer from annotations: %w", err)
 	}
 
 	layers := values.Layers{layerWorkload, layerNamespace, layerCli, layerEnv}
 
 	if layers.GetExcluded() {
 		slog.Debug("workload is excluded, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return true
+		return nil
 	}
 
 	scaling, err := layers.GetCurrentScaling()
 	if err != nil {
-		slog.Error("failed to get current scaling for workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return false
+		return fmt.Errorf("failed to get current scaling for workload: %w", err)
 	}
 	if scaling == values.ScalingIncompatible {
-		slog.Error("scaling is incompatible, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return false
+		return fmt.Errorf("scaling is incompatible, skipping")
 	}
 	if scaling == values.ScalingIgnore {
 		slog.Debug("scaling is ignored, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return true
+		return nil
 	}
 	if scaling == values.ScalingDown {
 		slog.Debug("downscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		downscaleReplicas, err := layers.GetDownscaleReplicas()
 		if err != nil {
-			slog.Error("failed to get downscale replicas", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-			return false
+			return fmt.Errorf("failed to get downscale replicas: %w", err)
 		}
 		err = client.DownscaleWorkload(downscaleReplicas, workload, ctx)
 		if err != nil {
-			slog.Error("failed to downscale workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-			return false
+			return fmt.Errorf("failed to downscale workload: %w", err)
 		}
 	}
 	if scaling == values.ScalingUp {
 		slog.Debug("upscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		err := client.UpscaleWorkload(workload, ctx)
 		if err != nil {
-			slog.Error("failed to upscale workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-			return false
+			return fmt.Errorf("failed to upscale workload: %w", err)
 		}
 	}
-	return true
+	return nil
 }
