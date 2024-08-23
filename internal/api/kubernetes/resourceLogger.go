@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
+	v1 "k8s.io/api/core/v1"
 )
 
 const reasonInvalidConfiguration = "InvalidConfiguration"
@@ -24,7 +25,7 @@ type resourceLogger struct {
 
 // ErrorInvalidAnnotation adds an error on the resource
 func (r resourceLogger) ErrorInvalidAnnotation(annotation, message string, ctx context.Context) {
-	err := r.client.addErrorEvent(reasonInvalidConfiguration, annotation, message, r.workload, ctx)
+	err := r.client.addWorkloadEvent(v1.EventTypeWarning, reasonInvalidConfiguration, annotation, message, r.workload, ctx)
 	if err != nil {
 		slog.Error("failed to add error event to workload", "workload", r.workload.GetName(), "error", err)
 		return

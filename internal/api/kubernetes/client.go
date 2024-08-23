@@ -33,8 +33,8 @@ type Client interface {
 	DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
-	// addErrorEvent creates a new event on the workload
-	addErrorEvent(reason string, id string, message string, workload scalable.Workload, ctx context.Context) error
+	// addWorkloadEvent creates a new event on the workload
+	addWorkloadEvent(eventType string, reason string, id string, message string, workload scalable.Workload, ctx context.Context) error
 }
 
 // NewClient makes a new Client
@@ -45,6 +45,9 @@ func NewClient(kubeconfig string) (client, error) {
 	if err != nil {
 		return kubeclient, fmt.Errorf("failed to get config for kubernetes: %w", err)
 	}
+	// set qps and burst rate limiting options. See https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1/
+	config.QPS = 500    // available queries per second, when unused will fill the burst buffer
+	config.Burst = 1000 // the max size of the buffer of queries
 	kubeclient.clientset, err = kubernetes.NewForConfig(config)
 	if err != nil {
 		return kubeclient, fmt.Errorf("failed to get clientset for kubernetes: %w", err)
@@ -169,8 +172,8 @@ func (c client) removeOriginalReplicas(workload scalable.Workload) {
 	workload.SetAnnotations(annotations)
 }
 
-// addErrorEvent creates or updates a new event on the workload
-func (c client) addErrorEvent(reason, id, message string, workload scalable.Workload, ctx context.Context) error {
+// addWorkloadEvent creates or updates a new event on the workload
+func (c client) addWorkloadEvent(eventType, reason, id, message string, workload scalable.Workload, ctx context.Context) error {
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s.%s", id, message)))
 	name := fmt.Sprintf("%s.%s.%x", workload.GetName(), reason, hash)
 	eventsClient := c.clientset.CoreV1().Events(workload.GetNamespace())
@@ -202,7 +205,7 @@ func (c client) addErrorEvent(reason, id, message string, workload scalable.Work
 		},
 		Reason:         reason,
 		Message:        message,
-		Type:           corev1.EventTypeWarning,
+		Type:           eventType,
 		Source:         corev1.EventSource{Component: componentName},
 		FirstTimestamp: metav1.Now(),
 		LastTimestamp:  metav1.Now(),
