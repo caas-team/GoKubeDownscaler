@@ -2,7 +2,7 @@ package kubernetes
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -168,8 +168,8 @@ func (c client) removeOriginalReplicas(workload scalable.Workload) {
 
 // AddErrorEvent creates or updates a new event on the workload
 func (c client) AddErrorEvent(reason, id, message string, workload scalable.Workload, ctx context.Context) error {
-	hash := sha1.Sum([]byte(fmt.Sprintf("%s.%s", id, message)))
-	name := fmt.Sprintf("%s.%s.%.3x", workload.GetName(), reason, hash)
+	hash := sha256.Sum256([]byte(fmt.Sprintf("%s.%s", id, message)))
+	name := fmt.Sprintf("%s.%s.%x", workload.GetName(), reason, hash)
 	eventsClient := c.clientset.CoreV1().Events(workload.GetNamespace())
 
 	// check if event already exists

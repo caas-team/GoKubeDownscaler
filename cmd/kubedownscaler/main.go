@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log/slog"
 	"os"
+	"regexp"
 	"sync"
 	"time"
 
@@ -17,15 +18,24 @@ var (
 	layerCli = values.NewLayer()
 	layerEnv = values.NewLayer()
 
-	dryRun            = false                                               // if the downscaler should take actions or just print them out // NOT_IMPLEMENTED
-	debug             = false                                               // if debug information should be printed
-	once              = false                                               // if the scan should only run once
-	interval          = values.Duration(30 * time.Second)                   // how long to wait between scans
-	namespaces        = values.StringList{""}                               // list of namespaces to restrict the downscaler to
-	resources         = values.StringList{"deployments"}                    // list of resources to restrict the downscaler to
-	excludeNamespaces = values.StringList{"kube-system", "kube-downscaler"} // list of namespaces to ignore while downscaling // NOT_IMPLEMENTED
-	excludeWorkloads  values.StringList                                     // list of workload names to ignore while downscaling // NOT_IMPLEMENTED
-	kubeconfig        string                                                // optional kubeconfig to use for testing purposes instead of the in-cluster config
+	// if the downscaler should take actions or just print them out // NOT_IMPLEMENTED
+	dryRun = false
+	// if debug information should be printed
+	debug = false
+	// if the scan should only run once
+	once = false
+	// how long to wait between scans
+	interval = values.Duration(30 * time.Second)
+	// list of namespaces to restrict the downscaler to
+	namespaces = values.StringList{""} // "" matches all namespaces
+	// list of resources to restrict the downscaler to
+	resources = values.StringList{"deployments"}
+	// list of namespaces to ignore while downscaling // NOT_IMPLEMENTED
+	excludeNamespaces = values.RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")}
+	// list of workload names to ignore while downscaling // NOT_IMPLEMENTED
+	excludeWorkloads values.RegexList
+	// optional kubeconfig to use for testing purposes instead of the in-cluster config
+	kubeconfig string
 )
 
 func init() {
