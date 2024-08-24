@@ -24,6 +24,7 @@ var GetResource = map[string]getResourceFunc{
 	"statefulsets": getStatefulSets,
 	"cronJobs":     getCronJobs,
 	"jobs":         getJobs,
+	"daemonsets":   getDaemonSets,
 }
 
 // Workload is a interface for a scalable resource. It holds all resource specific functions
@@ -62,11 +63,13 @@ type BatchWorkload interface {
 	GetSuspend() (bool, error)
 }
 
-// DaemonWorkload is a child interface for Workload. It holds all resource specific functions for apps/v1 workloads suchs as jobs and cronjobs
+// DaemonWorkload is a child interface for Workload. It holds all resource specific functions for daemonsets apps/v1 workloads suchs
 type DaemonWorkload interface {
 	Workload
-	// SetSuspend sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
-	SetAffinity(suspend bool)
-	// GetSuspend gets the current status of spec.Suspend
-	GetAffinity() (bool, error)
+	// SetNodeSelector sets a particular nodeSelector on the resource. Changes won't be made on kubernetes until update() is called
+	SetNodeSelector(key string, value string)
+	// RemoveNodeSelector removes a particular nodeSelector from the resource. Changes won't be made on kubernetes until update() is called
+	RemoveNodeSelector(key string) error
+	// NodeSelectorExists checks if a particular nodeSelector exists
+	NodeSelectorExists(key string, value string) (bool, error)
 }

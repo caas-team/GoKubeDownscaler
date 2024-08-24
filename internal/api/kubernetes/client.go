@@ -95,6 +95,9 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 	case scalable.AppWorkload:
 		return c.DownscaleAppWorkload(replicas, w, ctx)
 
+	case scalable.DaemonWorkload:
+		return c.DownscaleDaemonWorkload(w, ctx)
+
 	default:
 		return fmt.Errorf("failed to correctly identify the workload")
 	}
@@ -143,6 +146,26 @@ func (c client) DownscaleBatchWorkload(workload scalable.BatchWorkload, ctx cont
 	return nil
 }
 
+// DownscaleDaemonWorkload downscales the daemon workload
+func (c client) DownscaleDaemonWorkload(workload scalable.DaemonWorkload, ctx context.Context) error {
+	nodeSelectorExists, err := workload.NodeSelectorExists("kube-downscaler-non-existent", "true")
+	if err != nil {
+		return fmt.Errorf("failed to downscale the workload: %w. Make sure you didn't specify a kubedownscaler reserved node selector", err)
+	}
+	if nodeSelectorExists {
+		slog.Debug("workload is already downscaled, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	workload.SetNodeSelector("kube-downscaler-non-existent", "true")
+	err = workload.Update(c.clientset, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
 // UpscaleWorkload upscales the workload to the original replicas
 func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
 	switch w := workload.(type) {
@@ -151,6 +174,9 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 
 	case scalable.AppWorkload:
 		return c.UpscaleAppWorkload(w, ctx)
+
+	case scalable.DaemonWorkload:
+		return c.UpscaleDaemonWorkload(w, ctx)
 
 	default:
 		return fmt.Errorf("failed to correctly identify the workload")
@@ -201,6 +227,29 @@ func (c client) UpscaleAppWorkload(workload scalable.AppWorkload, ctx context.Co
 
 	workload.SetReplicas(originalReplicas)
 	c.removeOriginalReplicas(workload)
+	err = workload.Update(c.clientset, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
+// UpscaleDaemonWorkload upscales set daemon workload to the upscale state
+func (c client) UpscaleDaemonWorkload(workload scalable.DaemonWorkload, ctx context.Context) error {
+	nodeSelectorExists, err := workload.NodeSelectorExists("kube-downscaler-non-existent", "true")
+	if err != nil {
+		return fmt.Errorf("failed to upscale the workload: %w. Make sure you didn't specify a kubedownscaler reserved node selector", err)
+	}
+	if !nodeSelectorExists {
+		slog.Debug("workload is already upscaled, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	err = workload.RemoveNodeSelector("kube-downscaler-non-existent")
+	if err != nil {
+		return fmt.Errorf("failed to remove node selector from the workload: %w", err)
+	}
 	err = workload.Update(c.clientset, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
