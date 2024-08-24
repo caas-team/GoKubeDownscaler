@@ -17,24 +17,24 @@ func getStatefulSets(namespace string, clientset *kubernetes.Clientset, ctx cont
 		return nil, fmt.Errorf("failed to get statefulsets: %w", err)
 	}
 	for _, item := range statefulsets.Items {
-		results = append(results, statefulset{&item})
+		results = append(results, StatefulSet{&item})
 	}
 	return results, nil
 }
 
-// statefulset is a wrapper for appsv1.kubernetes to implement the scalableResource interface
-type statefulset struct {
+// statefulset is a wrapper for appsv1.StatefulSet to implement the scalableResource interface
+type StatefulSet struct {
 	*appsv1.StatefulSet
 }
 
 // SetReplicas sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
-func (s statefulset) SetReplicas(replicas int) {
+func (s StatefulSet) SetReplicas(replicas int) {
 	newReplicas := int32(replicas)
 	s.Spec.Replicas = &newReplicas
 }
 
 // GetCurrentReplicas gets the current amount of replicas of the resource
-func (s statefulset) GetCurrentReplicas() (int, error) {
+func (s StatefulSet) GetCurrentReplicas() (int, error) {
 	replicas := s.Spec.Replicas
 	if replicas == nil {
 		return 0, errNoReplicasSpecified
@@ -43,7 +43,7 @@ func (s statefulset) GetCurrentReplicas() (int, error) {
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource
-func (s statefulset) Update(clientset *kubernetes.Clientset, ctx context.Context) error {
+func (s StatefulSet) Update(clientset *kubernetes.Clientset, ctx context.Context) error {
 	_, err := clientset.AppsV1().StatefulSets(s.Namespace).Update(ctx, s.StatefulSet, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update statefulset: %w", err)

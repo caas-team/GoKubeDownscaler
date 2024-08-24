@@ -88,6 +88,20 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 
 // DownscaleWorkload downscales the workload to the specified replicas
 func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error {
+	switch w := workload.(type) {
+	case scalable.BatchWorkload:
+		return c.DownscaleBatch(w, ctx)
+
+	case scalable.AppWorkload:
+		return c.DownscaleApp(replicas, w, ctx)
+
+	default:
+		return fmt.Errorf("failed to correctly identify the workload")
+	}
+}
+
+// DownscaleWorkload downscales the batch workload to the original suspend state
+func (c client) DownscaleApp(replicas int, workload scalable.AppWorkload, ctx context.Context) error {
 	originalReplicas, err := workload.GetCurrentReplicas()
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
@@ -107,8 +121,47 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 	return nil
 }
 
+// DownscaleWorkload downscales the app workload to the specified replicas
+func (c client) DownscaleBatch(workload scalable.BatchWorkload, ctx context.Context) error {
+	const suspend = true
+	workload.SetSuspend(suspend)
+	err := workload.Update(c.clientset, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
 // UpscaleWorkload upscales the workload to the original replicas
 func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
+	switch w := workload.(type) {
+	case scalable.BatchWorkload:
+		return c.UpscaleBatch(w, ctx)
+
+	case scalable.AppWorkload:
+		return c.UpscaleApp(w, ctx)
+
+	default:
+		return fmt.Errorf("failed to correctly identify the workload")
+	}
+
+}
+
+// UpscaleBatch upscales the batch workload to the original suspend state
+func (c client) UpscaleBatch(workload scalable.BatchWorkload, ctx context.Context) error {
+	const suspend = false
+	workload.SetSuspend(suspend)
+	err := workload.Update(c.clientset, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
+// UpscaleApp upscales the app workload to the original replicas
+func (c client) UpscaleApp(workload scalable.AppWorkload, ctx context.Context) error {
 	currentReplicas, err := workload.GetCurrentReplicas()
 	if err != nil {
 		return fmt.Errorf("failed to get current replicas for workload: %w", err)
