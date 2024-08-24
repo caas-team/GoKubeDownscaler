@@ -90,18 +90,18 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error {
 	switch w := workload.(type) {
 	case scalable.BatchWorkload:
-		return c.DownscaleBatch(w, ctx)
+		return c.DownscaleBatchWorkload(w, ctx)
 
 	case scalable.AppWorkload:
-		return c.DownscaleApp(replicas, w, ctx)
+		return c.DownscaleAppWorkload(replicas, w, ctx)
 
 	default:
 		return fmt.Errorf("failed to correctly identify the workload")
 	}
 }
 
-// DownscaleWorkload downscales the batch workload to the original suspend state
-func (c client) DownscaleApp(replicas int, workload scalable.AppWorkload, ctx context.Context) error {
+// DownscaleAppWorkload downscales the batch workload to the original suspend state
+func (c client) DownscaleAppWorkload(replicas int, workload scalable.AppWorkload, ctx context.Context) error {
 	originalReplicas, err := workload.GetCurrentReplicas()
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
@@ -121,11 +121,21 @@ func (c client) DownscaleApp(replicas int, workload scalable.AppWorkload, ctx co
 	return nil
 }
 
-// DownscaleWorkload downscales the app workload to the specified replicas
-func (c client) DownscaleBatch(workload scalable.BatchWorkload, ctx context.Context) error {
+// DownscaleBatchWorkload downscales the app workload to the specified replicas
+func (c client) DownscaleBatchWorkload(workload scalable.BatchWorkload, ctx context.Context) error {
 	const suspend = true
+
+	originalSuspend, err := workload.GetSuspend()
+	if err != nil {
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+	if originalSuspend == suspend {
+		slog.Debug("workload is already downscaled, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
 	workload.SetSuspend(suspend)
-	err := workload.Update(c.clientset, ctx)
+	err = workload.Update(c.clientset, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
@@ -137,10 +147,10 @@ func (c client) DownscaleBatch(workload scalable.BatchWorkload, ctx context.Cont
 func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
 	switch w := workload.(type) {
 	case scalable.BatchWorkload:
-		return c.UpscaleBatch(w, ctx)
+		return c.UpscaleBatchWorkload(w, ctx)
 
 	case scalable.AppWorkload:
-		return c.UpscaleApp(w, ctx)
+		return c.UpscaleAppWorkload(w, ctx)
 
 	default:
 		return fmt.Errorf("failed to correctly identify the workload")
@@ -148,11 +158,21 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 
 }
 
-// UpscaleBatch upscales the batch workload to the original suspend state
-func (c client) UpscaleBatch(workload scalable.BatchWorkload, ctx context.Context) error {
+// UpscaleBatchWorkload upscales the batch workload to the original suspend state
+func (c client) UpscaleBatchWorkload(workload scalable.BatchWorkload, ctx context.Context) error {
 	const suspend = false
+
+	currentSuspend, err := workload.GetSuspend()
+	if err != nil {
+		return fmt.Errorf("failed to get current replicas for workload: %w", err)
+	}
+	if currentSuspend == suspend {
+		slog.Debug("workload is already upscaled, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
 	workload.SetSuspend(suspend)
-	err := workload.Update(c.clientset, ctx)
+	err = workload.Update(c.clientset, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
@@ -160,8 +180,8 @@ func (c client) UpscaleBatch(workload scalable.BatchWorkload, ctx context.Contex
 	return nil
 }
 
-// UpscaleApp upscales the app workload to the original replicas
-func (c client) UpscaleApp(workload scalable.AppWorkload, ctx context.Context) error {
+// UpscaleAppWorkload upscales the app workload to the original replicas
+func (c client) UpscaleAppWorkload(workload scalable.AppWorkload, ctx context.Context) error {
 	currentReplicas, err := workload.GetCurrentReplicas()
 	if err != nil {
 		return fmt.Errorf("failed to get current replicas for workload: %w", err)

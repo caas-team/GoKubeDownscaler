@@ -44,7 +44,7 @@ type Workload interface {
 	Update(clientset *kubernetes.Clientset, ctx context.Context) error
 }
 
-// AppWorkload is a child interface for Workload. It holds all resource specific functions for apps/v1 workloads such as deployments and statefulsets except for daemonsets
+// AppWorkload is a child interface for Workload. It holds all resource specific functions for apps/v1 workloads such as deployments and statefulsets
 type AppWorkload interface {
 	Workload
 	// SetReplicas sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
@@ -60,4 +60,13 @@ type BatchWorkload interface {
 	SetSuspend(suspend bool)
 	// GetSuspend gets the current status of spec.Suspend
 	GetSuspend() (bool, error)
+}
+
+// DaemonWorkload is a child interface for Workload. It holds all resource specific functions for apps/v1 workloads suchs as jobs and cronjobs
+type DaemonWorkload interface {
+	Workload
+	// SetSuspend sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
+	SetAffinity(suspend bool)
+	// GetSuspend gets the current status of spec.Suspend
+	GetAffinity() (bool, error)
 }
