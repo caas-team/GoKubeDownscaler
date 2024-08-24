@@ -98,8 +98,57 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 	case scalable.DaemonWorkload:
 		return c.DownscaleDaemonWorkload(w, ctx)
 
+	case scalable.PolicyWorkload:
+		return c.DownscalePolicyWorkload(replicas, w, ctx)
+
 	default:
 		return fmt.Errorf("failed to correctly identify the workload")
+	}
+}
+
+func (c client) DownscalePolicyWorkload(replicas int, workload scalable.PolicyWorkload, ctx context.Context) error {
+
+	minAvailableValue, minAvailableExists, errMinAvailable := workload.GetMinAvailableIfExistAndNotPercentageValue()
+	maxUnavailableValue, maxUnavailableExists, errMaxUnavailable := workload.GetMaxUnavailableIfExistAndNotPercentageValue()
+
+	if errMinAvailable != nil {
+		return fmt.Errorf("failed to get original minAvailable for workload: %w", errMinAvailable)
+	}
+
+	if errMaxUnavailable != nil {
+		return fmt.Errorf("failed to get original maxUnavailable for workload: %w", errMaxUnavailable)
+	}
+
+	if minAvailableExists {
+		intMinAvailableValue := int(minAvailableValue)
+		if intMinAvailableValue == replicas {
+			slog.Debug("workload is already at downscale values, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			return nil
+		}
+		workload.SetMinAvailable(replicas)
+		c.setOriginalReplicas(intMinAvailableValue, workload)
+		err := workload.Update(c.clientset, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update workload: %w", err)
+		}
+		slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	} else if maxUnavailableExists {
+		intMaxUnavailableValue := int(maxUnavailableValue)
+		if intMaxUnavailableValue == replicas {
+			slog.Debug("workload is already at downscale values, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			return nil
+		}
+		workload.SetMaxUnavailable(replicas)
+		c.setOriginalReplicas(intMaxUnavailableValue, workload)
+		err := workload.Update(c.clientset, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update workload: %w", err)
+		}
+		slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	} else {
+		return fmt.Errorf("the workload does not have minimum available or max unavailable value for this policy workload")
 	}
 }
 
@@ -178,6 +227,9 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 	case scalable.DaemonWorkload:
 		return c.UpscaleDaemonWorkload(w, ctx)
 
+	case scalable.PolicyWorkload:
+		return c.UpscalePolicyWorkload(w, ctx)
+
 	default:
 		return fmt.Errorf("failed to correctly identify the workload")
 	}
@@ -204,6 +256,60 @@ func (c client) UpscaleBatchWorkload(workload scalable.BatchWorkload, ctx contex
 	}
 	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 	return nil
+}
+
+func (c client) UpscalePolicyWorkload(workload scalable.PolicyWorkload, ctx context.Context) error {
+	minAvailableValue, minAvailableExists, errMinAvailable := workload.GetMinAvailableIfExistAndNotPercentageValue()
+	maxUnavailableValue, maxUnavailableExists, errMaxUnavailable := workload.GetMaxUnavailableIfExistAndNotPercentageValue()
+
+	if errMinAvailable != nil {
+		return fmt.Errorf("failed to get original minAvailable for workload: %w", errMinAvailable)
+	}
+
+	if errMaxUnavailable != nil {
+		return fmt.Errorf("failed to get original maxUnavailable for workload: %w", errMaxUnavailable)
+	}
+
+	originalReplicas, err := c.getOriginalReplicas(workload)
+	if err != nil {
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+	if originalReplicas == values.Undefined {
+		slog.Debug("original replicas is not set, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	if minAvailableExists {
+		intMinAvailableValue := int(minAvailableValue)
+		if originalReplicas == intMinAvailableValue {
+			slog.Debug("workload is already at original values, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			return nil
+		}
+		workload.SetMinAvailable(originalReplicas)
+		c.removeOriginalReplicas(workload)
+		err = workload.Update(c.clientset, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update workload: %w", err)
+		}
+		slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	} else if maxUnavailableExists {
+		intMaxUnavailableValue := int(maxUnavailableValue)
+		if originalReplicas == intMaxUnavailableValue {
+			slog.Debug("workload is already at original values, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			return nil
+		}
+		workload.SetMaxUnavailable(originalReplicas)
+		c.removeOriginalReplicas(workload)
+		err = workload.Update(c.clientset, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update workload: %w", err)
+		}
+		slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	} else {
+		return fmt.Errorf("workload is already at max unavailable replicas")
+	}
 }
 
 // UpscaleAppWorkload upscales the app workload to the original replicas

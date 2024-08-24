@@ -20,11 +20,12 @@ type getResourceFunc func(namespace string, clientset *kubernetes.Clientset, ctx
 
 // GetResource maps the resource name to a implementation specific getResourceFunc
 var GetResource = map[string]getResourceFunc{
-	"deployments":  getDeployments,
-	"statefulsets": getStatefulSets,
-	"cronJobs":     getCronJobs,
-	"jobs":         getJobs,
-	"daemonsets":   getDaemonSets,
+	"deployments":          getDeployments,
+	"statefulsets":         getStatefulSets,
+	"cronJobs":             getCronJobs,
+	"jobs":                 getJobs,
+	"daemonsets":           getDaemonSets,
+	"poddisruptionbudgets": getPodDisruptionBudgets,
 }
 
 // Workload is a interface for a scalable resource. It holds all resource specific functions
@@ -72,4 +73,16 @@ type DaemonWorkload interface {
 	RemoveNodeSelector(key string) error
 	// NodeSelectorExists checks if a particular nodeSelector exists
 	NodeSelectorExists(key string, value string) (bool, error)
+}
+
+type PolicyWorkload interface {
+	Workload
+
+	GetMinAvailableIfExistAndNotPercentageValue() (int32, bool, error)
+
+	SetMinAvailable(minAvailable int)
+
+	GetMaxUnavailableIfExistAndNotPercentageValue() (int32, bool, error)
+
+	SetMaxUnavailable(maxAvailable int)
 }
