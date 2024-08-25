@@ -79,20 +79,20 @@ type DaemonWorkload interface {
 
 type PolicyWorkload interface {
 	Workload
-
+	// GetMaxUnavailableIfExistAndNotPercentageValue returns the spec.MaxUnavailable value if it is not a percentage
 	GetMinAvailableIfExistAndNotPercentageValue() (int32, bool, error)
-
+	// SetMinAvailable applies a new value to spec.MinAvailable
 	SetMinAvailable(minAvailable int)
-
+	// GetMinAvailableIfExistAndNotPercentageValue returns the spec.MinAvailable value if it is not a percentage
 	GetMaxUnavailableIfExistAndNotPercentageValue() (int32, bool, error)
-
+	// SetMaxUnavailable applies a new value to spec.MaxUnavailable
 	SetMaxUnavailable(maxAvailable int)
 }
 
 type AutoscalingWorkload interface {
 	Workload
-
+	// GetMinReplicas get the spec.MinReplicas from the resource
 	SetMinReplicas(replicas int)
-
+	// SetMinReplicas set the spec.MinReplicas to a new value
 	GetMinReplicas() (int, error)
 }

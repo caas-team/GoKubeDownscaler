@@ -67,7 +67,7 @@ func (p PodDisruptionBudget) GetMaxUnavailableIfExistAndNotPercentageValue() (in
 		return maxUnavailable.IntVal, true, nil
 
 	case intstr.String:
-		// Handle the case where the value is a string
+		// Handle the case where the value is a string (percentage)
 		return 0, false, fmt.Errorf("minAvailable is a string value and cannot be converted to int directly")
 
 	default:
