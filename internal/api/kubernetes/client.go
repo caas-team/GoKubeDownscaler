@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
+	"k8s.io/client-go/dynamic"
 	"log/slog"
 	"strconv"
 
@@ -49,12 +50,17 @@ func NewClient(kubeconfig string) (client, error) {
 	if err != nil {
 		return kubeclient, fmt.Errorf("failed to get clientset for kubernetes: %w", err)
 	}
+	kubeclient.dynamicClient, err = dynamic.NewForConfig(config)
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to get dynamic client for crds: %w", err)
+	}
 	return kubeclient, nil
 }
 
 // client is a kubernetes client with downscaling specific functions
 type client struct {
-	clientset *kubernetes.Clientset
+	clientset     *kubernetes.Clientset
+	dynamicClient dynamic.Interface
 }
 
 // GetNamespaceAnnotations gets the annotations of the workload's namespace
@@ -76,7 +82,7 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 			if !ok {
 				return nil, errResourceNotSupported
 			}
-			workloads, err := getWorkload(namespace, c.clientset, ctx)
+			workloads, err := getWorkload(namespace, c.clientset, c.dynamicClient, ctx)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get workloads: %w", err)
 			}
@@ -105,6 +111,9 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 	case scalable.AutoscalingWorkload:
 		return c.DownscaleAutoscalingWorkload(replicas, w, ctx)
 
+	case scalable.KedaWorkload:
+		return c.DownscaleKedaWorkload(replicas, w, ctx)
+
 	default:
 		return fmt.Errorf("failed to correctly identify the workload")
 	}
@@ -132,7 +141,7 @@ func (c client) DownscalePolicyWorkload(replicas int, workload scalable.PolicyWo
 		}
 		workload.SetMinAvailable(replicas)
 		c.setOriginalReplicas(intMinAvailableValue, workload)
-		err := workload.Update(c.clientset, ctx)
+		err := workload.Update(c.clientset, c.dynamicClient, ctx)
 		if err != nil {
 			return fmt.Errorf("failed to update workload: %w", err)
 		}
@@ -146,7 +155,7 @@ func (c client) DownscalePolicyWorkload(replicas int, workload scalable.PolicyWo
 		}
 		workload.SetMaxUnavailable(replicas)
 		c.setOriginalReplicas(intMaxUnavailableValue, workload)
-		err := workload.Update(c.clientset, ctx)
+		err := workload.Update(c.clientset, c.dynamicClient, ctx)
 		if err != nil {
 			return fmt.Errorf("failed to update workload: %w", err)
 		}
@@ -170,7 +179,7 @@ func (c client) DownscaleAppWorkload(replicas int, workload scalable.AppWorkload
 
 	workload.SetReplicas(replicas)
 	c.setOriginalReplicas(originalReplicas, workload)
-	err = workload.Update(c.clientset, ctx)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
@@ -192,7 +201,7 @@ func (c client) DownscaleBatchWorkload(workload scalable.BatchWorkload, ctx cont
 	}
 
 	workload.SetSuspend(suspend)
-	err = workload.Update(c.clientset, ctx)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
@@ -212,7 +221,7 @@ func (c client) DownscaleDaemonWorkload(workload scalable.DaemonWorkload, ctx co
 	}
 
 	workload.SetNodeSelector("kube-downscaler-non-existent", "true")
-	err = workload.Update(c.clientset, ctx)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
@@ -233,7 +242,7 @@ func (c client) DownscaleAutoscalingWorkload(replicas int, workload scalable.Aut
 
 	workload.SetMinReplicas(replicas)
 	c.setOriginalReplicas(originalReplicas, workload)
-	err = workload.Update(c.clientset, ctx)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
@@ -259,6 +268,9 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 	case scalable.AutoscalingWorkload:
 		return c.UpscaleAutoscalingWorkload(w, ctx)
 
+	case scalable.KedaWorkload:
+		return c.UpscaleKedaWorkload(w, ctx)
+
 	default:
 		return fmt.Errorf("failed to correctly identify the workload")
 	}
@@ -279,7 +291,7 @@ func (c client) UpscaleBatchWorkload(workload scalable.BatchWorkload, ctx contex
 	}
 
 	workload.SetSuspend(suspend)
-	err = workload.Update(c.clientset, ctx)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
@@ -317,7 +329,7 @@ func (c client) UpscalePolicyWorkload(workload scalable.PolicyWorkload, ctx cont
 		}
 		workload.SetMinAvailable(originalReplicas)
 		c.removeOriginalReplicas(workload)
-		err = workload.Update(c.clientset, ctx)
+		err = workload.Update(c.clientset, c.dynamicClient, ctx)
 		if err != nil {
 			return fmt.Errorf("failed to update workload: %w", err)
 		}
@@ -331,7 +343,7 @@ func (c client) UpscalePolicyWorkload(workload scalable.PolicyWorkload, ctx cont
 		}
 		workload.SetMaxUnavailable(originalReplicas)
 		c.removeOriginalReplicas(workload)
-		err = workload.Update(c.clientset, ctx)
+		err = workload.Update(c.clientset, c.dynamicClient, ctx)
 		if err != nil {
 			return fmt.Errorf("failed to update workload: %w", err)
 		}
@@ -363,7 +375,7 @@ func (c client) UpscaleAppWorkload(workload scalable.AppWorkload, ctx context.Co
 
 	workload.SetReplicas(originalReplicas)
 	c.removeOriginalReplicas(workload)
-	err = workload.Update(c.clientset, ctx)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
@@ -386,7 +398,7 @@ func (c client) UpscaleDaemonWorkload(workload scalable.DaemonWorkload, ctx cont
 	if err != nil {
 		return fmt.Errorf("failed to remove node selector from the workload: %w", err)
 	}
-	err = workload.Update(c.clientset, ctx)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
@@ -415,7 +427,7 @@ func (c client) UpscaleAutoscalingWorkload(workload scalable.AutoscalingWorkload
 
 	workload.SetMinReplicas(originalReplicas)
 	c.removeOriginalReplicas(workload)
-	err = workload.Update(c.clientset, ctx)
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
 	}
@@ -496,4 +508,62 @@ func (c client) AddErrorEvent(reason, id, message string, workload scalable.Work
 		return fmt.Errorf("failed to create event: %w", err)
 	}
 	return nil
+}
+
+func (c client) UpscaleKedaWorkload(workload scalable.KedaWorkload, ctx context.Context) error {
+	_, pauseAnnotationExists, err := workload.GetPauseScaledObjectAnnotationReplicasIfExistsAndValid()
+	if err != nil {
+		return fmt.Errorf("failed to get pause scaledobject annotation: %w", err)
+	}
+	if !pauseAnnotationExists {
+		return fmt.Errorf("the workload is already upscaled: %w", err)
+	}
+
+	originalReplicas, err := c.getOriginalReplicas(workload)
+	if err != nil {
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+	if originalReplicas == values.Undefined {
+		slog.Debug("original replicas is not set, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	c.removeOriginalReplicas(workload)
+	err = workload.RemovePauseScaledObjectAnnotation()
+	if err != nil {
+		fmt.Errorf("failed to remove pause scaledobject annotation: %w", err)
+	}
+	err = workload.Update(c.clientset, c.dynamicClient, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
+func (c client) DownscaleKedaWorkload(replicas int, workload scalable.KedaWorkload, ctx context.Context) error {
+	pauseAnnotationReplicas, pauseAnnotationExists, err := workload.GetPauseScaledObjectAnnotationReplicasIfExistsAndValid()
+	if err != nil {
+		return fmt.Errorf("failed to get pause scaledobject annotation: %w", err)
+	}
+	if pauseAnnotationExists && pauseAnnotationReplicas == replicas {
+		c.setOriginalReplicas(replicas, workload)
+		err = workload.Update(c.clientset, c.dynamicClient, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update workload: %w", err)
+		}
+		slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	} else if (pauseAnnotationExists && pauseAnnotationReplicas != replicas) || !pauseAnnotationExists {
+		replicasStr := strconv.Itoa(replicas)
+		c.setOriginalReplicas(replicas, workload)
+		workload.SetPauseScaledObjectAnnotation(replicasStr)
+		err = workload.Update(c.clientset, c.dynamicClient, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update workload: %w", err)
+		}
+		slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+	return fmt.Errorf("invalid downscaling case for scaledobject")
 }

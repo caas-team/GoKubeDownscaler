@@ -5,11 +5,12 @@ import (
 	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 )
 
 // getDaemonSets is the getResourceFunc for DaemonSets
-func getDaemonSets(namespace string, clientset *kubernetes.Clientset, ctx context.Context) ([]Workload, error) {
+func getDaemonSets(namespace string, clientset *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	daemonsets, err := clientset.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
@@ -60,7 +61,7 @@ func (d DaemonSet) RemoveNodeSelector(key string) error {
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource
-func (d DaemonSet) Update(clientset *kubernetes.Clientset, ctx context.Context) error {
+func (d DaemonSet) Update(clientset *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) error {
 	_, err := clientset.AppsV1().DaemonSets(d.Namespace).Update(ctx, d.DaemonSet, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update daemonset: %w", err)

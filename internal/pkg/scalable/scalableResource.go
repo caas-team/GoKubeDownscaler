@@ -3,6 +3,7 @@ package scalable
 import (
 	"context"
 	"errors"
+	"k8s.io/client-go/dynamic"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,7 +18,7 @@ var (
 )
 
 // getResourceFunc is a function that gets a specific resource as a scalableResource
-type getResourceFunc func(namespace string, clientset *kubernetes.Clientset, ctx context.Context) ([]Workload, error)
+type getResourceFunc func(namespace string, clientset *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) ([]Workload, error)
 
 // GetResource maps the resource name to a implementation specific getResourceFunc
 var GetResource = map[string]getResourceFunc{
@@ -28,6 +29,7 @@ var GetResource = map[string]getResourceFunc{
 	"daemonsets":               getDaemonSets,
 	"poddisruptionbudgets":     getPodDisruptionBudgets,
 	"horizontalpodautoscalers": getHorizontalPodAutoscalers,
+	"scaledobjects":            getScaledObjects,
 }
 
 // Workload is a interface for a scalable resource. It holds all resource specific functions
@@ -45,7 +47,7 @@ type Workload interface {
 	// SetAnnotations sets the annotations on the resource. Changes won't be made on kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
-	Update(clientset *kubernetes.Clientset, ctx context.Context) error
+	Update(clientset *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) error
 }
 
 // AppWorkload is a child interface for Workload. It holds all resource specific functions for apps/v1 workloads such as deployments and statefulsets
@@ -95,4 +97,14 @@ type AutoscalingWorkload interface {
 	SetMinReplicas(replicas int)
 	// SetMinReplicas set the spec.MinReplicas to a new value
 	GetMinReplicas() (int, error)
+}
+
+type KedaWorkload interface {
+	Workload
+	// SetPauseScaledObjectAnnotation will modify the value of the keda pause annotation to the one passed as a parameter
+	SetPauseScaledObjectAnnotation(stringReplicas string)
+	// RemovePauseScaledObjectAnnotation will remove pause scaled object for annotation
+	RemovePauseScaledObjectAnnotation() error
+	// GetPauseScaledObjectAnnotationReplicasIfExistsAndValid gets the value of keda pause annotations. It returns the int value and true if the annotations exists and it is well formatted, otherwise it returns a fake value and false
+	GetPauseScaledObjectAnnotationReplicasIfExistsAndValid() (int, bool, error)
 }
