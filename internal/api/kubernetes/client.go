@@ -71,6 +71,7 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 	var results []scalable.Workload
 	for _, namespace := range namespaces {
 		for _, resourceType := range resourceTypes {
+			slog.Debug("getting workloads from resource type", "resourceType", resourceType)
 			getWorkload, ok := scalable.GetResource[resourceType]
 			if !ok {
 				return nil, errResourceNotSupported
@@ -101,11 +102,15 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 	case scalable.PolicyWorkload:
 		return c.DownscalePolicyWorkload(replicas, w, ctx)
 
+	case scalable.AutoscalingWorkload:
+		return c.DownscaleAutoscalingWorkload(replicas, w, ctx)
+
 	default:
 		return fmt.Errorf("failed to correctly identify the workload")
 	}
 }
 
+// DownscalePolicyWorkload is the downscale function dedicated to v1/policy Workloads
 func (c client) DownscalePolicyWorkload(replicas int, workload scalable.PolicyWorkload, ctx context.Context) error {
 
 	minAvailableValue, minAvailableExists, errMinAvailable := workload.GetMinAvailableIfExistAndNotPercentageValue()
@@ -152,7 +157,7 @@ func (c client) DownscalePolicyWorkload(replicas int, workload scalable.PolicyWo
 	}
 }
 
-// DownscaleAppWorkload downscales the batch workload to the original suspend state
+// DownscaleAppWorkload is the dedicated downscale function for apps/v1 workloads, excluding daemonsets
 func (c client) DownscaleAppWorkload(replicas int, workload scalable.AppWorkload, ctx context.Context) error {
 	originalReplicas, err := workload.GetCurrentReplicas()
 	if err != nil {
@@ -173,7 +178,7 @@ func (c client) DownscaleAppWorkload(replicas int, workload scalable.AppWorkload
 	return nil
 }
 
-// DownscaleBatchWorkload downscales the app workload to the specified replicas
+// DownscaleBatchWorkload is the dedicated downscale function for batch/v1 workloads
 func (c client) DownscaleBatchWorkload(workload scalable.BatchWorkload, ctx context.Context) error {
 	const suspend = true
 
@@ -195,7 +200,7 @@ func (c client) DownscaleBatchWorkload(workload scalable.BatchWorkload, ctx cont
 	return nil
 }
 
-// DownscaleDaemonWorkload downscales the daemon workload
+// DownscaleDaemonWorkload is the dedicated downscale function for apps/v1 daemonsets workloads
 func (c client) DownscaleDaemonWorkload(workload scalable.DaemonWorkload, ctx context.Context) error {
 	nodeSelectorExists, err := workload.NodeSelectorExists("kube-downscaler-non-existent", "true")
 	if err != nil {
@@ -207,6 +212,27 @@ func (c client) DownscaleDaemonWorkload(workload scalable.DaemonWorkload, ctx co
 	}
 
 	workload.SetNodeSelector("kube-downscaler-non-existent", "true")
+	err = workload.Update(c.clientset, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
+// DownscaleDaemonWorkload is the dedicated downscale function for autoscaling/v2 workloads
+func (c client) DownscaleAutoscalingWorkload(replicas int, workload scalable.AutoscalingWorkload, ctx context.Context) error {
+	originalReplicas, err := workload.GetMinReplicas()
+	if err != nil {
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+	if originalReplicas == replicas {
+		slog.Debug("workload is already at downscale replicas, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	workload.SetMinReplicas(replicas)
+	c.setOriginalReplicas(originalReplicas, workload)
 	err = workload.Update(c.clientset, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)
@@ -230,13 +256,16 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 	case scalable.PolicyWorkload:
 		return c.UpscalePolicyWorkload(w, ctx)
 
+	case scalable.AutoscalingWorkload:
+		return c.UpscaleAutoscalingWorkload(w, ctx)
+
 	default:
 		return fmt.Errorf("failed to correctly identify the workload")
 	}
 
 }
 
-// UpscaleBatchWorkload upscales the batch workload to the original suspend state
+// UpscaleBatchWorkload is the dedicated upscale function for batch/v1 workloads
 func (c client) UpscaleBatchWorkload(workload scalable.BatchWorkload, ctx context.Context) error {
 	const suspend = false
 
@@ -258,6 +287,7 @@ func (c client) UpscaleBatchWorkload(workload scalable.BatchWorkload, ctx contex
 	return nil
 }
 
+// UpscalePolicyWorkload is the dedicated upscale function for policy/v1 workloads
 func (c client) UpscalePolicyWorkload(workload scalable.PolicyWorkload, ctx context.Context) error {
 	minAvailableValue, minAvailableExists, errMinAvailable := workload.GetMinAvailableIfExistAndNotPercentageValue()
 	maxUnavailableValue, maxUnavailableExists, errMaxUnavailable := workload.GetMaxUnavailableIfExistAndNotPercentageValue()
@@ -312,7 +342,7 @@ func (c client) UpscalePolicyWorkload(workload scalable.PolicyWorkload, ctx cont
 	}
 }
 
-// UpscaleAppWorkload upscales the app workload to the original replicas
+// UpscaleDaemonWorkload is the dedicated upscale function for apps/v1 workloads except daemonsets
 func (c client) UpscaleAppWorkload(workload scalable.AppWorkload, ctx context.Context) error {
 	currentReplicas, err := workload.GetCurrentReplicas()
 	if err != nil {
@@ -341,7 +371,7 @@ func (c client) UpscaleAppWorkload(workload scalable.AppWorkload, ctx context.Co
 	return nil
 }
 
-// UpscaleDaemonWorkload upscales set daemon workload to the upscale state
+// UpscaleDaemonWorkload is the dedicated upscale function for apps/v1 daemonsets workloads
 func (c client) UpscaleDaemonWorkload(workload scalable.DaemonWorkload, ctx context.Context) error {
 	nodeSelectorExists, err := workload.NodeSelectorExists("kube-downscaler-non-existent", "true")
 	if err != nil {
@@ -356,6 +386,35 @@ func (c client) UpscaleDaemonWorkload(workload scalable.DaemonWorkload, ctx cont
 	if err != nil {
 		return fmt.Errorf("failed to remove node selector from the workload: %w", err)
 	}
+	err = workload.Update(c.clientset, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workload: %w", err)
+	}
+	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	return nil
+}
+
+// UpscaleAutoscalingWorkload is the dedicated downscale function for autoscaling/v2 workloads
+func (c client) UpscaleAutoscalingWorkload(workload scalable.AutoscalingWorkload, ctx context.Context) error {
+	currentReplicas, err := workload.GetMinReplicas()
+	if err != nil {
+		return fmt.Errorf("failed to get current replicas for workload: %w", err)
+	}
+	originalReplicas, err := c.getOriginalReplicas(workload)
+	if err != nil {
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+	if originalReplicas == values.Undefined {
+		slog.Debug("original replicas is not set, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+	if originalReplicas == currentReplicas {
+		slog.Debug("workload is already at original replicas, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
+	workload.SetMinReplicas(originalReplicas)
+	c.removeOriginalReplicas(workload)
 	err = workload.Update(c.clientset, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update workload: %w", err)

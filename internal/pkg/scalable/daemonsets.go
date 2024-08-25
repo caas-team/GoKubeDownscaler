@@ -28,11 +28,15 @@ type DaemonSet struct {
 
 // SetNodeSelector applies a particular NodeSelector to the workload
 func (d DaemonSet) SetNodeSelector(key string, value string) {
-	nodeSelector := d.Spec.Template.Spec.NodeSelector
-	nodeSelector[key] = value
+	if d.Spec.Template.Spec.NodeSelector == nil {
+		d.Spec.Template.Spec.NodeSelector = map[string]string{}
+		d.Spec.Template.Spec.NodeSelector[key] = value
+	} else {
+		d.Spec.Template.Spec.NodeSelector[key] = value
+	}
 }
 
-// GetNodeSelector get a particular NodeSelector to the workload
+// NodeSelectorExists check if a particular NodeSelector exists inside a workload
 func (d DaemonSet) NodeSelectorExists(key string, value string) (bool, error) {
 	nodeSelector := d.Spec.Template.Spec.NodeSelector
 	if v, ok := nodeSelector[key]; ok {
@@ -45,7 +49,7 @@ func (d DaemonSet) NodeSelectorExists(key string, value string) (bool, error) {
 	return false, nil
 }
 
-// GetNodeSelector get a particular NodeSelector to the workload
+// RemoveNodeSelector remove a particular node selector from the workload
 func (d DaemonSet) RemoveNodeSelector(key string) error {
 	nodeSelector := d.Spec.Template.Spec.NodeSelector
 	if _, ok := nodeSelector[key]; ok {

@@ -10,9 +10,10 @@ import (
 )
 
 var (
-	timeout                int64 = 30
-	errNoReplicasSpecified       = errors.New("error: workload has no replicas set")
-	errNoSuspendSpecified        = errors.New("error: workload has no suspend specified")
+	timeout                   int64 = 30
+	errNoReplicasSpecified          = errors.New("error: workload has no replicas set")
+	errNoSuspendSpecified           = errors.New("error: workload has no suspend specified")
+	errNoMinReplicasSpecified       = errors.New("error: workload has no minimum replicas set")
 )
 
 // getResourceFunc is a function that gets a specific resource as a scalableResource
@@ -20,12 +21,13 @@ type getResourceFunc func(namespace string, clientset *kubernetes.Clientset, ctx
 
 // GetResource maps the resource name to a implementation specific getResourceFunc
 var GetResource = map[string]getResourceFunc{
-	"deployments":          getDeployments,
-	"statefulsets":         getStatefulSets,
-	"cronJobs":             getCronJobs,
-	"jobs":                 getJobs,
-	"daemonsets":           getDaemonSets,
-	"poddisruptionbudgets": getPodDisruptionBudgets,
+	"deployments":              getDeployments,
+	"statefulsets":             getStatefulSets,
+	"cronjobs":                 getCronJobs,
+	"jobs":                     getJobs,
+	"daemonsets":               getDaemonSets,
+	"poddisruptionbudgets":     getPodDisruptionBudgets,
+	"horizontalpodautoscalers": getHorizontalPodAutoscalers,
 }
 
 // Workload is a interface for a scalable resource. It holds all resource specific functions
@@ -85,4 +87,12 @@ type PolicyWorkload interface {
 	GetMaxUnavailableIfExistAndNotPercentageValue() (int32, bool, error)
 
 	SetMaxUnavailable(maxAvailable int)
+}
+
+type AutoscalingWorkload interface {
+	Workload
+
+	SetMinReplicas(replicas int)
+
+	GetMinReplicas() (int, error)
 }

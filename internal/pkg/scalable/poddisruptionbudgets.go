@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// getDaemonSets is the getResourceFunc for DaemonSets
+// getPodDisruptionBudgets is the getResourceFunc for PodDisruptionBudget
 func getPodDisruptionBudgets(namespace string, clientset *kubernetes.Clientset, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	poddisruptionbudgets, err := clientset.PolicyV1().PodDisruptionBudgets(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
@@ -22,11 +22,12 @@ func getPodDisruptionBudgets(namespace string, clientset *kubernetes.Clientset, 
 	return results, nil
 }
 
-// DaemonSet is a wrapper for batch/v1.CronJob to implement the scalableResource interface
+// PodDisruptionBudget is a wrapper for policy/v1.PodDisruptionBudget to implement the scalableResource interface
 type PodDisruptionBudget struct {
 	*appsv1.PodDisruptionBudget
 }
 
+// GetMinAvailableIfExistAndNotPercentageValue returns the spec.MinAvailable value if it is not a percentage
 func (p PodDisruptionBudget) GetMinAvailableIfExistAndNotPercentageValue() (int32, bool, error) {
 	minAvailable := p.Spec.MinAvailable
 	if minAvailable == nil {
@@ -48,10 +49,12 @@ func (p PodDisruptionBudget) GetMinAvailableIfExistAndNotPercentageValue() (int3
 	}
 }
 
+// SetMinAvailable applies a new value to spec.MinAvailable
 func (p PodDisruptionBudget) SetMinAvailable(targetMinAvailable int) {
 	p.Spec.MinAvailable = &intstr.IntOrString{IntVal: int32(targetMinAvailable)}
 }
 
+// GetMaxUnavailableIfExistAndNotPercentageValue returns the spec.MaxUnavailable value if it is not a percentage
 func (p PodDisruptionBudget) GetMaxUnavailableIfExistAndNotPercentageValue() (int32, bool, error) {
 	maxUnavailable := p.Spec.MaxUnavailable
 	if maxUnavailable == nil {
@@ -73,6 +76,7 @@ func (p PodDisruptionBudget) GetMaxUnavailableIfExistAndNotPercentageValue() (in
 	}
 }
 
+// SetMaxUnavailable applies a new value to spec.MaxUnavailable
 func (p PodDisruptionBudget) SetMaxUnavailable(targetMaxUnavailable int) {
 	p.Spec.MaxUnavailable = &intstr.IntOrString{IntVal: int32(targetMaxUnavailable)}
 }
