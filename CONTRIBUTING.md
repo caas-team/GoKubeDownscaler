@@ -38,8 +38,15 @@ Commits:
 
 ## Code and Structure
 
-Try to stick to golang best practices and standards.
-Package structure standards can be found here: https://github.com/golang-standards/project-layout
+Try to stick to golang best practices and standards. Eg.:
+
+<!-- keep this list updated everytime someone opens a pr with best practice issues  -->
+
+- Package structure standards: https://github.com/golang-standards/project-layout
+- Use guard clauses if applicable
+- Try to avoid using else. Most of the time these can be replaced by just placing the else block content directly after the if or by refactoring the if block to be an additional function.
+- Comments on funcs/types (esp. public ones)
+- Only make functions public if necessary
 
 ## Issues
 
