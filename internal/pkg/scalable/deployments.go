@@ -3,6 +3,8 @@ package scalable
 import (
 	"context"
 	"fmt"
+	"math"
+
 	"k8s.io/client-go/dynamic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -11,7 +13,7 @@ import (
 )
 
 // getDeployments is the getResourceFunc for Deployments
-func getDeployments(namespace string, clientset *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) ([]Workload, error) {
+func getDeployments(namespace string, clientset *kubernetes.Clientset, _ dynamic.Interface, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	deployments, err := clientset.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
@@ -29,9 +31,15 @@ type deployment struct {
 }
 
 // SetReplicas sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
-func (d deployment) SetReplicas(replicas int) {
+func (d deployment) SetReplicas(replicas int) error {
+	if replicas > math.MaxInt32 || replicas < math.MinInt32 {
+		return fmt.Errorf("replicas value exceeds int32 bounds")
+	}
+
+	// #nosec G115
 	newReplicas := int32(replicas)
 	d.Spec.Replicas = &newReplicas
+	return nil
 }
 
 // GetCurrentReplicas gets the current amount of replicas of the resource
@@ -44,7 +52,7 @@ func (d deployment) GetCurrentReplicas() (int, error) {
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource
-func (d deployment) Update(clientset *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) error {
+func (d deployment) Update(clientset *kubernetes.Clientset, _ dynamic.Interface, ctx context.Context) error {
 	_, err := clientset.AppsV1().Deployments(d.Namespace).Update(ctx, d.Deployment, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update deployment: %w", err)

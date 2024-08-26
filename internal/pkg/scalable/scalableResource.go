@@ -3,6 +3,7 @@ package scalable
 import (
 	"context"
 	"errors"
+
 	"k8s.io/client-go/dynamic"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -32,7 +33,7 @@ var GetResource = map[string]getResourceFunc{
 	"scaledobjects":            getScaledObjects,
 }
 
-// Workload is a interface for a scalable resource. It holds all resource specific functions
+// Workload is a interface for a scalable resource. It holds shared resource specific functions
 type Workload interface {
 	// GetAnnotations gets the annotations of the resource
 	GetAnnotations() map[string]string
@@ -54,7 +55,7 @@ type Workload interface {
 type AppWorkload interface {
 	Workload
 	// SetReplicas sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
-	SetReplicas(replicas int)
+	SetReplicas(replicas int) error
 	// GetCurrentReplicas gets the current amount of replicas of the resource
 	GetCurrentReplicas() (int, error)
 }
@@ -84,27 +85,23 @@ type PolicyWorkload interface {
 	// GetMaxUnavailableIfExistAndNotPercentageValue returns the spec.MaxUnavailable value if it is not a percentage
 	GetMinAvailableIfExistAndNotPercentageValue() (int32, bool, error)
 	// SetMinAvailable applies a new value to spec.MinAvailable
-	SetMinAvailable(minAvailable int)
+	SetMinAvailable(minAvailable int) error
 	// GetMinAvailableIfExistAndNotPercentageValue returns the spec.MinAvailable value if it is not a percentage
 	GetMaxUnavailableIfExistAndNotPercentageValue() (int32, bool, error)
 	// SetMaxUnavailable applies a new value to spec.MaxUnavailable
-	SetMaxUnavailable(maxAvailable int)
+	SetMaxUnavailable(maxAvailable int) error
 }
 
 type AutoscalingWorkload interface {
 	Workload
 	// GetMinReplicas get the spec.MinReplicas from the resource
-	SetMinReplicas(replicas int)
+	SetMinReplicas(replicas int) error
 	// SetMinReplicas set the spec.MinReplicas to a new value
 	GetMinReplicas() (int, error)
 }
 
 type KedaWorkload interface {
 	Workload
-	// SetPauseScaledObjectAnnotation will modify the value of the keda pause annotation to the one passed as a parameter
-	SetPauseScaledObjectAnnotation(stringReplicas string)
-	// RemovePauseScaledObjectAnnotation will remove pause scaled object for annotation
-	RemovePauseScaledObjectAnnotation() error
 	// GetPauseScaledObjectAnnotationReplicasIfExistsAndValid gets the value of keda pause annotations. It returns the int value and true if the annotations exists and it is well formatted, otherwise it returns a fake value and false
 	GetPauseScaledObjectAnnotationReplicasIfExistsAndValid() (int, bool, error)
 }

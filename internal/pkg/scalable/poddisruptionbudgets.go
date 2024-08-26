@@ -3,6 +3,8 @@ package scalable
 import (
 	"context"
 	"fmt"
+	"math"
+
 	appsv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -10,26 +12,26 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// getPodDisruptionBudgets is the getResourceFunc for PodDisruptionBudget
-func getPodDisruptionBudgets(namespace string, clientset *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) ([]Workload, error) {
+// getPodDisruptionBudgets is the getResourceFunc for podDisruptionBudget
+func getPodDisruptionBudgets(namespace string, clientset *kubernetes.Clientset, _ dynamic.Interface, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	poddisruptionbudgets, err := clientset.PolicyV1().PodDisruptionBudgets(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get poddisruptionbudgets: %w", err)
 	}
 	for _, item := range poddisruptionbudgets.Items {
-		results = append(results, PodDisruptionBudget{&item})
+		results = append(results, podDisruptionBudget{&item})
 	}
 	return results, nil
 }
 
-// PodDisruptionBudget is a wrapper for policy/v1.PodDisruptionBudget to implement the scalableResource interface
-type PodDisruptionBudget struct {
+// podDisruptionBudget is a wrapper for policy/v1.podDisruptionBudget to implement the scalableResource interface
+type podDisruptionBudget struct {
 	*appsv1.PodDisruptionBudget
 }
 
 // GetMinAvailableIfExistAndNotPercentageValue returns the spec.MinAvailable value if it is not a percentage
-func (p PodDisruptionBudget) GetMinAvailableIfExistAndNotPercentageValue() (int32, bool, error) {
+func (p podDisruptionBudget) GetMinAvailableIfExistAndNotPercentageValue() (int32, bool, error) {
 	minAvailable := p.Spec.MinAvailable
 	if minAvailable == nil {
 		return 0, false, nil
@@ -51,12 +53,18 @@ func (p PodDisruptionBudget) GetMinAvailableIfExistAndNotPercentageValue() (int3
 }
 
 // SetMinAvailable applies a new value to spec.MinAvailable
-func (p PodDisruptionBudget) SetMinAvailable(targetMinAvailable int) {
+func (p *podDisruptionBudget) SetMinAvailable(targetMinAvailable int) error {
+	if targetMinAvailable > math.MaxInt32 || targetMinAvailable < math.MinInt32 {
+		return fmt.Errorf("targetMinAvailable exceeds int32 bounds")
+	}
+
+	// #nosec G115
 	p.Spec.MinAvailable = &intstr.IntOrString{IntVal: int32(targetMinAvailable)}
+	return nil
 }
 
 // GetMaxUnavailableIfExistAndNotPercentageValue returns the spec.MaxUnavailable value if it is not a percentage
-func (p PodDisruptionBudget) GetMaxUnavailableIfExistAndNotPercentageValue() (int32, bool, error) {
+func (p podDisruptionBudget) GetMaxUnavailableIfExistAndNotPercentageValue() (int32, bool, error) {
 	maxUnavailable := p.Spec.MaxUnavailable
 	if maxUnavailable == nil {
 		return 0, false, nil
@@ -78,12 +86,18 @@ func (p PodDisruptionBudget) GetMaxUnavailableIfExistAndNotPercentageValue() (in
 }
 
 // SetMaxUnavailable applies a new value to spec.MaxUnavailable
-func (p PodDisruptionBudget) SetMaxUnavailable(targetMaxUnavailable int) {
+func (p podDisruptionBudget) SetMaxUnavailable(targetMaxUnavailable int) error {
+	if targetMaxUnavailable > math.MaxInt32 || targetMaxUnavailable < math.MinInt32 {
+		return fmt.Errorf("targetMaxAvailable exceeds int32 bounds")
+	}
+
+	// #nosec G115
 	p.Spec.MaxUnavailable = &intstr.IntOrString{IntVal: int32(targetMaxUnavailable)}
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource
-func (p PodDisruptionBudget) Update(clientset *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) error {
+func (p podDisruptionBudget) Update(clientset *kubernetes.Clientset, _ dynamic.Interface, ctx context.Context) error {
 	_, err := clientset.PolicyV1().PodDisruptionBudgets(p.Namespace).Update(ctx, p.PodDisruptionBudget, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update poddisruptionbudget: %w", err)
