@@ -3,7 +3,10 @@ package scalable
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"math"
+
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 
 	appsv1 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,8 +32,8 @@ type horizontalPodAutoscaler struct {
 	*appsv1.HorizontalPodAutoscaler
 }
 
-// SetMinReplicas set the spec.MinReplicas to a new value
-func (h horizontalPodAutoscaler) SetMinReplicas(replicas int) error {
+// setMinReplicas set the spec.MinReplicas to a new value
+func (h horizontalPodAutoscaler) setMinReplicas(replicas int) error {
 	if replicas > math.MaxInt32 || replicas < math.MinInt32 {
 		return fmt.Errorf("replicas value exceeds int32 bounds")
 	}
@@ -41,13 +44,65 @@ func (h horizontalPodAutoscaler) SetMinReplicas(replicas int) error {
 	return nil
 }
 
-// GetMinReplicas get the spec.MinReplicas from the resource
-func (h horizontalPodAutoscaler) GetMinReplicas() (int, error) {
+// getMinReplicas get the spec.MinReplicas from the resource
+func (h horizontalPodAutoscaler) getMinReplicas() (int, error) {
 	minReplicas := h.Spec.MinReplicas
 	if minReplicas == nil {
 		return 0, errNoMinReplicasSpecified
 	}
 	return int(*minReplicas), nil
+}
+
+// ScaleUp upscale the resource when the downscale period ends
+func (h horizontalPodAutoscaler) ScaleUp() error {
+	currentReplicas, err := h.getMinReplicas()
+	if err != nil {
+		return fmt.Errorf("failed to get current replicas for workload: %w", err)
+	}
+	originalReplicas, err := getOriginalReplicas(h)
+	if err != nil {
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+	if originalReplicas == values.Undefined {
+		slog.Debug("original replicas is not set, skipping", "workload", h.GetName(), "namespace", h.GetNamespace())
+		return nil
+	}
+	if originalReplicas == currentReplicas {
+		slog.Debug("workload is already at original replicas, skipping", "workload", h.GetName(), "namespace", h.GetNamespace())
+		return nil
+	}
+
+	err = h.setMinReplicas(originalReplicas)
+	if err != nil {
+		return fmt.Errorf("failed to set original replicas for workload: %w", err)
+	}
+	removeOriginalReplicas(h)
+	return nil
+}
+
+// ScaleDown downscale the resource when the downscale period starts
+func (h horizontalPodAutoscaler) ScaleDown(downscaleReplicas int) error {
+	originalReplicas, err := h.getMinReplicas()
+	if err != nil {
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+	if originalReplicas == downscaleReplicas {
+		slog.Debug("workload is already at downscale replicas, skipping", "workload", h.GetName(), "namespace", h.GetNamespace())
+		return nil
+	}
+
+	// horizontal pod autoscaler can't be set to 0 when downscaling
+	if downscaleReplicas < 1 {
+		slog.Debug("skipping", "workload", h.GetName(), "namespace", h.GetNamespace())
+		return fmt.Errorf("scaling down to %d replicas is not allowed for workload %s; minimum replicas should be 1", downscaleReplicas, h)
+	}
+
+	err = h.setMinReplicas(downscaleReplicas)
+	if err != nil {
+		return fmt.Errorf("failed to set min replicas for workload: %w", err)
+	}
+	setOriginalReplicas(originalReplicas, h)
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource
