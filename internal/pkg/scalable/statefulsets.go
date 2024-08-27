@@ -23,20 +23,20 @@ func getStatefulSets(namespace string, clientset *kubernetes.Clientset, _ dynami
 		return nil, fmt.Errorf("failed to get statefulsets: %w", err)
 	}
 	for _, item := range statefulsets.Items {
-		results = append(results, statefulSet{&item})
+		results = append(results, &statefulSet{&item})
 	}
 	return results, nil
 }
 
-// statefulset is a wrapper for appsv1.statefulSet to implement the scalableResource interface
+// statefulset is a wrapper for appsv1.statefulSet to implement the Workload interface
 type statefulSet struct {
 	*appsv1.StatefulSet
 }
 
 // setReplicas sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
-func (s statefulSet) setReplicas(replicas int) error {
-	if replicas > math.MaxInt32 || replicas < math.MinInt32 {
-		return fmt.Errorf("replicas value exceeds int32 bounds")
+func (s *statefulSet) setReplicas(replicas int) error {
+	if replicas > math.MaxInt32 || replicas < 0 {
+		return errBoundOnScalingTargetValue
 	}
 
 	// #nosec G115
@@ -46,7 +46,7 @@ func (s statefulSet) setReplicas(replicas int) error {
 }
 
 // getCurrentReplicas gets the current amount of replicas of the resource
-func (s statefulSet) getCurrentReplicas() (int, error) {
+func (s *statefulSet) getCurrentReplicas() (int, error) {
 	replicas := s.Spec.Replicas
 	if replicas == nil {
 		return 0, errNoReplicasSpecified
@@ -55,21 +55,13 @@ func (s statefulSet) getCurrentReplicas() (int, error) {
 }
 
 // ScaleUp upscale the resource when the downscale period ends
-func (s statefulSet) ScaleUp() error {
-	currentReplicas, err := s.getCurrentReplicas()
-	if err != nil {
-		return fmt.Errorf("failed to get current replicas for workload: %w", err)
-	}
+func (s *statefulSet) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(s)
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 	if originalReplicas == values.Undefined {
 		slog.Debug("original replicas is not set, skipping", "workload", s.GetName(), "namespace", s.GetNamespace())
-		return nil
-	}
-	if originalReplicas == currentReplicas {
-		slog.Debug("workload is already at original replicas, skipping", "workload", s.GetName(), "namespace", s.GetNamespace())
 		return nil
 	}
 
@@ -82,7 +74,7 @@ func (s statefulSet) ScaleUp() error {
 }
 
 // ScaleDown downscale the resource when the downscale period starts
-func (s statefulSet) ScaleDown(downscaleReplicas int) error {
+func (s *statefulSet) ScaleDown(downscaleReplicas int) error {
 	originalReplicas, err := s.getCurrentReplicas()
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
@@ -101,7 +93,7 @@ func (s statefulSet) ScaleDown(downscaleReplicas int) error {
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource
-func (s statefulSet) Update(clientset *kubernetes.Clientset, _ dynamic.Interface, ctx context.Context) error {
+func (s *statefulSet) Update(clientset *kubernetes.Clientset, _ dynamic.Interface, ctx context.Context) error {
 	_, err := clientset.AppsV1().StatefulSets(s.Namespace).Update(ctx, s.StatefulSet, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update statefulset: %w", err)

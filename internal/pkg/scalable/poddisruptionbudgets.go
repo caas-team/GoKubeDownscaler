@@ -23,18 +23,18 @@ func getPodDisruptionBudgets(namespace string, clientset *kubernetes.Clientset, 
 		return nil, fmt.Errorf("failed to get poddisruptionbudgets: %w", err)
 	}
 	for _, item := range poddisruptionbudgets.Items {
-		results = append(results, podDisruptionBudget{&item})
+		results = append(results, &podDisruptionBudget{&item})
 	}
 	return results, nil
 }
 
-// podDisruptionBudget is a wrapper for policy/v1.podDisruptionBudget to implement the scalableResource interface
+// podDisruptionBudget is a wrapper for policy/v1.podDisruptionBudget to implement the Workload interface
 type podDisruptionBudget struct {
 	*appsv1.PodDisruptionBudget
 }
 
 // getMinAvailableIfExistAndNotPercentageValue returns the spec.MinAvailable value if it is not a percentage
-func (p podDisruptionBudget) getMinAvailableIfExistAndNotPercentageValue() (int32, bool, error) {
+func (p *podDisruptionBudget) getMinAvailableIfExistAndNotPercentageValue() (int32, bool, error) {
 	minAvailable := p.Spec.MinAvailable
 	if minAvailable == nil {
 		return 0, false, nil
@@ -56,9 +56,9 @@ func (p podDisruptionBudget) getMinAvailableIfExistAndNotPercentageValue() (int3
 }
 
 // setMinAvailable applies a new value to spec.MinAvailable
-func (p podDisruptionBudget) setMinAvailable(targetMinAvailable int) error {
-	if targetMinAvailable > math.MaxInt32 || targetMinAvailable < math.MinInt32 {
-		return fmt.Errorf("targetMinAvailable exceeds int32 bounds")
+func (p *podDisruptionBudget) setMinAvailable(targetMinAvailable int) error {
+	if targetMinAvailable > math.MaxInt32 || targetMinAvailable < 0 {
+		return errBoundOnScalingTargetValue
 	}
 
 	// #nosec G115
@@ -67,7 +67,7 @@ func (p podDisruptionBudget) setMinAvailable(targetMinAvailable int) error {
 }
 
 // getMaxUnavailableIfExistAndNotPercentageValue returns the spec.MaxUnavailable value if it is not a percentage
-func (p podDisruptionBudget) getMaxUnavailableIfExistAndNotPercentageValue() (int32, bool, error) {
+func (p *podDisruptionBudget) getMaxUnavailableIfExistAndNotPercentageValue() (int32, bool, error) {
 	maxUnavailable := p.Spec.MaxUnavailable
 	if maxUnavailable == nil {
 		return 0, false, nil
@@ -89,9 +89,9 @@ func (p podDisruptionBudget) getMaxUnavailableIfExistAndNotPercentageValue() (in
 }
 
 // setMaxUnavailable applies a new value to spec.MaxUnavailable
-func (p podDisruptionBudget) setMaxUnavailable(targetMaxUnavailable int) error {
-	if targetMaxUnavailable > math.MaxInt32 || targetMaxUnavailable < math.MinInt32 {
-		return fmt.Errorf("targetMaxAvailable exceeds int32 bounds")
+func (p *podDisruptionBudget) setMaxUnavailable(targetMaxUnavailable int) error {
+	if targetMaxUnavailable > math.MaxInt32 || targetMaxUnavailable < 0 {
+		return errBoundOnScalingTargetValue
 	}
 
 	// #nosec G115
@@ -100,7 +100,7 @@ func (p podDisruptionBudget) setMaxUnavailable(targetMaxUnavailable int) error {
 }
 
 // ScaleUp upscale the resource when the downscale period ends
-func (p podDisruptionBudget) ScaleUp() error {
+func (p *podDisruptionBudget) ScaleUp() error {
 	minAvailableValue, minAvailableExists, errMinAvailable := p.getMinAvailableIfExistAndNotPercentageValue()
 	maxUnavailableValue, maxUnavailableExists, errMaxUnavailable := p.getMaxUnavailableIfExistAndNotPercentageValue()
 
@@ -154,7 +154,7 @@ func (p podDisruptionBudget) ScaleUp() error {
 }
 
 // ScaleDown downscale the resource when the downscale period starts
-func (p podDisruptionBudget) ScaleDown(downscaleReplicas int) error {
+func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int) error {
 	minAvailableValue, minAvailableExists, errMinAvailable := p.getMinAvailableIfExistAndNotPercentageValue()
 	maxUnavailableValue, maxUnavailableExists, errMaxUnavailable := p.getMaxUnavailableIfExistAndNotPercentageValue()
 
@@ -199,7 +199,7 @@ func (p podDisruptionBudget) ScaleDown(downscaleReplicas int) error {
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource
-func (p podDisruptionBudget) Update(clientset *kubernetes.Clientset, _ dynamic.Interface, ctx context.Context) error {
+func (p *podDisruptionBudget) Update(clientset *kubernetes.Clientset, _ dynamic.Interface, ctx context.Context) error {
 	_, err := clientset.PolicyV1().PodDisruptionBudgets(p.Namespace).Update(ctx, p.PodDisruptionBudget, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update poddisruptionbudget: %w", err)

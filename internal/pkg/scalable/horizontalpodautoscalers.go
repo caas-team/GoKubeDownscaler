@@ -22,20 +22,20 @@ func getHorizontalPodAutoscalers(namespace string, clientset *kubernetes.Clients
 		return nil, fmt.Errorf("failed to get horizontalpodautoscalers: %w", err)
 	}
 	for _, item := range poddisruptionbudgets.Items {
-		results = append(results, horizontalPodAutoscaler{&item})
+		results = append(results, &horizontalPodAutoscaler{&item})
 	}
 	return results, nil
 }
 
-// horizontalPodAutoscaler is a wrapper for autoscaling/v2.horizontalPodAutoscaler to implement the scalableResource interface
+// horizontalPodAutoscaler is a wrapper for autoscaling/v2.horizontalPodAutoscaler to implement the Workload interface
 type horizontalPodAutoscaler struct {
 	*appsv1.HorizontalPodAutoscaler
 }
 
 // setMinReplicas set the spec.MinReplicas to a new value
-func (h horizontalPodAutoscaler) setMinReplicas(replicas int) error {
-	if replicas > math.MaxInt32 || replicas < math.MinInt32 {
-		return fmt.Errorf("replicas value exceeds int32 bounds")
+func (h *horizontalPodAutoscaler) setMinReplicas(replicas int) error {
+	if replicas > math.MaxInt32 || replicas < 0 {
+		return errBoundOnScalingTargetValue
 	}
 
 	// #nosec G115
@@ -45,7 +45,7 @@ func (h horizontalPodAutoscaler) setMinReplicas(replicas int) error {
 }
 
 // getMinReplicas get the spec.MinReplicas from the resource
-func (h horizontalPodAutoscaler) getMinReplicas() (int, error) {
+func (h *horizontalPodAutoscaler) getMinReplicas() (int, error) {
 	minReplicas := h.Spec.MinReplicas
 	if minReplicas == nil {
 		return 0, errNoMinReplicasSpecified
@@ -54,21 +54,13 @@ func (h horizontalPodAutoscaler) getMinReplicas() (int, error) {
 }
 
 // ScaleUp upscale the resource when the downscale period ends
-func (h horizontalPodAutoscaler) ScaleUp() error {
-	currentReplicas, err := h.getMinReplicas()
-	if err != nil {
-		return fmt.Errorf("failed to get current replicas for workload: %w", err)
-	}
+func (h *horizontalPodAutoscaler) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(h)
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 	if originalReplicas == values.Undefined {
 		slog.Debug("original replicas is not set, skipping", "workload", h.GetName(), "namespace", h.GetNamespace())
-		return nil
-	}
-	if originalReplicas == currentReplicas {
-		slog.Debug("workload is already at original replicas, skipping", "workload", h.GetName(), "namespace", h.GetNamespace())
 		return nil
 	}
 
@@ -81,7 +73,7 @@ func (h horizontalPodAutoscaler) ScaleUp() error {
 }
 
 // ScaleDown downscale the resource when the downscale period starts
-func (h horizontalPodAutoscaler) ScaleDown(downscaleReplicas int) error {
+func (h *horizontalPodAutoscaler) ScaleDown(downscaleReplicas int) error {
 	originalReplicas, err := h.getMinReplicas()
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
@@ -106,7 +98,7 @@ func (h horizontalPodAutoscaler) ScaleDown(downscaleReplicas int) error {
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource
-func (h horizontalPodAutoscaler) Update(clientset *kubernetes.Clientset, _ dynamic.Interface, ctx context.Context) error {
+func (h *horizontalPodAutoscaler) Update(clientset *kubernetes.Clientset, _ dynamic.Interface, ctx context.Context) error {
 	_, err := clientset.AutoscalingV2().HorizontalPodAutoscalers(h.Namespace).Update(ctx, h.HorizontalPodAutoscaler, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update horizontalpodautoscaler: %w", err)

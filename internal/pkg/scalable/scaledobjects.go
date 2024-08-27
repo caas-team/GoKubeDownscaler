@@ -35,19 +35,19 @@ func getScaledObjects(namespace string, _ *kubernetes.Clientset, dynamicClient d
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(item.Object, so); err != nil {
 			return nil, fmt.Errorf("failed to convert unstructured to scaledobject: %w", err)
 		}
-		results = append(results, ScaledObject{so})
+		results = append(results, &scaledObject{so})
 	}
 	slog.Error("no error")
 	return results, nil
 }
 
-// ScaledObject is a wrapper for keda.sh/v1alpha1.horizontalPodAutoscaler to implement the scalableResource interface
-type ScaledObject struct {
+// scaledObject is a wrapper for keda.sh/v1alpha1.horizontalPodAutoscaler to implement the Workload interface
+type scaledObject struct {
 	*kedav1alpha1.ScaledObject
 }
 
 // getPauseScaledObjectAnnotationReplicasIfExistsAndValid gets the value of keda pause annotations. It returns the int value and true if the annotations exists and it is well formatted, otherwise it returns a fake value and false
-func (s ScaledObject) getPauseScaledObjectAnnotationReplicasIfExistsAndValid() (int, bool, error) {
+func (s *scaledObject) getPauseScaledObjectAnnotationReplicasIfExistsAndValid() (int, bool, error) {
 	if pausedReplicasStr, ok := s.Annotations[kedaPausedReplicasAnnotation]; ok {
 		pausedReplicas, err := strconv.Atoi(pausedReplicasStr)
 		if err != nil {
@@ -60,7 +60,7 @@ func (s ScaledObject) getPauseScaledObjectAnnotationReplicasIfExistsAndValid() (
 }
 
 // ScaleUp upscale the resource when the downscale period ends
-func (s ScaledObject) ScaleUp() error {
+func (s *scaledObject) ScaleUp() error {
 	_, pauseAnnotationExists, err := s.getPauseScaledObjectAnnotationReplicasIfExistsAndValid()
 	if err != nil {
 		return fmt.Errorf("failed to get pause scaledobject annotation: %w", err)
@@ -84,7 +84,7 @@ func (s ScaledObject) ScaleUp() error {
 }
 
 // ScaleDown downscale the resource when the downscale period starts
-func (s ScaledObject) ScaleDown(downscaleReplicas int) error {
+func (s *scaledObject) ScaleDown(downscaleReplicas int) error {
 	pauseAnnotationReplicas, pauseAnnotationExists, err := s.getPauseScaledObjectAnnotationReplicasIfExistsAndValid()
 	if err != nil {
 		return fmt.Errorf("failed to get pause scaledobject annotation: %w", err)
@@ -104,7 +104,7 @@ func (s ScaledObject) ScaleDown(downscaleReplicas int) error {
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource
-func (s ScaledObject) Update(_ *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) error {
+func (s *scaledObject) Update(_ *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) error {
 	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(s.ScaledObject)
 	if err != nil {
 		return fmt.Errorf("failed to convert scaledobject to unstructured: %w", err)
@@ -112,7 +112,7 @@ func (s ScaledObject) Update(_ *kubernetes.Clientset, dynamicClient dynamic.Inte
 	unstructuredResource := &unstructured.Unstructured{Object: unstructuredObj}
 	_, err = dynamicClient.Resource(kedav1alpha1.SchemeGroupVersion.WithResource("scaledobjects")).Namespace(s.Namespace).Update(ctx, unstructuredResource, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update ScaledObject: %w", err)
+		return fmt.Errorf("failed to update scaledObject: %w", err)
 	}
 
 	return nil

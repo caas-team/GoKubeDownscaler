@@ -12,13 +12,13 @@ import (
 )
 
 var (
-	timeout                   int64 = 30
-	errNoReplicasSpecified          = errors.New("error: workload has no replicas set")
-	errNoSuspendSpecified           = errors.New("error: workload has no suspend specified")
-	errNoMinReplicasSpecified       = errors.New("error: workload has no minimum replicas set")
+	timeout                      int64 = 30
+	errNoReplicasSpecified             = errors.New("error: workload has no replicas set")
+	errNoMinReplicasSpecified          = errors.New("error: workload has no minimum replicas set")
+	errBoundOnScalingTargetValue       = errors.New("error: the target values for downscaling must be between 0 and maxInt32")
 )
 
-// getResourceFunc is a function that gets a specific resource as a scalableResource
+// getResourceFunc is a function that gets a specific resource as a Workload
 type getResourceFunc func(namespace string, clientset *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) ([]Workload, error)
 
 // GetResource maps the resource name to a implementation specific getResourceFunc
