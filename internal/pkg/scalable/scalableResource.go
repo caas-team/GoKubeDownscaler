@@ -15,7 +15,7 @@ var (
 	timeout                      int64 = 30
 	errNoReplicasSpecified             = errors.New("error: workload has no replicas set")
 	errNoMinReplicasSpecified          = errors.New("error: workload has no minimum replicas set")
-	errBoundOnScalingTargetValue       = errors.New("error: the target values for downscaling must be between 0 and maxInt32")
+	errBoundOnScalingTargetValue       = errors.New("error: the target values for downscaling must be between 0 (or 1 if hpa is include-resources) and maxInt32")
 )
 
 // getResourceFunc is a function that gets a specific resource as a Workload

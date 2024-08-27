@@ -34,7 +34,7 @@ type horizontalPodAutoscaler struct {
 
 // setMinReplicas set the spec.MinReplicas to a new value
 func (h *horizontalPodAutoscaler) setMinReplicas(replicas int) error {
-	if replicas > math.MaxInt32 || replicas < 0 {
+	if replicas > math.MaxInt32 || replicas < 1 {
 		return errBoundOnScalingTargetValue
 	}
 
