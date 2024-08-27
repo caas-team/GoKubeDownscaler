@@ -195,3 +195,23 @@ func getTimeOfDay(targetTime time.Time) time.Time {
 		targetTime.Location(),
 	)
 }
+
+func areTimespanOverlapped(relTime relativeTimeSpan, absTime absoluteTimeSpan) bool {
+	relTimeStart, relTimeEnd := convertRelativeToAbsolute(relTime, time.Now())
+
+	if absTime.from.Before(relTimeEnd) && relTimeStart.Before(absTime.to) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func convertRelativeToAbsolute(relTime relativeTimeSpan, reference time.Time) (time.Time, time.Time) {
+	// Calulating start and end date based on current date and relative timespan
+	year, month, day := reference.Date()
+
+	start := time.Date(year, month, day+int((relTime.weekdayFrom-reference.Weekday()+7)%7), relTime.timeFrom.Hour(), relTime.timeFrom.Minute(), relTime.timeFrom.Second(), 0, relTime.timezone)
+	end := time.Date(year, month, day+int((relTime.weekdayTo-reference.Weekday()+7)%7), relTime.timeTo.Hour(), relTime.timeTo.Minute(), relTime.timeTo.Second(), 0, relTime.timezone)
+
+	return start, end
+}
