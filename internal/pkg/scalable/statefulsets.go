@@ -79,10 +79,6 @@ func (s *statefulSet) ScaleDown(downscaleReplicas int) error {
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
-	if originalReplicas == downscaleReplicas {
-		slog.Debug("workload is already at downscale replicas, skipping", "workload", s.GetName(), "namespace", s.GetNamespace())
-		return nil
-	}
 
 	err = s.setReplicas(downscaleReplicas)
 	if err != nil {

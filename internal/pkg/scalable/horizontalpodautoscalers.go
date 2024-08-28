@@ -78,16 +78,6 @@ func (h *horizontalPodAutoscaler) ScaleDown(downscaleReplicas int) error {
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
-	if originalReplicas == downscaleReplicas {
-		slog.Debug("workload is already at downscale replicas, skipping", "workload", h.GetName(), "namespace", h.GetNamespace())
-		return nil
-	}
-
-	// horizontal pod autoscaler can't be set to 0 when downscaling
-	if downscaleReplicas < 1 {
-		slog.Debug("skipping", "workload", h.GetName(), "namespace", h.GetNamespace())
-		return fmt.Errorf("scaling down to %d replicas is not allowed for workload %s; minimum replicas should be 1", downscaleReplicas, h)
-	}
 
 	err = h.setMinReplicas(downscaleReplicas)
 	if err != nil {

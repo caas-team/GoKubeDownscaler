@@ -24,20 +24,16 @@ const (
 func getScaledObjects(namespace string, _ *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	scaledobjects, err := dynamicClient.Resource(kedav1alpha1.SchemeGroupVersion.WithResource("scaledobjects")).Namespace(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
-	slog.Error("error before fetching")
 	if err != nil {
-		slog.Error("error after fetching")
 		return nil, fmt.Errorf("failed to get scaledobjects: %w", err)
 	}
 	for _, item := range scaledobjects.Items {
-		slog.Error("error inside foreach")
 		so := &kedav1alpha1.ScaledObject{}
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(item.Object, so); err != nil {
 			return nil, fmt.Errorf("failed to convert unstructured to scaledobject: %w", err)
 		}
 		results = append(results, &scaledObject{so})
 	}
-	slog.Error("no error")
 	return results, nil
 }
 
