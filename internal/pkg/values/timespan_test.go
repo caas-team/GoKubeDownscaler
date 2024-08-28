@@ -251,3 +251,33 @@ func TestAbsoluteTimeSpan_isTimeInSpan(t *testing.T) {
 		})
 	}
 }
+
+func TestOverlappingTimespans(t *testing.T) {
+	tests := []struct {
+		name         string
+		relTime      relativeTimeSpan
+		absTime      absoluteTimeSpan
+		wantedResult bool
+	}{
+		{
+			name:         "timespans are not overlapping",
+			relTime:      relativeTimeSpan{time.UTC, time.Wednesday, time.Wednesday, time.Now(), time.Now().Add(5)},
+			absTime:      absoluteTimeSpan{time.Date(2024, time.August, 28, 12, 0, 0, 0, time.UTC), time.Date(2024, time.August, 28, 12, 5, 0, 0, time.UTC)},
+			wantedResult: false,
+		},
+		{
+			name: "timespans are overlapping",
+			relTime: relativeTimeSpan{time.UTC, time.Wednesday, time.Wednesday,
+				time.Date(2024, time.August, 28, 12, 0, 0, 0, time.UTC), time.Date(2024, time.August, 28, 12, 5, 0, 0, time.UTC)},
+			absTime: absoluteTimeSpan{time.Date(2024, time.August, 28, 12, 0, 0, 0, time.UTC),
+				time.Date(2024, time.August, 28, 12, 3, 0, 0, time.UTC)},
+			wantedResult: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			gotResult := areTimespanOverlapped(test.relTime, test.absTime)
+			assert.Equal(t, test.wantedResult, gotResult)
+		})
+	}
+}
