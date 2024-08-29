@@ -3,8 +3,6 @@ package scalable
 import (
 	"fmt"
 	"strconv"
-
-	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 )
 
 const (
@@ -22,17 +20,17 @@ func setOriginalReplicas(originalReplicas int, workload Workload) {
 }
 
 // GetOriginalReplicas gets the original replicas annotation on the workload. nil is undefined
-func getOriginalReplicas(workload Workload) (int, error) {
+func getOriginalReplicas(workload Workload) (*int, error) {
 	annotations := workload.GetAnnotations()
 	originalReplicasString, ok := annotations[annotationOriginalReplicas]
 	if !ok {
-		return values.Undefined, nil
+		return nil, nil
 	}
 	originalReplicas, err := strconv.Atoi(originalReplicasString)
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse original replicas annotation on workload: %w", err)
+		return nil, fmt.Errorf("failed to parse original replicas annotation on workload: %w", err)
 	}
-	return originalReplicas, nil
+	return &originalReplicas, nil
 }
 
 func removeOriginalReplicas(workload Workload) {
