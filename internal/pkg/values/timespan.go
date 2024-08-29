@@ -196,22 +196,60 @@ func getTimeOfDay(targetTime time.Time) time.Time {
 	)
 }
 
-func areTimespanOverlapped(relTime relativeTimeSpan, absTime absoluteTimeSpan) bool {
-	relTimeStart, relTimeEnd := convertRelativeToAbsolute(relTime, time.Now())
+// overlapsWith function for relativeTimeSpan
+func (r relativeTimeSpan) overlapsWith(span TimeSpan) bool {
+	switch o := span.(type) {
+	case relativeTimeSpan:
+		// Check if two timespan are overlapping
+		if r.weekdayFrom <= o.weekdayTo && o.weekdayFrom <= r.weekdayTo {
+			return r.timeFrom.Before(o.timeTo) && o.timeFrom.Before(r.timeTo)
+		}
+		return false
 
-	if absTime.from.Before(relTimeEnd) && relTimeStart.Before(absTime.to) {
-		return true
-	} else {
+	case absoluteTimeSpan:
+		// Check if relative overlaps with absolute
+		for day := r.weekdayFrom; day <= r.weekdayTo; day++ {
+			// Convert the weekday to a specific date within the absolute timespan range
+			for testDate := o.from; !testDate.After(o.to); testDate = testDate.AddDate(0, 0, 1) {
+				if testDate.Weekday() == day {
+					// Create a time value for the relative timespan on this specific date
+					startTime := time.Date(testDate.Year(), testDate.Month(), testDate.Day(),
+						r.timeFrom.Hour(), r.timeFrom.Minute(), r.timeFrom.Second(), r.timeFrom.Nanosecond(), r.timezone)
+					endTime := time.Date(testDate.Year(), testDate.Month(), testDate.Day(),
+						r.timeTo.Hour(), r.timeTo.Minute(), r.timeTo.Second(), r.timeTo.Nanosecond(), r.timezone)
+
+					// Check if this time falls within the absolute timespan
+					if !(endTime.Before(o.from) || startTime.After(o.to)) {
+						return true
+					}
+				}
+			}
+		}
 		return false
 	}
+	return false
 }
 
-func convertRelativeToAbsolute(relTime relativeTimeSpan, reference time.Time) (time.Time, time.Time) {
-	// Calulating start and end date based on current date and relative timespan
-	year, month, day := reference.Date()
+// overlapsWith function for absoluteTimeSpan
+func (a absoluteTimeSpan) overlapsWith(span TimeSpan) bool {
+	switch o := span.(type) {
+	case absoluteTimeSpan:
+		return !(a.to.Before(o.from) || o.to.Before(a.from))
 
-	start := time.Date(year, month, day+int((relTime.weekdayFrom-reference.Weekday()+7)%7), relTime.timeFrom.Hour(), relTime.timeFrom.Minute(), relTime.timeFrom.Second(), 0, relTime.timezone)
-	end := time.Date(year, month, day+int((relTime.weekdayTo-reference.Weekday()+7)%7), relTime.timeTo.Hour(), relTime.timeTo.Minute(), relTime.timeTo.Second(), 0, relTime.timezone)
+	case relativeTimeSpan:
+		return o.overlapsWith(a)
+	}
+	return false
+}
 
-	return start, end
+// function to check if both timespans overlap
+func areTimespanOverlapped(span1, span2 TimeSpan) bool {
+	switch s1 := span1.(type) {
+	case absoluteTimeSpan:
+		return s1.overlapsWith(span2)
+	case relativeTimeSpan:
+		return s1.overlapsWith(span2)
+	default:
+		return false
+	}
 }
