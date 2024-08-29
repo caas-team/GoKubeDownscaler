@@ -54,7 +54,7 @@ func (d *deployment) getCurrentReplicas() (int, error) {
 	return int(*d.Spec.Replicas), nil
 }
 
-// ScaleUp upscale the resource when the downscale period ends
+// ScaleUp upscale the resource
 func (d *deployment) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(d)
 	if err != nil {
@@ -73,7 +73,7 @@ func (d *deployment) ScaleUp() error {
 	return nil
 }
 
-// ScaleDown downscale the resource when the downscale period starts
+// ScaleDown downscale the resource
 func (d *deployment) ScaleDown(downscaleReplicas int) error {
 	originalReplicas, err := d.getCurrentReplicas()
 	if err != nil {

@@ -28,14 +28,14 @@ type job struct {
 	*batch.Job
 }
 
-// ScaleUp upscale the resource when the downscale period ends
+// ScaleUp upscale the resource
 func (j *job) ScaleUp() error {
 	newSuspend := false
 	j.Spec.Suspend = &newSuspend
 	return nil
 }
 
-// ScaleDown downscale the resource when the downscale period starts
+// ScaleDown downscale the resource
 func (j *job) ScaleDown(_ int) error {
 	newSuspend := true
 	j.Spec.Suspend = &newSuspend

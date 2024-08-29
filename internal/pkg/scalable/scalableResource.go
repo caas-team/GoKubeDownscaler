@@ -33,7 +33,7 @@ var GetResource = map[string]getResourceFunc{
 	"scaledobjects":            getScaledObjects,
 }
 
-// Workload is a interface for a scalable resource. It holds shared resource specific functions
+// Workload is an interface for a scalable resource. It holds shared resource specific functions
 type Workload interface {
 	// GetAnnotations gets the annotations of the resource
 	GetAnnotations() map[string]string

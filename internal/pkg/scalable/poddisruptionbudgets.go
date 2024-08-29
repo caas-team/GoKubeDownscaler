@@ -77,7 +77,7 @@ func (p *podDisruptionBudget) setMaxUnavailable(targetMaxUnavailable int) error 
 	return nil
 }
 
-// ScaleUp upscale the resource when the downscale period ends
+// ScaleUp upscale the resource
 func (p *podDisruptionBudget) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(p)
 	if err != nil {
@@ -109,7 +109,7 @@ func (p *podDisruptionBudget) ScaleUp() error {
 	return nil
 }
 
-// ScaleDown downscale the resource when the downscale period starts
+// ScaleDown downscale the resource
 func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int) error {
 	maxUnavailable := p.getMaxUnavailableInt()
 	minAvailable := p.getMinAvailableInt()

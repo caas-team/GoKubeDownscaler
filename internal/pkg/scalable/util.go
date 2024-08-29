@@ -17,7 +17,7 @@ func setOriginalReplicas(originalReplicas int, workload Workload) {
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
-	annotations[annotationOriginalReplicas] = fmt.Sprintf("%d", originalReplicas)
+	annotations[annotationOriginalReplicas] = strconv.Itoa(originalReplicas)
 	workload.SetAnnotations(annotations)
 }
 

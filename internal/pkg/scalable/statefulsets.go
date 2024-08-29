@@ -54,7 +54,7 @@ func (s *statefulSet) getCurrentReplicas() (int, error) {
 	return int(*s.Spec.Replicas), nil
 }
 
-// ScaleUp upscale the resource when the downscale period ends
+// ScaleUp upscale the resource
 func (s *statefulSet) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(s)
 	if err != nil {
@@ -73,7 +73,7 @@ func (s *statefulSet) ScaleUp() error {
 	return nil
 }
 
-// ScaleDown downscale the resource when the downscale period starts
+// ScaleDown downscale the resource
 func (s *statefulSet) ScaleDown(downscaleReplicas int) error {
 	originalReplicas, err := s.getCurrentReplicas()
 	if err != nil {

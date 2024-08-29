@@ -53,7 +53,7 @@ func (h *horizontalPodAutoscaler) getMinReplicas() (int, error) {
 	return int(*minReplicas), nil
 }
 
-// ScaleUp upscale the resource when the downscale period ends
+// ScaleUp upscale the resource
 func (h *horizontalPodAutoscaler) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(h)
 	if err != nil {
@@ -72,7 +72,7 @@ func (h *horizontalPodAutoscaler) ScaleUp() error {
 	return nil
 }
 
-// ScaleDown downscale the resource when the downscale period starts
+// ScaleDown downscale the resource
 func (h *horizontalPodAutoscaler) ScaleDown(downscaleReplicas int) error {
 	originalReplicas, err := h.getMinReplicas()
 	if err != nil {

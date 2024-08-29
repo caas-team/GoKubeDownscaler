@@ -55,7 +55,7 @@ func (s *scaledObject) getPauseScaledObjectAnnotationReplicasIfExistsAndValid() 
 	return 1, false, nil
 }
 
-// ScaleUp upscale the resource when the downscale period ends
+// ScaleUp upscale the resource
 func (s *scaledObject) ScaleUp() error {
 	_, pauseAnnotationExists, err := s.getPauseScaledObjectAnnotationReplicasIfExistsAndValid()
 	if err != nil {
@@ -79,7 +79,7 @@ func (s *scaledObject) ScaleUp() error {
 	return nil
 }
 
-// ScaleDown downscale the resource when the downscale period starts
+// ScaleDown downscale the resource
 func (s *scaledObject) ScaleDown(downscaleReplicas int) error {
 	pauseAnnotationReplicas, pauseAnnotationExists, err := s.getPauseScaledObjectAnnotationReplicasIfExistsAndValid()
 	if err != nil {

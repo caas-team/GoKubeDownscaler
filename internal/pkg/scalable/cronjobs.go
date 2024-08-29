@@ -28,14 +28,14 @@ type cronJob struct {
 	*batch.CronJob
 }
 
-// ScaleUp upscale the resource when the downscale period ends
+// ScaleUp upscale the resource
 func (c *cronJob) ScaleUp() error {
 	newSuspend := false
 	c.Spec.Suspend = &newSuspend
 	return nil
 }
 
-// ScaleDown downscale the resource when the downscale period starts
+// ScaleDown downscale the resource
 func (c *cronJob) ScaleDown(_ int) error {
 	newSuspend := true
 	c.Spec.Suspend = &newSuspend
