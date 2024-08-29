@@ -6,8 +6,6 @@ import (
 	"log/slog"
 	"math"
 
-	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
-
 	"k8s.io/client-go/dynamic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -60,12 +58,12 @@ func (s *statefulSet) ScaleUp() error {
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
-	if originalReplicas == values.Undefined {
+	if originalReplicas == nil {
 		slog.Debug("original replicas is not set, skipping", "workload", s.GetName(), "namespace", s.GetNamespace())
 		return nil
 	}
 
-	err = s.setReplicas(originalReplicas)
+	err = s.setReplicas(*originalReplicas)
 	if err != nil {
 		return fmt.Errorf("failed to set original replicas for workload: %w", err)
 	}

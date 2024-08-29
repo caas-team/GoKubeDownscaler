@@ -83,14 +83,14 @@ func (p *podDisruptionBudget) ScaleUp() error {
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
-	if originalReplicas == values.Undefined {
+	if originalReplicas == nil {
 		slog.Debug("original replicas is not set, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
 		return nil
 	}
 	maxUnavailable := p.getMaxUnavailableInt()
 	minAvailable := p.getMinAvailableInt()
 	if maxUnavailable != values.Undefined {
-		err = p.setMaxUnavailable(originalReplicas)
+		err = p.setMaxUnavailable(*originalReplicas)
 		if err != nil {
 			return fmt.Errorf("failed to set maxUnavailable for workload: %w", err)
 		}
@@ -98,7 +98,7 @@ func (p *podDisruptionBudget) ScaleUp() error {
 		return nil
 	}
 	if minAvailable != values.Undefined {
-		err = p.setMinAvailable(originalReplicas)
+		err = p.setMinAvailable(*originalReplicas)
 		if err != nil {
 			return fmt.Errorf("failed to set minAvailable for workload: %w", err)
 		}

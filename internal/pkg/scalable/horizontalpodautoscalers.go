@@ -6,8 +6,6 @@ import (
 	"log/slog"
 	"math"
 
-	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
-
 	appsv1 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -59,12 +57,12 @@ func (h *horizontalPodAutoscaler) ScaleUp() error {
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
-	if originalReplicas == values.Undefined {
+	if originalReplicas == nil {
 		slog.Debug("original replicas is not set, skipping", "workload", h.GetName(), "namespace", h.GetNamespace())
 		return nil
 	}
 
-	err = h.setMinReplicas(originalReplicas)
+	err = h.setMinReplicas(*originalReplicas)
 	if err != nil {
 		return fmt.Errorf("failed to set original replicas for workload: %w", err)
 	}

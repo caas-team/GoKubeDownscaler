@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	kedaPausedReplicasAnnotation = "autoscaling.keda.sh/paused-replicas"
+	annotationKedaPausedReplicas = "autoscaling.keda.sh/paused-replicas"
 )
 
 // getScaledObjects is the getResourceFunc for Keda ScaledObjects
@@ -42,61 +42,48 @@ type scaledObject struct {
 	*kedav1alpha1.ScaledObject
 }
 
-// getPauseScaledObjectAnnotationReplicasIfExistsAndValid gets the value of keda pause annotations. It returns the int value and true if the annotations exists and it is well formatted, otherwise it returns a fake value and false
-func (s *scaledObject) getPauseScaledObjectAnnotationReplicasIfExistsAndValid() (int, bool, error) {
-	if pausedReplicasStr, ok := s.Annotations[kedaPausedReplicasAnnotation]; ok {
-		pausedReplicas, err := strconv.Atoi(pausedReplicasStr)
-		if err != nil {
-			return 1, false, fmt.Errorf("invalid value for annotation %s: %w", kedaPausedReplicasAnnotation, err)
-		}
-		return pausedReplicas, true, nil
+// getPauseAnnotation gets the value of keda pause annotations
+func (s *scaledObject) getPauseAnnotation() (int, error) {
+	pausedReplicasAnnotation, ok := s.Annotations[annotationKedaPausedReplicas]
+	if !ok {
+		return values.Undefined, nil
 	}
-
-	return 1, false, nil
+	pausedReplicas, err := strconv.Atoi(pausedReplicasAnnotation)
+	if err != nil {
+		return 0, fmt.Errorf("invalid value for annotation %s: %w", annotationKedaPausedReplicas, err)
+	}
+	return pausedReplicas, nil
 }
 
 // ScaleUp upscale the resource when the downscale period ends
 func (s *scaledObject) ScaleUp() error {
-	_, pauseAnnotationExists, err := s.getPauseScaledObjectAnnotationReplicasIfExistsAndValid()
-	if err != nil {
-		return fmt.Errorf("failed to get pause scaledobject annotation: %w", err)
-	}
-	if !pauseAnnotationExists {
-		return fmt.Errorf("the workload is already upscaled: %w", err)
-	}
-
 	originalReplicas, err := getOriginalReplicas(s)
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
-	if originalReplicas == values.Undefined {
+	if originalReplicas == nil {
 		slog.Debug("original replicas is not set, skipping", "workload", s.GetName(), "namespace", s.GetNamespace())
 		return nil
 	}
-
+	if *originalReplicas == values.Undefined { // pausedAnnotation was not defined before workload was downscaled
+		delete(s.Annotations, annotationKedaPausedReplicas)
+		removeOriginalReplicas(s)
+		return nil
+	}
+	s.Annotations[annotationKedaPausedReplicas] = strconv.Itoa(*originalReplicas)
 	removeOriginalReplicas(s)
-	delete(s.GetAnnotations(), kedaPausedReplicasAnnotation)
 	return nil
 }
 
-// ScaleDown downscale the resource when the downscale period starts
+// ScaleDown scales down the workload
 func (s *scaledObject) ScaleDown(downscaleReplicas int) error {
-	pauseAnnotationReplicas, pauseAnnotationExists, err := s.getPauseScaledObjectAnnotationReplicasIfExistsAndValid()
+	pausedReplicas, err := s.getPauseAnnotation()
 	if err != nil {
 		return fmt.Errorf("failed to get pause scaledobject annotation: %w", err)
 	}
-	if pauseAnnotationExists && pauseAnnotationReplicas == downscaleReplicas {
-		setOriginalReplicas(downscaleReplicas, s)
-		return nil
-	}
-	if (pauseAnnotationExists && pauseAnnotationReplicas != downscaleReplicas) || !pauseAnnotationExists {
-		replicasStr := strconv.Itoa(downscaleReplicas)
-		setOriginalReplicas(downscaleReplicas, s)
-		annotations := s.GetAnnotations()
-		annotations[kedaPausedReplicasAnnotation] = replicasStr
-		return nil
-	}
-	return fmt.Errorf("invalid downscaling case for scaledobject")
+	s.Annotations[annotationKedaPausedReplicas] = strconv.Itoa(downscaleReplicas)
+	setOriginalReplicas(pausedReplicas, s)
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource
