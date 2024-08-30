@@ -156,7 +156,6 @@ func (t relativeTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 // inLocation returns an array of relative timespans matching the timespan converted to the given location
 func (t relativeTimeSpan) inLocation(timezone *time.Location) []relativeTimeSpan {
 	var result []relativeTimeSpan
-	fmt.Println(t.timeFrom)
 	sameDays := relativeTimeSpan{
 		timezone:    timezone,
 		weekdayFrom: t.weekdayFrom,
@@ -166,7 +165,6 @@ func (t relativeTimeSpan) inLocation(timezone *time.Location) []relativeTimeSpan
 	}
 	result = append(result, sameDays)
 	if sameDays.timeFrom.Year() == -1 { // check if timeFrom skipped to the day before
-		fmt.Println("from now day before")
 		daysBefore := relativeTimeSpan{
 			timezone:    timezone,
 			timeFrom:    sameDays.timeFrom.Add(24 * time.Hour),
@@ -177,7 +175,6 @@ func (t relativeTimeSpan) inLocation(timezone *time.Location) []relativeTimeSpan
 		result = append(result, daysBefore)
 	}
 	if sameDays.timeTo.Day() == 2 { // check if timeTo skipped to the day after
-		fmt.Println("to now day after")
 		daysAfter := relativeTimeSpan{
 			timezone:    timezone,
 			timeFrom:    sameDays.timeFrom.Add(-24 * time.Hour),
