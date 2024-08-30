@@ -44,15 +44,22 @@ These are the resources the Downscaler can scale:
 
 <!-- Keep this list updated as more scalable resources are implemented -->
 
-- <span id="deployments">Deployments</span>:
-  - sets the replica count to the downscale replicas
-
-<!-- resources with known downscale behaviour: (uncomment once implemented)
-- <span id="horizontal-pod-autoscalers">Horizontal Pod Autoscalers (HPA)</span>:
-  - sets the minReplicas of the HPA to the [downscale replicas](#downscale-replicas). will throw an error if the downscale replicas is >1
 - <span id="cronjobs">CronJobs</span>:
-  - sets the cronjobs suspend property to true
--->
+  - sets the cronjobs suspend property to true, halting it from running on the schedule
+- <span id="deamonsets">Deamonsets</span>:
+  - adds a label that matches none of the nodes to the nodeselector, stopping its pods from running on any node
+- <span id="deployments">Deployments</span>:
+  - sets the replica count to the [downscale replicas](#downscale-replicas)
+- <span id="horizontal-pod-autoscalers">Horizontal Pod Autoscalers (HPA)</span>:
+  - sets the minReplicas of the HPA to the [downscale replicas](#downscale-replicas). Will throw an error if the downscale replicas is > 1
+- <span id="jobs">Jobs</span>:
+  - sets the jobs suspend property to true, will stop execution of the job until upscaled again
+- <span id="poddisruptionbudgets">PodDisruptionBudgets</span>:
+  - sets either maxUnavailable or minAvailable to the [downscale replicas](#downscale-replicas). Will not scale if minAvailable or maxUnavailable are percentiles instead of replica counts.
+- <span id="scaledobjects">ScaledObjects</span>:
+  - sets the paused replicas annotation to the [downscale replicas](#downscale-replicas)
+- <span id="statefulsets">StatefulSets</span>:
+  - sets the replica count to the [downscale replicas](#downscale-replicas)
 
 ## Installation
 
@@ -62,7 +69,7 @@ Installation is done via the [Helm Chart](./deployments/chart/README.md)
 
 ### Annotations
 
-Annotations can be applied to the workload or the namespace. See the [layers concept](#layers) for more details on which of the layers [values](#values) will be used.
+Annotations can be applied to the [workload](#scalable-resources) or the namespace. See the [layers concept](#layers) for more details on which of the layers [values](#values) will be used.
 
 - <span id="downscaler/downscale-period">downscaler/downscale-period</span>:
   - sets the [downscale-period](#downscale-period) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
