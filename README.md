@@ -18,7 +18,14 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
 <!-- Do not add h4 or smaller in this list. If it should be on here but is h4 or smaller, you should restructure -->
 
 - [Scalable Resources](#scalable-resources)
+  - [CronJobs](#cronjobs)
+  - [DaemonSets](#daemonsets)
   - [Deployments](#deployments)
+  - [Horizontal Pod Autoscalers (HPA)](#horizontal-pod-autoscalers)
+  - [Jobs](#jobs)
+  - [PodDisruptionBudgets](#poddisruptionbudgets)
+  - [ScaledObjects](#scaledobjects)
+  - [StatefulSets](#statefulsets)
 - [Installation](#installation)
 - [Configuration](#configuration)
   - [Annotations](#annotations)
