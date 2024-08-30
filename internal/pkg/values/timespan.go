@@ -3,12 +3,21 @@ package values
 import (
 	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
 
 var errInvalidWeekday = errors.New("error: specified weekday is invalid")
 var errRelativeTimespanInvalid = errors.New("error: specified relative timespan is invalid")
+var errTimeOfDayOutOfRange = errors.New("error: the time of day has fields that are out of rane")
+
+// rfc339Regex is a regex that matches an rfc339 timestamp
+const rfc3339Regex = `(.+Z|.+[+-]\d{2}:\d{2})`
+
+// absoluteTimeSpanRegex matches a absolute timespan. It's groups are the two rfc3339 timestamps
+var absoluteTimeSpanRegex = regexp.MustCompile(fmt.Sprintf(`^%s *- *%s$`, rfc3339Regex, rfc3339Regex))
 
 type TimeSpan interface {
 	// inTimeSpan checks if time is in the timespan or not
@@ -59,13 +68,15 @@ func (t *timeSpans) String() string {
 	return fmt.Sprint(*t)
 }
 
+// parseAbsoluteTimespans parses an absolute timespan. will panic if timespan is not an absolute timespan
 func parseAbsoluteTimeSpan(timespan string) (absoluteTimeSpan, error) {
-	timestamps := strings.Split(timespan, " - ")
-	fromTime, err := time.Parse(time.RFC3339, timestamps[0])
+	timestamps := absoluteTimeSpanRegex.FindStringSubmatch(timespan)[1:]
+
+	fromTime, err := time.Parse(time.RFC3339, strings.TrimSpace(timestamps[0]))
 	if err != nil {
 		return absoluteTimeSpan{}, fmt.Errorf("failed to parse rfc3339 timestamp: %w", err)
 	}
-	toTime, err := time.Parse(time.RFC3339, timestamps[1])
+	toTime, err := time.Parse(time.RFC3339, strings.TrimSpace(timestamps[1]))
 	if err != nil {
 		return absoluteTimeSpan{}, fmt.Errorf("failed to parse rfc3339 timestamp: %w", err)
 	}
@@ -99,14 +110,16 @@ func parseRelativeTimeSpan(timespanString string) (*relativeTimeSpan, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse timezone: %w", err)
 	}
-	timespan.timeFrom, err = time.ParseInLocation("15:04", timeSpan[0], timespan.timezone)
+
+	timespan.timeFrom, err = parseDayTime(timeSpan[0], timespan.timezone)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse 'timeFrom': %w", err)
+		return nil, fmt.Errorf("failed to parse time of day from: %w", err)
 	}
-	timespan.timeTo, err = time.ParseInLocation("15:04", timeSpan[1], timespan.timezone)
+	timespan.timeTo, err = parseDayTime(timeSpan[1], timespan.timezone)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse 'timeTo': %w", err)
+		return nil, fmt.Errorf("failed to parse time of day to: %w", err)
 	}
+
 	timespan.weekdayFrom, err = getWeekday(weekdaySpan[0])
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse 'weekdayFrom': %w", err)
@@ -163,7 +176,7 @@ func (t absoluteTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 
 // isAbsoluteTimestamp checks if timestamp string is absolute
 func isAbsoluteTimestamp(timestamp string) bool {
-	return strings.Contains(timestamp, " - ")
+	return absoluteTimeSpanRegex.MatchString(timestamp)
 }
 
 // getWeekday gets the weekday from the given string
@@ -183,6 +196,26 @@ func getWeekday(weekday string) (time.Weekday, error) {
 	}
 
 	return 0, errInvalidWeekday
+}
+
+// parseDayTime parses the given time of day string to a zero date time
+func parseDayTime(daytime string, timezone *time.Location) (time.Time, error) {
+	parts := strings.Split(daytime, ":")
+	hour, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to parse hour of daytime: %w", err)
+	}
+	if hour < 0 || hour > 24 {
+		return time.Time{}, errTimeOfDayOutOfRange
+	}
+	minute, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to parse minute of daytime: %w", err)
+	}
+	if minute < 0 || minute >= 60 {
+		return time.Time{}, errTimeOfDayOutOfRange
+	}
+	return time.Date(0, time.January, 1, hour, minute, 0, 0, timezone), nil
 }
 
 // getTimeOfDay gets the time of day of the given time
