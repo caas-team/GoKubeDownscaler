@@ -143,3 +143,7 @@ func GetLayerFromEnv() (Layer, error) {
 	}
 	return result, nil
 }
+
+func asExclusiveTimestamp(inc time.Time) time.Time {
+	return inc.Add(-time.Nanosecond)
+}
