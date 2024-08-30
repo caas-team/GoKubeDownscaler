@@ -11,7 +11,7 @@ var (
 	errUpAndDownTime            = errors.New("error: both uptime and downtime are defined")
 	errTimeAndPeriod            = errors.New("error: both a time and a period is defined")
 	errInvalidDownscaleReplicas = errors.New("error: downscale replicas value is invalid")
-	errValueNotSet              = errors.New("error: value isn't set")
+	errValueNotSet              = errors.New("error: no layer implements this value")
 )
 
 const Undefined = -1 // Undefined represents an undefined integer value
