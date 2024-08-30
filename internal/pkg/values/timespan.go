@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	errInvalidWeekday = errors.New("error: specified weekday is invalid")
+	errInvalidWeekday          = errors.New("error: specified weekday is invalid")
 	errRelativeTimespanInvalid = errors.New("error: specified relative timespan is invalid")
-	errTimeOfDayOutOfRange = errors.New("error: the time of day has fields that are out of rane")
+	errTimeOfDayOutOfRange     = errors.New("error: the time of day has fields that are out of rane")
 )
 
 // rfc339Regex is a regex that matches an rfc339 timestamp

@@ -49,8 +49,8 @@ type Workload interface {
 	SetAnnotations(annotations map[string]string)
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
 	Update(clientset *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) error
-	// ScaleUp upscale the resource when the downscale period ends
+	// ScaleUp scales up the workload
 	ScaleUp() error
-	// ScaleDown downscale the resource when the downscale period starts
+	// ScaleDown scales down the workload
 	ScaleDown(downscaleReplicas int) error
 }
