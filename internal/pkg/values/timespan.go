@@ -174,7 +174,7 @@ func (t relativeTimeSpan) inLocation(timezone *time.Location) []relativeTimeSpan
 		}
 		result = append(result, daysBefore)
 	}
-	if sameDays.timeTo.Day() == 2 { // check if timeTo skipped to the day after
+	if asExclusiveTimestamp(sameDays.timeTo).Day() == 2 { // check if timeTo skipped to the day after
 		daysAfter := relativeTimeSpan{
 			timezone:    timezone,
 			timeFrom:    sameDays.timeFrom.Add(-24 * time.Hour),
@@ -251,6 +251,13 @@ func doTimespansOverlap(span1, span2 TimeSpan) bool {
 
 // relAndRelOverlap checks if two relative timespans overlap
 func relAndRelOverlap(rel1 relativeTimeSpan, rel2 relativeTimeSpan) bool {
+	_, tzOffset1 := rel1.timeFrom.Zone()
+	_, tzOffset2 := rel2.timeFrom.Zone()
+	if tzOffset1 == tzOffset2 { // optimized path for timespans with same timezone offset
+		return relAndRelSameTimezoneOverlap(rel1, rel2)
+	}
+
+	// slow path for timespans with different timezones
 	rel2List := rel2.inLocation(rel1.timezone)
 	for _, rel2 := range rel2List {
 		if relAndRelSameTimezoneOverlap(rel1, rel2) {
