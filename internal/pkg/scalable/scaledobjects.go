@@ -70,7 +70,7 @@ func (s *scaledObject) ScaleUp() error {
 		removeOriginalReplicas(s)
 		return nil
 	}
-	s.Annotations[annotationKedaPausedReplicas] = strconv.Itoa(*originalReplicas)
+	delete(s.Annotations, annotationKedaPausedReplicas)
 	removeOriginalReplicas(s)
 	return nil
 }

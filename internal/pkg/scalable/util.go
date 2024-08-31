@@ -9,7 +9,7 @@ const (
 	annotationOriginalReplicas = "downscaler/original-replicas"
 )
 
-// SetOriginalReplicas sets the original replicas annotation on the workload
+// setOriginalReplicas sets the original replicas annotation on the workload
 func setOriginalReplicas(originalReplicas int, workload Workload) {
 	annotations := workload.GetAnnotations()
 	if annotations == nil {
@@ -19,7 +19,7 @@ func setOriginalReplicas(originalReplicas int, workload Workload) {
 	workload.SetAnnotations(annotations)
 }
 
-// GetOriginalReplicas gets the original replicas annotation on the workload. nil is undefined
+// getOriginalReplicas gets the original replicas annotation on the workload. nil is undefined
 func getOriginalReplicas(workload Workload) (*int, error) {
 	annotations := workload.GetAnnotations()
 	originalReplicasString, ok := annotations[annotationOriginalReplicas]
@@ -33,6 +33,7 @@ func getOriginalReplicas(workload Workload) (*int, error) {
 	return &originalReplicas, nil
 }
 
+// removeOriginalReplicas removes the annotationOriginalReplicas from the workload
 func removeOriginalReplicas(workload Workload) {
 	annotations := workload.GetAnnotations()
 	delete(annotations, annotationOriginalReplicas)
