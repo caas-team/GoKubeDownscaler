@@ -52,7 +52,10 @@ func TestPodDisruptionBudgetScaleDownMaxUnavailable(t *testing.T) {
 		t.Errorf("expected MaxUnavailable to be %d, got %d", downscaleReplicas, pdb.getMaxUnavailableInt())
 	}
 
-	originalReplicas, _ := getOriginalReplicas(pdb)
+	originalReplicas, err := getOriginalReplicas(pdb)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 	if originalReplicas == nil || *originalReplicas != 5 {
 		t.Errorf("expected original replicas to be 5, got %v", originalReplicas)
 	}
@@ -103,7 +106,10 @@ func TestPodDisruptionBudgetScaleDownWithMinAvailable(t *testing.T) {
 		t.Errorf("expected MinAvailable to be %d, got %d", downscaleReplicas, pdb.getMinAvailableInt())
 	}
 
-	originalReplicas, _ := getOriginalReplicas(pdb)
+	originalReplicas, err := getOriginalReplicas(pdb)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 	if originalReplicas == nil || *originalReplicas != 5 {
 		t.Errorf("expected original replicas to be 5, got %v", originalReplicas)
 	}

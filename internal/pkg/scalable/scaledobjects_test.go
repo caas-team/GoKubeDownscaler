@@ -95,7 +95,10 @@ func TestScaledObjectsScaleDownWithExistingAnnotation(t *testing.T) {
 		t.Errorf("expected annotation value to be %d, got %s", downscaleReplicas, val)
 	}
 
-	originalReplicas, _ := getOriginalReplicas(so)
+	originalReplicas, err := getOriginalReplicas(so)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 	if originalReplicas == nil || *originalReplicas != 5 {
 		t.Errorf("expected original replicas to be 5, got %v", originalReplicas)
 	}

@@ -67,7 +67,10 @@ func TestStatefulSetsScaleDown(t *testing.T) {
 	}
 
 	// Ensure that the original replicas were stored correctly
-	originalReplicasAfter, _ := getOriginalReplicas(ss)
+	originalReplicasAfter, err := getOriginalReplicas(ss)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 	if originalReplicasAfter == nil || *originalReplicasAfter != int(originalReplicas) {
 		t.Errorf("expected original replicas to be %d, got %v", originalReplicas, originalReplicasAfter)
 	}
