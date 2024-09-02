@@ -164,7 +164,7 @@ func (t relativeTimeSpan) inLocation(timezone *time.Location) []relativeTimeSpan
 		timeTo:      t.timeTo.In(timezone),
 	}
 	result = append(result, sameDays)
-	if sameDays.timeFrom.Year() == -1 { // check if timeFrom skipped to the day before
+	if isTimeFromSkippedToPreviousDay(sameDays.timeFrom) {
 		daysBefore := relativeTimeSpan{
 			timezone:    timezone,
 			timeFrom:    sameDays.timeFrom.Add(24 * time.Hour),
@@ -174,7 +174,7 @@ func (t relativeTimeSpan) inLocation(timezone *time.Location) []relativeTimeSpan
 		}
 		result = append(result, daysBefore)
 	}
-	if asExclusiveTimestamp(sameDays.timeTo).Day() == 2 { // check if timeTo skipped to the day after
+	if isTimeToSkippedToNextDay(sameDays.timeTo) {
 		daysAfter := relativeTimeSpan{
 			timezone:    timezone,
 			timeFrom:    sameDays.timeFrom.Add(-24 * time.Hour),
@@ -185,6 +185,16 @@ func (t relativeTimeSpan) inLocation(timezone *time.Location) []relativeTimeSpan
 		result = append(result, daysAfter)
 	}
 	return result
+}
+
+// Check if timeFrom skipped to the previous day
+func isTimeFromSkippedToPreviousDay(timeFrom time.Time) bool {
+	return timeFrom.Year() == -1
+}
+
+// Check if timeTo skipped to the following day
+func isTimeToSkippedToNextDay(timeTo time.Time) bool {
+	return asExclusiveTimestamp(timeTo).Day() == 2
 }
 
 type absoluteTimeSpan struct {
