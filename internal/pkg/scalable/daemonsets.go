@@ -6,8 +6,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -15,9 +13,9 @@ const (
 )
 
 // getDaemonSets is the getResourceFunc for DaemonSets
-func getDaemonSets(namespace string, clientset *kubernetes.Clientset, _ dynamic.Interface, ctx context.Context) ([]Workload, error) {
+func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
-	daemonsets, err := clientset.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
+	daemonsets, err := clientsets.Kubernetes.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get daemonsets: %w", err)
 	}
@@ -48,8 +46,8 @@ func (d *daemonSet) ScaleDown(_ int) error {
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource
-func (d *daemonSet) Update(clientset *kubernetes.Clientset, _ dynamic.Interface, ctx context.Context) error {
-	_, err := clientset.AppsV1().DaemonSets(d.Namespace).Update(ctx, d.DaemonSet, metav1.UpdateOptions{})
+func (d *daemonSet) Update(clientsets *Clientsets, ctx context.Context) error {
+	_, err := clientsets.Kubernetes.AppsV1().DaemonSets(d.Namespace).Update(ctx, d.DaemonSet, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update daemonset: %w", err)
 	}

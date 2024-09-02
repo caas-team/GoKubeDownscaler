@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"k8s.io/client-go/dynamic"
-
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
+	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -38,31 +37,32 @@ type Client interface {
 // NewClient makes a new Client
 func NewClient(kubeconfig string) (client, error) {
 	var kubeclient client
+	var clientsets scalable.Clientsets
 
 	config, err := getConfig(kubeconfig)
 	if err != nil {
 		return kubeclient, fmt.Errorf("failed to get config for kubernetes: %w", err)
 	}
-	kubeclient.clientset, err = kubernetes.NewForConfig(config)
+	clientsets.Kubernetes, err = kubernetes.NewForConfig(config)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get clientset for kubernetes: %w", err)
+		return kubeclient, fmt.Errorf("failed to get clientset for kubernetes resources: %w", err)
 	}
-	kubeclient.dynamicClient, err = dynamic.NewForConfig(config)
+	clientsets.Keda, err = keda.NewForConfig(config)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get dynamic client for crds: %w", err)
+		return kubeclient, fmt.Errorf("failed to get clientset for keda resources: %w", err)
 	}
+	kubeclient.clientsets = &clientsets
 	return kubeclient, nil
 }
 
 // client is a kubernetes client with downscaling specific functions
 type client struct {
-	clientset     *kubernetes.Clientset
-	dynamicClient dynamic.Interface
+	clientsets *scalable.Clientsets
 }
 
 // GetNamespaceAnnotations gets the annotations of the workload's namespace
 func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
-	ns, err := c.clientset.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
+	ns, err := c.clientsets.Kubernetes.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace: %w", err)
 	}
@@ -79,7 +79,7 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 			if !ok {
 				return nil, errResourceNotSupported
 			}
-			workloads, err := getWorkload(namespace, c.clientset, c.dynamicClient, ctx)
+			workloads, err := getWorkload(namespace, c.clientsets, ctx)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get workloads: %w", err)
 			}
@@ -96,7 +96,7 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 	if err != nil {
 		return fmt.Errorf("failed to complete the scale down process on workload: %w", err)
 	}
-	err = workload.Update(c.clientset, c.dynamicClient, ctx)
+	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update the workload after completing the scaling down process: %w", err)
 	}
@@ -110,7 +110,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 	if err != nil {
 		return fmt.Errorf("failed to complete the scale up process on workload: %w", err)
 	}
-	err = workload.Update(c.clientset, c.dynamicClient, ctx)
+	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update the workload after completing the scaling up process: %w", err)
 	}
@@ -122,7 +122,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 func (c client) AddErrorEvent(reason, id, message string, workload scalable.Workload, ctx context.Context) error {
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s.%s", id, message)))
 	name := fmt.Sprintf("%s.%s.%.3x", workload.GetName(), reason, hash)
-	eventsClient := c.clientset.CoreV1().Events(workload.GetNamespace())
+	eventsClient := c.clientsets.Kubernetes.CoreV1().Events(workload.GetNamespace())
 
 	// check if event already exists
 	if event, err := eventsClient.Get(ctx, name, metav1.GetOptions{}); err == nil && event != nil {
@@ -137,7 +137,7 @@ func (c client) AddErrorEvent(reason, id, message string, workload scalable.Work
 	}
 
 	// create event
-	_, err := c.clientset.CoreV1().Events(workload.GetNamespace()).Create(ctx, &corev1.Event{
+	_, err := c.clientsets.Kubernetes.CoreV1().Events(workload.GetNamespace()).Create(ctx, &corev1.Event{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: workload.GetNamespace(),

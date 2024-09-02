@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 
-	"k8s.io/client-go/dynamic"
+	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
+	"k8s.io/client-go/kubernetes"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
 )
 
 var (
@@ -19,7 +19,7 @@ var (
 )
 
 // getResourceFunc is a function that gets a specific resource as a Workload
-type getResourceFunc func(namespace string, clientset *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) ([]Workload, error)
+type getResourceFunc func(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error)
 
 // GetResource maps the resource name to a implementation specific getResourceFunc
 var GetResource = map[string]getResourceFunc{
@@ -48,9 +48,14 @@ type Workload interface {
 	// SetAnnotations sets the annotations on the resource. Changes won't be made on kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
-	Update(clientset *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) error
+	Update(clientsets *Clientsets, ctx context.Context) error
 	// ScaleUp scales up the workload
 	ScaleUp() error
 	// ScaleDown scales down the workload
 	ScaleDown(downscaleReplicas int) error
+}
+
+type Clientsets struct {
+	Kubernetes *kubernetes.Clientset
+	Keda       *keda.Clientset
 }

@@ -10,10 +10,6 @@ import (
 
 	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -21,18 +17,14 @@ const (
 )
 
 // getScaledObjects is the getResourceFunc for Keda ScaledObjects
-func getScaledObjects(namespace string, _ *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) ([]Workload, error) {
+func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
-	scaledobjects, err := dynamicClient.Resource(kedav1alpha1.SchemeGroupVersion.WithResource("scaledobjects")).Namespace(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
+	scaledobjects, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get scaledobjects: %w", err)
 	}
 	for _, item := range scaledobjects.Items {
-		so := &kedav1alpha1.ScaledObject{}
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(item.Object, so); err != nil {
-			return nil, fmt.Errorf("failed to convert unstructured to scaledobject: %w", err)
-		}
-		results = append(results, &scaledObject{so})
+		results = append(results, &scaledObject{&item})
 	}
 	return results, nil
 }
@@ -87,13 +79,8 @@ func (s *scaledObject) ScaleDown(downscaleReplicas int) error {
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource
-func (s *scaledObject) Update(_ *kubernetes.Clientset, dynamicClient dynamic.Interface, ctx context.Context) error {
-	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(s.ScaledObject)
-	if err != nil {
-		return fmt.Errorf("failed to convert scaledobject to unstructured: %w", err)
-	}
-	unstructuredResource := &unstructured.Unstructured{Object: unstructuredObj}
-	_, err = dynamicClient.Resource(kedav1alpha1.SchemeGroupVersion.WithResource("scaledobjects")).Namespace(s.Namespace).Update(ctx, unstructuredResource, metav1.UpdateOptions{})
+func (s *scaledObject) Update(clientsets *Clientsets, ctx context.Context) error {
+	_, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(s.Namespace).Update(ctx, s.ScaledObject, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update scaledObject: %w", err)
 	}
