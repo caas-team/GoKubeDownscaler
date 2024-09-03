@@ -1,0 +1,75 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/caas-team/gokubedownscaler
+  tag: "" # Dynamically set from CI
+
+arguments:
+#  - --interval=60
+
+includedResources:
+  - deployments
+#  - statefulsets
+#  - daemonsets
+#  - rollouts
+#  - horizontalpodautoscalers
+#  - jobs
+#  - cronjobs
+#  - scaledobjects
+#  - stacks
+#  - poddisruptionbudgets
+
+fullnameOverride: ""
+nameOverride: ""
+
+constrainedDownscaler: false
+constrainedNamespaces: []
+
+serviceAccount:
+  create: true
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podSecurityContext:
+  runAsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  supplementalGroups: [1000]
+
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  privileged: false
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 900Mi
+  requests:
+    cpu: 200m
+    memory: 300Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+configMapName: go-kube-downscaler
+
+excludedNamespaces:
+  - go-kube-downscaler
+  - kube-downscaler
+  - kube-system
+
+# Additional config in the configmap.
+# Add configmap lines via the multiline Operator |
+# e.g.:
+# extraConfig: |
+#   DOWNSCALE_PERIOD: "Mon-Sun 19:00-20:00 Europe/Berlin"
+extraConfig: ""
