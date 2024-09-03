@@ -9,9 +9,11 @@ import (
 	"time"
 )
 
-var errInvalidWeekday = errors.New("error: specified weekday is invalid")
-var errRelativeTimespanInvalid = errors.New("error: specified relative timespan is invalid")
-var errTimeOfDayOutOfRange = errors.New("error: the time of day has fields that are out of rane")
+var (
+	errInvalidWeekday          = errors.New("error: specified weekday is invalid")
+	errRelativeTimespanInvalid = errors.New("error: specified relative timespan is invalid")
+	errTimeOfDayOutOfRange     = errors.New("error: the time of day has fields that are out of rane")
+)
 
 // rfc339Regex is a regex that matches an rfc339 timestamp
 const rfc3339Regex = `(.+Z|.+[+-]\d{2}:\d{2})`
