@@ -18,16 +18,16 @@ Commits:
 
 ### Types
 
-| Type     | Example                         | Description                                                                          |
-| -------- | ------------------------------- | ------------------------------------------------------------------------------------ |
-| feat     | feat: add more workload types   | A new feature                                                                        |
-| fix      | fix: stop tests from failing    | A fix of a bug                                                                       |
-| chore    | chore: rm unneeded consts       | An annoying task, that has/had to be done                                            |
-| refactor | refactor: improved error logs   | Changes that don't change any functionality                                          |
-| revert   | revert: #5ff385d2               | A change that reverts a previous commit                                              |
-| docs     | docs: added a readme            | Changes to documentation only                                                        |
-| perf     | perf: sw to concurrent scanning | A change that only improves performance                                              |
-| style    | style: rm leading spaces        | A change which makes the code look better without changing the code (eg. formatting) |
+| Type     | Example                         | Description                                                                            |
+| -------- | ------------------------------- | -------------------------------------------------------------------------------------- |
+| feat     | feat: add more workload types   | A new feature                                                                          |
+| fix      | fix: stop tests from failing    | A fix of a bug                                                                         |
+| chore    | chore: rm unneeded consts       | An annoying task, that has/had to be done                                              |
+| refactor | refactor: improved error logs   | Changes that don't change any functionality                                            |
+| revert   | revert: #5ff385d2               | A change that reverts a previous commit                                                |
+| docs     | docs: added a readme            | Changes to documentation only                                                          |
+| perf     | perf: sw to concurrent scanning | A change that only improves performance                                                |
+| style    | style: rm leading spaces        | A change which makes the code look better without changing the code (formatting, etc.) |
 
 ### Common Abbreviations
 
