@@ -247,7 +247,7 @@ OR with optional spaces:
 ```
 
 The timespans can be absolute, relative or mixed.
-Eg.: downscale over the weekend and at night:
+Example: downscale over the weekend and at night:
 
 ```
 Sat-Sun 00:00-24:00 Europe/Berlin, Mon-Fri 20:00-07:00 Europe/Berlin
