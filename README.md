@@ -505,7 +505,7 @@ Some cases where this might be needed include:
 
 ### Missing Features
 
-Currentlly the GoKubeDownscaler is still a WIP. This means that there are still some features missing. You can find a list of the known-missing features [here](https://github.com/caas-team/GoKubeDownscaler/labels/missing%20feature). If you think that any other features are missing or you have an idea for a new feature, feel free to open an [Issue](/../../issues/) with the [`Missing Feature` label](https://github.com/caas-team/GoKubeDownscaler/labels/missing%20feature)
+Currentlly the GoKubeDownscaler is still a WIP. This means that there are still some features missing. You can find a list of the known-missing features [here](https://github.com/caas-team/GoKubeDownscaler/labels/missing%20feature). If you think that any other features are missing or you have an idea for a new feature, feel free to open an [Issue](/../../issues/)
 
 ## Developing
 
