@@ -38,7 +38,7 @@ Commits:
 
 ## Code and Structure
 
-Try to stick to golang best practices and standards. Eg.:
+Try to stick to golang best practices and standards:
 
 <!-- keep this list updated everytime someone opens a pr with best practice issues  -->
 
