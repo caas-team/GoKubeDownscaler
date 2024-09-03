@@ -212,12 +212,12 @@ example: `2024-07-29T08:30:00Z - 2024-07-29T16:00:00+02:00`
 example:
 
 ```text
-Mon-Fri 08:00-20:00 Europe/Berlin    # From Monday to Friday: from 08:00 to 20:00
-Sat-Sun 00:00-24:00 UTC              # On The Weekend: the entire day
-Mon-Fri 20:00-08:00 PST              # From Monday to Friday: from Midnight to 08:00 and from 20:00 until end of day
-Mon-Sun 00:00-00:00 America/New_York # The timespan never matches, this would not do anything
-Mon-Tue 20:00-24:00 CEST             # On Monday and Tuesday: from 20:00 to midnight
-Mon-Tue 20:00-00:00 Europe/Amsterdam # On Monday and Tuesday: from 20:00 to midnight
+Mon-Fri 08:00-20:00 Europe/Berlin           # From Monday to Friday: from 08:00 to 20:00
+Sat-Sun 00:00-24:00 UTC                     # On The Weekend: the entire day
+Mon-Fri 20:00-08:00 PST                     # From Monday to Friday: from Midnight to 08:00 and from 20:00 until end of day
+Mon-Sun 00:00-00:00 NorthAmerica/New_York   # The timespan never matches, this would not do anything
+Mon-Tue 20:00-24:00 CEST                    # On Monday and Tuesday: from 20:00 to midnight
+Mon-Tue 20:00-00:00 Europe/Amsterdam        # On Monday and Tuesday: from 20:00 to midnight
 ```
 
 Valid Values:
