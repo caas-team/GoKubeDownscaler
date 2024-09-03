@@ -53,7 +53,7 @@ These are the resources the Downscaler can scale:
 
 - <span id="cronjobs">CronJobs</span>:
   - sets the cronjobs suspend property to true, halting it from running on the schedule
-- <span id="deamonsets">Deamonsets</span>:
+- <span id="daemonsets">Daemonsets</span>:
   - adds a label that matches none of the nodes to the nodeselector, stopping its pods from running on any node
 - <span id="deployments">Deployments</span>:
   - sets the replica count to the [downscale replicas](#downscale-replicas)
@@ -103,18 +103,18 @@ Annotations can be applied to the [workload](#scalable-resources) or the namespa
 
 ### Arguments
 
-CLI arguements set [layer values](#values) and runtime configuration at the start of the program. See the [layers concept](#layers) for more details on which of the layers [values](#values) will be used.
+CLI arguments set [layer values](#values) and runtime configuration at the start of the program. See the [layers concept](#layers) for more details on which of the layers [values](#values) will be used.
 
 Layer Values:
 
 - <span id="--upscale-period">--upscale-period</span>:
   - sets the [upscale-period](#upscale-period) value on the [cli layer](#cli-layer)
 - <span id="--default-uptime">--default-uptime</span>:
-  - sets the [default-uptime](#default-uptime) value on the [cli layer](#cli-layer)
+  - sets the [uptime](#uptime) value on the [cli layer](#cli-layer)
 - <span id="--downscale-period">--downscale-period</span>:
   - sets the [downscale-period](#downscale-period) value on the [cli layer](#cli-layer)
 - <span id="--default-downtime">--default-downtime</span>:
-  - sets the [default-downtime](#default-downtime) value on the [cli layer](#cli-layer)
+  - sets the [downtime](#downtime) value on the [cli layer](#cli-layer)
 - <span id="--downtime-replicas">--downtime-replicas</span>:
   - sets the [downscale replicas](#downscale-replicas) value on the [cli layer](#cli-layer)
 - <span id="--explicit-include">--explicit-include</span>:
@@ -144,17 +144,21 @@ Runtime Configuration:
   - default: all namespaces
 - <span id="--include-resources">--include-resources</span>:
   - comma seperated list of [scalable resources](#scalable-resources) (`deployments,statefulsets` or `deployments, statefulsets`)
-  - restricts the downscaler to only scale workloads of this resource kind
+  - enables scaling of workloads with the specified resource type
   - default: deployments
 - <span id="--exclude-namespaces">--exclude-namespaces</span>:
   - comma seperated list of namespaces (`some-ns,other-ns` or `some-ns, other-ns`)
-  - makes the downscaler exclude the specified namespaces
+  - excludes the specified namespaces from being scaled
   - default: kube-system, kube-downscaler
+- <span id="--exclude-deployments">--exclude-deployments</span>:
+  - comma seperated list of workload names (`some-workload,other-workload` or `some-workload, other-workload`)
+  - excludes the specified workloads from being scaled
+  - default: none
 - <span id="--matching-labels">--matching-labels</span>:
   - comma seperated list of labels with their value (`some-label=val,other-label=value` or `some-label=val, other-label=value`)
   - makes the downscaler only include workloads which have any label that machtes any of the specified labels and values
   - default: none
-- <span id="time-annotation">time-annotation</span>:
+- <span id="--time-annotation">--time-annotation</span>:
   - key of annotation with an RFC3339 Timestamp
   - when set grace-period will use the timestamp in the annotation instead of the creation time of the workload
   - default: none (uses the workloads creation time)
@@ -196,7 +200,7 @@ or
 <RFC3339-Timestamp> - <RFC3339-Timestamp>
 ```
 
-eg.: `2024-07-29T08:30:00Z - 2024-07-29T16:00:00+02:00`
+example: `2024-07-29T08:30:00Z - 2024-07-29T16:00:00+02:00`
 
 #### Configuration of a Relative Timespan
 
@@ -204,7 +208,7 @@ eg.: `2024-07-29T08:30:00Z - 2024-07-29T16:00:00+02:00`
 <Weekday-From>-<Weekday-To> <Time-Of-Day-From>-<Time-Of-Day-To> <Timezone>
 ```
 
-eg.:
+example:
 
 ```text
 Mon-Fri 08:00-20:00 Europe/Berlin    # From Monday to Friday: from 08:00 to 20:00
@@ -379,7 +383,7 @@ Workload will be scaled according to the uptime schedule on the cli layer
   - comma seperated list of [timespans](#timespans)
   - within these timespans the [workload](#scalable-resources) will be scaled down, outside of them it will be scaled up
   - incompatible with [downscale-period](#downscale-period), [upscale-period](#upscale-period), [uptime](#uptime)
-- <span id="upscale-period">downscale-period</span>:
+- <span id="upscale-period">upscale-period</span>:
   - comma seperated list of [timespans](#timespans)
   - within these periods the [workload](#scalable-resources) will be scaled up
   - incompatible with [downtime](#downtime), [uptime](#uptime)
@@ -431,15 +435,15 @@ If you had an implementation that used some of the quirks of the py-kube-downsca
 Some cases where this might be needed include:
 
 - [Incompatibility instead of priority](#diff-incompatible)
-  - eg. if you had a program that dynamically added a uptime annotation on a workload with a downtime annotation because you relied on the uptime annotation taking over
+  - example: if you had a program that dynamically added an uptime annotation on a workload with a downtime annotation because you relied on the uptime annotation taking over
 - [Layer system](#diff-layer-system)
-  - eg. the behaviour of excluding a namespace resulting in all workloads in it being excluded is not quite the same, as the workload could overwrite this by setting exclude to false
+  - example: the behaviour of excluding a namespace resulting in all workloads in it being excluded is not quite the same, as the workload could overwrite this by setting exclude to false
 - [A pod that upscales the whole cluster](https://github.com/caas-team/py-kube-downscaler/blob/main/README.md?plain=1#L90)
   - this behaviour is no longer available
 - [RFC3339 timestamp](#diff-uniform-timestamp)
   - if you used the short form versions of the ISO 8601 timestamp (`2023-08-12`, `2023-233` or `2023-W34-1`)
 - [Actual exclusion](#diff-actual-exclusion)
-  - eg. if you had a program that dynamically excluded a namespace and need it to then go in an upscaled state
+  - example: if you had a program that dynamically excluded a namespace and need it to then go in an upscaled state
 
 ### Differences to py-kube-downscaler
 
@@ -471,11 +475,11 @@ Some cases where this might be needed include:
 <span id="diff-uniform-timestamp">Uniform timestamp</span>:
 
 - all timestamps are RFC3339 this is more optimized for golang, more consistent and also used by kubernetes itself
-- backwards compatible: mostly, unless you used a short form of ISO 8601 eg. `2023-08-12`, `2023-233` or `2023-W34-1` it should be totally fine to not change anything
+- backwards compatible: mostly, unless you used a short form of ISO 8601 (`2023-08-12`, `2023-233`) or `2023-W34-1` it should be totally fine to not change anything
 
 <span id="diff-overlapping-days">Overlapping [relative timespans](#configuration-of-a-relative-timespan) into next day</span>:
 
-- timespans can overlap into the "next" day (eg. `Mon-Fri 20:00-06:00 UTC`). See [Relative Timespans](#configuration-of-a-relative-timespan)
+- timespans can overlap into the "next" day (`Mon-Fri 20:00-06:00 UTC`). See [Relative Timespans](#configuration-of-a-relative-timespan)
 - backwards compatible: fully compatible, this didn't change any existing functionallity
 
 <span id="diff-actual-exclusion">Actual exclusion</span>:
@@ -492,6 +496,11 @@ Some cases where this might be needed include:
 
 - errors with the configuration of a [workload](#scalable-resources) are shown as events on the workload
 - backwards compatible: fully compatible, doesn't change any existing functionality
+
+<span id="diff-cmd-aruments">--deployment-time-annotation -> [--time-annotation](#--time-annotation)</span>:
+
+- the `--deployment-time-annotation` cli argument was changed to `--time-annotation`
+- backwards compatible: if you used this cli argument, you have to change it to `--time-annotation`
 
 ## Developing
 
