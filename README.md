@@ -40,6 +40,7 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [Basic Migration](#basic-migration)
   - [Edge Cases](#edge-cases)
   - [Differences to py-kube-downscaler](#differences-to-py-kube-downscaler)
+  - [Missing Features](#missing-features)
 - [Developing](#developing)
   - [Cloning the Repository](#cloning-the-repository)
   - [Setting up Pre-Commit](#setting-up-pre-commit)
@@ -501,6 +502,10 @@ Some cases where this might be needed include:
 
 - the `--deployment-time-annotation` cli argument was changed to `--time-annotation`
 - backwards compatible: if you used this cli argument, you have to change it to `--time-annotation`
+
+### Missing Features
+
+Currentlly the GoKubeDownscaler is still a WIP. This means that there are still some features missing. You can find a list of the known-missing features [here](https://github.com/caas-team/GoKubeDownscaler/labels/missing%20feature). If you think that any other features are missing or you have an idea for a new feature, feel free to open an [Issue](/../../issues/) with the [`Missing Feature` label](https://github.com/caas-team/GoKubeDownscaler/labels/missing%20feature)
 
 ## Developing
 
