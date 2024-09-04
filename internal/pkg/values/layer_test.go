@@ -69,6 +69,34 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "down- and upscale periods overlapping",
+			layer: Layer{
+				DownscalePeriod: timeSpans{absoluteTimeSpan{
+					from: time.Now(),
+					to:   time.Now().Add(1 * time.Hour),
+				}},
+				UpscalePeriod: timeSpans{absoluteTimeSpan{ // overlapping
+					from: time.Now(),
+					to:   time.Now().Add(1 * time.Hour),
+				}},
+			},
+			wantErr: true,
+		},
+		{
+			name: "down- and upscale do not overlap",
+			layer: Layer{
+				DownscalePeriod: timeSpans{absoluteTimeSpan{
+					from: time.Now(),
+					to:   time.Now().Add(time.Hour),
+				}},
+				UpscalePeriod: timeSpans{absoluteTimeSpan{
+					from: time.Now().Add(2 * time.Hour),
+					to:   time.Now().Add(3 * time.Hour),
+				}},
+			},
+			wantErr: false,
+		},
+		{
 			name: "valid",
 			layer: Layer{
 				DownTime:        timeSpans{relativeTimeSpan{}},
