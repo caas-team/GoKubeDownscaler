@@ -169,8 +169,8 @@ func (t relativeTimeSpan) inLocation(timezone *time.Location) []relativeTimeSpan
 			timezone:    timezone,
 			timeFrom:    sameDays.timeFrom.Add(24 * time.Hour),
 			timeTo:      sameDays.timeTo.Add(24 * time.Hour),
-			weekdayFrom: sameDays.weekdayFrom - 1,
-			weekdayTo:   sameDays.weekdayTo - 1,
+			weekdayFrom: getWeekdayBefore(sameDays.weekdayFrom),
+			weekdayTo:   getWeekdayBefore(sameDays.weekdayTo),
 		}
 		result = append(result, daysBefore)
 	}
@@ -179,8 +179,8 @@ func (t relativeTimeSpan) inLocation(timezone *time.Location) []relativeTimeSpan
 			timezone:    timezone,
 			timeFrom:    sameDays.timeFrom.Add(-24 * time.Hour),
 			timeTo:      sameDays.timeTo.Add(-24 * time.Hour),
-			weekdayFrom: sameDays.weekdayFrom + 1,
-			weekdayTo:   sameDays.weekdayTo + 1,
+			weekdayFrom: getWeekdayAfter(sameDays.weekdayFrom),
+			weekdayTo:   getWeekdayAfter(sameDays.weekdayTo),
 		}
 		result = append(result, daysAfter)
 	}

@@ -62,6 +62,10 @@ func TestParseRelativeTimeSpan(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			gotResult, gotErr := parseRelativeTimeSpan(test.timespanString)
+
+			// Debugging
+			//t.Errorf("Error: %v", gotResult)
+
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {

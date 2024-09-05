@@ -157,3 +157,23 @@ func isTimeFromSkippedToPreviousDay(timeFrom time.Time) bool {
 func isTimeToSkippedToNextDay(timeTo time.Time) bool {
 	return asExclusiveTimestamp(timeTo).Day() == 2
 }
+
+// getWeekdayBefore returns the day before (it automatically checks if value is below 0 or above 6)
+func getWeekdayBefore(weekday time.Weekday) time.Weekday {
+	if weekday == 0 {
+		weekday = 6
+		return weekday
+	} else {
+		return weekday - 1
+	}
+}
+
+// getWeekdayAfter returns the day after (it automatically checks if value is below 0 or above 6)
+func getWeekdayAfter(weekday time.Weekday) time.Weekday {
+	if weekday == 6 {
+		weekday = 0
+		return weekday
+	} else {
+		return weekday + 1
+	}
+}
