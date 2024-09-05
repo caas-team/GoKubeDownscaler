@@ -187,16 +187,6 @@ func (t relativeTimeSpan) inLocation(timezone *time.Location) []relativeTimeSpan
 	return result
 }
 
-// Check if timeFrom skipped to the previous day
-func isTimeFromSkippedToPreviousDay(timeFrom time.Time) bool {
-	return timeFrom.Year() == -1
-}
-
-// Check if timeTo skipped to the following day
-func isTimeToSkippedToNextDay(timeTo time.Time) bool {
-	return asExclusiveTimestamp(timeTo).Day() == 2
-}
-
 type absoluteTimeSpan struct {
 	from time.Time
 	to   time.Time

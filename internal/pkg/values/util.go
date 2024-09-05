@@ -147,3 +147,13 @@ func GetLayerFromEnv() (Layer, error) {
 func asExclusiveTimestamp(inc time.Time) time.Time {
 	return inc.Add(-time.Nanosecond)
 }
+
+// isTimeFromSkippedToPreviousDay checks if timeFrom skipped to the previous day
+func isTimeFromSkippedToPreviousDay(timeFrom time.Time) bool {
+	return timeFrom.Year() == -1
+}
+
+// isTimeToSkppedToNextDay checks if timeTo skipped to the following day
+func isTimeToSkippedToNextDay(timeTo time.Time) bool {
+	return asExclusiveTimestamp(timeTo).Day() == 2
+}
