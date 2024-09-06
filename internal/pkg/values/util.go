@@ -164,7 +164,7 @@ func getWeekdayBefore(weekday time.Weekday) time.Weekday {
 		weekday = 6
 		return weekday
 	} else {
-		return weekday - 1
+		return (weekday + 6) % 7
 	}
 }
 
@@ -174,6 +174,6 @@ func getWeekdayAfter(weekday time.Weekday) time.Weekday {
 		weekday = 0
 		return weekday
 	} else {
-		return weekday + 1
+		return (weekday + 1) % 7
 	}
 }
