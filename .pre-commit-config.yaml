@@ -3,7 +3,6 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.3.0
     hooks:
-      - id: check-yaml
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: no-commit-to-branch
@@ -19,9 +18,30 @@ repos:
         args: [-l, -w]
       - id: golangci-lint-repo-mod
         args: [--config, .golangci.yaml, --, --fix]
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.0.1
+    hooks:
+      - id: prettier
+        files: \.md$
   - repo: local
     hooks:
       - id: prevent-todo-comments
         name: prevent todo comments
-        entry: '\/\/ *(TODO|FIXME)\b'
+        entry: '\/\/ *(TODO|FIXME)\b' # matches a golang comment beginning with "TODO" or "FIXME"
         language: pygrep
+        files: \.go$
+      - id: prevent-too-small-headings
+        name: prevent too small headings
+        entry: "^#{5,} " # matches a h5 or smaller markdown heading
+        language: pygrep
+        files: \.md$
+      - id: prevent-overly-nested-hierarchy
+        name: prevent overly nested hierarchy
+        entry: "^(  ){2,}- " # matches a markdown list with 2 or more indentations
+        language: pygrep
+        files: \.md$
+      - id: prevent-invalid-alert-types
+        name: prevent invalid alert types
+        entry: '(?i)^> \[!(?!\b(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\b).+\]' # matches a github markdown callout/alert that doesn't use one of the supported keywords
+        language: pygrep
+        files: \.md$

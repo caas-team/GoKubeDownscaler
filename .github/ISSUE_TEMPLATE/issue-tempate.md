@@ -1,17 +1,16 @@
 ---
 name: Issue Template
 about: Use this issue template for pointing out a general issue.
-title: ''
-labels: ''
-assignees: ''
-
+title: ""
+labels: ""
+assignees: ""
 ---
 
 ## Issue
+
 <!--
 Briefly describe the issue.
 -->
-
 
 ### Problem to solve
 

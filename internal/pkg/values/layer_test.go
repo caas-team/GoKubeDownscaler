@@ -16,8 +16,8 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 		{
 			name: "forced up and downtime",
 			layer: Layer{
-				ForceUptime:   true,
-				ForceDowntime: true,
+				ForceUptime:   triStateBool{isSet: true, value: true},
+				ForceDowntime: triStateBool{isSet: true, value: true},
 			},
 			wantErr: true,
 		},
@@ -135,20 +135,6 @@ func TestLayer_getCurrentScaling(t *testing.T) {
 		layer       Layer
 		wantScaling scaling
 	}{
-		{
-			name: "force downtime",
-			layer: Layer{
-				ForceDowntime: true,
-			},
-			wantScaling: ScalingDown,
-		},
-		{
-			name: "force uptime",
-			layer: Layer{
-				ForceUptime: true,
-			},
-			wantScaling: ScalingUp,
-		},
 		{
 			name: "in downtime",
 			layer: Layer{

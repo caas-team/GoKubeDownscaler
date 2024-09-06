@@ -52,10 +52,34 @@ func TestParseRelativeTimeSpan(t *testing.T) {
 			wantErr:        true,
 		},
 		{
-			name:           "invalid Time",
-			timespanString: "Mon-Fri 03:00-04:0 UTC",
+			name:           "invalid Format",
+			timespanString: "Mon-Fri 03:00-04-00 UTC",
 			wantResult:     nil,
 			wantErr:        true,
+		},
+		{
+			name:           "negative Time",
+			timespanString: "Mon-Fri -03:00-04:00 UTC",
+			wantResult:     nil,
+			wantErr:        true,
+		},
+		{
+			name:           "out of range Time",
+			timespanString: "Mon-Fri 00:00-26:00 UTC",
+			wantResult:     nil,
+			wantErr:        true,
+		},
+		{
+			name:           "all day",
+			timespanString: "Mon-Fri 00:00-24:00 UTC",
+			wantResult: &relativeTimeSpan{
+				timezone:    time.UTC,
+				weekdayFrom: time.Monday,
+				weekdayTo:   time.Friday,
+				timeFrom:    zeroTime,
+				timeTo:      zeroTime.Add(24 * time.Hour),
+			},
+			wantErr: false,
 		},
 	}
 
@@ -171,6 +195,48 @@ func TestRelativeTimeSpan_isTimeOfDayInRange(t *testing.T) {
 			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(18 * time.Hour), timeTo: zeroTime.Add(4 * time.Hour)},
 			timeOfDay:  zeroTime.Add(18 * time.Hour),
 			wantResult: true,
+		},
+		{
+			name:       "all day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime.Add(24 * time.Hour)},
+			timeOfDay:  zeroTime.Add(18 * time.Hour),
+			wantResult: true,
+		},
+		{
+			name:       "all day overlap to next day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime.Add(24 * time.Hour)},
+			timeOfDay:  zeroTime.Add(24*time.Hour - time.Nanosecond),
+			wantResult: true,
+		},
+		{
+			name:       "all day start of day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime.Add(24 * time.Hour)},
+			timeOfDay:  zeroTime,
+			wantResult: true,
+		},
+		{
+			name:       "24 never",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(24 * time.Hour), timeTo: zeroTime},
+			timeOfDay:  zeroTime.Add(18 * time.Hour),
+			wantResult: false,
+		},
+		{
+			name:       "24 never overlap to next day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(24 * time.Hour), timeTo: zeroTime},
+			timeOfDay:  zeroTime.Add(24*time.Hour - time.Nanosecond),
+			wantResult: false,
+		},
+		{
+			name:       "24 never start of day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(24 * time.Hour), timeTo: zeroTime},
+			timeOfDay:  zeroTime,
+			wantResult: false,
+		},
+		{
+			name:       "0 never",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime},
+			timeOfDay:  zeroTime,
+			wantResult: false,
 		},
 	}
 
