@@ -1,4 +1,3 @@
-# Build and push Image
 name: Build and push Image
 
 on:
