@@ -6,19 +6,50 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 )
 
-// FilterMatchingLabels filters the workloads out if their labels don't match one of the includeLabels
-func FilterMatchingLabels(workloads []Workload, includeLabels values.RegexList) []Workload {
+// FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads
+func FilterExcluded(workloads []Workload, includeLabels values.RegexList, excludedNamespaces values.RegexList, excludedWorkloads values.RegexList) []Workload {
 	var results []Workload
-	if includeLabels == nil {
-		results = append(results, workloads...)
-		return results
-	}
 	for _, workload := range workloads {
-		for label, value := range workload.GetLabels() {
-			if includeLabels.CheckMatchesAny(fmt.Sprintf("%s=%s", label, value)) {
-				results = append(results, workload)
-			}
+		if !isMatchingLabels(workload, includeLabels) {
+			continue
 		}
+		if isNamespaceExcluded(workload, excludedNamespaces) {
+			continue
+		}
+		if isWorkloadExcluded(workload, excludedWorkloads) {
+			continue
+		}
+		results = append(results, workload)
 	}
 	return results
+}
+
+// isMatchingLabels check if the workload is matching any labels
+func isMatchingLabels(workload Workload, includeLabels values.RegexList) bool {
+	if includeLabels == nil {
+		return true
+	}
+	for label, value := range workload.GetLabels() {
+		if !includeLabels.CheckMatchesAny(fmt.Sprintf("%s=%s", label, value)) {
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+// isNamespaceExcluded check if the workloads namespace is excluded
+func isNamespaceExcluded(workload Workload, excludedNamespaces values.RegexList) bool {
+	if excludedNamespaces == nil {
+		return false
+	}
+	return excludedNamespaces.CheckMatchesAny(workload.GetName())
+}
+
+// isWorkloadExcluded check if the workloads name is excluded
+func isWorkloadExcluded(workload Workload, excludedWorkloads values.RegexList) bool {
+	if excludedWorkloads == nil {
+		return false
+	}
+	return excludedWorkloads.CheckMatchesAny(workload.GetName())
 }

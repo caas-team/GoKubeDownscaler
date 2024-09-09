@@ -31,9 +31,9 @@ var (
 	includeNamespaces values.StringList
 	// list of resources to restrict the downscaler to
 	includeResources = values.StringList{"deployments"}
-	// list of namespaces to ignore while downscaling // NOT_IMPLEMENTED
+	// list of namespaces to ignore while downscaling
 	excludeNamespaces = values.RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")}
-	// list of workload names to ignore while downscaling // NOT_IMPLEMENTED
+	// list of workload names to ignore while downscaling
 	excludeWorkloads values.RegexList
 	// workloads have to match one of these labels to be scaled
 	includeLabels values.RegexList
@@ -106,7 +106,7 @@ func main() {
 			slog.Error("failed to get workloads", "error", err)
 			os.Exit(1)
 		}
-		workloads = scalable.FilterMatchingLabels(workloads, includeLabels)
+		workloads = scalable.FilterExcluded(workloads, includeLabels, excludeNamespaces, excludeWorkloads)
 
 		var wg sync.WaitGroup
 		for _, workload := range workloads {
