@@ -29,6 +29,7 @@ type deployment struct {
 
 // SetReplicas sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
 func (d deployment) SetReplicas(replicas int) {
+	// #nosec G115
 	newReplicas := int32(replicas)
 	d.Spec.Replicas = &newReplicas
 }

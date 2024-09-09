@@ -10,9 +10,11 @@ type StringList []string
 
 func (s *StringList) Set(text string) error {
 	entries := strings.Split(text, ",")
+	var trimmedEntries []string
 	for _, entry := range entries {
-		*s = append(*s, strings.TrimSpace(entry))
+		trimmedEntries = append(trimmedEntries, strings.TrimSpace(entry))
 	}
+	*s = trimmedEntries
 	return nil
 }
 

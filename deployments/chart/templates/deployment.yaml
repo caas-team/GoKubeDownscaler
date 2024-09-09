@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "go-kube-downscaler.fullname" . }}
+  labels:
+    {{- include "go-kube-downscaler.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "go-kube-downscaler.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "go-kube-downscaler.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "go-kube-downscaler.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          args:
+          - --include-resources={{ join "," .Values.includedResources }}
+          {{- with .Values.arguments }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- if .Values.constrainedDownscaler }}
+          - --namespace={{ join "," .Values.constrainedNamespaces }}
+          {{- end }}
+          envFrom:
+          - configMapRef:
+              name: {{ .Values.configMapName }}
+              optional: true
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
