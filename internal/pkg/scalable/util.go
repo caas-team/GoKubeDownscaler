@@ -2,6 +2,7 @@ package scalable
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 )
@@ -11,12 +12,15 @@ func FilterExcluded(workloads []Workload, includeLabels values.RegexList, exclud
 	var results []Workload
 	for _, workload := range workloads {
 		if !isMatchingLabels(workload, includeLabels) {
+			slog.Debug("workload is not matching any of the specified labels, excluding it from being scanned", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 			continue
 		}
 		if isNamespaceExcluded(workload, excludedNamespaces) {
+			slog.Debug("the workloads namespace is excluded, excluding it from being scanned", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 			continue
 		}
 		if isWorkloadExcluded(workload, excludedWorkloads) {
+			slog.Debug("the workloads name is excluded, excluding it from being scanned", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 			continue
 		}
 		results = append(results, workload)
@@ -43,7 +47,7 @@ func isNamespaceExcluded(workload Workload, excludedNamespaces values.RegexList)
 	if excludedNamespaces == nil {
 		return false
 	}
-	return excludedNamespaces.CheckMatchesAny(workload.GetName())
+	return excludedNamespaces.CheckMatchesAny(workload.GetNamespace())
 }
 
 // isWorkloadExcluded check if the workloads name is excluded
