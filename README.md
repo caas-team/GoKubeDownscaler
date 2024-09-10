@@ -87,8 +87,6 @@ Annotations can be applied to the [workload](#scalable-resources) or the namespa
   - sets the [upscale-period](#upscale-period) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
 - <span id="downscaler/uptime">downscaler/uptime</span>:
   - sets the [uptime](#uptime) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
-- <span id="downscaler/upscale-period">downscaler/upscale-period</span>:
-  - sets the [upscale-period](#upscale-period) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
 - <span id="downscaler/exclude">downscaler/exclude</span>:
   - sets the [exclude](#exclude) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
 - <span id="downscaler/exclude-until">downscaler/exclude-until</span>:
