@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/e18fb90a-f109-4c3b-b945-458f13a68cf2)# GoKubeDownscaler
+# GoKubeDownscaler
 
 <a href="/../../releases/" title="GitHub Release"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/caas-team/GoKubeDownscaler?style=flat"></a>
 <a href="./LICENSE" title="GitHub License"><img alt="GitHub License" src="https://img.shields.io/github/license/caas-team/GoKubeDownscaler?style=flat"></a>
