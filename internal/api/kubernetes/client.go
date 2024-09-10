@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
@@ -75,7 +76,7 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 	for _, namespace := range namespaces {
 		for _, resourceType := range resourceTypes {
 			slog.Debug("getting workloads from resource type", "resourceType", resourceType)
-			getWorkload, ok := scalable.GetResource[resourceType]
+			getWorkload, ok := scalable.GetResource[strings.ToLower(resourceType)]
 			if !ok {
 				return nil, errResourceNotSupported
 			}
