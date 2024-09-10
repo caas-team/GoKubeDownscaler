@@ -23,7 +23,7 @@ Here you can find a brief overview of the charts components and a quick installa
 - [Installation](#installation)
   - [Prerequisits](#prerequisits)
   - [Install the Chart](#install-the-chart)
-- [Downscale workloads](#downscale-workloads)
+- [Configure scaling for specific Workloads](#configure-scaling-for-specific-workloads)
 
 ## Components
 
@@ -111,4 +111,4 @@ helm install go-kube-downscaler ./deployments/chart
 ## Configure scaling for specific Workloads
 
 Now all that is left to do is annotate the workloads you want to scale.
-You can find out how to do that [in the readme](../../README.md#configuration).
+You can find out how to do that [in the main readme](../../README.md#configuration).
