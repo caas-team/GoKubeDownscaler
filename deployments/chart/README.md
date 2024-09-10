@@ -108,7 +108,7 @@ helm install go-kube-downscaler ./deployments/chart
 
 **Make sure to adjust the values.yaml as needed or use a custom values.yaml file.**
 
-## Downscale workloads
+## Configure scaling for specific Workloads
 
-Now all that is left to do is annotate the workloads you want to scale down.
-You can find out how to do that [here](../../README.md).
+Now all that is left to do is annotate the workloads you want to scale.
+You can find out how to do that [in the readme](../../README.md#configuration).
