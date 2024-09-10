@@ -413,7 +413,7 @@ Workload will be scaled according to the uptime schedule on the cli layer
   - the replicas that the [workload](#scalable-resources) should have while downscaled
 - <span id="grace-period">grace-period</span>:
   - [duration](#duration)
-  - the duration a [workload](#scalable-resources) has to exist until it is first scaled. will use the (time annotation)(#--time-annotation) instead of the creation time of the workload if 
+  - the duration a [workload](#scalable-resources) has to exist until it is first scaled. Will use the [time annotation](#--time-annotation) instead of the creation time of the workload if the time annotation argument is set.
 
 See [the layers concept](#layers) for more details on which of the layers [values](#values) will be used
 
