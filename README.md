@@ -1,4 +1,4 @@
-# GoKubeDownscaler
+![image](https://github.com/user-attachments/assets/e18fb90a-f109-4c3b-b945-458f13a68cf2)# GoKubeDownscaler
 
 <a href="/../../releases/" title="GitHub Release"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/caas-team/GoKubeDownscaler?style=flat"></a>
 <a href="./LICENSE" title="GitHub License"><img alt="GitHub License" src="https://img.shields.io/github/license/caas-team/GoKubeDownscaler?style=flat"></a>
@@ -55,11 +55,11 @@ These are the resources the Downscaler can scale:
 - <span id="cronjobs">CronJobs</span>:
   - sets the cronjobs suspend property to true, halting it from running on the schedule
 - <span id="daemonsets">Daemonsets</span>:
-  - adds a label that matches none of the nodes to the nodeselector, stopping its pods from running on any node
+  - adds a label which matches none of the nodes to the nodeselector, stopping its pods from running on any node
 - <span id="deployments">Deployments</span>:
   - sets the replica count to the [downscale replicas](#downscale-replicas)
 - <span id="horizontal-pod-autoscalers">Horizontal Pod Autoscalers (HPA)</span>:
-  - sets the minReplicas of the HPA to the [downscale replicas](#downscale-replicas). Will throw an error if the downscale replicas is > 1
+  - sets the minReplicas of the HPA to the [downscale replicas](#downscale-replicas). Will throw an error if the downscale replicas is smaller than 1
 - <span id="jobs">Jobs</span>:
   - sets the jobs suspend property to true, will stop execution of the job until upscaled again
 - <span id="poddisruptionbudgets">PodDisruptionBudgets</span>:
@@ -77,7 +77,7 @@ Installation is done via the [Helm Chart](./deployments/chart/README.md)
 
 ### Annotations
 
-Annotations can be applied to the [workload](#scalable-resources) or the namespace. See the [layers concept](#layers) for more details on which of the layers [values](#values) will be used.
+Annotations can be applied to a [workload](#scalable-resources) or its namespace. See the [layers concept](#layers) for more details on which of the layers [values](#values) will be used.
 
 - <span id="downscaler/downscale-period">downscaler/downscale-period</span>:
   - sets the [downscale-period](#downscale-period) value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer
@@ -123,48 +123,48 @@ Runtime Configuration:
 
 - <span id="--dry-run">--dry-run</span>:
   - boolean
-  - sets the downscaler into dry run mode, which makes it just print what it would have done, instead of actually doing it
+  - sets the downscaler into dry run mode, which makes it just print the actions it would have performed
   - default: false
 - <span id="--debug">--debug</span>:
   - boolean
-  - makes the downscaler print debug information
+  - makes the downscaler print more/debug information on what it currently does and what happens to the workloads
   - default: false
 - <span id="--once">--once</span>:
   - boolean
-  - makes the downscaler exit after one scan
+  - makes the downscaler exit after one scan <!-- In the future we should explain what a scan is in the #concepts section and link it here -->
   - default: false
 - <span id="--interval">--interval</span>:
   - [duration](#duration)
-  - sets the time between scans
+  - sets the wait time between scans
   - default: 30s
 - <span id="--namespace">--namespace</span>:
   - comma seperated list of namespaces (`some-ns,other-ns` or `some-ns, other-ns`)
-  - makes the downscaler only get the specified namespaces
+  - makes the downscaler get workloads only from the specified namespaces
   - default: all namespaces
 - <span id="--include-resources">--include-resources</span>:
-  - comma seperated list of [scalable resources](#scalable-resources) (`deployments,statefulsets` or `deployments, statefulsets`)
+  - comma seperated list of (case-insensitive) [scalable resources](#scalable-resources) (`deployments,statefulsets` or `deployments, statefulsets`)
   - enables scaling of workloads with the specified resource type
   - default: deployments
 - <span id="--exclude-namespaces">--exclude-namespaces</span>:
-  - comma seperated list of namespaces (`some-ns,other-ns` or `some-ns, other-ns`)
-  - excludes the specified namespaces from being scaled
+  - comma seperated list of regex patterns matching namespaces (`some-ns,other-ns,kube-.*` or `some-ns, other-ns, kube-.*`)
+  - excludes the matching namespaces from being scaled
   - default: kube-system, kube-downscaler
 - <span id="--exclude-deployments">--exclude-deployments</span>:
-  - comma seperated list of workload names (`some-workload,other-workload` or `some-workload, other-workload`)
-  - excludes the specified workloads from being scaled
+  - comma seperated list of regex patterns matching workload names (`some-workload,other-workload,.*kube-downscaler` or `some-workload, other-workload, .*kube-downscaler`)
+  - excludes the matching workloads from being scaled
   - default: none
 - <span id="--matching-labels">--matching-labels</span>:
-  - comma seperated list of labels with their value (`some-label=val,other-label=value` or `some-label=val, other-label=value`)
+  - comma seperated list of regex patterns matching labels with their value (`some-label=val,other-label=value,another-label=.*` or `some-label=val, other-label=value, another-label=.*`)
   - makes the downscaler only include workloads which have any label that machtes any of the specified labels and values
   - default: none
 - <span id="--time-annotation">--time-annotation</span>:
-  - key of annotation with an RFC3339 Timestamp
+  - string key of an annotation on the workload containing a [RFC3339 Timestamp](https://datatracker.ietf.org/doc/html/rfc3339)
   - when set grace-period will use the timestamp in the annotation instead of the creation time of the workload
   - default: none (uses the workloads creation time)
 
 ### Environment Variables
 
-Environment Variables set [layer values](#values) and runtime configuration at the start of the program. See the [layers concept](#layers) for more details on which of the layers [values](#values) will be used.
+Environment Variables set [layer values](#values) on the [env layer](#env-layer) and runtime configuration at the start of the program. See the [layers concept](#layers) for more details on which of the layers [values](#values) will be used.
 
 Layer Values:
 
@@ -186,9 +186,9 @@ Runtime Configuration:
 
 ### Timespans
 
-There are two different kinds of Timespans.
+There are two different kinds of Timespans:
 
-- Absolute Timespans: a timespan defined by two RFC3339 timestamps
+- Absolute Timespans: a timespan defined by two [RFC3339 Timestamps](https://datatracker.ietf.org/doc/html/rfc3339)
 - Relative Timespans: reoccuring on a schedule
 
 #### Configuration of an Absolute Timespan
@@ -200,6 +200,8 @@ or
 ```
 
 example: `2024-07-29T08:30:00Z - 2024-07-29T16:00:00+02:00`
+
+See [RFC3339 Timestamps](https://datatracker.ietf.org/doc/html/rfc3339) for more information
 
 #### Configuration of a Relative Timespan
 
@@ -261,7 +263,7 @@ A duration can be defined either by an integer representing seconds
 "900" # 900 seconds (15 minutes)
 ```
 
-Or by a duration strings:
+Or by a duration string:
 
 ```text
 "1h30m" # 1 hour and 30 minutes
@@ -282,11 +284,13 @@ Other units:
 "h"       # hours
 ```
 
+See [Golangs official documentation](https://pkg.go.dev/time#ParseDuration) for more information
+
 ## Concepts
 
 ### Layers
 
-Layers are layers of values. If the highest Layer doesn't have a value, it falls through it and tries to get it from the next lower layer.
+Layers are layers of values. If the highest Layer doesn't have a value, it falls through it and tries to get the value from the next lower layer.
 
 #### Layer Hierarchy
 
@@ -297,11 +301,11 @@ Layers are layers of values. If the highest Layer doesn't have a value, it falls
 
 #### Workload Layer
 
-Defined by the [annotations](#annotations) on the [workload](#scalable-resources).
+Defined by the [annotations](#annotations) on the [workload](#scalable-resources) every scan.
 
 #### Namespace Layer
 
-Defined by the [annotations](#annotations) on the namespace.
+Defined by the [annotations](#annotations) on the namespace every scan.
 
 #### CLI Layer
 
@@ -376,7 +380,7 @@ Workload will be scaled according to the uptime schedule on the cli layer
 
 - <span id="downscale-period">downscale-period</span>:
   - comma seperated list of [timespans](#timespans)
-  - within these periods the [workload](#scalable-resources) will be scaled down
+  - within these periods the [workload](#scalable-resources) will be scaled down, outside of them the state will be ignored
   - incompatible with [downtime](#downtime), [uptime](#uptime)
 - <span id="downtime">downtime</span>:
   - comma seperated list of [timespans](#timespans)
@@ -384,7 +388,7 @@ Workload will be scaled according to the uptime schedule on the cli layer
   - incompatible with [downscale-period](#downscale-period), [upscale-period](#upscale-period), [uptime](#uptime)
 - <span id="upscale-period">upscale-period</span>:
   - comma seperated list of [timespans](#timespans)
-  - within these periods the [workload](#scalable-resources) will be scaled up
+  - within these periods the [workload](#scalable-resources) will be scaled up, outside of them the state will be ignored
   - incompatible with [downtime](#downtime), [uptime](#uptime)
 - <span id="uptime">uptime</span>:
   - comma seperated list of [timespans](#timespans)
@@ -409,9 +413,9 @@ Workload will be scaled according to the uptime schedule on the cli layer
   - the replicas that the [workload](#scalable-resources) should have while downscaled
 - <span id="grace-period">grace-period</span>:
   - [duration](#duration)
-  - the duration a [workload](#scalable-resources) has to exist until it is first scaled
+  - the duration a [workload](#scalable-resources) has to exist until it is first scaled. will use the (time annotation)(#--time-annotation) instead of the creation time of the workload if 
 
-For more info please refer to the [official documentation](https://pkg.go.dev/time#ParseDuration)
+See [the layers concept](#layers) for more details on which of the layers [values](#values) will be used
 
 ## Migrating from py-kube-downscaler
 
@@ -423,13 +427,13 @@ For more info please refer to the [official documentation](https://pkg.go.dev/ti
 helm uninstall py-kube-downscaler
 ```
 
-2. Make sure all programs/non-default uses support the [breaking changes](#edge-cases)
+2. Make sure all programs/non-default use cases support the [breaking changes](#edge-cases)
 3. Make sure all timestamps are [RFC 3339](#diff-uniform-timestamp) compatible
 4. [Install the new downscaler](#installation)
 
 ### Edge cases
 
-If you had an implementation that used some of the quirks of the py-kube-downscaler you might need to change those.
+If you had an implementation that used some of the quirks of the py-kube-downscaler you might need to change them to work with the GoKubeDownscaler.
 
 Some cases where this might be needed include:
 
@@ -448,17 +452,17 @@ Some cases where this might be needed include:
 
 <span id="diff-incompatible">Incompatibility instead of priority</span>:
 
-- some values are now incompatible instead of using one over the other
+- some values are now incompatible instead of using one over the other if both are set
 - backwards compatible: shouldn't break anything in most cases
 
 <span id="diff-duration-units">Duration units</span>:
 
-- instead of integers representing seconds you can also use duration strings see [Duration](#duration) for more information
+- instead of integers representing seconds you can also use duration strings. See [Duration](#duration) for more information
 - backwards compatible: fully compatible, integer seconds are still supported
 
 <span id="diff-layer-system">Layer system</span>:
 
-- Makes it easier and more uniform to know what configuration is going to be used. All annotations can now also be easily applied to namespaces.
+- makes it easier and more uniform to know what configuration is going to be used. All annotations can now also be easily applied to namespaces. See [the layers concept](#layers) for information on the new behaviour
 - backwards compatible: shouldn't break anything in most cases
 
 <span id="diff-explicit-include">[--explicit-include](#--explicit-include) cli argument</span>:
@@ -473,17 +477,17 @@ Some cases where this might be needed include:
 
 <span id="diff-uniform-timestamp">Uniform timestamp</span>:
 
-- all timestamps are RFC3339 this is more optimized for golang, more consistent and also used by kubernetes itself
+- all timestamps are [RFC3339 Timestamps](https://datatracker.ietf.org/doc/html/rfc3339) this is more optimized for golang, more consistent and also used by kubernetes itself
 - backwards compatible: mostly, unless you used a short form of ISO 8601 (`2023-08-12`, `2023-233`) or `2023-W34-1` it should be totally fine to not change anything
 
 <span id="diff-overlapping-days">Overlapping [relative timespans](#configuration-of-a-relative-timespan) into next day</span>:
 
-- timespans can overlap into the "next" day (`Mon-Fri 20:00-06:00 UTC`). See [Relative Timespans](#configuration-of-a-relative-timespan)
+- relative timespans can overlap into the "next" day (`Mon-Fri 20:00-06:00 UTC`). See [Relative Timespans](#configuration-of-a-relative-timespan) for information on how this behaves
 - backwards compatible: fully compatible, this didn't change any existing functionallity
 
 <span id="diff-actual-exclusion">Actual exclusion</span>:
 
-- [excluding a workload](#exclude) won't force the workload to be upscaled
+- [excluding a workload](#exclude) won't force the workload to be upscaled, instead it will just ignore its state
 - backwards compatible: should be fully compatible, unless your implementation relies on this
 
 <span id="diff-iana-timezones">IANA Timezones</span>:
@@ -493,7 +497,7 @@ Some cases where this might be needed include:
 
 <span id="diff-workload-errors">Workload error events</span>:
 
-- errors with the configuration of a [workload](#scalable-resources) are shown as events on the workload
+- errors with the configuration on the [namespace](#namespace-layer) or [workload layer](#workload-layer) are shown as events on the workload
 - backwards compatible: fully compatible, doesn't change any existing functionality
 
 <span id="diff-cmd-aruments">--deployment-time-annotation -> [--time-annotation](#--time-annotation)</span>:
@@ -503,7 +507,7 @@ Some cases where this might be needed include:
 
 ### Missing Features
 
-Currentlly the GoKubeDownscaler is still a WIP. This means that there are still some features missing. You can find a list of the known-missing features [here](https://github.com/caas-team/GoKubeDownscaler/labels/missing%20feature). If you think that any other features are missing or you have an idea for a new feature, feel free to open an [Issue](/../../issues/)
+Currently the GoKubeDownscaler is still a WIP. This means that there are still some features missing. You can find a list of the known-missing features [here](/../../labels/missing%20feature). If you think that any other features are missing or you have an idea for a new feature, feel free to open an [Issue](/../../issues/)
 
 ## Developing
 
