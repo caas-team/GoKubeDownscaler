@@ -1,0 +1,41 @@
+name: Check for new version
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - test-chart/Chart.yaml
+
+jobs:
+  check_version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract Chart Version
+        id: chart_version
+        run: |
+          version=$(yq e '.version' ./test-chart/Chart.yaml)
+          echo "version=$version" >> $GITHUB_ENV
+
+      - name: Get latest Git tag
+        id: get_latest_tag
+        run: |
+          latest_tag=$(git describe --tags --abbrev=0 || echo "No tags found")
+          echo "latest_tag=$latest_tag" >> $GITHUB_ENV
+
+      - name: Dispatch Event to Helm-Charts Repo
+        if: ${{ env.version }} != ${{ env.latest_tag}}
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: caas-team/GoKubeDownscaler
+          event-type: release-new-version
+          client-payload: '{"version": "${{ env.version }}"}'
