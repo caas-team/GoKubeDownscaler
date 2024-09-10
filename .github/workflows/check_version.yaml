@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - test-chart/Chart.yaml
+      - deployments/chart/Chart.yaml
 
 jobs:
   check_version:
@@ -22,7 +22,7 @@ jobs:
       - name: Extract Chart Version
         id: chart_version
         run: |
-          version=$(yq e '.version' ./test-chart/Chart.yaml)
+          version=$(yq e '.version' ./deployments/chart/Chart.yaml)
           echo "version=$version" >> $GITHUB_ENV
 
       - name: Get latest Git tag
