@@ -3,47 +3,76 @@ package scalable
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	batch "k8s.io/api/batch/v1"
 )
 
-// TestCronJobScaleUp tests the ScaleUp method of the cronJob struct.
-func TestCronJobScaleUp(t *testing.T) {
-	cj := &cronJob{
-		CronJob: &batch.CronJob{
-			Spec: batch.CronJobSpec{
-				Suspend: new(bool),
-			},
+func TestCronJob_ScaleUp(t *testing.T) {
+	tests := []struct {
+		name        string
+		suspend     *bool
+		wantSuspend *bool
+	}{
+		{
+			name:        "scale up",
+			suspend:     boolAsPointer(true),
+			wantSuspend: boolAsPointer(false),
+		},
+		{
+			name:        "already scaled up",
+			suspend:     boolAsPointer(false),
+			wantSuspend: boolAsPointer(false),
+		},
+		{
+			name:        "suspend unset",
+			suspend:     nil,
+			wantSuspend: boolAsPointer(false),
 		},
 	}
 
-	*cj.Spec.Suspend = true
-	err := cj.ScaleUp()
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cj := cronJob{&batch.CronJob{}}
+			cj.Spec.Suspend = test.suspend
 
-	if *cj.Spec.Suspend {
-		t.Errorf("expected Suspend to be false, got true")
+			err := cj.ScaleUp()
+			assert.NoError(t, err)
+			assertBoolPointerEqual(t, test.wantSuspend, cj.Spec.Suspend)
+		})
 	}
 }
 
-// TestCronJobScaleDown tests the ScaleDown method of the cronJob struct.
-func TestCronJobScaleDown(t *testing.T) {
-	cj := &cronJob{
-		CronJob: &batch.CronJob{
-			Spec: batch.CronJobSpec{
-				Suspend: new(bool),
-			},
+func TestCronJob_ScaleDown(t *testing.T) {
+	tests := []struct {
+		name        string
+		suspend     *bool
+		wantSuspend *bool
+	}{
+		{
+			name:        "scale down",
+			suspend:     boolAsPointer(false),
+			wantSuspend: boolAsPointer(true),
+		},
+		{
+			name:        "already scaled down",
+			suspend:     boolAsPointer(true),
+			wantSuspend: boolAsPointer(true),
+		},
+		{
+			name:        "suspend unset",
+			suspend:     nil,
+			wantSuspend: boolAsPointer(true),
 		},
 	}
 
-	*cj.Spec.Suspend = false
-	err := cj.ScaleDown(0)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cj := cronJob{&batch.CronJob{}}
+			cj.Spec.Suspend = test.suspend
 
-	if !*cj.Spec.Suspend {
-		t.Errorf("expected Suspend to be true, got false")
+			err := cj.ScaleDown(0)
+			assert.NoError(t, err)
+			assertBoolPointerEqual(t, test.wantSuspend, cj.Spec.Suspend)
+		})
 	}
 }

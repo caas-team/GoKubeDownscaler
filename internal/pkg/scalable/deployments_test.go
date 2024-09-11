@@ -3,61 +3,108 @@ package scalable
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 )
 
-// TestDeploymentsScaleUp tests the ScaleUp method of the deployment struct.
-func TestDeploymentsScaleUp(t *testing.T) {
-	originalReplicas := int32(5)
-	d := &deployment{
-		Deployment: &appsv1.Deployment{
-			Spec: appsv1.DeploymentSpec{
-				Replicas: &originalReplicas,
-			},
+func TestDeployments_ScaleUp(t *testing.T) {
+	tests := []struct {
+		name                 string
+		replicas             int32
+		originalReplicas     *int
+		wantOriginalReplicas *int
+		wantReplicas         int32
+	}{
+		{
+			name:                 "scale up",
+			replicas:             0,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: nil,
+			wantReplicas:         5,
+		},
+		{
+			name:                 "already scaled up",
+			replicas:             5,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantReplicas:         5,
+		},
+		{
+			name:                 "orignal replicas not set",
+			replicas:             0,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantReplicas:         0,
 		},
 	}
 
-	// Mock setting the original replicas
-	setOriginalReplicas(int(originalReplicas), d)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			d := &deployment{&appsv1.Deployment{}}
+			d.Spec.Replicas = &test.replicas
+			if test.originalReplicas != nil {
+				setOriginalReplicas(*test.originalReplicas, d)
+			}
 
-	err := d.ScaleUp()
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if *d.Spec.Replicas != originalReplicas {
-		t.Errorf("expected replicas to be %d, got %d", originalReplicas, *d.Spec.Replicas)
+			err := d.ScaleUp()
+			assert.NoError(t, err)
+			if assert.NotNil(t, d.Spec.Replicas) {
+				assert.Equal(t, test.wantReplicas, *d.Spec.Replicas)
+			}
+			oringalReplicas, err := getOriginalReplicas(d)
+			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
+		})
 	}
 }
 
-// TestDeploymentsScaleDown tests the ScaleDown method of the deployment struct.
-func TestDeploymentsScaleDown(t *testing.T) {
-	originalReplicas := int32(5)
-	d := &deployment{
-		Deployment: &appsv1.Deployment{
-			Spec: appsv1.DeploymentSpec{
-				Replicas: &originalReplicas,
-			},
+func TestDeployments_ScaleDown(t *testing.T) {
+	tests := []struct {
+		name                 string
+		replicas             int32
+		originalReplicas     *int
+		wantOriginalReplicas *int
+		wantReplicas         int32
+	}{
+		{
+			name:                 "scale down",
+			replicas:             5,
+			originalReplicas:     nil,
+			wantOriginalReplicas: intAsPointer(5),
+			wantReplicas:         0,
+		},
+		{
+			name:                 "already scaled down",
+			replicas:             0,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(5),
+			wantReplicas:         0,
+		},
+		{
+			name:                 "orignal replicas set, but not scaled down",
+			replicas:             2,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(2),
+			wantReplicas:         0,
 		},
 	}
 
-	downscaleReplicas := 2
-	err := d.ScaleDown(downscaleReplicas)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			d := &deployment{&appsv1.Deployment{}}
+			d.Spec.Replicas = &test.replicas
+			if test.originalReplicas != nil {
+				setOriginalReplicas(*test.originalReplicas, d)
+			}
 
-	if *d.Spec.Replicas != int32(downscaleReplicas) {
-		t.Errorf("expected replicas to be %d, got %d", downscaleReplicas, *d.Spec.Replicas)
-	}
-
-	// Verify that original replicas are stored correctly
-	storedOriginalReplicas, err := getOriginalReplicas(d)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if *storedOriginalReplicas != int(originalReplicas) {
-		t.Errorf("expected original replicas to be %d, got %d", originalReplicas, *storedOriginalReplicas)
+			err := d.ScaleDown(0)
+			assert.NoError(t, err)
+			if assert.NotNil(t, d.Spec.Replicas) {
+				assert.Equal(t, test.wantReplicas, *d.Spec.Replicas)
+			}
+			oringalReplicas, err := getOriginalReplicas(d)
+			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
+		})
 	}
 }

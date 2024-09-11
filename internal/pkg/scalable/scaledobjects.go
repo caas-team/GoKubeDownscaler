@@ -47,6 +47,14 @@ func (s *scaledObject) getPauseAnnotation() (int, error) {
 	return pausedReplicas, nil
 }
 
+// setPauseAnnotation sets the value of keda pause annotations
+func (s *scaledObject) setPauseAnnotation(value int) {
+	if s.Annotations == nil {
+		s.Annotations = map[string]string{}
+	}
+	s.Annotations[annotationKedaPausedReplicas] = strconv.Itoa(value)
+}
+
 // ScaleUp upscale the resource when the downscale period ends
 func (s *scaledObject) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(s)
@@ -62,7 +70,7 @@ func (s *scaledObject) ScaleUp() error {
 		removeOriginalReplicas(s)
 		return nil
 	}
-	delete(s.Annotations, annotationKedaPausedReplicas)
+	s.setPauseAnnotation(*originalReplicas)
 	removeOriginalReplicas(s)
 	return nil
 }
@@ -73,7 +81,11 @@ func (s *scaledObject) ScaleDown(downscaleReplicas int) error {
 	if err != nil {
 		return fmt.Errorf("failed to get pause scaledobject annotation: %w", err)
 	}
-	s.Annotations[annotationKedaPausedReplicas] = strconv.Itoa(downscaleReplicas)
+	if pausedReplicas == downscaleReplicas {
+		slog.Debug("workload is already scaled down, skipping", "workload", s.GetName(), "namespace", s.GetNamespace())
+		return nil
+	}
+	s.setPauseAnnotation(downscaleReplicas)
 	setOriginalReplicas(pausedReplicas, s)
 	return nil
 }

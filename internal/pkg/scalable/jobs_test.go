@@ -3,47 +3,76 @@ package scalable
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	batch "k8s.io/api/batch/v1"
 )
 
-// TestJobsScaleUp tests the ScaleUp method of the job struct.
-func TestJobsScaleUp(t *testing.T) {
-	j := &job{
-		Job: &batch.Job{
-			Spec: batch.JobSpec{
-				Suspend: new(bool),
-			},
+func TestJob_ScaleUp(t *testing.T) {
+	tests := []struct {
+		name        string
+		suspend     *bool
+		wantSuspend *bool
+	}{
+		{
+			name:        "scale up",
+			suspend:     boolAsPointer(true),
+			wantSuspend: boolAsPointer(false),
+		},
+		{
+			name:        "already scaled up",
+			suspend:     boolAsPointer(false),
+			wantSuspend: boolAsPointer(false),
+		},
+		{
+			name:        "suspend unset",
+			suspend:     nil,
+			wantSuspend: boolAsPointer(false),
 		},
 	}
 
-	*j.Spec.Suspend = true // Initially, the job is suspended
-	err := j.ScaleUp()
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			j := job{&batch.Job{}}
+			j.Spec.Suspend = test.suspend
 
-	if *j.Spec.Suspend {
-		t.Errorf("expected Suspend to be false, got true")
+			err := j.ScaleUp()
+			assert.NoError(t, err)
+			assertBoolPointerEqual(t, test.wantSuspend, j.Spec.Suspend)
+		})
 	}
 }
 
-// TestJobsScaleDown tests the ScaleDown method of the job struct.
-func TestJobsScaleDown(t *testing.T) {
-	j := &job{
-		Job: &batch.Job{
-			Spec: batch.JobSpec{
-				Suspend: new(bool),
-			},
+func TestJob_ScaleDown(t *testing.T) {
+	tests := []struct {
+		name        string
+		suspend     *bool
+		wantSuspend *bool
+	}{
+		{
+			name:        "scale down",
+			suspend:     boolAsPointer(false),
+			wantSuspend: boolAsPointer(true),
+		},
+		{
+			name:        "already scaled down",
+			suspend:     boolAsPointer(true),
+			wantSuspend: boolAsPointer(true),
+		},
+		{
+			name:        "suspend unset",
+			suspend:     nil,
+			wantSuspend: boolAsPointer(true),
 		},
 	}
 
-	*j.Spec.Suspend = false // Initially, the job is not suspended
-	err := j.ScaleDown(0)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			j := job{&batch.Job{}}
+			j.Spec.Suspend = test.suspend
 
-	if !*j.Spec.Suspend {
-		t.Errorf("expected Suspend to be true, got false")
+			err := j.ScaleDown(0)
+			assert.NoError(t, err)
+			assertBoolPointerEqual(t, test.wantSuspend, j.Spec.Suspend)
+		})
 	}
 }

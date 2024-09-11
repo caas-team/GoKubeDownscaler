@@ -3,65 +3,108 @@ package scalable
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/autoscaling/v2"
 )
 
-// TestHPAScaleUp tests the ScaleUp method of the horizontalPodAutoscaler struct.
-func TestHPAScaleUp(t *testing.T) {
-	originalReplicas := int32(3)
-	h := &horizontalPodAutoscaler{
-		HorizontalPodAutoscaler: &appsv1.HorizontalPodAutoscaler{
-			Spec: appsv1.HorizontalPodAutoscalerSpec{
-				MinReplicas: &originalReplicas,
-			},
+func TestHPA_ScaleUp(t *testing.T) {
+	tests := []struct {
+		name                 string
+		replicas             int32
+		originalReplicas     *int
+		wantOriginalReplicas *int
+		wantReplicas         int32
+	}{
+		{
+			name:                 "scale up",
+			replicas:             0,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: nil,
+			wantReplicas:         5,
+		},
+		{
+			name:                 "already scaled up",
+			replicas:             5,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantReplicas:         5,
+		},
+		{
+			name:                 "orignal replicas not set",
+			replicas:             0,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantReplicas:         0,
 		},
 	}
 
-	// Mock setting the original replicas
-	setOriginalReplicas(int(originalReplicas), h)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			hpa := &horizontalPodAutoscaler{&appsv1.HorizontalPodAutoscaler{}}
+			hpa.Spec.MinReplicas = &test.replicas
+			if test.originalReplicas != nil {
+				setOriginalReplicas(*test.originalReplicas, hpa)
+			}
 
-	// Modify MinReplicas to simulate scaling down before scaling up
-	newReplicas := int32(1)
-	h.Spec.MinReplicas = &newReplicas
-
-	err := h.ScaleUp()
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if *h.Spec.MinReplicas != originalReplicas {
-		t.Errorf("expected MinReplicas to be %d, got %d", originalReplicas, *h.Spec.MinReplicas)
+			err := hpa.ScaleUp()
+			assert.NoError(t, err)
+			if assert.NotNil(t, hpa.Spec.MinReplicas) {
+				assert.Equal(t, test.wantReplicas, *hpa.Spec.MinReplicas)
+			}
+			oringalReplicas, err := getOriginalReplicas(hpa)
+			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
+		})
 	}
 }
 
-// TestHPAScaleDown tests the ScaleDown method of the horizontalPodAutoscaler struct.
-func TestHPAScaleDown(t *testing.T) {
-	originalReplicas := int32(5)
-	h := &horizontalPodAutoscaler{
-		HorizontalPodAutoscaler: &appsv1.HorizontalPodAutoscaler{
-			Spec: appsv1.HorizontalPodAutoscalerSpec{
-				MinReplicas: &originalReplicas,
-			},
+func TestHPA_ScaleDown(t *testing.T) {
+	tests := []struct {
+		name                 string
+		replicas             int32
+		originalReplicas     *int
+		wantOriginalReplicas *int
+		wantReplicas         int32
+	}{
+		{
+			name:                 "scale down",
+			replicas:             5,
+			originalReplicas:     nil,
+			wantOriginalReplicas: intAsPointer(5),
+			wantReplicas:         1,
+		},
+		{
+			name:                 "already scaled down",
+			replicas:             1,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(5),
+			wantReplicas:         1,
+		},
+		{
+			name:                 "orignal replicas set, but not scaled down",
+			replicas:             2,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(2),
+			wantReplicas:         1,
 		},
 	}
 
-	downscaleReplicas := 2
-	err := h.ScaleDown(downscaleReplicas)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			hpa := &horizontalPodAutoscaler{&appsv1.HorizontalPodAutoscaler{}}
+			hpa.Spec.MinReplicas = &test.replicas
+			if test.originalReplicas != nil {
+				setOriginalReplicas(*test.originalReplicas, hpa)
+			}
 
-	if *h.Spec.MinReplicas != int32(downscaleReplicas) {
-		t.Errorf("expected MinReplicas to be %d, got %d", downscaleReplicas, *h.Spec.MinReplicas)
-	}
-
-	// Verify that original replicas are stored correctly
-	storedOriginalReplicas, err := getOriginalReplicas(h)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if *storedOriginalReplicas != int(originalReplicas) {
-		t.Errorf("expected original replicas to be %d, got %d", originalReplicas, *storedOriginalReplicas)
+			err := hpa.ScaleDown(1)
+			assert.NoError(t, err)
+			if assert.NotNil(t, hpa.Spec.MinReplicas) {
+				assert.Equal(t, test.wantReplicas, *hpa.Spec.MinReplicas)
+			}
+			oringalReplicas, err := getOriginalReplicas(hpa)
+			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
+		})
 	}
 }

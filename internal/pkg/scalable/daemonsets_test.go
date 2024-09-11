@@ -3,56 +3,72 @@ package scalable
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 )
 
-// TestDaemonSetScaleUp tests the ScaleUp method of the daemonSet struct.
-func TestDaemonSetScaleUp(t *testing.T) {
-	ds := &daemonSet{
-		DaemonSet: &appsv1.DaemonSet{
-			Spec: appsv1.DaemonSetSpec{
-				Template: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						NodeSelector: map[string]string{
-							labelMatchNone: "true",
-						},
-					},
-				},
-			},
+func TestDaemonSet_ScaleUp(t *testing.T) {
+	tests := []struct {
+		name         string
+		labelSet     bool
+		wantLabelSet bool
+	}{
+		{
+			name:         "scale up",
+			labelSet:     true,
+			wantLabelSet: false,
+		},
+		{
+			name:         "already scaled up",
+			labelSet:     false,
+			wantLabelSet: false,
 		},
 	}
 
-	err := ds.ScaleUp()
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ds := daemonSet{&appsv1.DaemonSet{}}
+			if test.labelSet {
+				ds.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: "true"}
+			}
 
-	if _, exists := ds.Spec.Template.Spec.NodeSelector[labelMatchNone]; exists {
-		t.Errorf("expected label %s to be removed, but it still exists", labelMatchNone)
+			err := ds.ScaleUp()
+			assert.NoError(t, err)
+			_, ok := ds.Spec.Template.Spec.NodeSelector[labelMatchNone]
+			assert.Equal(t, test.wantLabelSet, ok)
+		})
 	}
 }
 
-// TestDaemonSetScaleDown tests the ScaleDown method of the daemonSet struct.
-func TestDaemonSetScaleDown(t *testing.T) {
-	ds := &daemonSet{
-		DaemonSet: &appsv1.DaemonSet{
-			Spec: appsv1.DaemonSetSpec{
-				Template: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						NodeSelector: map[string]string{},
-					},
-				},
-			},
+func TestDaemonSet_ScaleDown(t *testing.T) {
+	tests := []struct {
+		name         string
+		labelSet     bool
+		wantLabelSet bool
+	}{
+		{
+			name:         "scale down",
+			labelSet:     false,
+			wantLabelSet: true,
+		},
+		{
+			name:         "already scaled down",
+			labelSet:     true,
+			wantLabelSet: true,
 		},
 	}
 
-	err := ds.ScaleDown(0)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ds := daemonSet{&appsv1.DaemonSet{}}
+			if test.labelSet {
+				ds.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: "true"}
+			}
 
-	if val, exists := ds.Spec.Template.Spec.NodeSelector[labelMatchNone]; !exists || val != "true" {
-		t.Errorf("expected label %s to be added with value 'true', but got value %v", labelMatchNone, val)
+			err := ds.ScaleDown(0)
+			assert.NoError(t, err)
+			_, ok := ds.Spec.Template.Spec.NodeSelector[labelMatchNone]
+			assert.Equal(t, test.wantLabelSet, ok)
+		})
 	}
 }

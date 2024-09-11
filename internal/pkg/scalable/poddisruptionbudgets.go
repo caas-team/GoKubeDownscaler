@@ -8,7 +8,7 @@ import (
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 
-	appsv1 "k8s.io/api/policy/v1"
+	policy "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -28,7 +28,7 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 
 // podDisruptionBudget is a wrapper for policy/v1.podDisruptionBudget to implement the Workload interface
 type podDisruptionBudget struct {
-	*appsv1.PodDisruptionBudget
+	*policy.PodDisruptionBudget
 }
 
 // getMinAvailableInt returns the spec.MinAvailable value if it is not a percentage
@@ -112,6 +112,10 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int) error {
 	maxUnavailable := p.getMaxUnavailableInt()
 	minAvailable := p.getMinAvailableInt()
 	if maxUnavailable != values.Undefined {
+		if maxUnavailable == downscaleReplicas {
+			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
+			return nil
+		}
 		err := p.setMaxUnavailable(downscaleReplicas)
 		if err != nil {
 			return fmt.Errorf("failed to set minAvailable for workload: %w", err)
@@ -120,6 +124,10 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int) error {
 		return nil
 	}
 	if minAvailable != values.Undefined {
+		if minAvailable == downscaleReplicas {
+			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
+			return nil
+		}
 		err := p.setMinAvailable(downscaleReplicas)
 		if err != nil {
 			return fmt.Errorf("failed to set minAvailable for workload: %w", err)

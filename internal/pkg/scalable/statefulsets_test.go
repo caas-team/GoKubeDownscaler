@@ -3,75 +3,108 @@ package scalable
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// TestScaleUp tests the ScaleUp method of the statefulSet struct.
-func TestStatefulSetsScaleUp(t *testing.T) {
-	// Mock a statefulSet with an initial replica count of 3
-	originalReplicas := int32(3)
-	ss := &statefulSet{
-		StatefulSet: &appsv1.StatefulSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-statefulset",
-				Namespace: "default",
-			},
-			Spec: appsv1.StatefulSetSpec{
-				Replicas: &originalReplicas,
-			},
+func TestStatefulSets_ScaleUp(t *testing.T) {
+	tests := []struct {
+		name                 string
+		replicas             int32
+		originalReplicas     *int
+		wantOriginalReplicas *int
+		wantReplicas         int32
+	}{
+		{
+			name:                 "scale up",
+			replicas:             0,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: nil,
+			wantReplicas:         5,
+		},
+		{
+			name:                 "already scaled up",
+			replicas:             5,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantReplicas:         5,
+		},
+		{
+			name:                 "orignal replicas not set",
+			replicas:             0,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantReplicas:         0,
 		},
 	}
 
-	// Mock original replicas to test ScaleUp
-	setOriginalReplicas(int(originalReplicas), ss)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ss := &statefulSet{&appsv1.StatefulSet{}}
+			ss.Spec.Replicas = &test.replicas
+			if test.originalReplicas != nil {
+				setOriginalReplicas(*test.originalReplicas, ss)
+			}
 
-	err := ss.ScaleUp()
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	// Ensure that the replicas were restored to the original value
-	if *ss.Spec.Replicas != originalReplicas {
-		t.Errorf("expected replicas to be %d, got %d", originalReplicas, *ss.Spec.Replicas)
+			err := ss.ScaleUp()
+			assert.NoError(t, err)
+			if assert.NotNil(t, ss.Spec.Replicas) {
+				assert.Equal(t, test.wantReplicas, *ss.Spec.Replicas)
+			}
+			oringalReplicas, err := getOriginalReplicas(ss)
+			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
+		})
 	}
 }
 
-// TestScaleDown tests the ScaleDown method of the statefulSet struct.
-func TestStatefulSetsScaleDown(t *testing.T) {
-	// Mock a statefulSet with an initial replica count of 5
-	originalReplicas := int32(5)
-	ss := &statefulSet{
-		StatefulSet: &appsv1.StatefulSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-statefulset",
-				Namespace: "default",
-			},
-			Spec: appsv1.StatefulSetSpec{
-				Replicas: &originalReplicas,
-			},
+func TestStatefulSets_ScaleDown(t *testing.T) {
+	tests := []struct {
+		name                 string
+		replicas             int32
+		originalReplicas     *int
+		wantOriginalReplicas *int
+		wantReplicas         int32
+	}{
+		{
+			name:                 "scale down",
+			replicas:             5,
+			originalReplicas:     nil,
+			wantOriginalReplicas: intAsPointer(5),
+			wantReplicas:         0,
+		},
+		{
+			name:                 "already scaled down",
+			replicas:             0,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(5),
+			wantReplicas:         0,
+		},
+		{
+			name:                 "orignal replicas set, but not scaled down",
+			replicas:             2,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(2),
+			wantReplicas:         0,
 		},
 	}
 
-	// Mock downscaling to 2 replicas
-	downscaleReplicas := 2
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ss := &statefulSet{&appsv1.StatefulSet{}}
+			ss.Spec.Replicas = &test.replicas
+			if test.originalReplicas != nil {
+				setOriginalReplicas(*test.originalReplicas, ss)
+			}
 
-	err := ss.ScaleDown(downscaleReplicas)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	// Ensure that the replicas were set to the downscaled value
-	if *ss.Spec.Replicas != int32(downscaleReplicas) {
-		t.Errorf("expected replicas to be %d, got %d", downscaleReplicas, *ss.Spec.Replicas)
-	}
-
-	// Ensure that the original replicas were stored correctly
-	originalReplicasAfter, err := getOriginalReplicas(ss)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-	if originalReplicasAfter == nil || *originalReplicasAfter != int(originalReplicas) {
-		t.Errorf("expected original replicas to be %d, got %v", originalReplicas, originalReplicasAfter)
+			err := ss.ScaleDown(0)
+			assert.NoError(t, err)
+			if assert.NotNil(t, ss.Spec.Replicas) {
+				assert.Equal(t, test.wantReplicas, *ss.Spec.Replicas)
+			}
+			oringalReplicas, err := getOriginalReplicas(ss)
+			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
+		})
 	}
 }

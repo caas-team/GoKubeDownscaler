@@ -3,114 +3,276 @@ package scalable
 import (
 	"testing"
 
-	appsv1 "k8s.io/api/policy/v1"
+	"github.com/stretchr/testify/assert"
+	policy "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// TestPodDisruptionBudgetScaleUpMaxUnavailable tests the ScaleUp method of the podDisruptionBudget struct when MaxUnavailable is used.
-func TestPodDisruptionBudgetScaleUpMaxUnavailable(t *testing.T) {
-	pdb := &podDisruptionBudget{
-		PodDisruptionBudget: &appsv1.PodDisruptionBudget{
-			Spec: appsv1.PodDisruptionBudgetSpec{
-				MaxUnavailable: &intstr.IntOrString{IntVal: 2, Type: intstr.Int},
-			},
+func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
+	replicasUpscaled := intstr.FromInt32(5)
+	replicasDownscaled := intstr.FromInt32(0)
+	percentile := intstr.FromString("50%")
+	tests := []struct {
+		name                 string
+		minAvailable         *intstr.IntOrString
+		maxUnavailable       *intstr.IntOrString
+		originalReplicas     *int
+		wantOriginalReplicas *int
+		wantMinAvailable     *intstr.IntOrString
+		wantMaxUnavailable   *intstr.IntOrString
+	}{
+		{
+			name:                 "minAvailable scale up",
+			minAvailable:         &replicasDownscaled,
+			maxUnavailable:       nil,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: nil,
+			wantMinAvailable:     &replicasUpscaled,
+			wantMaxUnavailable:   nil,
+		},
+		{
+			name:                 "minAvailable already scaled up",
+			minAvailable:         &replicasUpscaled,
+			maxUnavailable:       nil,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantMinAvailable:     &replicasUpscaled,
+			wantMaxUnavailable:   nil,
+		},
+		{
+			name:                 "minAvailable orignal replicas not set",
+			minAvailable:         &replicasDownscaled,
+			maxUnavailable:       nil,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantMinAvailable:     &replicasDownscaled,
+			wantMaxUnavailable:   nil,
+		},
+		{
+			name:                 "minAvailable percentile",
+			minAvailable:         &percentile,
+			maxUnavailable:       nil,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(5),
+			wantMinAvailable:     &percentile,
+			wantMaxUnavailable:   nil,
+		},
+		{
+			name:                 "minAvailable percentile already scaled up",
+			minAvailable:         &percentile,
+			maxUnavailable:       nil,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantMinAvailable:     &percentile,
+			wantMaxUnavailable:   nil,
+		},
+		{
+			name:                 "maxUnavailable scale up",
+			minAvailable:         nil,
+			maxUnavailable:       &replicasDownscaled,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: nil,
+			wantMinAvailable:     nil,
+			wantMaxUnavailable:   &replicasUpscaled,
+		},
+		{
+			name:                 "maxUnavailable already scaled up",
+			minAvailable:         nil,
+			maxUnavailable:       &replicasUpscaled,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantMinAvailable:     nil,
+			wantMaxUnavailable:   &replicasUpscaled,
+		},
+		{
+			name:                 "maxUnavailable orignal replicas not set",
+			minAvailable:         nil,
+			maxUnavailable:       &replicasDownscaled,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantMinAvailable:     nil,
+			wantMaxUnavailable:   &replicasDownscaled,
+		},
+		{
+			name:                 "maxUnavailable percentile",
+			minAvailable:         nil,
+			maxUnavailable:       &percentile,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(5),
+			wantMinAvailable:     nil,
+			wantMaxUnavailable:   &percentile,
+		},
+		{
+			name:                 "maxUnavailable percentile already scaled up",
+			minAvailable:         nil,
+			maxUnavailable:       &percentile,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantMinAvailable:     nil,
+			wantMaxUnavailable:   &percentile,
 		},
 	}
 
-	// Mock original replicas to test ScaleUp
-	originalReplicas := 5
-	setOriginalReplicas(originalReplicas, pdb)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			pdb := &podDisruptionBudget{&policy.PodDisruptionBudget{}}
+			pdb.Spec.MaxUnavailable = test.maxUnavailable
+			pdb.Spec.MinAvailable = test.minAvailable
+			if test.originalReplicas != nil {
+				setOriginalReplicas(*test.originalReplicas, pdb)
+			}
 
-	err := pdb.ScaleUp()
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+			err := pdb.ScaleUp()
+			assert.NoError(t, err)
+			if test.wantMaxUnavailable != nil {
+				if assert.NotNil(t, pdb.Spec.MaxUnavailable) {
+					assert.Equal(t, *test.wantMaxUnavailable, *pdb.Spec.MaxUnavailable)
+				}
+			}
+			if test.wantMinAvailable != nil {
+				if assert.NotNil(t, pdb.Spec.MinAvailable) {
+					assert.Equal(t, *test.wantMinAvailable, *pdb.Spec.MinAvailable)
+				}
+			}
 
-	if pdb.getMaxUnavailableInt() != originalReplicas {
-		t.Errorf("expected MaxUnavailable to be %d, got %d", originalReplicas, pdb.getMaxUnavailableInt())
+			oringalReplicas, err := getOriginalReplicas(pdb)
+			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
+		})
 	}
 }
 
-// TestPodDisruptionBudgetScaleDownMaxUnavailable tests the ScaleDown method of the podDisruptionBudget struct when MaxUnavailable is used.
-func TestPodDisruptionBudgetScaleDownMaxUnavailable(t *testing.T) {
-	pdb := &podDisruptionBudget{
-		PodDisruptionBudget: &appsv1.PodDisruptionBudget{
-			Spec: appsv1.PodDisruptionBudgetSpec{
-				MaxUnavailable: &intstr.IntOrString{IntVal: 5, Type: intstr.Int},
-			},
+func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
+	replicasUpscaled := intstr.FromInt32(5)
+	replicasUpscaled2 := intstr.FromInt32(2)
+	replicasDownscaled := intstr.FromInt32(0)
+	percentile := intstr.FromString("50%")
+	tests := []struct {
+		name                 string
+		minAvailable         *intstr.IntOrString
+		maxUnavailable       *intstr.IntOrString
+		originalReplicas     *int
+		wantOriginalReplicas *int
+		wantMinAvailable     *intstr.IntOrString
+		wantMaxUnavailable   *intstr.IntOrString
+	}{
+		{
+			name:                 "minAvailable scale down",
+			minAvailable:         &replicasUpscaled,
+			maxUnavailable:       nil,
+			originalReplicas:     nil,
+			wantOriginalReplicas: intAsPointer(5),
+			wantMinAvailable:     &replicasDownscaled,
+			wantMaxUnavailable:   nil,
+		},
+		{
+			name:                 "minAvailable already scaled down",
+			minAvailable:         &replicasDownscaled,
+			maxUnavailable:       nil,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(5),
+			wantMinAvailable:     &replicasDownscaled,
+			wantMaxUnavailable:   nil,
+		},
+		{
+			name:                 "minAvailable orignal replicas set, but not scaled down",
+			minAvailable:         &replicasUpscaled2,
+			maxUnavailable:       nil,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(2),
+			wantMinAvailable:     &replicasDownscaled,
+			wantMaxUnavailable:   nil,
+		},
+		{
+			name:                 "minAvailable percentile",
+			minAvailable:         &percentile,
+			maxUnavailable:       nil,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantMinAvailable:     &percentile,
+			wantMaxUnavailable:   nil,
+		},
+		{
+			name:                 "minAvailable percentile already scaled down",
+			minAvailable:         &percentile,
+			maxUnavailable:       nil,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(5),
+			wantMinAvailable:     &percentile,
+			wantMaxUnavailable:   nil,
+		},
+		{
+			name:                 "maxUnavailable scale down",
+			minAvailable:         nil,
+			maxUnavailable:       &replicasUpscaled,
+			originalReplicas:     nil,
+			wantOriginalReplicas: intAsPointer(5),
+			wantMinAvailable:     nil,
+			wantMaxUnavailable:   &replicasDownscaled,
+		},
+		{
+			name:                 "maxUnavailable already scaled down",
+			minAvailable:         nil,
+			maxUnavailable:       &replicasDownscaled,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(5),
+			wantMinAvailable:     nil,
+			wantMaxUnavailable:   &replicasDownscaled,
+		},
+		{
+			name:                 "maxUnavailable orignal replicas set, but not scaled down",
+			minAvailable:         nil,
+			maxUnavailable:       &replicasUpscaled2,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(2),
+			wantMinAvailable:     nil,
+			wantMaxUnavailable:   &replicasDownscaled,
+		},
+		{
+			name:                 "maxUnavailable percentile",
+			minAvailable:         nil,
+			maxUnavailable:       &percentile,
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantMinAvailable:     nil,
+			wantMaxUnavailable:   &percentile,
+		},
+		{
+			name:                 "maxUnavailable percentile already scaled down",
+			minAvailable:         nil,
+			maxUnavailable:       &percentile,
+			originalReplicas:     intAsPointer(5),
+			wantOriginalReplicas: intAsPointer(5),
+			wantMinAvailable:     nil,
+			wantMaxUnavailable:   &percentile,
 		},
 	}
 
-	downscaleReplicas := 2
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			pdb := &podDisruptionBudget{&policy.PodDisruptionBudget{}}
+			pdb.Spec.MaxUnavailable = test.maxUnavailable
+			pdb.Spec.MinAvailable = test.minAvailable
+			if test.originalReplicas != nil {
+				setOriginalReplicas(*test.originalReplicas, pdb)
+			}
 
-	err := pdb.ScaleDown(downscaleReplicas)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+			err := pdb.ScaleDown(0)
+			assert.NoError(t, err)
+			if test.wantMaxUnavailable != nil {
+				if assert.NotNil(t, pdb.Spec.MaxUnavailable) {
+					assert.Equal(t, *test.wantMaxUnavailable, *pdb.Spec.MaxUnavailable)
+				}
+			}
+			if test.wantMinAvailable != nil {
+				if assert.NotNil(t, pdb.Spec.MinAvailable) {
+					assert.Equal(t, *test.wantMinAvailable, *pdb.Spec.MinAvailable)
+				}
+			}
 
-	if pdb.getMaxUnavailableInt() != downscaleReplicas {
-		t.Errorf("expected MaxUnavailable to be %d, got %d", downscaleReplicas, pdb.getMaxUnavailableInt())
-	}
-
-	originalReplicas, err := getOriginalReplicas(pdb)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-	if originalReplicas == nil || *originalReplicas != 5 {
-		t.Errorf("expected original replicas to be 5, got %v", originalReplicas)
-	}
-}
-
-// TestPodDisruptionBudgetScaleUpWithMinAvailable tests the ScaleUp method of the podDisruptionBudget struct when MinAvailable is used.
-func TestPodDisruptionBudgetScaleUpWithMinAvailable(t *testing.T) {
-	pdb := &podDisruptionBudget{
-		PodDisruptionBudget: &appsv1.PodDisruptionBudget{
-			Spec: appsv1.PodDisruptionBudgetSpec{
-				MinAvailable: &intstr.IntOrString{IntVal: 2, Type: intstr.Int},
-			},
-		},
-	}
-
-	// Mock original replicas to test ScaleUp
-	originalReplicas := 5
-	setOriginalReplicas(originalReplicas, pdb)
-
-	err := pdb.ScaleUp()
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if pdb.getMinAvailableInt() != originalReplicas {
-		t.Errorf("expected MinAvailable to be %d, got %d", originalReplicas, pdb.getMinAvailableInt())
-	}
-}
-
-// TestPodDisruptionBudgetScaleDownWithMinAvailable tests the ScaleDown method of the podDisruptionBudget struct when MinAvailable is used.
-func TestPodDisruptionBudgetScaleDownWithMinAvailable(t *testing.T) {
-	pdb := &podDisruptionBudget{
-		PodDisruptionBudget: &appsv1.PodDisruptionBudget{
-			Spec: appsv1.PodDisruptionBudgetSpec{
-				MinAvailable: &intstr.IntOrString{IntVal: 5, Type: intstr.Int},
-			},
-		},
-	}
-
-	downscaleReplicas := 2
-
-	err := pdb.ScaleDown(downscaleReplicas)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if pdb.getMinAvailableInt() != downscaleReplicas {
-		t.Errorf("expected MinAvailable to be %d, got %d", downscaleReplicas, pdb.getMinAvailableInt())
-	}
-
-	originalReplicas, err := getOriginalReplicas(pdb)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-	if originalReplicas == nil || *originalReplicas != 5 {
-		t.Errorf("expected original replicas to be 5, got %v", originalReplicas)
+			oringalReplicas, err := getOriginalReplicas(pdb)
+			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
+		})
 	}
 }
