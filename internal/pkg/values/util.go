@@ -80,14 +80,14 @@ func GetLayerFromAnnotations(annotations map[string]string, logEvent resourceLog
 		}
 	}
 	if forceUptime, ok := annotations[annotationForceUptime]; ok {
-		result.ForceUptime, err = strconv.ParseBool(forceUptime)
+		err = result.ForceUptime.Set(forceUptime)
 		if err != nil {
 			logEvent.ErrorInvalidAnnotation(annotationForceUptime, fmt.Sprintf("failed to parse %q annotaion: %s", annotationForceUptime, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationForceUptime, err)
 		}
 	}
 	if forceDowntime, ok := annotations[annotationForceDowntime]; ok {
-		result.ForceDowntime, err = strconv.ParseBool(forceDowntime)
+		err = result.ForceDowntime.Set(forceDowntime)
 		if err != nil {
 			logEvent.ErrorInvalidAnnotation(annotationForceDowntime, fmt.Sprintf("failed to parse %q annotaion: %s", annotationForceDowntime, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationForceDowntime, err)

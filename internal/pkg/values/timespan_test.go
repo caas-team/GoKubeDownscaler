@@ -52,19 +52,40 @@ func TestParseRelativeTimeSpan(t *testing.T) {
 			wantErr:        true,
 		},
 		{
-			name:           "invalid Time",
-			timespanString: "Mon-Fri 03:00-04:0 UTC",
+			name:           "invalid Format",
+			timespanString: "Mon-Fri 03:00-04-00 UTC",
 			wantResult:     nil,
 			wantErr:        true,
+		},
+		{
+			name:           "negative Time",
+			timespanString: "Mon-Fri -03:00-04:00 UTC",
+			wantResult:     nil,
+			wantErr:        true,
+		},
+		{
+			name:           "out of range Time",
+			timespanString: "Mon-Fri 00:00-26:00 UTC",
+			wantResult:     nil,
+			wantErr:        true,
+		},
+		{
+			name:           "all day",
+			timespanString: "Mon-Fri 00:00-24:00 UTC",
+			wantResult: &relativeTimeSpan{
+				timezone:    time.UTC,
+				weekdayFrom: time.Monday,
+				weekdayTo:   time.Friday,
+				timeFrom:    zeroTime,
+				timeTo:      zeroTime.Add(24 * time.Hour),
+			},
+			wantErr: false,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			gotResult, gotErr := parseRelativeTimeSpan(test.timespanString)
-
-			// Debugging
-			//t.Errorf("Error: %v", gotResult)
 
 			if test.wantErr {
 				assert.Error(t, gotErr)
@@ -171,6 +192,48 @@ func TestRelativeTimeSpan_isTimeOfDayInRange(t *testing.T) {
 			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(18 * time.Hour), timeTo: zeroTime.Add(4 * time.Hour)},
 			timeOfDay:  zeroTime.Add(18 * time.Hour),
 			wantResult: true,
+		},
+		{
+			name:       "all day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime.Add(24 * time.Hour)},
+			timeOfDay:  zeroTime.Add(18 * time.Hour),
+			wantResult: true,
+		},
+		{
+			name:       "all day overlap to next day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime.Add(24 * time.Hour)},
+			timeOfDay:  zeroTime.Add(24*time.Hour - time.Nanosecond),
+			wantResult: true,
+		},
+		{
+			name:       "all day start of day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime.Add(24 * time.Hour)},
+			timeOfDay:  zeroTime,
+			wantResult: true,
+		},
+		{
+			name:       "24 never",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(24 * time.Hour), timeTo: zeroTime},
+			timeOfDay:  zeroTime.Add(18 * time.Hour),
+			wantResult: false,
+		},
+		{
+			name:       "24 never overlap to next day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(24 * time.Hour), timeTo: zeroTime},
+			timeOfDay:  zeroTime.Add(24*time.Hour - time.Nanosecond),
+			wantResult: false,
+		},
+		{
+			name:       "24 never start of day",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(24 * time.Hour), timeTo: zeroTime},
+			timeOfDay:  zeroTime,
+			wantResult: false,
+		},
+		{
+			name:       "0 never",
+			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime},
+			timeOfDay:  zeroTime,
+			wantResult: false,
 		},
 	}
 
@@ -533,6 +596,94 @@ func BenchmarkDoTimespansOverlap(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				doTimespansOverlap(test.span2, test.span1)
 			}
+		})
+	}
+}
+
+func TestParseAbsoluteTimeSpan(t *testing.T) {
+	time1 := time.Date(2024, time.February, 27, 0, 0, 0, 0, time.UTC)
+	time2 := time1.Add(48 * time.Hour)
+
+	tests := []struct {
+		name           string
+		timespanString string
+		wantResult     absoluteTimeSpan
+		wantErr        bool
+	}{
+		{
+			name:           "valid no spaces",
+			timespanString: fmt.Sprintf("%s-%s", time1.Format(time.RFC3339), time2.Format(time.RFC3339)),
+			wantResult: absoluteTimeSpan{
+				from: time1,
+				to:   time2,
+			},
+			wantErr: false,
+		},
+		{
+			name:           "valid with spaces",
+			timespanString: fmt.Sprintf("%s - %s", time1.Format(time.RFC3339), time2.Format(time.RFC3339)),
+			wantResult: absoluteTimeSpan{
+				from: time1,
+				to:   time2,
+			},
+			wantErr: false,
+		},
+		{
+			name:           "invalid",
+			timespanString: "2024-07Z - 2024-07-29T16:00:00+02:00",
+			wantResult:     absoluteTimeSpan{},
+			wantErr:        true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			gotResult, gotErr := parseAbsoluteTimeSpan(test.timespanString)
+			if test.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.NoError(t, gotErr)
+			}
+			assert.Equal(t, test.wantResult, gotResult)
+		})
+	}
+}
+
+func TestIsAbsoluteTimestamp(t *testing.T) {
+	time1 := time.Date(2024, time.February, 27, 0, 0, 0, 0, time.UTC)
+	time2 := time1.Add(48 * time.Hour)
+
+	tests := []struct {
+		name           string
+		timespanString string
+		wantResult     bool
+	}{
+		{
+			name:           "absolute timespan no spaces",
+			timespanString: fmt.Sprintf("%s-%s", time1.Format(time.RFC3339), time2.Format(time.RFC3339)),
+			wantResult:     true,
+		},
+		{
+			name:           "absolute timespan with spaces",
+			timespanString: fmt.Sprintf("%s - %s", time1.Format(time.RFC3339), time2.Format(time.RFC3339)),
+			wantResult:     true,
+		},
+		{
+			name:           "relative timespan",
+			timespanString: "Mon-Fri 07:30-20:30 Europe/Berlin",
+			wantResult:     false,
+		},
+		{
+			name:           "not a timespan",
+			timespanString: "09:00-16:00",
+			wantResult:     false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			gotResult := isAbsoluteTimestamp(test.timespanString)
+			assert.Equal(t, test.wantResult, gotResult)
 		})
 	}
 }
