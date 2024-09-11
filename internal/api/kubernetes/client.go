@@ -95,11 +95,11 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error {
 	err := workload.ScaleDown(replicas)
 	if err != nil {
-		return fmt.Errorf("failed to complete the scale down process on workload: %w", err)
+		return fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
 	}
 	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
-		return fmt.Errorf("failed to update the workload after completing the scaling down process: %w", err)
+		return fmt.Errorf("failed to update the workload: %w", err)
 	}
 	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 	return nil
@@ -109,11 +109,11 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
 	err := workload.ScaleUp()
 	if err != nil {
-		return fmt.Errorf("failed to complete the scale up process on workload: %w", err)
+		return fmt.Errorf("failed to set the workload into a scaled up state: %w", err)
 	}
 	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
-		return fmt.Errorf("failed to update the workload after completing the scaling up process: %w", err)
+		return fmt.Errorf("failed to update the workload: %w", err)
 	}
 	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 	return nil
