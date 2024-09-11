@@ -17,35 +17,22 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main  # Ensure the main branch is fetched
 
-      - name: Extract Chart Version
-        id: chart_version
-        run: |
-          version=$(yq e '.version' ./deployments/chart/Chart.yaml)
-          echo "version=$version" >> $GITHUB_ENV
+      - name: Fetch the latest from the main branch
+        run: git fetch origin main
 
-      - name: Get latest Git tag
-        id: get_latest_tag
+      - name: Extract Chart appVersion
+        id: extract_appversion
         run: |
-          latest_tag=$(git describe --tags --abbrev=0 || echo "No tags found")
-          echo "latest_tag=$latest_tag" >> $GITHUB_ENV
-
-      # Compare versions and fail if there is a version bump
-      - name: Compare versions and fail if there is a version bump
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'release') }}
-        run: |
-          if [ "v${{ env.version }}" != "${{ env.latest_tag }}" ]; then
-            echo "Version bump detected. Failing the job."
-            exit 1
-          else
-            echo "No version bump detected."
-          fi
+          appversion=$(yq e '.appVersion' ./deployments/chart/Chart.yaml)
+          echo "appversion=$appversion" >> $GITHUB_ENV
 
       # Check for changes in the appVersion between PR and main
       - name: Check for appVersion changes
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'release') }}
         run: |
-          if git diff main -- deployments/chart/Chart.yaml | grep -qe "^[+-]appVersion: "; then
+          if git diff origin/main -- deployments/chart/Chart.yaml | grep -qe "^[+-]appVersion: "; then
             echo "appVersion has changed. Failing the job."
             exit 1
           else
@@ -54,9 +41,9 @@ jobs:
 
       # Post warning comment if there is a failure
       - name: Post warning comment
-        if: ${{ failure() && !contains(github.event.pull_request.labels.*.name, 'release') }}
+        if: ${{ failure() }}
         uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
-          body: "Warning: This PR will result in a new release because the version in Chart.yaml (`${{ env.version }}`) or the appVersion has changed. Please confirm before merging."
+          body: "⚠️ Warning: This PR will result in a new release because the `appVersion` in Chart.yaml has changed to `${{ env.appversion }}`. Please confirm before merging."
