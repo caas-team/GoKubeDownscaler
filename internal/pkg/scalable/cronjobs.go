@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getDeployments is the getResourceFunc for Deployments
+// getCronJobs is the getResourceFunc for CronJobs
 func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	cronjobs, err := clientsets.Kubernetes.BatchV1().CronJobs(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
@@ -26,14 +26,14 @@ type cronJob struct {
 	*batch.CronJob
 }
 
-// ScaleUp upscale the resource
+// ScaleUp scales the resource up
 func (c *cronJob) ScaleUp() error {
 	newSuspend := false
 	c.Spec.Suspend = &newSuspend
 	return nil
 }
 
-// ScaleDown downscale the resource
+// ScaleDown scales the resource down
 func (c *cronJob) ScaleDown(_ int) error {
 	newSuspend := true
 	c.Spec.Suspend = &newSuspend

@@ -30,13 +30,13 @@ type daemonSet struct {
 	*appsv1.DaemonSet
 }
 
-// ScaleUp upscale the resource
+// ScaleUp scales the resource up
 func (d *daemonSet) ScaleUp() error {
 	delete(d.Spec.Template.Spec.NodeSelector, labelMatchNone)
 	return nil
 }
 
-// ScaleDown downscale the resource
+// ScaleDown scales the resource down
 func (d *daemonSet) ScaleDown(_ int) error {
 	if d.Spec.Template.Spec.NodeSelector == nil {
 		d.Spec.Template.Spec.NodeSelector = map[string]string{}
