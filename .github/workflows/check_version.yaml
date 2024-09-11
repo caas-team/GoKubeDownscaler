@@ -32,7 +32,7 @@ jobs:
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
 
       - name: Dispatch Event to Helm-Charts Repo
-        if: ${{ env.version }} != ${{ env.latest_tag}}
+        if: v${{ env.version }} != ${{ env.latest_tag}}
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
