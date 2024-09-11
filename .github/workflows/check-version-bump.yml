@@ -1,14 +1,12 @@
-name: Check for Version Bump in Chart.yaml
+name: Check for Version Bump and appVersion in Chart.yaml
 
 on:
   pull_request:
-    branches:
-      - main
-    paths:
-      - deployments/chart/Chart.yaml
+    types: [opened, synchronize, labeled]
 
 jobs:
   check_version_bump:
+    name: Version Bump Check
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -20,69 +18,45 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v45
-        with:
-          files: |
-            deployments/chart/Chart.yaml
-
-      - name: Check if Chart.yaml has changed
-        if: steps.changed-files.outputs.any_changed == 'true'
-        run: echo "Chart.yaml has been modified."
-
-      - name: Extract version from Chart.yaml
+      - name: Extract Chart Version
         id: chart_version
         run: |
           version=$(yq e '.version' ./deployments/chart/Chart.yaml)
           echo "version=$version" >> $GITHUB_ENV
-          echo "Current Chart version: $version"
-        
+
       - name: Get latest Git tag
         id: get_latest_tag
         run: |
-          latest_tag=$(git describe --tags --abbrev=0 || echo "0.0.0")
+          latest_tag=$(git describe --tags --abbrev=0 || echo "No tags found")
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
-          echo "Latest Git tag: $latest_tag"
 
-      - name: Compare versions
-        id: compare_versions
+      # Compare versions and fail if there is a version bump
+      - name: Compare versions and fail if there is a version bump
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'approved-for-merge') }}
         run: |
-          chart_version=${{ env.version }}
-          git_tag_version=${{ env.latest_tag }}
-          
-          # Strip any leading 'v' from the Git tag to compare versions numerically
-          git_tag_version="${git_tag_version#v}"
-
-          if [ "$chart_version" != "$git_tag_version" ]; then
-            echo "Version bump detected: Chart version ($chart_version) differs from latest Git tag ($git_tag_version)"
-            echo "version_bump=true" >> $GITHUB_ENV
+          if [ "v${{ env.version }}" != "${{ env.latest_tag }}" ]; then
+            echo "Version bump detected. Failing the job."
+            exit 1
           else
             echo "No version bump detected."
-            echo "version_bump=false" >> $GITHUB_ENV
+          fi
 
+      # Check for changes in the appVersion between PR and main
+      - name: Check for appVersion changes
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'approved-for-merge') }}
+        run: |
+          if git diff main -- deployments/chart/Chart.yaml | grep -qe "^[+-]appVersion: "; then
+            echo "appVersion has changed. Failing the job."
+            exit 1
+          else
+            echo "No appVersion changes detected."
+          fi
+
+      # Post warning comment if there is a failure
       - name: Post warning comment
-        if: env.version_bump == 'true'
+        if: ${{ failure() && !contains(github.event.pull_request.labels.*.name, 'approved-for-merge') }}
         uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
-          body: "Warning: This PR will result in a new release because the version in Chart.yaml (`${{ env.version }}`) is different from the latest Git tag (`${{ env.latest_tag }}`). Please confirm before merging."
-
-      - name: Set PR as blocked (requires thumbs up from maintainer)
-        if: env.version_bump == 'true'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const sha = context.payload.pull_request.head.sha;
-            await github.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: sha,
-              state: 'failure',
-              context: 'version-bump-check',
-              description: 'Version bump detected. Awaiting maintainer approval.',
-            });
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
+          body: "Warning: This PR will result in a new release because the version in Chart.yaml (`${{ env.version }}`) or the appVersion has changed. Please confirm before merging."
