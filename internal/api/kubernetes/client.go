@@ -122,7 +122,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 // AddErrorEvent creates or updates a new event on the workload
 func (c client) AddErrorEvent(reason, id, message string, workload scalable.Workload, ctx context.Context) error {
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s.%s", id, message)))
-	name := fmt.Sprintf("%s.%s.%.3x", workload.GetName(), reason, hash)
+	name := fmt.Sprintf("%s.%s.%x", workload.GetName(), reason, hash)
 	eventsClient := c.clientsets.Kubernetes.CoreV1().Events(workload.GetNamespace())
 
 	// check if event already exists
