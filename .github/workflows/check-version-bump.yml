@@ -32,7 +32,7 @@ jobs:
 
       # Compare versions and fail if there is a version bump
       - name: Compare versions and fail if there is a version bump
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'approved-for-merge') }}
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'release') }}
         run: |
           if [ "v${{ env.version }}" != "${{ env.latest_tag }}" ]; then
             echo "Version bump detected. Failing the job."
@@ -43,7 +43,7 @@ jobs:
 
       # Check for changes in the appVersion between PR and main
       - name: Check for appVersion changes
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'approved-for-merge') }}
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'release') }}
         run: |
           if git diff main -- deployments/chart/Chart.yaml | grep -qe "^[+-]appVersion: "; then
             echo "appVersion has changed. Failing the job."
@@ -54,7 +54,7 @@ jobs:
 
       # Post warning comment if there is a failure
       - name: Post warning comment
-        if: ${{ failure() && !contains(github.event.pull_request.labels.*.name, 'approved-for-merge') }}
+        if: ${{ failure() && !contains(github.event.pull_request.labels.*.name, 'release') }}
         uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
