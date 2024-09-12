@@ -1,0 +1,45 @@
+name: Run pre-commit checks
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  run-pre-commit:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go environment
+        uses: actions/setup-go@v5.0.2
+        with:
+          go-version-file: "go.mod"
+      - name: Install dependencies
+        run: |
+          # install required go packages
+          go mod tidy
+          # install gofumpt
+          go install mvdan.cc/gofumpt@latest
+          # install golangci-lint
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
+        env:
+          SKIP: "no-commit-to-branch" # if not skipped, will always fail on main
+      - name: Push changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add .
+          if git diff-index --quiet HEAD; then
+            echo "No changes were made"
+            exit 0
+          fi
+          echo "Found changes"
+          git commit -m "chore: automatically push pre-commit changes"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: always()
