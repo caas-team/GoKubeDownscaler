@@ -4,25 +4,36 @@ import (
 	"context"
 	"errors"
 
+	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
+	"k8s.io/client-go/kubernetes"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
 )
 
 var (
-	timeout                int64 = 30
-	errNoReplicasSpecified       = errors.New("error: workload has no replicas set")
+	timeout                      int64 = 30
+	errNoReplicasSpecified             = errors.New("error: workload has no replicas set")
+	errNoMinReplicasSpecified          = errors.New("error: workload has no minimum replicas set")
+	errBoundOnScalingTargetValue       = errors.New("error: replicas can only be set to a 32-bit integer >= 0 (or >= 1 for HPAs)")
 )
 
-// getResourceFunc is a function that gets a specific resource as a scalableResource
-type getResourceFunc func(namespace string, clientset *kubernetes.Clientset, ctx context.Context) ([]Workload, error)
+// getResourceFunc is a function that gets a specific resource as a Workload
+type getResourceFunc func(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error)
 
-// GetResource maps the resource name to a implementation specific getResourceFunc
+// GetResource maps the resource name to an implementation specific getResourceFunc
 var GetResource = map[string]getResourceFunc{
-	"deployments": getDeployments,
+	"deployments":              getDeployments,
+	"statefulsets":             getStatefulSets,
+	"cronjobs":                 getCronJobs,
+	"jobs":                     getJobs,
+	"daemonsets":               getDaemonSets,
+	"poddisruptionbudgets":     getPodDisruptionBudgets,
+	"horizontalpodautoscalers": getHorizontalPodAutoscalers,
+	"scaledobjects":            getScaledObjects,
 }
 
-// Workload is a interface for a scalable resource. It holds all resource specific functions
+// Workload is an interface for a scalable resource. It holds shared resource specific functions
 type Workload interface {
 	// GetAnnotations gets the annotations of the resource
 	GetAnnotations() map[string]string
@@ -36,10 +47,15 @@ type Workload interface {
 	GetObjectKind() schema.ObjectKind
 	// SetAnnotations sets the annotations on the resource. Changes won't be made on kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
-	// SetReplicas sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
-	SetReplicas(replicas int)
-	// GetCurrentReplicas gets the current amount of replicas of the resource
-	GetCurrentReplicas() (int, error)
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
-	Update(clientset *kubernetes.Clientset, ctx context.Context) error
+	Update(clientsets *Clientsets, ctx context.Context) error
+	// ScaleUp scales up the workload
+	ScaleUp() error
+	// ScaleDown scales down the workload
+	ScaleDown(downscaleReplicas int) error
+}
+
+type Clientsets struct {
+	Kubernetes *kubernetes.Clientset
+	Keda       *keda.Clientset
 }
