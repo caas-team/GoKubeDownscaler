@@ -3,10 +3,5 @@ name: go-kube-downscaler
 description: A Helm chart for deploying the go-kube-downscaler
 
 type: application
-<<<<<<< feat/RefactorWorkflows
 version: 1.0.0
 appVersion: 1.0.0
-=======
-version: 0.0.0
-appVersion: 0.0.0
->>>>>>> main
