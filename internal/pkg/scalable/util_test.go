@@ -73,35 +73,35 @@ func TestFilterExcluded(t *testing.T) {
 	}{
 		{
 			name:               "none set",
-			workloads:          []Workload{ns1.deployment1, ns1.deployment2, ns2.deployment1},
+			workloads:          []Workload{&ns1.deployment1, &ns1.deployment2, &ns2.deployment1},
 			includeLabels:      nil,
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
-			want:               []Workload{ns1.deployment1, ns1.deployment2, ns2.deployment1},
+			want:               []Workload{&ns1.deployment1, &ns1.deployment2, &ns2.deployment1},
 		},
 		{
 			name:               "includeLabels",
-			workloads:          []Workload{ns1.deployment1, ns1.deployment2, ns1.labeledDeployment},
+			workloads:          []Workload{&ns1.deployment1, &ns1.deployment2, &ns1.labeledDeployment},
 			includeLabels:      values.RegexList{regexp.MustCompile(".*")}, // match any label
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
-			want:               []Workload{ns1.labeledDeployment},
+			want:               []Workload{&ns1.labeledDeployment},
 		},
 		{
 			name:               "excludeNamespaces",
-			workloads:          []Workload{ns1.deployment1, ns1.deployment2, ns2.deployment1},
+			workloads:          []Workload{&ns1.deployment1, &ns1.deployment2, &ns2.deployment1},
 			includeLabels:      nil,
 			excludedNamespaces: values.RegexList{regexp.MustCompile("Namespace1")}, // exclude Namespace1
 			excludedWorkloads:  nil,
-			want:               []Workload{ns2.deployment1},
+			want:               []Workload{&ns2.deployment1},
 		},
 		{
 			name:               "excludeWorkloads",
-			workloads:          []Workload{ns1.deployment1, ns1.deployment2, ns2.deployment1},
+			workloads:          []Workload{&ns1.deployment1, &ns1.deployment2, &ns2.deployment1},
 			includeLabels:      nil,
 			excludedNamespaces: nil,
 			excludedWorkloads:  values.RegexList{regexp.MustCompile("Deployment1")}, // exclude Deployment1
-			want:               []Workload{ns1.deployment2},
+			want:               []Workload{&ns1.deployment2},
 		},
 	}
 	for _, test := range tests {
