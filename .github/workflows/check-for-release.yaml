@@ -1,0 +1,46 @@
+name: Check for new release
+
+on:
+  pull_request:
+    types: [opened, synchronize, labeled]
+
+jobs:
+  check_version_bump:
+    name: Check For Relase
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract Chart appVersion
+        id: extract_appversion
+        run: |
+          appversion=$(yq e '.appVersion' ./deployments/chart/Chart.yaml)
+          echo "appversion=$appversion" >> $GITHUB_ENV
+
+      # Check for changes in the appVersion between PR and base branch
+      - name: Check for appVersion changes
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'release') }}
+        run: |
+          echo "Checking for appVersion changes..."
+          if git diff origin/${{ github.base_ref }} -- deployments/chart/Chart.yaml | grep -qe "^[+-]appVersion: "; then
+            echo "appVersion has changed. Failing the job."
+            exit 1
+          else
+            echo "No appVersion changes detected."
+          fi
+
+      # Post warning comment if there is a failure
+      - name: Post warning comment
+        if: ${{ failure() }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: "⚠️ Warning: This PR will result in a new release because the `appVersion` in Chart.yaml has changed to `${{ env.appversion }}`. Please confirm before merging."
