@@ -1,4 +1,4 @@
-name: Run pre-commit
+name: Run pre-commit checks
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  test:
+  run-pre-commit:
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -26,6 +26,8 @@ jobs:
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
+        env:
+          SKIP: "no-commit-to-branch" # if not skipped, will always fail on main
       - name: Push changes
         run: |
           git config --global user.name "github-actions[bot]"
