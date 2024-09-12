@@ -6,18 +6,16 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strconv"
+	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
-	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 const (
-	annotationOriginalReplicas = "downscaler/original-replicas"
-
 	componentName = "kubedownscaler"
 )
 
@@ -40,26 +38,32 @@ type Client interface {
 // NewClient makes a new Client
 func NewClient(kubeconfig string) (client, error) {
 	var kubeclient client
+	var clientsets scalable.Clientsets
 
 	config, err := getConfig(kubeconfig)
 	if err != nil {
 		return kubeclient, fmt.Errorf("failed to get config for kubernetes: %w", err)
 	}
-	kubeclient.clientset, err = kubernetes.NewForConfig(config)
+	clientsets.Kubernetes, err = kubernetes.NewForConfig(config)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get clientset for kubernetes: %w", err)
+		return kubeclient, fmt.Errorf("failed to get clientset for kubernetes resources: %w", err)
 	}
+	clientsets.Keda, err = keda.NewForConfig(config)
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to get clientset for keda resources: %w", err)
+	}
+	kubeclient.clientsets = &clientsets
 	return kubeclient, nil
 }
 
 // client is a kubernetes client with downscaling specific functions
 type client struct {
-	clientset *kubernetes.Clientset
+	clientsets *scalable.Clientsets
 }
 
 // GetNamespaceAnnotations gets the annotations of the workload's namespace
 func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
-	ns, err := c.clientset.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
+	ns, err := c.clientsets.Kubernetes.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace: %w", err)
 	}
@@ -71,11 +75,12 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 	var results []scalable.Workload
 	for _, namespace := range namespaces {
 		for _, resourceType := range resourceTypes {
-			getWorkload, ok := scalable.GetResource[resourceType]
+			slog.Debug("getting workloads from resource type", "resourceType", resourceType)
+			getWorkload, ok := scalable.GetResource[strings.ToLower(resourceType)]
 			if !ok {
 				return nil, errResourceNotSupported
 			}
-			workloads, err := getWorkload(namespace, c.clientset, ctx)
+			workloads, err := getWorkload(namespace, c.clientsets, ctx)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get workloads: %w", err)
 			}
@@ -88,20 +93,13 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 
 // DownscaleWorkload downscales the workload to the specified replicas
 func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error {
-	originalReplicas, err := workload.GetCurrentReplicas()
+	err := workload.ScaleDown(replicas)
 	if err != nil {
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+		return fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
 	}
-	if originalReplicas == replicas {
-		slog.Debug("workload is already at downscale replicas, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return nil
-	}
-
-	workload.SetReplicas(replicas)
-	c.setOriginalReplicas(originalReplicas, workload)
-	err = workload.Update(c.clientset, ctx)
+	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
-		return fmt.Errorf("failed to update workload: %w", err)
+		return fmt.Errorf("failed to update the workload: %w", err)
 	}
 	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 	return nil
@@ -109,68 +107,23 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 
 // UpscaleWorkload upscales the workload to the original replicas
 func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
-	currentReplicas, err := workload.GetCurrentReplicas()
+	err := workload.ScaleUp()
 	if err != nil {
-		return fmt.Errorf("failed to get current replicas for workload: %w", err)
+		return fmt.Errorf("failed to set the workload into a scaled up state: %w", err)
 	}
-	originalReplicas, err := c.getOriginalReplicas(workload)
+	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
-	}
-	if originalReplicas == values.Undefined {
-		slog.Debug("original replicas is not set, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return nil
-	}
-	if originalReplicas == currentReplicas {
-		slog.Debug("workload is already at original replicas, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return nil
-	}
-
-	workload.SetReplicas(originalReplicas)
-	c.removeOriginalReplicas(workload)
-	err = workload.Update(c.clientset, ctx)
-	if err != nil {
-		return fmt.Errorf("failed to update workload: %w", err)
+		return fmt.Errorf("failed to update the workload: %w", err)
 	}
 	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 	return nil
-}
-
-// setOriginalReplicas sets the original replicas annotation on the workload
-func (c client) setOriginalReplicas(originalReplicas int, workload scalable.Workload) {
-	annotations := workload.GetAnnotations()
-	if annotations == nil {
-		annotations = map[string]string{}
-	}
-	annotations[annotationOriginalReplicas] = fmt.Sprintf("%d", originalReplicas)
-	workload.SetAnnotations(annotations)
-}
-
-// getOriginalReplicas gets the original replicas annotation on the workload. nil is undefined
-func (c client) getOriginalReplicas(workload scalable.Workload) (int, error) {
-	annotations := workload.GetAnnotations()
-	originalReplicasString, ok := annotations[annotationOriginalReplicas]
-	if !ok {
-		return values.Undefined, nil
-	}
-	originalReplicas, err := strconv.Atoi(originalReplicasString)
-	if err != nil {
-		return 0, fmt.Errorf("failed to parse original replicas annotation on workload: %w", err)
-	}
-	return originalReplicas, nil
-}
-
-func (c client) removeOriginalReplicas(workload scalable.Workload) {
-	annotations := workload.GetAnnotations()
-	delete(annotations, annotationOriginalReplicas)
-	workload.SetAnnotations(annotations)
 }
 
 // AddErrorEvent creates or updates a new event on the workload
 func (c client) AddErrorEvent(reason, id, message string, workload scalable.Workload, ctx context.Context) error {
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s.%s", id, message)))
 	name := fmt.Sprintf("%s.%s.%x", workload.GetName(), reason, hash)
-	eventsClient := c.clientset.CoreV1().Events(workload.GetNamespace())
+	eventsClient := c.clientsets.Kubernetes.CoreV1().Events(workload.GetNamespace())
 
 	// check if event already exists
 	if event, err := eventsClient.Get(ctx, name, metav1.GetOptions{}); err == nil && event != nil {
@@ -185,7 +138,7 @@ func (c client) AddErrorEvent(reason, id, message string, workload scalable.Work
 	}
 
 	// create event
-	_, err := c.clientset.CoreV1().Events(workload.GetNamespace()).Create(ctx, &corev1.Event{
+	_, err := c.clientsets.Kubernetes.CoreV1().Events(workload.GetNamespace()).Create(ctx, &corev1.Event{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: workload.GetNamespace(),
