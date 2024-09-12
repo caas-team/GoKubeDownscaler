@@ -30,7 +30,7 @@ jobs:
     name: Post message to warn of new release
     runs-on: ubuntu-latest
     needs: check_for_release
-    if: ${{ failure() && !contains(github.event.pull_request.labels.*.name, 'needs approval') }}
+    if: ${{ failure() && !contains(github.event.pull_request.labels.*.name, 'needs approval') && github.event.action != 'labeled' }}
     permissions:
       contents: write
       pull-requests: write
