@@ -5,8 +5,8 @@ on:
     types: [opened, synchronize, labeled]
 
 jobs:
-  check_version_bump:
-    name: Check For Relase
+  check_for_release:
+    name: Check For Relaese
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -43,4 +43,4 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
-          body: "⚠️ Warning: This PR will result in a new release because the `appVersion` in Chart.yaml has changed to `${{ env.appversion }}`. Please confirm before merging."
+          body: "⚠️ Warning: Merging this PR will result in a new release because the `appVersion` in Chart.yaml has changed to `${{ env.appversion }}`. Please confirm before merging."
