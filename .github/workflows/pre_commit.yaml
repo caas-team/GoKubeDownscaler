@@ -36,7 +36,7 @@ jobs:
             exit 0
           fi
           echo "Found changes"
-          git commit -m "chore: automatically push pre-commit file changes"
+          git commit -m "chore: automatically push pre-commit changes"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
