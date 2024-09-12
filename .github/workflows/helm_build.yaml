@@ -1,11 +1,11 @@
-name: Build and Push Helm Package
+name: Build and push helm chart
 
 on:
   repository_dispatch:
-    types: [release-new-version]
+    types: [build-new-chart]
 
 jobs:
-  helm:
+  build_and_push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
@@ -21,13 +21,13 @@ jobs:
           helm registry login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
           helm registry login ${MTR} -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
         env:
-          DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
-          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           MTR: mtr.devops.telekom.de
 
       - name: Helm Lint, Package, and Push
         run: |
-          cd chart
+          cd deployments/chart
           helm lint .
           helm package .
           helm push $(ls *.tgz | head -1) oci://ghcr.io/caas-team/charts
