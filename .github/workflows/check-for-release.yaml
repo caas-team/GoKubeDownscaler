@@ -1,4 +1,4 @@
-name: Check for Version Bump and appVersion in Chart.yaml
+name: Check for new release
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   check_version_bump:
-    name: Version Bump Check
+    name: Check For Relase
     runs-on: ubuntu-latest
     permissions:
       contents: write
