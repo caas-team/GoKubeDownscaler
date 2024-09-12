@@ -55,7 +55,7 @@ func (s *scaledObject) setPauseAnnotation(value int) {
 	s.Annotations[annotationKedaPausedReplicas] = strconv.Itoa(value)
 }
 
-// ScaleUp scales the resource up when the downscale period ends
+// ScaleUp scales the resource up
 func (s *scaledObject) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(s)
 	if err != nil {
@@ -75,7 +75,7 @@ func (s *scaledObject) ScaleUp() error {
 	return nil
 }
 
-// ScaleDown scales down the workload
+// ScaleDown scales the workload down
 func (s *scaledObject) ScaleDown(downscaleReplicas int) error {
 	pausedReplicas, err := s.getPauseAnnotation()
 	if err != nil {

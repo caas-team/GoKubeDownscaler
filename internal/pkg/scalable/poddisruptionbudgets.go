@@ -118,7 +118,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int) error {
 		}
 		err := p.setMaxUnavailable(downscaleReplicas)
 		if err != nil {
-			return fmt.Errorf("failed to set minAvailable for workload: %w", err)
+			return fmt.Errorf("failed to set maxUnavailable for workload: %w", err)
 		}
 		setOriginalReplicas(maxUnavailable, p)
 		return nil

@@ -21,7 +21,7 @@ var (
 // getResourceFunc is a function that gets a specific resource as a Workload
 type getResourceFunc func(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error)
 
-// GetResource maps the resource name to a implementation specific getResourceFunc
+// GetResource maps the resource name to an implementation specific getResourceFunc
 var GetResource = map[string]getResourceFunc{
 	"deployments":              getDeployments,
 	"statefulsets":             getStatefulSets,

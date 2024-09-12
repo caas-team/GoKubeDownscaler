@@ -10,14 +10,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getHorizontalPodAutoscalers is the getResourceFunc for horizontalPodAutoscaler
+// getHorizontalPodAutoscalers is the getResourceFunc for horizontalPodAutoscalers
 func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
-	poddisruptionbudgets, err := clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
+	hpas, err := clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get horizontalpodautoscalers: %w", err)
 	}
-	for _, item := range poddisruptionbudgets.Items {
+	for _, item := range hpas.Items {
 		results = append(results, &horizontalPodAutoscaler{&item})
 	}
 	return results, nil
@@ -40,7 +40,7 @@ func (h *horizontalPodAutoscaler) setMinReplicas(replicas int) error {
 	return nil
 }
 
-// getMinReplicas get the spec.MinReplicas from the resource
+// getMinReplicas gets the spec.MinReplicas from the resource
 func (h *horizontalPodAutoscaler) getMinReplicas() (int, error) {
 	minReplicas := h.Spec.MinReplicas
 	if minReplicas == nil {
@@ -62,7 +62,7 @@ func (h *horizontalPodAutoscaler) ScaleUp() error {
 
 	err = h.setMinReplicas(*originalReplicas)
 	if err != nil {
-		return fmt.Errorf("failed to set original replicas for workload: %w", err)
+		return fmt.Errorf("failed to set minimum replicas for workload: %w", err)
 	}
 	removeOriginalReplicas(h)
 	return nil
