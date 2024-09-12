@@ -5,6 +5,7 @@
 - [Issues](#issues)
 - [Pull Requests](#pull-requests)
 - [Pre Commit](#pre-commit)
+- [Versioning](#versioning)
 
 ## Branches and Commits
 
@@ -61,3 +62,17 @@ Set yourself and any other collaborators as assignee.
 ## Pre Commit
 
 It is recommended to install pre-commit. This insures that formatting is consistent, you don't commit to protected branches and you don't accidentally commit broken code or new functionality without changing the tests. The installation process is in the [README](README.md#setting-up-pre-commit)
+
+## Versioning
+
+New releases are automatically created when the appVersion in the Chart.yaml is updated in the main branch. To merge a pull request which when merged would result in a new release, the [`release` label](https://github.com/caas-team/GoKubeDownscaler/labels/release) has to be set on the PR.
+
+Releases are following the semver versioning standard:
+
+Layout: `<Major>.<Minor>.<Patch>` (example: 1.1.0)
+
+- MAJOR: increment on breaking changes
+- MINOR: increment on new funcitonality/features
+- PATCH: increment on small bug fixes
+
+You can find more infomration on semantic versioning here [here](https://semver.org/)
