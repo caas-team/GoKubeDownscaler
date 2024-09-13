@@ -202,12 +202,12 @@ func (t *relativeTimeSpan) inLocation(timezone *time.Location) []relativeTimeSpa
 
 // overlapsIntoPreviousDay checks if timeFrom overlaps into the previous day
 func (r *relativeTimeSpan) overlapsIntoPreviousDay() bool {
-	return r.timeFrom.Year() == -1
+	return r.timeFrom.Year() == -1 // || r.timeTo.Year() == -1
 }
 
 // overlapsIntoNextDay checks if timeTo overlaps into the following day
 func (r *relativeTimeSpan) overlapsIntoNextDay() bool {
-	return asExclusiveTimestamp(r.timeTo).Day() == 2
+	return asExclusiveTimestamp(r.timeTo).Day() == 2 // || r.timeFrom.Day() == 2
 }
 
 type absoluteTimeSpan struct {

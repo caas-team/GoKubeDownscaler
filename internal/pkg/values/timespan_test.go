@@ -570,6 +570,42 @@ var doTimespansOverlapTests = []struct {
 		},
 		wantedResult: false,
 	},
+	{
+		name: "rev-rel rel overlap different timezones day before",
+		span1: &relativeTimeSpan{
+			timezone:    time.UTC,
+			weekdayFrom: time.Monday,
+			weekdayTo:   time.Monday,
+			timeFrom:    zeroTime.Add(8 * time.Hour),
+			timeTo:      zeroTime.Add(24 * time.Hour),
+		},
+		span2: &relativeTimeSpan{
+			timezone:    UTC1,
+			weekdayFrom: time.Monday,
+			weekdayTo:   time.Monday,
+			timeFrom:    zeroTimeUTC1.Add(24 * time.Hour),
+			timeTo:      zeroTimeUTC1.Add(30 * time.Minute),
+		},
+		wantedResult: true,
+	},
+	{
+		name: "rel rev-rel dont overlap different timezones day before",
+		span1: &relativeTimeSpan{
+			timezone:    time.UTC,
+			weekdayFrom: time.Wednesday,
+			weekdayTo:   time.Wednesday,
+			timeFrom:    zeroTime.Add(23 * time.Hour),
+			timeTo:      zeroTime.Add(24 * time.Hour),
+		},
+		span2: &relativeTimeSpan{
+			timezone:    UTC1,
+			weekdayFrom: time.Wednesday,
+			weekdayTo:   time.Wednesday,
+			timeFrom:    zeroTimeUTC1.Add(23 * time.Hour),
+			timeTo:      zeroTimeUTC1.Add(0 * time.Hour),
+		},
+		wantedResult: false,
+	},
 }
 
 func TestOverlappingTimespans(t *testing.T) {
