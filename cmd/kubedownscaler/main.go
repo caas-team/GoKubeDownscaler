@@ -19,7 +19,7 @@ var (
 	layerCli = values.NewLayer()
 	layerEnv = values.NewLayer()
 
-	// if the downscaler should take actions or just print them out // NOT_IMPLEMENTED
+	// if the downscaler should take actions or just print them out
 	dryRun = false
 	// if debug information should be printed
 	debug = false
@@ -57,7 +57,7 @@ func init() {
 	flag.Var(&layerCli.GracePeriod, "grace-period", "the grace period between creation of workload until first downscale (default: 15min)")
 
 	// cli runtime configuration
-	flag.BoolVar(&dryRun, "dry-run", false, "print actions instead of doing them (default: false)")
+	flag.BoolVar(&dryRun, "dry-run", false, "print actions instead of doing them. enables debug logs (default: false)")
 	flag.BoolVar(&debug, "debug", false, "print more debug information (default: false)")
 	flag.BoolVar(&once, "once", false, "run scan only once (default: false)")
 	flag.Var(&interval, "interval", "time between scans (default: 30s)")
@@ -87,7 +87,7 @@ func init() {
 
 func main() {
 	flag.Parse()
-	if debug {
+	if debug || dryRun {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 	if err := layerCli.CheckForIncompatibleFields(); err != nil {
@@ -96,7 +96,7 @@ func main() {
 	}
 	ctx := context.Background()
 
-	client, err := kubernetes.NewClient(kubeconfig)
+	client, err := kubernetes.NewClient(kubeconfig, dryRun)
 	if err != nil {
 		slog.Error("failed to create new kubernetes client", "error", err)
 		os.Exit(1)

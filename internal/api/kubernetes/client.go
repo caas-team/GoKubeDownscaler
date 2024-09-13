@@ -36,9 +36,11 @@ type Client interface {
 }
 
 // NewClient makes a new Client
-func NewClient(kubeconfig string) (client, error) {
+func NewClient(kubeconfig string, dryRun bool) (client, error) {
 	var kubeclient client
 	var clientsets scalable.Clientsets
+
+	kubeclient.dryRun = dryRun
 
 	config, err := getConfig(kubeconfig)
 	if err != nil {
@@ -62,6 +64,7 @@ func NewClient(kubeconfig string) (client, error) {
 // client is a kubernetes client with downscaling specific functions
 type client struct {
 	clientsets *scalable.Clientsets
+	dryRun     bool
 }
 
 // GetNamespaceAnnotations gets the annotations of the workload's namespace
@@ -103,6 +106,10 @@ func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx 
 	if err != nil {
 		return fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
 	}
+	if c.dryRun {
+		slog.Info("running in dry run mode, would have sent update workload request to scale down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
 	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update the workload: %w", err)
@@ -117,6 +124,10 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 	if err != nil {
 		return fmt.Errorf("failed to set the workload into a scaled up state: %w", err)
 	}
+	if c.dryRun {
+		slog.Info("running in dry run mode, would have sent update workload request to scale up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
 	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update the workload: %w", err)
@@ -127,6 +138,18 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 
 // addWorkloadEvent creates or updates a new event on the workload
 func (c client) addWorkloadEvent(eventType, reason, id, message string, workload scalable.Workload, ctx context.Context) error {
+	if c.dryRun {
+		slog.Info("running in dry run mode, would have added an event on workload",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+			"eventType", eventType,
+			"reason", reason,
+			"id", id,
+			"message", message,
+		)
+		return nil
+	}
+
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s.%s", id, message)))
 	name := fmt.Sprintf("%s.%s.%x", workload.GetName(), reason, hash)
 	eventsClient := c.clientsets.Kubernetes.CoreV1().Events(workload.GetNamespace())
