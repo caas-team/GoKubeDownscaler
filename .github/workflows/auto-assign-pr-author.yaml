@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, reopened]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   auto-assign:
     runs-on: ubuntu-latest
