@@ -71,6 +71,10 @@ func main() {
 	if debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
+	if err := layerCli.CheckForIncompatibleFields(); err != nil {
+		slog.Error("found incompatible fields", "error", err)
+		os.Exit(1)
+	}
 	ctx := context.Background()
 
 	client, err := kubernetes.NewClient(kubeconfig)
@@ -145,10 +149,6 @@ func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx cont
 	scaling, err := layers.GetCurrentScaling()
 	if err != nil {
 		slog.Error("failed to get current scaling for workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return false
-	}
-	if scaling == values.ScalingIncompatible {
-		slog.Error("scaling is incompatible, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return false
 	}
 	if scaling == values.ScalingIgnore {

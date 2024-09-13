@@ -7,7 +7,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 )
 
-const reasonInvalidAnnotation = "InvalidAnnotation"
+const reasonInvalidConfiguration = "InvalidConfiguration"
 
 func NewResourceLogger(client Client, workload scalable.Workload) resourceLogger {
 	logger := resourceLogger{
@@ -22,9 +22,9 @@ type resourceLogger struct {
 	client   Client
 }
 
-// ErrorInvalidAnnotation adds an error on the resource
-func (r resourceLogger) ErrorInvalidAnnotation(id, message string, ctx context.Context) {
-	err := r.client.AddErrorEvent(reasonInvalidAnnotation, id, message, r.workload, ctx)
+// ErrorInvalidConfiguration adds an error on the resource
+func (r resourceLogger) ErrorInvalidConfiguration(id, message string, ctx context.Context) {
+	err := r.client.AddErrorEvent(reasonInvalidConfiguration, id, message, r.workload, ctx)
 	if err != nil {
 		slog.Error("failed to add error event to workload", "workload", r.workload.GetName(), "error", err)
 		return

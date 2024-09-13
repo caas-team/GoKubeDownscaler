@@ -332,14 +332,14 @@ var doTimespansOverlapTests = []struct {
 }{
 	{
 		name: "rel rel overlap",
-		span1: relativeTimeSpan{
+		span1: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Friday,
 			timeFrom:    zeroTime.Add(8 * time.Hour),
 			timeTo:      zeroTime.Add(20 * time.Hour),
 		},
-		span2: relativeTimeSpan{
+		span2: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Monday,
@@ -350,14 +350,14 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "rel rel dont overlap",
-		span1: relativeTimeSpan{
+		span1: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Friday,
 			timeFrom:    zeroTime.Add(8 * time.Hour),
 			timeTo:      zeroTime.Add(20 * time.Hour),
 		},
-		span2: relativeTimeSpan{
+		span2: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Tuesday,
 			weekdayTo:   time.Tuesday,
@@ -368,11 +368,11 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "abs abs overlap",
-		span1: absoluteTimeSpan{ // all of January 2024
+		span1: &absoluteTimeSpan{ // all of January 2024
 			from: time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC),  // from 1st of January
 			to:   time.Date(2024, time.February, 1, 0, 0, 0, 0, time.UTC), // to 1st of February
 		},
-		span2: absoluteTimeSpan{ // from the 10th of Janurary 2024 until the end of the 19th of Janurary 2024
+		span2: &absoluteTimeSpan{ // from the 10th of Janurary 2024 until the end of the 19th of Janurary 2024
 			from: time.Date(2024, time.January, 10, 0, 0, 0, 0, time.UTC), // from 10th of January
 			to:   time.Date(2024, time.January, 20, 0, 0, 0, 0, time.UTC), // to 20th of January
 		},
@@ -380,11 +380,11 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "abs abs dont overlap",
-		span1: absoluteTimeSpan{ // all of January 2024
+		span1: &absoluteTimeSpan{ // all of January 2024
 			from: time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC),  // from 1st of January
 			to:   time.Date(2024, time.February, 1, 0, 0, 0, 0, time.UTC), // to 1st of February
 		},
-		span2: absoluteTimeSpan{ // all of February 2024
+		span2: &absoluteTimeSpan{ // all of February 2024
 			from: time.Date(2024, time.February, 10, 0, 0, 0, 0, time.UTC), // from 1st of February
 			to:   time.Date(2024, time.March, 20, 0, 0, 0, 0, time.UTC),    // to 1st of March
 		},
@@ -392,14 +392,14 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "rel abs overlap",
-		span1: relativeTimeSpan{
+		span1: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Friday,
 			timeFrom:    zeroTime.Add(8 * time.Hour),
 			timeTo:      zeroTime.Add(20 * time.Hour),
 		},
-		span2: absoluteTimeSpan{ // all of January 2024
+		span2: &absoluteTimeSpan{ // all of January 2024
 			from: time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC),  // from Monday 1st of January
 			to:   time.Date(2024, time.February, 1, 0, 0, 0, 0, time.UTC), // to Thursday 1st of Feburary
 		},
@@ -407,14 +407,14 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "rel abs dont overlap",
-		span1: relativeTimeSpan{
+		span1: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Friday,
 			timeFrom:    zeroTime.Add(8 * time.Hour),
 			timeTo:      zeroTime.Add(20 * time.Hour),
 		},
-		span2: absoluteTimeSpan{ // the entire day on 6th of January 2024 (Saturday)
+		span2: &absoluteTimeSpan{ // the entire day on 6th of January 2024 (Saturday)
 			from: time.Date(2024, time.January, 6, 0, 0, 0, 0, time.UTC), // from Saturday 6th of January
 			to:   time.Date(2024, time.January, 7, 0, 0, 0, 0, time.UTC), // to Sunday 7th of January
 		},
@@ -422,14 +422,14 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "rel rel overlap different timezones",
-		span1: relativeTimeSpan{
+		span1: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Friday,
 			timeFrom:    zeroTime.Add(8 * time.Hour),
 			timeTo:      zeroTime.Add(20 * time.Hour),
 		},
-		span2: relativeTimeSpan{
+		span2: &relativeTimeSpan{
 			timezone:    UTC1,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Friday,
@@ -440,14 +440,14 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "rel rel dont overlap different timezones",
-		span1: relativeTimeSpan{
+		span1: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Friday,
 			timeFrom:    zeroTime.Add(8 * time.Hour),
 			timeTo:      zeroTime.Add(20 * time.Hour),
 		},
-		span2: relativeTimeSpan{
+		span2: &relativeTimeSpan{
 			timezone:    UTC1,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Friday,
@@ -458,14 +458,14 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "rel abs overlap different timezones",
-		span1: relativeTimeSpan{
+		span1: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Friday,
 			timeFrom:    zeroTime.Add(8 * time.Hour),
 			timeTo:      zeroTime.Add(20 * time.Hour),
 		},
-		span2: absoluteTimeSpan{ // from 20:00 UTC+1 Friday and on the entire Saturday
+		span2: &absoluteTimeSpan{ // from 20:00 UTC+1 Friday and on the entire Saturday
 			from: time.Date(2024, time.January, 5, 20, 0, 0, 0, UTC1), // from 20:00 UTC+1 Friday 5th of January
 			to:   time.Date(2024, time.January, 7, 0, 0, 0, 0, UTC1),  // to Sunday 7th of January
 		},
@@ -473,14 +473,14 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "rel abs dont overlap different timezones",
-		span1: relativeTimeSpan{
+		span1: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Friday,
 			timeFrom:    zeroTime.Add(8 * time.Hour),
 			timeTo:      zeroTime.Add(20 * time.Hour),
 		},
-		span2: absoluteTimeSpan{ // the entire day on the 7th of Janurary 2024 and on Monday the 8th of Janurary at 9:00 UTC+1
+		span2: &absoluteTimeSpan{ // the entire day on the 7th of Janurary 2024 and on Monday the 8th of Janurary at 9:00 UTC+1
 			from: time.Date(2024, time.January, 7, 0, 0, 0, 0, UTC1), // from Sunday 7th of January
 			to:   time.Date(2024, time.January, 8, 9, 0, 0, 0, UTC1), // to 9:00 UTC+1 Monday 8th of January
 		},
@@ -488,14 +488,14 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "rel abs overlap reverse weekdays",
-		span1: relativeTimeSpan{
+		span1: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Sunday,
 			timeFrom:    zeroTime.Add(8 * time.Hour),
 			timeTo:      zeroTime.Add(20 * time.Hour),
 		},
-		span2: absoluteTimeSpan{ // from 20:00 Friday until the next day 8:00
+		span2: &absoluteTimeSpan{ // from 20:00 Friday until the next day 8:00
 			from: time.Date(2024, time.January, 5, 20, 0, 0, 0, time.UTC), // from 20:00 Friday 5th of January
 			to:   time.Date(2024, time.January, 6, 8, 0, 0, 0, time.UTC),  // to 8:00 Saturday 6th of January
 		},
@@ -503,14 +503,14 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "rev-rel rev-rel overlap",
-		span1: relativeTimeSpan{
+		span1: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Monday,
 			timeFrom:    zeroTime.Add(20 * time.Hour),
 			timeTo:      zeroTime.Add(1 * time.Hour),
 		},
-		span2: relativeTimeSpan{
+		span2: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Monday,
 			weekdayTo:   time.Monday,
@@ -521,14 +521,14 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "rel abs overlap different timezones rel split days",
-		span1: relativeTimeSpan{
+		span1: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Tuesday,
 			weekdayTo:   time.Tuesday,
 			timeFrom:    zeroTime.Add(0 * time.Hour),
 			timeTo:      zeroTime.Add(24 * time.Hour),
 		},
-		span2: absoluteTimeSpan{ // the entire day on Wednesday the 3rd of January 2024 UTC+1
+		span2: &absoluteTimeSpan{ // the entire day on Wednesday the 3rd of January 2024 UTC+1
 			from: time.Date(2024, time.January, 3, 0, 0, 0, 0, UTC1), // from Wednesday 0:00 January 3rd of 2024
 			to:   time.Date(2024, time.January, 4, 0, 0, 0, 0, UTC1), // to Thursday 0:00 January 4th of 2024
 		},
@@ -536,14 +536,14 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "rel rel overlap different timezones rel split days",
-		span1: relativeTimeSpan{
+		span1: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Tuesday,
 			weekdayTo:   time.Tuesday,
 			timeFrom:    zeroTime.Add(0 * time.Hour),
 			timeTo:      zeroTime.Add(24 * time.Hour),
 		},
-		span2: relativeTimeSpan{
+		span2: &relativeTimeSpan{
 			timezone:    UTC1,
 			weekdayFrom: time.Wednesday,
 			weekdayTo:   time.Wednesday,
@@ -554,14 +554,14 @@ var doTimespansOverlapTests = []struct {
 	},
 	{
 		name: "rel rel dont overlap different timezones rel split days",
-		span1: relativeTimeSpan{
+		span1: &relativeTimeSpan{
 			timezone:    UTC1,
 			weekdayFrom: time.Wednesday,
 			weekdayTo:   time.Wednesday,
 			timeFrom:    zeroTimeUTC1.Add(0 * time.Hour),
 			timeTo:      zeroTimeUTC1.Add(8 * time.Hour),
 		},
-		span2: relativeTimeSpan{
+		span2: &relativeTimeSpan{
 			timezone:    time.UTC,
 			weekdayFrom: time.Tuesday,
 			weekdayTo:   time.Tuesday,
