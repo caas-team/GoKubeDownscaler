@@ -169,31 +169,31 @@ func (t *relativeTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 // inLocation returns an array of relative timespans matching the timespan converted to the given location
 func (t *relativeTimeSpan) inLocation(timezone *time.Location) []relativeTimeSpan {
 	var result []relativeTimeSpan
-	sameWeedays := relativeTimeSpan{
+	sameWeekdays := relativeTimeSpan{
 		timezone:    timezone,
 		weekdayFrom: t.weekdayFrom,
 		weekdayTo:   t.weekdayTo,
 		timeFrom:    t.timeFrom.In(timezone),
 		timeTo:      t.timeTo.In(timezone),
 	}
-	result = append(result, sameWeedays)
-	if sameWeedays.overlapsIntoPreviousDay() {
+	result = append(result, sameWeekdays)
+	if sameWeekdays.overlapsIntoPreviousDay() {
 		weekdaysBefore := relativeTimeSpan{
 			timezone:    timezone,
-			timeFrom:    sameWeedays.timeFrom.Add(24 * time.Hour),
-			timeTo:      sameWeedays.timeTo.Add(24 * time.Hour),
-			weekdayFrom: getWeekdayBefore(sameWeedays.weekdayFrom),
-			weekdayTo:   getWeekdayBefore(sameWeedays.weekdayTo),
+			timeFrom:    sameWeekdays.timeFrom.Add(24 * time.Hour),
+			timeTo:      sameWeekdays.timeTo.Add(24 * time.Hour),
+			weekdayFrom: getWeekdayBefore(sameWeekdays.weekdayFrom),
+			weekdayTo:   getWeekdayBefore(sameWeekdays.weekdayTo),
 		}
 		result = append(result, weekdaysBefore)
 	}
-	if sameWeedays.overlapsIntoNextDay() {
+	if sameWeekdays.overlapsIntoNextDay() {
 		weekdaysAfter := relativeTimeSpan{
 			timezone:    timezone,
-			timeFrom:    sameWeedays.timeFrom.Add(-24 * time.Hour),
-			timeTo:      sameWeedays.timeTo.Add(-24 * time.Hour),
-			weekdayFrom: getWeekdayAfter(sameWeedays.weekdayFrom),
-			weekdayTo:   getWeekdayAfter(sameWeedays.weekdayTo),
+			timeFrom:    sameWeekdays.timeFrom.Add(-24 * time.Hour),
+			timeTo:      sameWeekdays.timeTo.Add(-24 * time.Hour),
+			weekdayFrom: getWeekdayAfter(sameWeekdays.weekdayFrom),
+			weekdayTo:   getWeekdayAfter(sameWeekdays.weekdayTo),
 		}
 		result = append(result, weekdaysAfter)
 	}
