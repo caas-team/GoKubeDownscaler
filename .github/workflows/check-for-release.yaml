@@ -62,7 +62,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
-          body: "⚠️ Warning: Merging this PR will result in a new release because the `appVersion` in Chart.yaml has changed to `${{ env.appversion }}`. Please confirm this by replacing the 'needs approval' label with the 'new release' label before merging."
+          body: "⚠️ Warning: Merging this PR will result in a new release because the `appVersion` in Chart.yaml has changed to `${{ env.appversion }}`. Please confirm this by adding the `new release` label before merging."
 
       - name: Set a label on the pull request
         run: |
