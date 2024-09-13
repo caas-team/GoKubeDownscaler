@@ -30,6 +30,8 @@ const (
 type resourceLogger interface {
 	// ErrorInvalidAnnotation adds an invalid annotation error on a resource
 	ErrorInvalidAnnotation(id string, message string, ctx context.Context)
+	// ErrorIncompatibleFields adds an incompatible fields error on a resource
+	ErrorIncompatibleFields(message string, ctx context.Context)
 }
 
 // GetLayerFromAnnotations makes a layer and fills it with all values from the annotations
@@ -108,6 +110,11 @@ func GetLayerFromAnnotations(annotations map[string]string, logEvent resourceLog
 		}
 	}
 
+	if err = result.CheckForIncompatibleFields(); err != nil {
+		logEvent.ErrorIncompatibleFields(fmt.Sprintf("found incompatible fields: %s", err.Error()), ctx)
+		return result, fmt.Errorf("error: found incompatible fields: %w", err)
+	}
+
 	return result, nil
 }
 
@@ -141,5 +148,10 @@ func GetLayerFromEnv() (Layer, error) {
 	if err != nil {
 		return result, fmt.Errorf("error while getting %q environment variable: %w", envDowntime, err)
 	}
+
+	if err = result.CheckForIncompatibleFields(); err != nil {
+		return result, fmt.Errorf("error: found incompatible fields: %w", err)
+	}
+
 	return result, nil
 }

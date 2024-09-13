@@ -9,6 +9,8 @@
 
 ## Branches and Commits
 
+Branch and Commit names follow the [conventional commits specification](https://www.conventionalcommits.org/en/v1.0.0/)
+
 ### Structure
 
 Branches:
@@ -29,13 +31,6 @@ Commits:
 | docs     | docs: added a readme            | Changes to documentation only                                                          |
 | perf     | perf: sw to concurrent scanning | A change that only improves performance                                                |
 | style    | style: rm leading spaces        | A change which makes the code look better without changing the code (formatting, etc.) |
-
-### Common Abbreviations
-
-| Abbreviation | Meaning |
-| ------------ | ------- |
-| sw           | switch  |
-| rm           | remove  |
 
 ## Code and Structure
 
