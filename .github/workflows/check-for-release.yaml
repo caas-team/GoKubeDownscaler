@@ -24,13 +24,9 @@ jobs:
             exit 1
           else
             echo "No appVersion changes detected."
-            gh pr edit ${{ github.event.pull_request.number }} --remove-label "needs approval"
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Remove approval label
-        if: ${{ contains(github.event.pull_request.labels.*.name, 'new release') }}
         run: |
           gh pr edit ${{ github.event.pull_request.number }} --remove-label "needs approval"
         env:
