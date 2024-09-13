@@ -2,16 +2,16 @@ package values
 
 import (
 	"errors"
-	"fmt"
 	"time"
 )
 
 var (
-	errForceUpAndDownTime       = errors.New("error: both forceUptime and forceDowntime are defined")
-	errUpAndDownTime            = errors.New("error: both uptime and downtime are defined")
-	errTimeAndPeriod            = errors.New("error: both a time and a period is defined")
-	errInvalidDownscaleReplicas = errors.New("error: downscale replicas value is invalid")
-	errValueNotSet              = errors.New("error: no layer implements this value")
+	errForceUpAndDownTime        = errors.New("error: both forceUptime and forceDowntime are defined")
+	errUpAndDownTime             = errors.New("error: both uptime and downtime are defined")
+	errTimeAndPeriod             = errors.New("error: both a time and a period is defined")
+	errInvalidDownscaleReplicas  = errors.New("error: downscale replicas value is invalid")
+	errValueNotSet               = errors.New("error: no layer implements this value")
+	errUpAndDownscaleOverlapping = errors.New("error: up- and downscale periods are overlapping")
 )
 
 const Undefined = -1 // Undefined represents an undefined integer value
@@ -20,11 +20,10 @@ const Undefined = -1 // Undefined represents an undefined integer value
 type scaling int
 
 const (
-	scalingNone         scaling = iota // no scaling set in this layer, go to next layer
-	ScalingIncompatible                // incompatible scaling fields set, error
-	ScalingIgnore                      // not scaling
-	ScalingDown                        // scaling down
-	ScalingUp                          // scaling up
+	scalingNone   scaling = iota // no scaling set in this layer, go to next layer
+	ScalingIgnore                // not scaling
+	ScalingDown                  // scaling down
+	ScalingUp                    // scaling up
 )
 
 // NewLayer gets a new layer with the default values
@@ -60,8 +59,8 @@ func (l Layer) isScalingExcluded() *bool {
 	return nil
 }
 
-// checkForIncompatibleFields checks if there are incompatible fields
-func (l Layer) checkForIncompatibleFields() error {
+// CheckForIncompatibleFields checks if there are incompatible fields
+func (l Layer) CheckForIncompatibleFields() error {
 	// force down and uptime
 	if l.ForceDowntime.isSet &&
 		l.ForceDowntime.value &&
@@ -81,6 +80,14 @@ func (l Layer) checkForIncompatibleFields() error {
 	if (l.UpTime != nil || l.DownTime != nil) &&
 		(l.UpscalePeriod != nil || l.DownscalePeriod != nil) {
 		return errTimeAndPeriod
+	}
+	// up- and downscale periods overlapping
+	for _, upscale := range l.UpscalePeriod {
+		for _, downscale := range l.DownscalePeriod {
+			if doTimespansOverlap(upscale, downscale) {
+				return errUpAndDownscaleOverlapping
+			}
+		}
 	}
 	return nil
 }
@@ -131,13 +138,6 @@ type Layers []Layer
 
 // GetCurrentScaling gets the current scaling of the first layer that implements scaling
 func (l Layers) GetCurrentScaling() (scaling, error) {
-	// check for incompatibilities
-	for _, layer := range l {
-		err := layer.checkForIncompatibleFields()
-		if err != nil {
-			return ScalingIncompatible, fmt.Errorf("error found incompatible fields: %w", err)
-		}
-	}
 	// check for forced scaling
 	for _, layer := range l {
 		forcedScaling := layer.getForcedScaling()

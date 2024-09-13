@@ -51,7 +51,7 @@ func (t *timeSpans) Set(value string) error {
 			if err != nil {
 				return fmt.Errorf("failed to parse absolute timespan: %w", err)
 			}
-			timespans = append(timespans, timespan)
+			timespans = append(timespans, &timespan)
 			continue
 		}
 
@@ -143,7 +143,7 @@ type relativeTimeSpan struct {
 }
 
 // isWeekdayInRange checks if the weekday falls into the weekday range
-func (t relativeTimeSpan) isWeekdayInRange(weekday time.Weekday) bool {
+func (t *relativeTimeSpan) isWeekdayInRange(weekday time.Weekday) bool {
 	if t.weekdayFrom <= t.weekdayTo { // check if range wraps across weeks
 		return weekday >= t.weekdayFrom && weekday <= t.weekdayTo
 	}
@@ -151,19 +151,63 @@ func (t relativeTimeSpan) isWeekdayInRange(weekday time.Weekday) bool {
 }
 
 // isTimeOfDayInRange checks if the time falls into the time of day range
-func (t relativeTimeSpan) isTimeOfDayInRange(timeOfDay time.Time) bool {
+func (t *relativeTimeSpan) isTimeOfDayInRange(timeOfDay time.Time) bool {
 	if t.timeFrom.After(t.timeTo) { // check if range wraps across days
 		return timeOfDay.After(t.timeFrom) || timeOfDay.Equal(t.timeFrom) || timeOfDay.Before(t.timeTo)
 	}
 	return (t.timeFrom.Before(timeOfDay) || t.timeFrom.Equal(timeOfDay)) && t.timeTo.After(timeOfDay)
 }
 
-// isTimeInSpan check if the time is in the span
-func (t relativeTimeSpan) isTimeInSpan(targetTime time.Time) bool {
+// isTimeInSpan checks if the time is in the span
+func (t *relativeTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 	targetTime = targetTime.In(t.timezone)
 	timeOfDay := getTimeOfDay(targetTime)
 	weekday := targetTime.Weekday()
 	return t.isTimeOfDayInRange(timeOfDay) && t.isWeekdayInRange(weekday)
+}
+
+// inLocation returns an array of relative timespans matching the timespan converted to the given location
+func (t *relativeTimeSpan) inLocation(timezone *time.Location) []relativeTimeSpan {
+	var result []relativeTimeSpan
+	sameWeekdays := relativeTimeSpan{
+		timezone:    timezone,
+		weekdayFrom: t.weekdayFrom,
+		weekdayTo:   t.weekdayTo,
+		timeFrom:    t.timeFrom.In(timezone),
+		timeTo:      t.timeTo.In(timezone),
+	}
+	result = append(result, sameWeekdays)
+	if sameWeekdays.overlapsIntoPreviousDay() {
+		weekdaysBefore := relativeTimeSpan{
+			timezone:    timezone,
+			timeFrom:    sameWeekdays.timeFrom.Add(24 * time.Hour),
+			timeTo:      sameWeekdays.timeTo.Add(24 * time.Hour),
+			weekdayFrom: getWeekdayBefore(sameWeekdays.weekdayFrom),
+			weekdayTo:   getWeekdayBefore(sameWeekdays.weekdayTo),
+		}
+		result = append(result, weekdaysBefore)
+	}
+	if sameWeekdays.overlapsIntoNextDay() {
+		weekdaysAfter := relativeTimeSpan{
+			timezone:    timezone,
+			timeFrom:    sameWeekdays.timeFrom.Add(-24 * time.Hour),
+			timeTo:      sameWeekdays.timeTo.Add(-24 * time.Hour),
+			weekdayFrom: getWeekdayAfter(sameWeekdays.weekdayFrom),
+			weekdayTo:   getWeekdayAfter(sameWeekdays.weekdayTo),
+		}
+		result = append(result, weekdaysAfter)
+	}
+	return result
+}
+
+// overlapsIntoPreviousDay checks if timeFrom overlaps into the previous day
+func (r *relativeTimeSpan) overlapsIntoPreviousDay() bool {
+	return r.timeFrom.Year() == -1 // || r.timeTo.Year() == -1
+}
+
+// overlapsIntoNextDay checks if timeTo overlaps into the following day
+func (r *relativeTimeSpan) overlapsIntoNextDay() bool {
+	return asExclusiveTimestamp(r.timeTo).Day() == 2 // || r.timeFrom.Day() == 2
 }
 
 type absoluteTimeSpan struct {
@@ -172,7 +216,7 @@ type absoluteTimeSpan struct {
 }
 
 // isTimeInSpan check if the time is in the span
-func (t absoluteTimeSpan) isTimeInSpan(targetTime time.Time) bool {
+func (t *absoluteTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 	return (t.from.Before(targetTime) || t.from.Equal(targetTime)) && t.to.After(targetTime)
 }
 
@@ -229,4 +273,81 @@ func getTimeOfDay(targetTime time.Time) time.Time {
 		targetTime.Nanosecond(),
 		targetTime.Location(),
 	)
+}
+
+// doTimespansOverlap checks if the given timespans overlap with each other
+func doTimespansOverlap(span1, span2 TimeSpan) bool {
+	switch s1 := span1.(type) {
+	case *absoluteTimeSpan:
+		if s2, ok := span2.(*absoluteTimeSpan); ok {
+			return absAndAbsOverlap(*s1, *s2)
+		}
+		return relAndAbsOverlap(*span2.(*relativeTimeSpan), *s1)
+	case *relativeTimeSpan:
+		if s2, ok := span2.(*absoluteTimeSpan); ok {
+			return relAndAbsOverlap(*s1, *s2)
+		}
+		return relAndRelOverlap(*s1, *span2.(*relativeTimeSpan))
+	}
+	panic(fmt.Sprintf("Fatal error, the timespan does not match any of the known types. This should never happen! Type: %T", span1))
+}
+
+// relAndRelOverlap checks if two relative timespans overlap
+func relAndRelOverlap(rel1 relativeTimeSpan, rel2 relativeTimeSpan) bool {
+	_, tzOffset1 := rel1.timeFrom.Zone()
+	_, tzOffset2 := rel2.timeFrom.Zone()
+	if tzOffset1 == tzOffset2 { // optimized path for timespans with same timezone offset
+		return relAndRelSameTimezoneOverlap(rel1, rel2)
+	}
+
+	// slow path for timespans with different timezones
+	rel2List := rel2.inLocation(rel1.timezone)
+	for _, rel2 := range rel2List {
+		if relAndRelSameTimezoneOverlap(rel1, rel2) {
+			return true
+		}
+	}
+	return false
+}
+
+// relAndRelSameTimezoneOverlap checks if two relative timespans overlap, without converting them to the same timezone before
+func relAndRelSameTimezoneOverlap(rel1 relativeTimeSpan, rel2 relativeTimeSpan) bool {
+	if rel1.timeFrom.After(rel1.timeTo) && rel2.timeFrom.After(rel2.timeTo) { // if both timespans are reversed, they both overlap anytime
+		return true
+	}
+	overlappingWeekdays := rel1.isWeekdayInRange(rel2.weekdayFrom) ||
+		rel1.isWeekdayInRange(rel2.weekdayTo) ||
+		rel2.isWeekdayInRange(rel1.weekdayFrom) ||
+		rel2.isWeekdayInRange(rel1.weekdayTo)
+	if !overlappingWeekdays {
+		return false
+	}
+	overlappingTimeOfDays := rel1.isTimeOfDayInRange(rel2.timeFrom) ||
+		rel1.isTimeOfDayInRange(asExclusiveTimestamp(rel2.timeTo)) ||
+		rel2.isTimeOfDayInRange(rel1.timeFrom) ||
+		rel2.isTimeOfDayInRange(asExclusiveTimestamp(rel1.timeTo))
+	return overlappingTimeOfDays
+}
+
+// relAndAbsOverlap checks if a relative and an aboslute timespan overlap
+func relAndAbsOverlap(rel relativeTimeSpan, abs absoluteTimeSpan) bool {
+	abs.from = abs.from.In(rel.timezone)
+	abs.to = abs.to.In(rel.timezone)
+	if abs.to.Sub(abs.from) >= 7*24*time.Hour {
+		return true
+	}
+	if rel.isTimeInSpan(abs.from) || rel.isTimeInSpan(asExclusiveTimestamp(abs.to)) {
+		return true
+	}
+	if rel.weekdayFrom > rel.weekdayTo { // check if weekdays are in reverse
+		return abs.from.Weekday() > rel.weekdayFrom || abs.from.Weekday() < rel.weekdayTo ||
+			abs.to.Weekday() > rel.weekdayFrom || abs.to.Weekday() < rel.weekdayTo
+	}
+	return rel.weekdayFrom > abs.from.Weekday() && rel.weekdayFrom < abs.to.Weekday() ||
+		rel.weekdayTo > abs.from.Weekday() && rel.weekdayTo < abs.to.Weekday()
+}
+
+// absAndAbsOverlap checks if two absolute timespans overlap
+func absAndAbsOverlap(abs1 absoluteTimeSpan, abs2 absoluteTimeSpan) bool {
+	return abs1.from.Before(abs2.to) && abs1.to.After(abs2.from)
 }

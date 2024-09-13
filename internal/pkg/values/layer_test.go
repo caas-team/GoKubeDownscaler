@@ -31,48 +31,76 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 		{
 			name: "up- and downtime",
 			layer: Layer{
-				UpTime:   timeSpans{relativeTimeSpan{}},
-				DownTime: timeSpans{relativeTimeSpan{}},
+				UpTime:   timeSpans{&relativeTimeSpan{}},
+				DownTime: timeSpans{&relativeTimeSpan{}},
 			},
 			wantErr: true,
 		},
 		{
 			name: "uptime an upscaleperiod",
 			layer: Layer{
-				UpTime:        timeSpans{relativeTimeSpan{}},
-				UpscalePeriod: timeSpans{relativeTimeSpan{}},
+				UpTime:        timeSpans{&relativeTimeSpan{}},
+				UpscalePeriod: timeSpans{&relativeTimeSpan{}},
 			},
 			wantErr: true,
 		},
 		{
 			name: "uptime an downscaleperiod",
 			layer: Layer{
-				UpTime:          timeSpans{relativeTimeSpan{}},
-				DownscalePeriod: timeSpans{relativeTimeSpan{}},
+				UpTime:          timeSpans{&relativeTimeSpan{}},
+				DownscalePeriod: timeSpans{&relativeTimeSpan{}},
 			},
 			wantErr: true,
 		},
 		{
 			name: "downtime an upscaleperiod",
 			layer: Layer{
-				DownTime:      timeSpans{relativeTimeSpan{}},
-				UpscalePeriod: timeSpans{relativeTimeSpan{}},
+				DownTime:      timeSpans{&relativeTimeSpan{}},
+				UpscalePeriod: timeSpans{&relativeTimeSpan{}},
 			},
 			wantErr: true,
 		},
 		{
 			name: "downtime an downscaleperiod",
 			layer: Layer{
-				DownTime:        timeSpans{relativeTimeSpan{}},
-				DownscalePeriod: timeSpans{relativeTimeSpan{}},
+				DownTime:        timeSpans{&relativeTimeSpan{}},
+				DownscalePeriod: timeSpans{&relativeTimeSpan{}},
 			},
 			wantErr: true,
 		},
 		{
+			name: "down- and upscale periods overlapping",
+			layer: Layer{
+				DownscalePeriod: timeSpans{&absoluteTimeSpan{
+					from: time.Now(),
+					to:   time.Now().Add(1 * time.Hour),
+				}},
+				UpscalePeriod: timeSpans{&absoluteTimeSpan{ // overlapping
+					from: time.Now(),
+					to:   time.Now().Add(1 * time.Hour),
+				}},
+			},
+			wantErr: true,
+		},
+		{
+			name: "down- and upscale do not overlap",
+			layer: Layer{
+				DownscalePeriod: timeSpans{&absoluteTimeSpan{
+					from: time.Now(),
+					to:   time.Now().Add(time.Hour),
+				}},
+				UpscalePeriod: timeSpans{&absoluteTimeSpan{
+					from: time.Now().Add(2 * time.Hour),
+					to:   time.Now().Add(3 * time.Hour),
+				}},
+			},
+			wantErr: false,
+		},
+		{
 			name: "valid",
 			layer: Layer{
-				DownTime:        timeSpans{relativeTimeSpan{}},
-				DownscalePeriod: timeSpans{relativeTimeSpan{}},
+				DownTime:        timeSpans{&relativeTimeSpan{}},
+				DownscalePeriod: timeSpans{&relativeTimeSpan{}},
 			},
 			wantErr: true,
 		},
@@ -80,7 +108,7 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.layer.checkForIncompatibleFields()
+			err := test.layer.CheckForIncompatibleFields()
 			if test.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -92,11 +120,11 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 
 func TestLayer_getCurrentScaling(t *testing.T) {
 	var (
-		inTimeSpan = timeSpans{absoluteTimeSpan{
+		inTimeSpan = timeSpans{&absoluteTimeSpan{
 			from: time.Now().Add(-time.Hour),
 			to:   time.Now().Add(time.Hour),
 		}}
-		outOfTimeSpan = timeSpans{absoluteTimeSpan{
+		outOfTimeSpan = timeSpans{&absoluteTimeSpan{
 			from: time.Now().Add(-2 * time.Hour),
 			to:   time.Now().Add(-time.Hour),
 		}}
