@@ -8,7 +8,7 @@ jobs:
   auto-assign:
     runs-on: ubuntu-latest
     steps:
-      - name: Check if assignee exists
+      - name: Check If Assignee Exists
         uses: actions/github-script@v6
         id: check-assignee
         with:
@@ -16,7 +16,7 @@ jobs:
             const assignees = context.payload.pull_request.assignees;
             return assignees.length > 0;
 
-      - name: Assign PR author if no assignee
+      - name: Assign PR Author If No Assignee
         if: steps.check-assignee.outputs.result == 'false'
         uses: actions-ecosystem/action-add-assignees@v1
         with:
