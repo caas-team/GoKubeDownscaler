@@ -1,0 +1,24 @@
+name: Auto Assign PR Author
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  auto-assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if assignee exists
+        uses: actions/github-script@v6
+        id: check-assignee
+        with:
+          script: |
+            const assignees = context.payload.pull_request.assignees;
+            return assignees.length > 0;
+
+      - name: Assign PR author if no assignee
+        if: steps.check-assignee.outputs.result == 'false'
+        uses: actions-ecosystem/action-add-assignees@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          assignees: ${{ github.event.pull_request.user.login }}
