@@ -49,7 +49,7 @@ jobs:
           version=$(yq e '.version' ./deployments/chart/Chart.yaml)
           echo "version=$version" >> $GITHUB_ENV
 
-      - name: Dispatch Event to Helm-Charts Repo
+      - name: Dispatch Event to build new helm chart
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -74,7 +74,7 @@ jobs:
           app_version=$(yq e '.appVersion' ./deployments/chart/Chart.yaml)
           echo "app_version=$app_version" >> $GITHUB_ENV
 
-      - name: Dispatch Event to Helm-Charts Repo
+      - name: Dispatch Event to create new release
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
