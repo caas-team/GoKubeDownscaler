@@ -1,13 +1,38 @@
+# Build and push Image
 name: Build and push Image
 
 on:
-  repository_dispatch:
-    types: [release-new-version]
+  push:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check Version Format in Tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: nowsprinting/check-version-format-action@v4.0.2
+        id: check-version
+        with:
+          prefix: "v"
+
+      - name: Set tag
+        id: set-tag
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          TAG1="dev"
+          TAG2="commit-$SHORT_SHA"
+
+          if [[ "${{ steps.check-version.outputs.is_valid }}" == 'true' ]]; then
+            TAG1="latest"
+            TAG2="${{ steps.check-version.outputs.full_without_prefix }}"
+          fi
+
+          echo "TAG1=$TAG1" >> $GITHUB_ENV
+          echo "TAG2=$TAG2" >> $GITHUB_ENV
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -16,8 +41,8 @@ jobs:
             mtr.devops.telekom.de/caas/go-kube-downscaler
             ghcr.io/caas-team/gokubedownscaler
           tags: |
-            latest
-            ${{ github.event.client_payload.version }}
+            ${{ env.TAG1 }}
+            ${{ env.TAG2 }}
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@main
