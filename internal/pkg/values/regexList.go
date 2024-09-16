@@ -8,7 +8,7 @@ import (
 
 type RegexList []*regexp.Regexp
 
-func (s *RegexList) Set(text string) error {
+func (r *RegexList) Set(text string) error {
 	entries := strings.Split(text, ",")
 	for _, entry := range entries {
 		entry = strings.TrimSpace(entry)
@@ -16,17 +16,17 @@ func (s *RegexList) Set(text string) error {
 		if err != nil {
 			return fmt.Errorf("failed to compile stringlist entry as a regex: %w", err)
 		}
-		*s = append(*s, re)
+		*r = append(*r, re)
 	}
 	return nil
 }
 
-func (s *RegexList) String() string {
-	return fmt.Sprint(*s)
+func (r *RegexList) String() string {
+	return fmt.Sprint(*r)
 }
 
-func (s RegexList) CheckMatchesAny(text string) bool {
-	for _, entry := range s {
+func (r RegexList) CheckMatchesAny(text string) bool {
+	for _, entry := range r {
 		if entry.MatchString(text) {
 			return true
 		}

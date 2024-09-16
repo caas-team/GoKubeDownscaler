@@ -60,7 +60,7 @@ It is recommended to install pre-commit. This insures that formatting is consist
 
 ## Versioning
 
-New releases are automatically created when the appVersion in the Chart.yaml is updated in the main branch. To merge a pull request which when merged would result in a new release, the [`release` label](https://github.com/caas-team/GoKubeDownscaler/labels/release) has to be set on the PR.
+New releases are automatically created when the appVersion in the Chart.yaml is updated in the main branch. To merge a pull request which when merged would result in a new release, the [`new release` label](https://github.com/caas-team/GoKubeDownscaler/labels/new%20release) has to be set on the PR.
 
 Releases are following the semver versioning standard:
 

@@ -33,7 +33,7 @@ func FilterExcluded(workloads []Workload, includeLabels values.RegexList, exclud
 	return results
 }
 
-// isMatchingLabels check if the workload is matching any labels
+// isMatchingLabels check if the workload is matching any of the specified labels
 func isMatchingLabels(workload Workload, includeLabels values.RegexList) bool {
 	if includeLabels == nil {
 		return true
@@ -47,7 +47,7 @@ func isMatchingLabels(workload Workload, includeLabels values.RegexList) bool {
 	return false
 }
 
-// isNamespaceExcluded check if the workloads namespace is excluded
+// isNamespaceExcluded checks if the workloads namespace is excluded
 func isNamespaceExcluded(workload Workload, excludedNamespaces values.RegexList) bool {
 	if excludedNamespaces == nil {
 		return false
@@ -55,7 +55,7 @@ func isNamespaceExcluded(workload Workload, excludedNamespaces values.RegexList)
 	return excludedNamespaces.CheckMatchesAny(workload.GetNamespace())
 }
 
-// isWorkloadExcluded check if the workloads name is excluded
+// isWorkloadExcluded checks if the workloads name is excluded
 func isWorkloadExcluded(workload Workload, excludedWorkloads values.RegexList) bool {
 	if excludedWorkloads == nil {
 		return false

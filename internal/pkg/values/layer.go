@@ -47,7 +47,7 @@ type Layer struct {
 	ForceUptime       triStateBool // force workload into a uptime state
 	ForceDowntime     triStateBool // force workload into a downtime state
 	DownscaleReplicas int          // the replicas to scale down to
-	GracePeriod       Duration     // grace period until new deployments will be scaled down
+	GracePeriod       Duration     // grace period until new workloads will be scaled down
 }
 
 // isScalingExcluded checks if scaling is excluded, nil represents a not set state
@@ -177,10 +177,9 @@ func (l Layers) GetExcluded() bool {
 	return false
 }
 
-// GetGracePeriod gets the grace period of the uppermost layer that has it set
-func (l Layers) GetOnGracePeriod(timeAnnotation string, workloadAnnotations map[string]string, creationTime time.Time, logEvent resourceLogger, ctx context.Context) (bool, error) {
-	// get grace period
-	var gracePeriod Duration = 0
+// IsInGracePeriod gets the grace period of the uppermost layer that has it set
+func (l Layers) IsInGracePeriod(timeAnnotation string, workloadAnnotations map[string]string, creationTime time.Time, logEvent resourceLogger, ctx context.Context) (bool, error) {
+	var gracePeriod Duration = Undefined
 	for _, layer := range l {
 		if layer.GracePeriod == Undefined {
 			continue

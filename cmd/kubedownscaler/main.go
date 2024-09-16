@@ -158,7 +158,7 @@ func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx cont
 
 	layers := values.Layers{layerWorkload, layerNamespace, layerCli, layerEnv}
 
-	ok, err := layers.GetOnGracePeriod(timeAnnotation, workload.GetAnnotations(), workload.GetCreationTimestamp().Time, resourceLogger, ctx)
+	ok, err := layers.IsInGracePeriod(timeAnnotation, workload.GetAnnotations(), workload.GetCreationTimestamp().Time, resourceLogger, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get if workload is on grace period: %w", err)
 	}
