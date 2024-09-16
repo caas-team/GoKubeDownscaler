@@ -1,25 +1,20 @@
-name: Create Release
+name: Create new release
 
 on:
-  push:
-    tags:
-      - "*"
+  repository_dispatch:
+    types: [release-new-version]
 
 jobs:
-  release:
-    name: Create Release
+  create_release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Create GitHub Release
         id: create_release
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
+          tag: v${{ github.event.client_payload.appVersion }}
+          name: v${{ github.event.client_payload.appVersion }}
           generateReleaseNotes: true
