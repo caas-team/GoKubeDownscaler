@@ -222,16 +222,24 @@ Mon-Tue 20:00-00:00 Europe/Amsterdam # On Monday and Tuesday: from 20:00 to midn
 
 Valid Values:
 
-- Weekdays: (case-insensitive)
-  - Mon
-  - Tue
-  - Wed
-  - Thu
-  - Fri
-  - Sat
-  - Sun
-- Timezones: all from the [IANA Time Zone database](https://www.iana.org/time-zones)
-- Time of day: 00:00 - 24:00
+Weekdays: (case-insensitive)
+
+- Mon
+- Tue
+- Wed
+- Thu
+- Fri
+- Sat
+- Sun
+
+Timezones:
+
+- all from the [IANA Time Zone database](https://www.iana.org/time-zones)
+
+> [!Note]
+> The IANA Time Zone database mainly supports regional/city timezones (example: `Europe/Berlin`, `America/Los_Angeles`) instead of abbreviations (example: `CEST`, `PST`, `PDT`).
+> It supports some abbreviations like `CET`, `MET` and `PST8PDT` but these (not including `UTC`) shouldn't be used, and only exist for backwards compatibility.
+> Time of day: 00:00 - 24:00
 
 #### Multiple/Complex Timespans
 

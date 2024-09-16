@@ -5,8 +5,11 @@
 - [Issues](#issues)
 - [Pull Requests](#pull-requests)
 - [Pre Commit](#pre-commit)
+- [Versioning](#versioning)
 
 ## Branches and Commits
+
+Branch and Commit names follow the [conventional commits specification](https://www.conventionalcommits.org/en/v1.0.0/)
 
 ### Structure
 
@@ -28,13 +31,6 @@ Commits:
 | docs     | docs: added a readme            | Changes to documentation only                                                          |
 | perf     | perf: sw to concurrent scanning | A change that only improves performance                                                |
 | style    | style: rm leading spaces        | A change which makes the code look better without changing the code (formatting, etc.) |
-
-### Common Abbreviations
-
-| Abbreviation | Meaning |
-| ------------ | ------- |
-| sw           | switch  |
-| rm           | remove  |
 
 ## Code and Structure
 
@@ -61,3 +57,17 @@ Set yourself and any other collaborators as assignee.
 ## Pre Commit
 
 It is recommended to install pre-commit. This insures that formatting is consistent, you don't commit to protected branches and you don't accidentally commit broken code or new functionality without changing the tests. The installation process is in the [README](README.md#setting-up-pre-commit)
+
+## Versioning
+
+New releases are automatically created when the appVersion in the Chart.yaml is updated in the main branch. To merge a pull request which when merged would result in a new release, the [`new release` label](https://github.com/caas-team/GoKubeDownscaler/labels/new%20release) has to be set on the PR.
+
+Releases are following the semver versioning standard:
+
+Layout: `<Major>.<Minor>.<Patch>` (example: 1.1.0)
+
+- MAJOR: increment on breaking changes
+- MINOR: increment on new funcitonality/features
+- PATCH: increment on small bug fixes
+
+You can find more infomration on semantic versioning here [here](https://semver.org/)

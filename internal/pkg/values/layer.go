@@ -1,6 +1,7 @@
 package values
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -12,6 +13,7 @@ var (
 	errTimeAndPeriod            = errors.New("error: both a time and a period is defined")
 	errInvalidDownscaleReplicas = errors.New("error: downscale replicas value is invalid")
 	errValueNotSet              = errors.New("error: no layer implements this value")
+	errAnnotationNotSet         = errors.New("error: annotation isn't set on workload")
 )
 
 const Undefined = -1 // Undefined represents an undefined integer value
@@ -20,17 +22,17 @@ const Undefined = -1 // Undefined represents an undefined integer value
 type scaling int
 
 const (
-	scalingNone         scaling = iota // no scaling set in this layer, go to next layer
-	ScalingIncompatible                // incompatible scaling fields set, error
-	ScalingIgnore                      // not scaling
-	ScalingDown                        // scaling down
-	ScalingUp                          // scaling up
+	scalingNone   scaling = iota // no scaling set in this layer, go to next layer
+	ScalingIgnore                // not scaling
+	ScalingDown                  // scaling down
+	ScalingUp                    // scaling up
 )
 
 // NewLayer gets a new layer with the default values
 func NewLayer() Layer {
 	return Layer{
 		DownscaleReplicas: Undefined,
+		GracePeriod:       Undefined,
 	}
 }
 
@@ -45,8 +47,7 @@ type Layer struct {
 	ForceUptime       triStateBool // force workload into a uptime state
 	ForceDowntime     triStateBool // force workload into a downtime state
 	DownscaleReplicas int          // the replicas to scale down to
-	GracePeriod       Duration     // grace period until new deployments will be scaled down // NOT_IMPLEMENTED
-	TimeAnnotation    string       // annotation to use for grace-period instead of creation time // NOT_IMPLEMENTED
+	GracePeriod       Duration     // grace period until new workloads will be scaled down
 }
 
 // isScalingExcluded checks if scaling is excluded, nil represents a not set state
@@ -60,8 +61,8 @@ func (l Layer) isScalingExcluded() *bool {
 	return nil
 }
 
-// checkForIncompatibleFields checks if there are incompatible fields
-func (l Layer) checkForIncompatibleFields() error {
+// CheckForIncompatibleFields checks if there are incompatible fields
+func (l Layer) CheckForIncompatibleFields() error {
 	// force down and uptime
 	if l.ForceDowntime.isSet &&
 		l.ForceDowntime.value &&
@@ -131,13 +132,6 @@ type Layers []Layer
 
 // GetCurrentScaling gets the current scaling of the first layer that implements scaling
 func (l Layers) GetCurrentScaling() (scaling, error) {
-	// check for incompatibilities
-	for _, layer := range l {
-		err := layer.checkForIncompatibleFields()
-		if err != nil {
-			return ScalingIncompatible, fmt.Errorf("error found incompatible fields: %w", err)
-		}
-	}
 	// check for forced scaling
 	for _, layer := range l {
 		forcedScaling := layer.getForcedScaling()
@@ -181,4 +175,35 @@ func (l Layers) GetExcluded() bool {
 		return *excluded
 	}
 	return false
+}
+
+// IsInGracePeriod gets the grace period of the uppermost layer that has it set
+func (l Layers) IsInGracePeriod(timeAnnotation string, workloadAnnotations map[string]string, creationTime time.Time, logEvent resourceLogger, ctx context.Context) (bool, error) {
+	var gracePeriod Duration = Undefined
+	for _, layer := range l {
+		if layer.GracePeriod == Undefined {
+			continue
+		}
+		gracePeriod = layer.GracePeriod
+		break
+	}
+	if gracePeriod == Undefined {
+		return false, nil
+	}
+
+	if timeAnnotation != "" {
+		timeString, ok := workloadAnnotations[timeAnnotation]
+		if !ok {
+			logEvent.ErrorInvalidAnnotation(timeAnnotation, fmt.Sprintf("annotation %q not present on this workload", timeAnnotation), ctx)
+			return false, errAnnotationNotSet
+		}
+		var err error
+		creationTime, err = time.Parse(time.RFC3339, timeString)
+		if err != nil {
+			logEvent.ErrorInvalidAnnotation(timeAnnotation, fmt.Sprintf("failed to parse %q annotation as RFC3339 timestamp: %s", timeAnnotation, err.Error()), ctx)
+			return false, fmt.Errorf("failed to parse timestamp in annotation: %w", err)
+		}
+	}
+	gracePeriodUntil := creationTime.Add(time.Duration(gracePeriod))
+	return time.Now().Before(gracePeriodUntil), nil
 }

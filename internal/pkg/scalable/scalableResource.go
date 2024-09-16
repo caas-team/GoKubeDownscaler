@@ -7,6 +7,7 @@ import (
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -45,6 +46,10 @@ type Workload interface {
 	GetUID() types.UID
 	// GetObjectKind gets the ObjectKind of the workload
 	GetObjectKind() schema.ObjectKind
+	// GetLabels gets the labels of the workload
+	GetLabels() map[string]string
+	// GetCreationTimestamp gets the creation timestamp of the workload
+	GetCreationTimestamp() metav1.Time
 	// SetAnnotations sets the annotations on the resource. Changes won't be made on kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
