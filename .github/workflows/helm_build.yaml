@@ -1,11 +1,12 @@
-name: Build and push helm chart
+name: Build and Push Helm Package
 
 on:
-  repository_dispatch:
-    types: [build-new-chart]
+  push:
+    tags:
+      - "*"
 
 jobs:
-  build_and_push:
+  helm:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
@@ -21,13 +22,13 @@ jobs:
           helm registry login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
           helm registry login ${MTR} -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
         env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
           MTR: mtr.devops.telekom.de
 
       - name: Helm Lint, Package, and Push
         run: |
-          cd deployments/chart
+          cd chart
           helm lint .
           helm package .
           helm push $(ls *.tgz | head -1) oci://ghcr.io/caas-team/charts
@@ -36,10 +37,16 @@ jobs:
           MTR: mtr.devops.telekom.de
           REPO: caas
 
+      - name: Extract Chart Version
+        id: chart_version
+        run: |
+          version=$(yq e '.version' ./chart/Chart.yaml)
+          echo "::set-output name=version::$version"
+
       - name: Dispatch Event to Helm-Charts Repo
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           repository: caas-team/helm-charts
           event-type: new-helm-chart-version
-          client-payload: '{"chart": "go-kube-downscaler", "version": "${{ github.event.client_payload.version }}"}'
+          client-payload: '{"chart": "go-kube-downscaler", "version": "${{ steps.chart_version.outputs.version }}"}'
