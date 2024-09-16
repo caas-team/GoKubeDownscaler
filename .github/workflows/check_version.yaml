@@ -1,0 +1,83 @@
+name: Check for new version
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - deployments/chart/Chart.yaml
+
+jobs:
+  check_versions:
+    runs-on: ubuntu-latest
+    outputs:
+      version_change: ${{ steps.check_for_version_change.outputs.version_change }}
+      app_version_change: ${{ steps.check_for_appVersion_change.outputs.app_version_change }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for appVersion change
+        id: check_for_appVersion_change
+        run: |
+          app_version_change=$(git diff main HEAD~1 -- deployments/chart/Chart.yaml | grep -qe "^[+-]appVersion: " && echo "appVersion changed" || echo "appVersion didn't change")
+          echo "app_version_change=$app_version_change" >> $GITHUB_OUTPUT
+
+      - name: Check for version change
+        id: check_for_version_change
+        run: |
+          version_change=$(git diff main HEAD~1 -- deployments/chart/Chart.yaml | grep -qe "^[+-]version: " && echo "version changed" || echo "version didn't change")
+          echo "version_change=$version_change" >> $GITHUB_OUTPUT
+
+  build_new_chart:
+    runs-on: ubuntu-latest
+    needs: check_versions
+    if: ${{ needs.check_versions.outputs.version_change == 'version changed' }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract Chart Version
+        id: chart_version
+        run: |
+          version=$(yq e '.version' ./deployments/chart/Chart.yaml)
+          echo "version=$version" >> $GITHUB_ENV
+
+      - name: Dispatch Event to Helm-Charts Repo
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: caas-team/GoKubeDownscaler
+          event-type: build-new-chart
+          client-payload: '{"version": "${{ env.version }}"}'
+
+  release_new_version:
+    runs-on: ubuntu-latest
+    needs: check_versions
+    if: ${{ needs.check_versions.outputs.app_version_change == 'appVersion changed' }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract App Version
+        id: app_version
+        run: |
+          app_version=$(yq e '.appVersion' ./deployments/chart/Chart.yaml)
+          echo "app_version=$app_version" >> $GITHUB_ENV
+
+      - name: Dispatch Event to Helm-Charts Repo
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: caas-team/GoKubeDownscaler
+          event-type: release-new-version
+          client-payload: '{"appVersion": "${{ env.app_version }}"}'
