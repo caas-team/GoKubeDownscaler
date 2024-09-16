@@ -171,9 +171,10 @@ func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx cont
 		return nil
 	}
 
-	scaling, err := layers.GetCurrentScaling()
-	if err != nil {
-		return fmt.Errorf("failed to get current scaling for workload: %w", err)
+	scaling := layers.GetCurrentScaling()
+	if scaling == values.ScalingNone {
+		slog.Debug("scaling is not set by any layer, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
 	}
 	if scaling == values.ScalingIgnore {
 		slog.Debug("scaling is ignored, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())

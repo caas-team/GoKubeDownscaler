@@ -166,7 +166,7 @@ func TestLayer_getCurrentScaling(t *testing.T) {
 		{
 			name:        "none set",
 			layer:       Layer{},
-			wantScaling: scalingNone,
+			wantScaling: ScalingNone,
 		},
 	}
 

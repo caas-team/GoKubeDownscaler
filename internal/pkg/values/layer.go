@@ -22,7 +22,7 @@ const Undefined = -1 // Undefined represents an undefined integer value
 type scaling int
 
 const (
-	scalingNone   scaling = iota // no scaling set in this layer, go to next layer
+	ScalingNone   scaling = iota // no scaling set in this layer, go to next layer
 	ScalingIgnore                // not scaling
 	ScalingDown                  // scaling down
 	ScalingUp                    // scaling up
@@ -113,7 +113,7 @@ func (l Layer) getCurrentScaling() scaling {
 		return ScalingIgnore
 	}
 
-	return scalingNone
+	return ScalingNone
 }
 
 // getForcedScaling checks if the layer has forced scaling enabled and returns the matching scaling
@@ -131,24 +131,24 @@ func (l Layer) getForcedScaling() scaling {
 type Layers []Layer
 
 // GetCurrentScaling gets the current scaling of the first layer that implements scaling
-func (l Layers) GetCurrentScaling() (scaling, error) {
+func (l Layers) GetCurrentScaling() scaling {
 	// check for forced scaling
 	for _, layer := range l {
 		forcedScaling := layer.getForcedScaling()
-		if forcedScaling != scalingNone {
-			return forcedScaling, nil
+		if forcedScaling != ScalingNone {
+			return forcedScaling
 		}
 	}
 	// check for time-based scaling
 	for _, layer := range l {
 		layerScaling := layer.getCurrentScaling()
-		if layerScaling == scalingNone {
+		if layerScaling == ScalingNone {
 			continue
 		}
-		return layerScaling, nil
+		return layerScaling
 	}
 
-	return scalingNone, errValueNotSet
+	return ScalingNone
 }
 
 // GetDownscaleReplicas gets the downscale replicas of the first layer that implements downscale replicas
