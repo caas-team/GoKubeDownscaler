@@ -20,7 +20,7 @@ jobs:
             ghcr.io/caas-team/gokubedownscaler
           tags: |
             latest
-            ${{ github.event.client_payload.version }}
+            ${{ github.event.client_payload.appVersion }}
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@main
