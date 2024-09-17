@@ -33,7 +33,7 @@ The deployment.yaml file creates the main Deployment of the go-kube-downscaler w
 
 ### Serviceaccount
 
-The serviceaccount.yaml file creates a ServiceAccount that will be used by the go-kube-downscaler to interact with kubernetes.
+The serviceaccount.yaml file creates a ServiceAccount that will be used by the go-kube-downscaler to interact with Kubernetes.
 
 ### Configmap
 
@@ -80,7 +80,7 @@ The default values can be found [here](./values.yaml).
 
 ### Prerequisits
 
-In order to get started installing the go-kube-downscaler using our helm chart you only need to have helm installed on your system and have access to a kubernetes cluster in some kind of way.
+In order to get started installing the go-kube-downscaler using our helm chart you only need to have helm installed on your system and have access to a Kubernetes cluster in some kind of way.
 
 You can find out how to install helm [here](https://helm.sh/docs/intro/install/).
 

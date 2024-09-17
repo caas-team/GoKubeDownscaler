@@ -11,6 +11,7 @@ import (
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
+	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -22,7 +23,7 @@ const (
 
 var errResourceNotSupported = errors.New("error: specified rescource type is not supported")
 
-// Client is a interface representing a high-level client to get and modify kubernetes resources
+// Client is a interface representing a high-level client to get and modify Kubernetes resources
 type Client interface {
 	// GetNamespaceAnnotations gets the annotations of the workload's namespace
 	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
@@ -45,14 +46,14 @@ func NewClient(kubeconfig string, dryRun bool) (client, error) {
 
 	config, err := getConfig(kubeconfig)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get config for kubernetes: %w", err)
+		return kubeclient, fmt.Errorf("failed to get config for Kubernetes: %w", err)
 	}
 	// set qps and burst rate limiting options. See https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1/
 	config.QPS = 500    // available queries per second, when unused will fill the burst buffer
 	config.Burst = 1000 // the max size of the buffer of queries
 	clientsets.Kubernetes, err = kubernetes.NewForConfig(config)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get clientset for kubernetes resources: %w", err)
+		return kubeclient, fmt.Errorf("failed to get clientset for Kubernetes resources: %w", err)
 	}
 	clientsets.Keda, err = keda.NewForConfig(config)
 	if err != nil {
@@ -62,11 +63,15 @@ func NewClient(kubeconfig string, dryRun bool) (client, error) {
 	if err != nil {
 		return kubeclient, fmt.Errorf("failed to get clientset for argo resources: %w", err)
 	}
+	clientsets.Zalando, err = zalando.NewForConfig(config)
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to get clientset for argo resources: %w", err)
+	}
 	kubeclient.clientsets = &clientsets
 	return kubeclient, nil
 }
 
-// client is a kubernetes client with downscaling specific functions
+// client is a Kubernetes client with downscaling specific functions
 type client struct {
 	clientsets *scalable.Clientsets
 	dryRun     bool

@@ -98,7 +98,7 @@ func main() {
 
 	client, err := kubernetes.NewClient(kubeconfig, dryRun)
 	if err != nil {
-		slog.Error("failed to create new kubernetes client", "error", err)
+		slog.Error("failed to create new Kubernetes client", "error", err)
 		os.Exit(1)
 	}
 

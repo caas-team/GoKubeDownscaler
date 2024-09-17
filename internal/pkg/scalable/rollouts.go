@@ -28,7 +28,7 @@ type rollout struct {
 	*argov1alpha1.Rollout
 }
 
-// setReplicas sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
+// setReplicas sets the amount of replicas on the resource. Changes won't be made on Kubernetes until update() is called
 func (r *rollout) setReplicas(replicas int) error {
 	if replicas > math.MaxInt32 || replicas < 0 {
 		return errBoundOnScalingTargetValue

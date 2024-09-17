@@ -28,7 +28,7 @@ type deployment struct {
 	*appsv1.Deployment
 }
 
-// setReplicas sets the amount of replicas on the resource. Changes won't be made on kubernetes until update() is called
+// setReplicas sets the amount of replicas on the resource. Changes won't be made on Kubernetes until update() is called
 func (d *deployment) setReplicas(replicas int) error {
 	if replicas > math.MaxInt32 || replicas < 0 {
 		return errBoundOnScalingTargetValue

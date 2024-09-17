@@ -6,6 +6,7 @@ import (
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
+	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	"k8s.io/client-go/kubernetes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +35,7 @@ var GetResource = map[string]getResourceFunc{
 	"horizontalpodautoscalers": getHorizontalPodAutoscalers,
 	"scaledobjects":            getScaledObjects,
 	"rollouts":                 getRollouts,
-	// "stacks":                   getStacks,
+	"stacks":                   getStacks,
 }
 
 // Workload is an interface for a scalable resource. It holds shared resource specific functions
@@ -53,7 +54,7 @@ type Workload interface {
 	GetLabels() map[string]string
 	// GetCreationTimestamp gets the creation timestamp of the workload
 	GetCreationTimestamp() metav1.Time
-	// SetAnnotations sets the annotations on the resource. Changes won't be made on kubernetes until update() is called
+	// SetAnnotations sets the annotations on the resource. Changes won't be made on Kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
 	Update(clientsets *Clientsets, ctx context.Context) error
@@ -67,4 +68,5 @@ type Clientsets struct {
 	Kubernetes *kubernetes.Clientset
 	Keda       *keda.Clientset
 	Argo       *argo.Clientset
+	Zalando    *zalando.Clientset
 }

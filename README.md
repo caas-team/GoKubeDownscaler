@@ -68,6 +68,10 @@ These are the resources the Downscaler can scale:
   - sets the paused replicas annotation to the [downscale replicas](#downscale-replicas)
 - <span id="statefulsets">StatefulSets</span>:
   - sets the replica count to the [downscale replicas](#downscale-replicas)
+- <span id="rollouts">Rollouts</span>:
+  - sets the replica count to the [downscale replicas](#downscale-replicas)
+- <span id="stacks">Stacks</span>:
+  - sets the replica count to the [downscale replicas](#downscale-replicas)
 
 ## Installation
 
@@ -485,7 +489,7 @@ Some cases where this might be needed include:
 
 <span id="diff-uniform-timestamp">Uniform timestamp</span>:
 
-- all timestamps are [RFC3339 Timestamps](https://datatracker.ietf.org/doc/html/rfc3339) this is more optimized for golang, more consistent and also used by kubernetes itself
+- all timestamps are [RFC3339 Timestamps](https://datatracker.ietf.org/doc/html/rfc3339) this is more optimized for golang, more consistent and also used by Kubernetes itself
 - backwards compatible: mostly, unless you used a short form of ISO 8601 (`2023-08-12`, `2023-233`) or `2023-W34-1` it should be totally fine to not change anything
 
 <span id="diff-overlapping-days">Overlapping [relative timespans](#configuration-of-a-relative-timespan) into next day</span>:
