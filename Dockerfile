@@ -14,4 +14,4 @@ FROM scratch
 
 COPY --from=build /tmp/kubedownscaler/bin/gokubedownscaler /app/backend
 
-CMD ["/app/gokubedownscaler"]
+ENTRYPOINT ["/app/gokubedownscaler"]
