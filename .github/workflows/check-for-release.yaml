@@ -38,11 +38,14 @@ jobs:
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'new release') }}
         run: |
           if [ "${{ env.app_version_change }}" == "version changed" ]; then
+            gh pr edit ${{ github.event.pull_request.number }} --add-label "needs approval"
             echo "Version changed, exiting..."
             exit 1
           else
             echo "No appVersion changes detected."
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Remove approval label
         run: |
@@ -77,9 +80,3 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
           body: "⚠️ Warning: Merging this PR will result in a new release because the `appVersion` in Chart.yaml has changed to `${{ env.appversion }}`. Please confirm this by adding the `new release` label before merging."
-
-      - name: Set a label on the pull request
-        run: |
-          gh pr edit ${{ github.event.pull_request.number }} --add-label "needs approval"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
