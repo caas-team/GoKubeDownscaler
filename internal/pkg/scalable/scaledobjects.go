@@ -29,7 +29,7 @@ func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Cont
 	return results, nil
 }
 
-// scaledObject is a wrapper for keda.sh/v1alpha1.horizontalPodAutoscaler to implement the Workload interface
+// scaledObject is a wrapper for keda.sh/v1alpha1.ScaledObject to implement the Workload interface
 type scaledObject struct {
 	*kedav1alpha1.ScaledObject
 }

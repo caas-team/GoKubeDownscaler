@@ -3,6 +3,7 @@ module github.com/caas-team/gokubedownscaler
 go 1.22.5
 
 require (
+	github.com/argoproj/argo-rollouts v1.7.2
 	github.com/kedacore/keda/v2 v2.15.1
 	github.com/stretchr/testify v1.9.0
 	k8s.io/api v0.31.0

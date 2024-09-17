@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"strings"
 
+	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
@@ -56,6 +57,10 @@ func NewClient(kubeconfig string, dryRun bool) (client, error) {
 	clientsets.Keda, err = keda.NewForConfig(config)
 	if err != nil {
 		return kubeclient, fmt.Errorf("failed to get clientset for keda resources: %w", err)
+	}
+	clientsets.Argo, err = argo.NewForConfig(config)
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to get clientset for argo resources: %w", err)
 	}
 	kubeclient.clientsets = &clientsets
 	return kubeclient, nil

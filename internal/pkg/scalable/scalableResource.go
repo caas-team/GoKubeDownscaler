@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 
@@ -32,6 +33,8 @@ var GetResource = map[string]getResourceFunc{
 	"poddisruptionbudgets":     getPodDisruptionBudgets,
 	"horizontalpodautoscalers": getHorizontalPodAutoscalers,
 	"scaledobjects":            getScaledObjects,
+	"rollouts":                 getRollouts,
+	// "stacks":                   getStacks,
 }
 
 // Workload is an interface for a scalable resource. It holds shared resource specific functions
@@ -63,4 +66,5 @@ type Workload interface {
 type Clientsets struct {
 	Kubernetes *kubernetes.Clientset
 	Keda       *keda.Clientset
+	Argo       *argo.Clientset
 }
