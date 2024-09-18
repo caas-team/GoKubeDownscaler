@@ -245,7 +245,7 @@ Create defined permissions for roles
 - apiGroups:
     - monitoring.coreos.com
   resources:
-    - prometheus
+    - prometheuses
   verbs:
     - get
     - watch

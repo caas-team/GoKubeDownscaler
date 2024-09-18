@@ -6,6 +6,7 @@ import (
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
+	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	"k8s.io/client-go/kubernetes"
 
@@ -36,6 +37,7 @@ var GetResource = map[string]getResourceFunc{
 	"scaledobjects":            getScaledObjects,
 	"rollouts":                 getRollouts,
 	"stacks":                   getStacks,
+	"prometheuses":             getPrometheuses,
 }
 
 // Workload is an interface for a scalable resource. It holds shared resource specific functions
@@ -69,4 +71,5 @@ type Clientsets struct {
 	Keda       *keda.Clientset
 	Argo       *argo.Clientset
 	Zalando    *zalando.Clientset
+	Monitoring *monitoring.Clientset
 }

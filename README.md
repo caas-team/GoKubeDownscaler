@@ -26,6 +26,9 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [PodDisruptionBudgets](#poddisruptionbudgets)
   - [ScaledObjects](#scaledobjects)
   - [StatefulSets](#statefulsets)
+  - [Rollouts](#rollouts)
+  - [Stacks](#stacks)
+  - [Prometheuses](#prometheuses)
 - [Installation](#installation)
 - [Configuration](#configuration)
   - [Annotations](#annotations)
@@ -71,6 +74,8 @@ These are the resources the Downscaler can scale:
 - <span id="rollouts">Rollouts</span>:
   - sets the replica count to the [downscale replicas](#downscale-replicas)
 - <span id="stacks">Stacks</span>:
+  - sets the replica count to the [downscale replicas](#downscale-replicas)
+- <span id="prometheuses">Prometheuses</span>:
   - sets the replica count to the [downscale replicas](#downscale-replicas)
 
 ## Installation

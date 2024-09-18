@@ -3,11 +3,11 @@ package scalable
 import (
 	"testing"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
-	zalandov1 "github.com/zalando-incubator/stackset-controller/pkg/apis/zalando.org/v1"
 )
 
-func TestStack_ScaleUp(t *testing.T) {
+func TestPrometheus_ScaleUp(t *testing.T) {
 	tests := []struct {
 		name                 string
 		replicas             int32
@@ -40,25 +40,25 @@ func TestStack_ScaleUp(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			s := &stack{&zalandov1.Stack{}}
-			s.Spec.Replicas = &test.replicas
+			p := &prometheus{&monitoringv1.Prometheus{}}
+			p.Spec.Replicas = &test.replicas
 			if test.originalReplicas != nil {
-				setOriginalReplicas(*test.originalReplicas, s)
+				setOriginalReplicas(*test.originalReplicas, p)
 			}
 
-			err := s.ScaleUp()
+			err := p.ScaleUp()
 			assert.NoError(t, err)
-			if assert.NotNil(t, s.Spec.Replicas) {
-				assert.Equal(t, test.wantReplicas, *s.Spec.Replicas)
+			if assert.NotNil(t, p.Spec.Replicas) {
+				assert.Equal(t, test.wantReplicas, *p.Spec.Replicas)
 			}
-			oringalReplicas, err := getOriginalReplicas(s)
+			oringalReplicas, err := getOriginalReplicas(p)
 			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
 			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
 		})
 	}
 }
 
-func TestStack_ScaleDown(t *testing.T) {
+func TestPrometheus_ScaleDown(t *testing.T) {
 	tests := []struct {
 		name                 string
 		replicas             int32
@@ -91,18 +91,18 @@ func TestStack_ScaleDown(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			s := &stack{&zalandov1.Stack{}}
-			s.Spec.Replicas = &test.replicas
+			p := &prometheus{&monitoringv1.Prometheus{}}
+			p.Spec.Replicas = &test.replicas
 			if test.originalReplicas != nil {
-				setOriginalReplicas(*test.originalReplicas, s)
+				setOriginalReplicas(*test.originalReplicas, p)
 			}
 
-			err := s.ScaleDown(0)
+			err := p.ScaleDown(0)
 			assert.NoError(t, err)
-			if assert.NotNil(t, s.Spec.Replicas) {
-				assert.Equal(t, test.wantReplicas, *s.Spec.Replicas)
+			if assert.NotNil(t, p.Spec.Replicas) {
+				assert.Equal(t, test.wantReplicas, *p.Spec.Replicas)
 			}
-			oringalReplicas, err := getOriginalReplicas(s)
+			oringalReplicas, err := getOriginalReplicas(p)
 			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
 			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
 		})

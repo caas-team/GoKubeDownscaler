@@ -11,6 +11,7 @@ import (
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
+	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -65,7 +66,11 @@ func NewClient(kubeconfig string, dryRun bool) (client, error) {
 	}
 	clientsets.Zalando, err = zalando.NewForConfig(config)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get clientset for argo resources: %w", err)
+		return kubeclient, fmt.Errorf("failed to get clientset for zalando resources: %w", err)
+	}
+	clientsets.Monitoring, err = monitoring.NewForConfig(config)
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to get clientset for monitoring resources: %w", err)
 	}
 	kubeclient.clientsets = &clientsets
 	return kubeclient, nil

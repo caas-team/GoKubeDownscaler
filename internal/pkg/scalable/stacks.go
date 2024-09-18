@@ -13,11 +13,11 @@ import (
 // getStacks is the getResourceFunc for Zalando Stacks
 func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
-	deployments, err := clientsets.Zalando.ZalandoV1().Stacks(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
+	stacks, err := clientsets.Zalando.ZalandoV1().Stacks(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get deployments: %w", err)
 	}
-	for _, item := range deployments.Items {
+	for _, item := range stacks.Items {
 		results = append(results, &stack{&item})
 	}
 	return results, nil
