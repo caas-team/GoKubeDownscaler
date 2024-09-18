@@ -1,4 +1,4 @@
-FROM dockerhub.devops.telekom.de/golang:1.22.5 AS build
+FROM golang:1.22.5 AS build
 
 WORKDIR /tmp/kubedownscaler
 
