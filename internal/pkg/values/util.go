@@ -105,7 +105,7 @@ func GetLayerFromAnnotations(annotations map[string]string, logEvent resourceLog
 		result.DownscaleReplicas = int32(downscaleReplicas)
 	}
 	if gracePeriod, ok := annotations[annotationGracePeriod]; ok {
-		err = result.GracePeriod.Set(gracePeriod)
+		err = (*DurationValue)(&result.GracePeriod).Set(gracePeriod)
 		if err != nil {
 			logEvent.ErrorInvalidAnnotation(annotationGracePeriod, fmt.Sprintf("failed to parse %q annotation: %s", annotationGracePeriod, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationGracePeriod, err)

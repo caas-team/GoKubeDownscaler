@@ -65,7 +65,7 @@ func TestScanWorkload(t *testing.T) {
 	layerEnv := values.NewLayer()
 
 	layerCli.DownscaleReplicas = 0
-	layerCli.GracePeriod = values.Duration(15 * time.Minute)
+	layerCli.GracePeriod = 15 * time.Minute
 
 	mockClient := new(MockClient)
 	mockWorkload := new(MockWorkload)
