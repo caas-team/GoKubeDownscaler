@@ -241,7 +241,7 @@ Create defined permissions for roles
     - update
     - patch
 {{- end }}
-{{- if eq $resource "prometheus" }}
+{{- if eq $resource "prometheuses" }}
 - apiGroups:
     - monitoring.coreos.com
   resources:
