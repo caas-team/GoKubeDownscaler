@@ -97,14 +97,16 @@ func main() {
 	}
 	ctx := context.Background()
 
+	slog.Debug("getting client for kubernetes")
 	client, err := kubernetes.NewClient(kubeconfig, dryRun)
 	if err != nil {
 		slog.Error("failed to create new Kubernetes client", "error", err)
 		os.Exit(1)
 	}
 
+	slog.Info("started downscaler")
 	for {
-		slog.Debug("scanning workloads")
+		slog.Info("scanning workloads")
 
 		workloads, err := client.GetWorkloads(includeNamespaces, includeResources, ctx)
 		if err != nil {
@@ -112,6 +114,7 @@ func main() {
 			os.Exit(1)
 		}
 		workloads = scalable.FilterExcluded(workloads, includeLabels, excludeNamespaces, excludeWorkloads)
+		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 
 		var wg sync.WaitGroup
 		for _, workload := range workloads {
@@ -130,6 +133,7 @@ func main() {
 			}()
 		}
 		wg.Wait()
+		slog.Info("successfully scanned all workloads")
 
 		if once {
 			slog.Debug("once is set to true, exiting")
