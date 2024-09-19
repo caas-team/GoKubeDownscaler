@@ -23,7 +23,7 @@ func (m *MockClient) GetNamespaceAnnotations(namespace string, ctx context.Conte
 	return args.Get(0).(map[string]string), args.Error(1)
 }
 
-func (m *MockClient) DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error {
+func (m *MockClient) DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error {
 	args := m.Called(replicas, workload, ctx)
 	return args.Error(0)
 }
@@ -78,7 +78,7 @@ func TestScanWorkload(t *testing.T) {
 	})
 
 	mockClient.On("GetNamespaceAnnotations", "test-namespace", ctx).Return(map[string]string{}, nil)
-	mockClient.On("DownscaleWorkload", 0, mockWorkload, ctx).Return(nil)
+	mockClient.On("DownscaleWorkload", int32(0), mockWorkload, ctx).Return(nil)
 
 	err := scanWorkload(mockWorkload, mockClient, ctx, layerCli, layerEnv)
 

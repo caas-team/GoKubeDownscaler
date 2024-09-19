@@ -13,24 +13,24 @@ import (
 func TestFilterExcluded(t *testing.T) {
 	// define some example objects to use
 	type ns struct {
-		deployment1       deployment
-		deployment2       deployment
-		labeledDeployment deployment
+		deployment1       Workload
+		deployment2       Workload
+		labeledDeployment Workload
 	}
 	ns1 := ns{
-		deployment1: deployment{Deployment: &appsv1.Deployment{
+		deployment1: &replicaScaledWorkload{&deployment{Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "Deployment1",
 				Namespace: "Namespace1",
 			},
-		}},
-		deployment2: deployment{Deployment: &appsv1.Deployment{
+		}}},
+		deployment2: &replicaScaledWorkload{&deployment{Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "Deployment2",
 				Namespace: "Namespace1",
 			},
-		}},
-		labeledDeployment: deployment{Deployment: &appsv1.Deployment{
+		}}},
+		labeledDeployment: &replicaScaledWorkload{&deployment{Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "LabeledDeployment",
 				Namespace: "Namespace1",
@@ -38,30 +38,15 @@ func TestFilterExcluded(t *testing.T) {
 					"label": "value",
 				},
 			},
-		}},
+		}}},
 	}
 	ns2 := ns{
-		deployment1: deployment{Deployment: &appsv1.Deployment{
+		deployment1: &replicaScaledWorkload{&deployment{Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "Deployment1",
 				Namespace: "Namespace2",
 			},
-		}},
-		deployment2: deployment{Deployment: &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "Deployment2",
-				Namespace: "Namespace2",
-			},
-		}},
-		labeledDeployment: deployment{Deployment: &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "LabeledDeployment",
-				Namespace: "Namespace2",
-				Labels: map[string]string{
-					"label2": "value",
-				},
-			},
-		}},
+		}}},
 	}
 	tests := []struct {
 		name               string
@@ -73,35 +58,35 @@ func TestFilterExcluded(t *testing.T) {
 	}{
 		{
 			name:               "none set",
-			workloads:          []Workload{&ns1.deployment1, &ns1.deployment2, &ns2.deployment1},
+			workloads:          []Workload{ns1.deployment1, ns1.deployment2, ns2.deployment1},
 			includeLabels:      nil,
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
-			want:               []Workload{&ns1.deployment1, &ns1.deployment2, &ns2.deployment1},
+			want:               []Workload{ns1.deployment1, ns1.deployment2, ns2.deployment1},
 		},
 		{
 			name:               "includeLabels",
-			workloads:          []Workload{&ns1.deployment1, &ns1.deployment2, &ns1.labeledDeployment},
+			workloads:          []Workload{ns1.deployment1, ns1.deployment2, ns1.labeledDeployment},
 			includeLabels:      values.RegexList{regexp.MustCompile(".*")}, // match any label
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
-			want:               []Workload{&ns1.labeledDeployment},
+			want:               []Workload{ns1.labeledDeployment},
 		},
 		{
 			name:               "excludeNamespaces",
-			workloads:          []Workload{&ns1.deployment1, &ns1.deployment2, &ns2.deployment1},
+			workloads:          []Workload{ns1.deployment1, ns1.deployment2, ns2.deployment1},
 			includeLabels:      nil,
 			excludedNamespaces: values.RegexList{regexp.MustCompile("Namespace1")}, // exclude Namespace1
 			excludedWorkloads:  nil,
-			want:               []Workload{&ns2.deployment1},
+			want:               []Workload{ns2.deployment1},
 		},
 		{
 			name:               "excludeWorkloads",
-			workloads:          []Workload{&ns1.deployment1, &ns1.deployment2, &ns2.deployment1},
+			workloads:          []Workload{ns1.deployment1, ns1.deployment2, ns2.deployment1},
 			includeLabels:      nil,
 			excludedNamespaces: nil,
 			excludedWorkloads:  values.RegexList{regexp.MustCompile("Deployment1")}, // exclude Deployment1
-			want:               []Workload{&ns1.deployment2},
+			want:               []Workload{ns1.deployment2},
 		},
 	}
 	for _, test := range tests {

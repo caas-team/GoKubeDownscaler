@@ -46,6 +46,7 @@ var (
 func init() {
 	// set defaults for layers
 	layerCli.GracePeriod = values.Duration(15 * time.Minute)
+	layerCli.DownscaleReplicas = 0
 
 	// cli layer values
 	flag.Var(&layerCli.DownscalePeriod, "downscale-period", "period to scale down in (default: never, incompatible: UpscaleTime, DownscaleTime)")
@@ -53,7 +54,7 @@ func init() {
 	flag.Var(&layerCli.UpscalePeriod, "upscale-period", "periods to scale up in (default: never, incompatible: UpscaleTime, DownscaleTime)")
 	flag.Var(&layerCli.UpTime, "default-uptime", "timespans where workloads will be scaled up, outside of them they will be scaled down (default: never, incompatible: UpscalePeriod, DownscalePeriod)")
 	flag.Var(&layerCli.Exclude, "explicit-include", "sets exclude on cli layer to true, makes it so namespaces or deployments have to specify downscaler/exclude=false (default: false)")
-	flag.IntVar(&layerCli.DownscaleReplicas, "downtime-replicas", 0, "the replicas to scale down to (default: 0)")
+	flag.Var((*values.Int32Value)(&layerCli.DownscaleReplicas), "downtime-replicas", "the replicas to scale down to (default: 0)")
 	flag.Var(&layerCli.GracePeriod, "grace-period", "the grace period between creation of workload until first downscale (default: 15min)")
 
 	// cli runtime configuration

@@ -46,7 +46,7 @@ type Layer struct {
 	ExcludeUntil      time.Time    // until when the workload should be excluded
 	ForceUptime       triStateBool // force workload into a uptime state
 	ForceDowntime     triStateBool // force workload into a downtime state
-	DownscaleReplicas int          // the replicas to scale down to
+	DownscaleReplicas int32        // the replicas to scale down to
 	GracePeriod       Duration     // grace period until new workloads will be scaled down
 }
 
@@ -152,7 +152,7 @@ func (l Layers) GetCurrentScaling() scaling {
 }
 
 // GetDownscaleReplicas gets the downscale replicas of the first layer that implements downscale replicas
-func (l Layers) GetDownscaleReplicas() (int, error) {
+func (l Layers) GetDownscaleReplicas() (int32, error) {
 	for _, layer := range l {
 		downscaleReplicas := layer.DownscaleReplicas
 		if downscaleReplicas == Undefined {

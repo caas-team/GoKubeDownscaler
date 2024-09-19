@@ -34,7 +34,7 @@ func (j *job) ScaleUp() error {
 }
 
 // ScaleDown scales the resource down
-func (j *job) ScaleDown(_ int) error {
+func (j *job) ScaleDown(_ int32) error {
 	newSuspend := true
 	j.Spec.Suspend = &newSuspend
 	return nil

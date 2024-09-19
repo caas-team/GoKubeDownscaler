@@ -34,7 +34,7 @@ func (c *cronJob) ScaleUp() error {
 }
 
 // ScaleDown scales the resource down
-func (c *cronJob) ScaleDown(_ int) error {
+func (c *cronJob) ScaleDown(_ int32) error {
 	newSuspend := true
 	c.Spec.Suspend = &newSuspend
 	return nil

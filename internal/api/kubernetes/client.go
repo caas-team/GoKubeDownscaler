@@ -31,7 +31,7 @@ type Client interface {
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
 	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
 	// DownscaleWorkload downscales the workload to the specified replicas
-	DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error
+	DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
 	// addWorkloadEvent creates a new event on the workload
@@ -100,7 +100,7 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 	for _, namespace := range namespaces {
 		for _, resourceType := range resourceTypes {
 			slog.Debug("getting workloads from resource type", "resourceType", resourceType)
-			getWorkloads, ok := scalable.GetResource[strings.ToLower(resourceType)]
+			getWorkloads, ok := scalable.GetWorkloads[strings.ToLower(resourceType)]
 			if !ok {
 				return nil, errResourceNotSupported
 			}
@@ -116,7 +116,7 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 }
 
 // DownscaleWorkload downscales the workload to the specified replicas
-func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error {
+func (c client) DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error {
 	err := workload.ScaleDown(replicas)
 	if err != nil {
 		return fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
