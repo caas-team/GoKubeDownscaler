@@ -8,10 +8,10 @@ RUN go mod download
 
 COPY . /tmp/kubedownscaler
 
-RUN go build -o bin/gokubedownscaler ./cmd/kubedownscaler
+RUN CGO_ENABLED=0 go build -o bin/gokubedownscaler ./cmd/kubedownscaler
 
 FROM scratch
 
-COPY --from=build /tmp/kubedownscaler/bin/gokubedownscaler /app/backend
+COPY --from=build /tmp/kubedownscaler/bin/gokubedownscaler /app/gokubedownscaler
 
-CMD ["/app/gokubedownscaler"]
+ENTRYPOINT ["/app/gokubedownscaler"]
