@@ -1,6 +1,6 @@
 module github.com/caas-team/gokubedownscaler
 
-go 1.22.5
+go 1.23.1
 
 require (
 	github.com/argoproj/argo-rollouts v1.7.2
