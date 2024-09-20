@@ -21,7 +21,7 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 	return results, nil
 }
 
-// deployment is a wrapper for appsv1.Deployment to implement the replicaScaledWorkload interface
+// deployment is a wrapper for appsv1.Deployment to implement the replicaScaledResource interface
 type deployment struct {
 	*appsv1.Deployment
 }

@@ -21,7 +21,7 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 	return results, nil
 }
 
-// prometheus is a wrapper for monitoring.coreos.com/v1.Prometheus to implement the replicaScaledWorkload interface
+// prometheus is a wrapper for monitoring.coreos.com/v1.Prometheus to implement the replicaScaledResource interface
 type prometheus struct {
 	*monitoringv1.Prometheus
 }
