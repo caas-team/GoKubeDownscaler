@@ -16,28 +16,19 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 		return nil, fmt.Errorf("failed to get jobs: %w", err)
 	}
 	for _, item := range jobs.Items {
-		results = append(results, &job{&item})
+		results = append(results, &suspendScaledWorkload{&job{&item}})
 	}
 	return results, nil
 }
 
-// job is a wrapper for batch/v1.job to implement the Workload interface
+// job is a wrapper for batch/v1.job to implement the suspendScaledResource interface
 type job struct {
 	*batch.Job
 }
 
-// ScaleUp scales the resource up
-func (j *job) ScaleUp() error {
-	newSuspend := false
-	j.Spec.Suspend = &newSuspend
-	return nil
-}
-
-// ScaleDown scales the resource down
-func (j *job) ScaleDown(_ int32) error {
-	newSuspend := true
-	j.Spec.Suspend = &newSuspend
-	return nil
+// setSuspend sets the value of the suspend field on the job
+func (c *job) setSuspend(suspend bool) {
+	c.Spec.Suspend = &suspend
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource

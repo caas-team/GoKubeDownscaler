@@ -16,28 +16,19 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 		return nil, fmt.Errorf("failed to get cronjobs: %w", err)
 	}
 	for _, item := range cronjobs.Items {
-		results = append(results, &cronJob{&item})
+		results = append(results, &suspendScaledWorkload{&cronJob{&item}})
 	}
 	return results, nil
 }
 
-// cronJob is a wrapper for batch/v1.cronJob to implement the Workload interface
+// cronJob is a wrapper for batch/v1.cronJob to implement the suspendScaledResource interface
 type cronJob struct {
 	*batch.CronJob
 }
 
-// ScaleUp scales the resource up
-func (c *cronJob) ScaleUp() error {
-	newSuspend := false
-	c.Spec.Suspend = &newSuspend
-	return nil
-}
-
-// ScaleDown scales the resource down
-func (c *cronJob) ScaleDown(_ int32) error {
-	newSuspend := true
-	c.Spec.Suspend = &newSuspend
-	return nil
+// setSuspend sets the value of the suspend field on the cronJob
+func (c *cronJob) setSuspend(suspend bool) {
+	c.Spec.Suspend = &suspend
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource
