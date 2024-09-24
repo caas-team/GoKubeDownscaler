@@ -44,6 +44,7 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [Edge Cases](#edge-cases)
   - [Differences to py-kube-downscaler](#differences-to-py-kube-downscaler)
   - [Missing Features](#missing-features)
+- [Troubleshooting](#troubleshooting)
 - [Developing](#developing)
   - [Cloning the Repository](#cloning-the-repository)
   - [Setting up Pre-Commit](#setting-up-pre-commit)
@@ -526,6 +527,10 @@ Some cases where this might be needed include:
 ### Missing Features
 
 Currently the GoKubeDownscaler is still a WIP. This means that there are still some features missing. You can find a list of the known-missing features [here](/../../labels/missing%20feature). If you think that any other features are missing or you have an idea for a new feature, feel free to open an [Issue](/../../issues/)
+
+## Troubleshooting
+
+See [troubleshooting](docs/troubleshooting.md)
 
 ## Developing
 
