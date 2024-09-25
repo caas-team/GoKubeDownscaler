@@ -14,6 +14,8 @@ const config: Config = {
   organizationName: "caas-team",
   projectName: "GoKubeDownscaler",
 
+  trailingSlash: false,
+
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
 
