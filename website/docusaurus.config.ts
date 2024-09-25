@@ -9,7 +9,7 @@ const config: Config = {
 
   url: "https://caas-team.github.io",
 
-  baseUrl: "/",
+  baseUrl: "/GoKubeDownscaler",
 
   organizationName: "caas-team",
   projectName: "GoKubeDownscaler",
@@ -87,7 +87,7 @@ const config: Config = {
       style: "dark",
       links: [
         {
-          title: "Documentation",
+          title: "Learn",
           items: [
             {
               label: "Documentation",

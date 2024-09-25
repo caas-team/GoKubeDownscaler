@@ -27,6 +27,7 @@ jobs:
           cd website
           npm run build
       - name: Upload Artifacts
+        id: upload-artifacts
         uses: actions/upload-pages-artifact@v3
         with:
           path: website/build
@@ -44,3 +45,5 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ steps.upload-artifacts.outputs.artifact_id }}
