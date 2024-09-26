@@ -24,7 +24,7 @@ func (r *suspendScaledWorkload) ScaleUp() error {
 	return nil
 }
 
-// ScaleUp scales down the underlying suspendScaledResource
+// ScaleDown scales down the underlying suspendScaledResource
 func (r *suspendScaledWorkload) ScaleDown(_ int32) error {
 	r.setSuspend(true)
 	return nil

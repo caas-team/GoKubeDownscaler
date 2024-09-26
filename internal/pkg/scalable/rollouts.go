@@ -13,7 +13,7 @@ func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) 
 	var results []Workload
 	rollouts, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get deployments: %w", err)
+		return nil, fmt.Errorf("failed to get rollouts: %w", err)
 	}
 	for _, item := range rollouts.Items {
 		results = append(results, &replicaScaledWorkload{&rollout{&item}})
@@ -45,7 +45,7 @@ func (r *rollout) getReplicas() (int32, error) {
 func (r *rollout) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(r.Namespace).Update(ctx, r.Rollout, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update deployment: %w", err)
+		return fmt.Errorf("failed to update rollout: %w", err)
 	}
 	return nil
 }

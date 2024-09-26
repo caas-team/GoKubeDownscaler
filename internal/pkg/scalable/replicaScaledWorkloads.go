@@ -41,7 +41,7 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 	return nil
 }
 
-// ScaleUp scales down the underlying replicaScaledResource
+// ScaleDown scales down the underlying replicaScaledResource
 func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas int32) error {
 	originalReplicas, err := r.getReplicas()
 	if err != nil {

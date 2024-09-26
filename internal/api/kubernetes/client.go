@@ -24,7 +24,7 @@ const (
 
 var errResourceNotSupported = errors.New("error: specified rescource type is not supported")
 
-// Client is a interface representing a high-level client to get and modify Kubernetes resources
+// Client is an interface representing a high-level client to get and modify Kubernetes resources
 type Client interface {
 	// GetNamespaceAnnotations gets the annotations of the workload's namespace
 	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)

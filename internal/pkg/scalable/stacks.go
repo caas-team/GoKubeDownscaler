@@ -13,7 +13,7 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 	var results []Workload
 	stacks, err := clientsets.Zalando.ZalandoV1().Stacks(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get deployments: %w", err)
+		return nil, fmt.Errorf("failed to get stacks: %w", err)
 	}
 	for _, item := range stacks.Items {
 		results = append(results, &replicaScaledWorkload{&stack{&item}})
@@ -45,7 +45,7 @@ func (s *stack) getReplicas() (int32, error) {
 func (s *stack) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Zalando.ZalandoV1().Stacks(s.Namespace).Update(ctx, s.Stack, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update deployment: %w", err)
+		return fmt.Errorf("failed to update stack: %w", err)
 	}
 	return nil
 }
