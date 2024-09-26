@@ -5,7 +5,15 @@
   width: 100%;
 }
 
-.featureSvg {
-  height: 200px;
-  width: 200px;
+.feature {
+  width: 16rem;
+}
+
+.image {
+  height: 10rem;
+  width: 10rem;
+}
+
+.heading {
+  display: block;
 }

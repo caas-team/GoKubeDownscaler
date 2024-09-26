@@ -4,42 +4,58 @@ import styles from "./styles.module.css";
 
 type FeatureItem = {
   title: string;
+  Svg: React.ComponentType<React.ComponentProps<"svg">>;
+  href: string;
   description: JSX.Element;
 };
 
 const FeatureList: FeatureItem[] = [
   {
-    title: "Easy to Use",
+    title: "Kubernetes",
+    Svg: require("@site/static/img/Kubernetes.svg").default,
+    href: "https://kubernetes.io/",
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        batch/CronJob, apps/DeamonSet, apps/Deployment,
+        autoscaling/HorizontalPodAutoscaler, batch/Job,
+        policy/PodDisruptionBudget, apps/StatefulSet
       </>
     ),
   },
   {
-    title: "Focus on What Matters",
-    description: (
-      <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
-      </>
-    ),
+    title: "Prometheus",
+    Svg: require("@site/static/img/Prometheus.svg").default,
+    href: "https://prometheus.io/",
+    description: <>monitoring.coreos.com/Prometheus</>,
   },
   {
-    title: "Powered by React",
-    description: (
-      <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
-      </>
-    ),
+    title: "Argo",
+    Svg: require("@site/static/img/Argo.svg").default,
+    href: "https://argoproj.github.io/",
+    description: <>argoproj.io/Rollout</>,
+  },
+  {
+    title: "Keda",
+    Svg: require("@site/static/img/Keda.svg").default,
+    href: "https://keda.sh/",
+    description: <>keda.sh/ScaledObject</>,
+  },
+  {
+    title: "Zalando",
+    Svg: require("@site/static/img/Zalando.svg").default,
+    href: "https://zalando.com/",
+    description: <>zalando.org/Stack</>,
   },
 ];
 
-function Feature({ title, description }: FeatureItem) {
+function Feature({ title, Svg, href, description }: FeatureItem) {
   return (
-    <div className={clsx("col col--4")}>
+    <div className={clsx("col", styles.feature)}>
+      <div className={clsx("text--center")}>
+        <a href={href}>
+          <Svg className={styles.image} />
+        </a>
+      </div>
       <div className="text--center padding-horiz--md">
         <Heading as="h3">{title}</Heading>
         <p>{description}</p>
@@ -51,6 +67,7 @@ function Feature({ title, description }: FeatureItem) {
 export default function HomepageFeatures(): JSX.Element {
   return (
     <section className={styles.features}>
+      <h1 className={styles.heading}>Supported Resources</h1>
       <div className="container">
         <div className="row">
           {FeatureList.map((props, idx) => (
