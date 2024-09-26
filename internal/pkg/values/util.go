@@ -95,8 +95,8 @@ func GetLayerFromAnnotations(annotations map[string]string, logEvent resourceLog
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationForceDowntime, err)
 		}
 	}
-	if downscaleReplicas, ok := annotations[annotationDownscaleReplicas]; ok {
-		downscaleReplicas, err := strconv.ParseInt(downscaleReplicas, 10, 32)
+	if downscaleReplicasString, ok := annotations[annotationDownscaleReplicas]; ok {
+		downscaleReplicas, err := strconv.ParseInt(downscaleReplicasString, 10, 32)
 		if err != nil {
 			logEvent.ErrorInvalidAnnotation(annotationDownscaleReplicas, fmt.Sprintf("failed to parse %q annotation: %s", annotationDownscaleReplicas, err.Error()), ctx)
 			return result, fmt.Errorf("failed to parse %q annotation: %w", annotationDownscaleReplicas, err)
