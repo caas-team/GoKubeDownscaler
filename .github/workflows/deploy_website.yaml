@@ -20,12 +20,10 @@ jobs:
           node-version-file: "website/package.json"
       - name: Install dependencies
         run: |
-          cd website
-          npm install
+          npm --prefix website install
       - name: Run npm build
         run: |
-          cd website
-          npm run build
+          npm --prefix website run build
       - name: Upload Artifacts
         id: upload-artifacts
         uses: actions/upload-pages-artifact@v3
