@@ -25,7 +25,7 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 	return results, nil
 }
 
-// daemonSet is a wrapper for batch/v1.cronJob to implement the Workload interface
+// daemonSet is a wrapper for apps/v1.DeamonSet to implement the Workload interface
 type daemonSet struct {
 	*appsv1.DaemonSet
 }
