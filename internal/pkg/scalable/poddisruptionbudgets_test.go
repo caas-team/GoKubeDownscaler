@@ -16,8 +16,8 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 		name                 string
 		minAvailable         *intstr.IntOrString
 		maxUnavailable       *intstr.IntOrString
-		originalReplicas     *int
-		wantOriginalReplicas *int
+		originalReplicas     *int32
+		wantOriginalReplicas *int32
 		wantMinAvailable     *intstr.IntOrString
 		wantMaxUnavailable   *intstr.IntOrString
 	}{
@@ -151,8 +151,8 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 		name                 string
 		minAvailable         *intstr.IntOrString
 		maxUnavailable       *intstr.IntOrString
-		originalReplicas     *int
-		wantOriginalReplicas *int
+		originalReplicas     *int32
+		wantOriginalReplicas *int32
 		wantMinAvailable     *intstr.IntOrString
 		wantMaxUnavailable   *intstr.IntOrString
 	}{

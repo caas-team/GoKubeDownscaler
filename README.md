@@ -26,6 +26,9 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [PodDisruptionBudgets](#poddisruptionbudgets)
   - [ScaledObjects](#scaledobjects)
   - [StatefulSets](#statefulsets)
+  - [Rollouts](#rollouts)
+  - [Stacks](#stacks)
+  - [Prometheuses](#prometheuses)
 - [Installation](#installation)
 - [Configuration](#configuration)
   - [Annotations](#annotations)
@@ -41,6 +44,7 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [Edge Cases](#edge-cases)
   - [Differences to py-kube-downscaler](#differences-to-py-kube-downscaler)
   - [Missing Features](#missing-features)
+- [Troubleshooting](#troubleshooting)
 - [Developing](#developing)
   - [Cloning the Repository](#cloning-the-repository)
   - [Setting up Pre-Commit](#setting-up-pre-commit)
@@ -67,6 +71,12 @@ These are the resources the Downscaler can scale:
 - <span id="scaledobjects">ScaledObjects</span>:
   - sets the paused replicas annotation to the [downscale replicas](#downscale-replicas)
 - <span id="statefulsets">StatefulSets</span>:
+  - sets the replica count to the [downscale replicas](#downscale-replicas)
+- <span id="rollouts">Rollouts</span>:
+  - sets the replica count to the [downscale replicas](#downscale-replicas)
+- <span id="stacks">Stacks</span>:
+  - sets the replica count to the [downscale replicas](#downscale-replicas)
+- <span id="prometheuses">Prometheuses</span>:
   - sets the replica count to the [downscale replicas](#downscale-replicas)
 
 ## Installation
@@ -212,12 +222,12 @@ See [RFC3339 Timestamps](https://datatracker.ietf.org/doc/html/rfc3339) for more
 example:
 
 ```text
-Mon-Fri 08:00-20:00 Europe/Berlin    # From Monday to Friday: from 08:00 to 20:00
-Sat-Sun 00:00-24:00 UTC              # On The Weekend: the entire day
-Mon-Fri 20:00-08:00 PST              # From Monday to Friday: from Midnight to 08:00 and from 20:00 until end of day
-Mon-Sun 00:00-00:00 America/New_York # The timespan never matches, this would not do anything
-Mon-Tue 20:00-24:00 CEST             # On Monday and Tuesday: from 20:00 to midnight
-Mon-Tue 20:00-00:00 Europe/Amsterdam # On Monday and Tuesday: from 20:00 to midnight
+Mon-Fri 08:00-20:00 Asia/Tokyo          # From Monday to Friday: from 08:00 to 20:00
+Sat-Sun 00:00-24:00 UTC                 # On The Weekend: the entire day
+Mon-Fri 20:00-08:00 Australia/Sydney    # From Monday to Friday: from Midnight to 08:00 and from 20:00 until end of day
+Mon-Sun 00:00-00:00 America/New_York    # The timespan never matches, this would not do anything
+Mon-Tue 20:00-24:00 Africa/Johannesburg # On Monday and Tuesday: from 20:00 to midnight
+Mon-Tue 20:00-00:00 Europe/Amsterdam    # On Monday and Tuesday: from 20:00 to midnight
 ```
 
 Valid Values:
@@ -256,6 +266,7 @@ OR with optional spaces:
 ```
 
 The timespans can be absolute, relative or mixed.
+
 Example: downscale over the weekend and at night:
 
 ```
@@ -275,7 +286,7 @@ Or by a duration string:
 
 ```text
 "1h30m" # 1 hour and 30 minutes
-"1.5h"  # 1 ½ hours (1 hour and 30 minutes)
+"1.5h"  # 1 hour and 30 minutes
 "2m"    # 2 minutes
 "10s"   # 10 seconds
 "300s"  # 300 seconds
@@ -361,7 +372,7 @@ Workload will be scaled according to the downtime schedule on the cli layer
 --- Layers
 Workload: uptime="Mon-Fri 08:00-16:00 Europe/Berlin"
 Namespace: force-downtime=true
-CLI: downtime="Mon-Fri 20:00-08:00 PST"
+CLI: downtime="Mon-Fri 20:00-08:00 America/Los_Angeles"
 ENV: (no env vars)
 --- Process:
 Exclusion not set on any layer (...)
@@ -374,7 +385,7 @@ Workload will be forced into a down-scaled state
 --- Layers
 Workload: uptime="Mon-Fri 08:00-16:00 Europe/Berlin"
 Namespace: force-downtime=true
-CLI: downtime="Mon-Fri 20:00-08:00 PST"
+CLI: downtime="Mon-Fri 20:00-08:00 America/Los_Angeles"
 ENV: (no env vars)
 --- Process:
 Exclusion not set on any layer (...)
@@ -465,7 +476,7 @@ Some cases where this might be needed include:
 
 <span id="diff-duration-units">Duration units</span>:
 
-- instead of integers representing seconds you can also use duration strings. See [Duration](#duration) for more information
+- instead of integers representing seconds you can also use [duration strings](#duration)
 - backwards compatible: fully compatible, integer seconds are still supported
 
 <span id="diff-layer-system">Layer system</span>:
@@ -485,8 +496,8 @@ Some cases where this might be needed include:
 
 <span id="diff-uniform-timestamp">Uniform timestamp</span>:
 
-- all timestamps are [RFC3339 Timestamps](https://datatracker.ietf.org/doc/html/rfc3339) this is more optimized for golang, more consistent and also used by kubernetes itself
-- backwards compatible: mostly, unless you used a short form of ISO 8601 (`2023-08-12`, `2023-233`) or `2023-W34-1` it should be totally fine to not change anything
+- all timestamps are [RFC3339 Timestamps](https://datatracker.ietf.org/doc/html/rfc3339) this is more optimized for golang, more consistent and also used by Kubernetes itself
+- backwards compatible: mostly, unless you used a short form of ISO 8601 (`2023-08-12`, `2023-233` or `2023-W34-1`) it should be totally fine to not change anything
 
 <span id="diff-overlapping-days">Overlapping [relative timespans](#configuration-of-a-relative-timespan) into next day</span>:
 
@@ -516,6 +527,10 @@ Some cases where this might be needed include:
 ### Missing Features
 
 Currently the GoKubeDownscaler is still a WIP. This means that there are still some features missing. You can find a list of the known-missing features [here](/../../labels/missing%20feature). If you think that any other features are missing or you have an idea for a new feature, feel free to open an [Issue](/../../issues/)
+
+## Troubleshooting
+
+See [troubleshooting](docs/troubleshooting.md)
 
 ## Developing
 

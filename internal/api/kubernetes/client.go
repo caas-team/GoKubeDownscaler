@@ -8,8 +8,11 @@ import (
 	"log/slog"
 	"strings"
 
+	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
+	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
+	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -21,14 +24,14 @@ const (
 
 var errResourceNotSupported = errors.New("error: specified rescource type is not supported")
 
-// Client is a interface representing a high-level client to get and modify kubernetes resources
+// Client is an interface representing a high-level client to get and modify Kubernetes resources
 type Client interface {
 	// GetNamespaceAnnotations gets the annotations of the workload's namespace
 	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
 	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
 	// DownscaleWorkload downscales the workload to the specified replicas
-	DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error
+	DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
 	// addWorkloadEvent creates a new event on the workload
@@ -44,24 +47,36 @@ func NewClient(kubeconfig string, dryRun bool) (client, error) {
 
 	config, err := getConfig(kubeconfig)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get config for kubernetes: %w", err)
+		return kubeclient, fmt.Errorf("failed to get config for Kubernetes: %w", err)
 	}
 	// set qps and burst rate limiting options. See https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1/
 	config.QPS = 500    // available queries per second, when unused will fill the burst buffer
 	config.Burst = 1000 // the max size of the buffer of queries
 	clientsets.Kubernetes, err = kubernetes.NewForConfig(config)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get clientset for kubernetes resources: %w", err)
+		return kubeclient, fmt.Errorf("failed to get clientset for Kubernetes resources: %w", err)
 	}
 	clientsets.Keda, err = keda.NewForConfig(config)
 	if err != nil {
 		return kubeclient, fmt.Errorf("failed to get clientset for keda resources: %w", err)
 	}
+	clientsets.Argo, err = argo.NewForConfig(config)
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to get clientset for argo resources: %w", err)
+	}
+	clientsets.Zalando, err = zalando.NewForConfig(config)
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to get clientset for zalando resources: %w", err)
+	}
+	clientsets.Monitoring, err = monitoring.NewForConfig(config)
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to get clientset for monitoring resources: %w", err)
+	}
 	kubeclient.clientsets = &clientsets
 	return kubeclient, nil
 }
 
-// client is a kubernetes client with downscaling specific functions
+// client is a Kubernetes client with downscaling specific functions
 type client struct {
 	clientsets *scalable.Clientsets
 	dryRun     bool
@@ -85,7 +100,7 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 	for _, namespace := range namespaces {
 		for _, resourceType := range resourceTypes {
 			slog.Debug("getting workloads from resource type", "resourceType", resourceType)
-			getWorkloads, ok := scalable.GetResource[strings.ToLower(resourceType)]
+			getWorkloads, ok := scalable.GetWorkloads[strings.ToLower(resourceType)]
 			if !ok {
 				return nil, errResourceNotSupported
 			}
@@ -101,7 +116,7 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 }
 
 // DownscaleWorkload downscales the workload to the specified replicas
-func (c client) DownscaleWorkload(replicas int, workload scalable.Workload, ctx context.Context) error {
+func (c client) DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error {
 	err := workload.ScaleDown(replicas)
 	if err != nil {
 		return fmt.Errorf("failed to set the workload into a scaled down state: %w", err)

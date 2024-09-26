@@ -7,7 +7,7 @@ import (
 	batch "k8s.io/api/batch/v1"
 )
 
-func TestCronJob_ScaleUp(t *testing.T) {
+func TestSuspendScaledWorkload_ScaleUp(t *testing.T) {
 	tests := []struct {
 		name        string
 		suspend     *bool
@@ -34,15 +34,16 @@ func TestCronJob_ScaleUp(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			cj := cronJob{&batch.CronJob{}}
 			cj.Spec.Suspend = test.suspend
+			s := suspendScaledWorkload{&cj}
 
-			err := cj.ScaleUp()
+			err := s.ScaleUp()
 			assert.NoError(t, err)
 			assertBoolPointerEqual(t, test.wantSuspend, cj.Spec.Suspend)
 		})
 	}
 }
 
-func TestCronJob_ScaleDown(t *testing.T) {
+func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 	tests := []struct {
 		name        string
 		suspend     *bool
@@ -69,8 +70,9 @@ func TestCronJob_ScaleDown(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			cj := cronJob{&batch.CronJob{}}
 			cj.Spec.Suspend = test.suspend
+			s := suspendScaledWorkload{&cj}
 
-			err := cj.ScaleDown(0)
+			err := s.ScaleDown(0)
 			assert.NoError(t, err)
 			assertBoolPointerEqual(t, test.wantSuspend, cj.Spec.Suspend)
 		})

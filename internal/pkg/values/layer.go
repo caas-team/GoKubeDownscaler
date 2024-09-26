@@ -38,16 +38,16 @@ func NewLayer() Layer {
 
 // Layer represents a value Layer
 type Layer struct {
-	DownscalePeriod   timeSpans    // periods to downscale in
-	DownTime          timeSpans    // within these timespans workloads will be scaled down, outside of them they will be scaled up
-	UpscalePeriod     timeSpans    // periods to upscale in
-	UpTime            timeSpans    // within these timespans workloads will be scaled up, outside of them they will be scaled down
-	Exclude           triStateBool // if workload should be excluded
-	ExcludeUntil      time.Time    // until when the workload should be excluded
-	ForceUptime       triStateBool // force workload into a uptime state
-	ForceDowntime     triStateBool // force workload into a downtime state
-	DownscaleReplicas int          // the replicas to scale down to
-	GracePeriod       Duration     // grace period until new workloads will be scaled down
+	DownscalePeriod   timeSpans     // periods to downscale in
+	DownTime          timeSpans     // within these timespans workloads will be scaled down, outside of them they will be scaled up
+	UpscalePeriod     timeSpans     // periods to upscale in
+	UpTime            timeSpans     // within these timespans workloads will be scaled up, outside of them they will be scaled down
+	Exclude           triStateBool  // if workload should be excluded
+	ExcludeUntil      time.Time     // until when the workload should be excluded
+	ForceUptime       triStateBool  // force workload into a uptime state
+	ForceDowntime     triStateBool  // force workload into a downtime state
+	DownscaleReplicas int32         // the replicas to scale down to
+	GracePeriod       time.Duration // grace period until new workloads will be scaled down
 }
 
 // isScalingExcluded checks if scaling is excluded, nil represents a not set state
@@ -152,7 +152,7 @@ func (l Layers) GetCurrentScaling() scaling {
 }
 
 // GetDownscaleReplicas gets the downscale replicas of the first layer that implements downscale replicas
-func (l Layers) GetDownscaleReplicas() (int, error) {
+func (l Layers) GetDownscaleReplicas() (int32, error) {
 	for _, layer := range l {
 		downscaleReplicas := layer.DownscaleReplicas
 		if downscaleReplicas == Undefined {
@@ -179,7 +179,7 @@ func (l Layers) GetExcluded() bool {
 
 // IsInGracePeriod gets the grace period of the uppermost layer that has it set
 func (l Layers) IsInGracePeriod(timeAnnotation string, workloadAnnotations map[string]string, creationTime time.Time, logEvent resourceLogger, ctx context.Context) (bool, error) {
-	var gracePeriod Duration = Undefined
+	var gracePeriod time.Duration = Undefined
 	for _, layer := range l {
 		if layer.GracePeriod == Undefined {
 			continue

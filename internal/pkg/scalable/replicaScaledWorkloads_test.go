@@ -7,12 +7,12 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 )
 
-func TestDeployments_ScaleUp(t *testing.T) {
+func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 	tests := []struct {
 		name                 string
 		replicas             int32
-		originalReplicas     *int
-		wantOriginalReplicas *int
+		originalReplicas     *int32
+		wantOriginalReplicas *int32
 		wantReplicas         int32
 	}{
 		{
@@ -40,30 +40,31 @@ func TestDeployments_ScaleUp(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			d := &deployment{&appsv1.Deployment{}}
-			d.Spec.Replicas = &test.replicas
+			r := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
+			_ = r.setReplicas(test.replicas)
 			if test.originalReplicas != nil {
-				setOriginalReplicas(*test.originalReplicas, d)
+				setOriginalReplicas(*test.originalReplicas, r)
 			}
 
-			err := d.ScaleUp()
+			err := r.ScaleUp()
 			assert.NoError(t, err)
-			if assert.NotNil(t, d.Spec.Replicas) {
-				assert.Equal(t, test.wantReplicas, *d.Spec.Replicas)
+			replicas, err := r.getReplicas()
+			if assert.NoError(t, err) {
+				assert.Equal(t, test.wantReplicas, replicas)
 			}
-			oringalReplicas, err := getOriginalReplicas(d)
+			oringalReplicas, err := getOriginalReplicas(r)
 			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
 			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
 		})
 	}
 }
 
-func TestDeployments_ScaleDown(t *testing.T) {
+func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 	tests := []struct {
 		name                 string
 		replicas             int32
-		originalReplicas     *int
-		wantOriginalReplicas *int
+		originalReplicas     *int32
+		wantOriginalReplicas *int32
 		wantReplicas         int32
 	}{
 		{
@@ -91,18 +92,19 @@ func TestDeployments_ScaleDown(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			d := &deployment{&appsv1.Deployment{}}
-			d.Spec.Replicas = &test.replicas
+			r := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
+			_ = r.setReplicas(test.replicas)
 			if test.originalReplicas != nil {
-				setOriginalReplicas(*test.originalReplicas, d)
+				setOriginalReplicas(*test.originalReplicas, r)
 			}
 
-			err := d.ScaleDown(0)
+			err := r.ScaleDown(0)
 			assert.NoError(t, err)
-			if assert.NotNil(t, d.Spec.Replicas) {
-				assert.Equal(t, test.wantReplicas, *d.Spec.Replicas)
+			replicas, err := r.getReplicas()
+			if assert.NoError(t, err) {
+				assert.Equal(t, test.wantReplicas, replicas)
 			}
-			oringalReplicas, err := getOriginalReplicas(d)
+			oringalReplicas, err := getOriginalReplicas(r)
 			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
 			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
 		})

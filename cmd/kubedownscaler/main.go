@@ -26,11 +26,11 @@ var (
 	// if the scan should only run once
 	once = false
 	// how long to wait between scans
-	interval = values.Duration(30 * time.Second)
+	interval = 30 * time.Second
 	// list of namespaces to restrict the downscaler to
-	includeNamespaces values.StringList
+	includeNamespaces []string
 	// list of resources to restrict the downscaler to
-	includeResources = values.StringList{"deployments"}
+	includeResources = []string{"deployments"}
 	// list of namespaces to ignore while downscaling
 	excludeNamespaces = values.RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")}
 	// list of workload names to ignore while downscaling
@@ -45,7 +45,8 @@ var (
 
 func init() {
 	// set defaults for layers
-	layerCli.GracePeriod = values.Duration(15 * time.Minute)
+	layerCli.GracePeriod = 15 * time.Minute
+	layerCli.DownscaleReplicas = 0
 
 	// cli layer values
 	flag.Var(&layerCli.DownscalePeriod, "downscale-period", "period to scale down in (default: never, incompatible: UpscaleTime, DownscaleTime)")
@@ -53,16 +54,16 @@ func init() {
 	flag.Var(&layerCli.UpscalePeriod, "upscale-period", "periods to scale up in (default: never, incompatible: UpscaleTime, DownscaleTime)")
 	flag.Var(&layerCli.UpTime, "default-uptime", "timespans where workloads will be scaled up, outside of them they will be scaled down (default: never, incompatible: UpscalePeriod, DownscalePeriod)")
 	flag.Var(&layerCli.Exclude, "explicit-include", "sets exclude on cli layer to true, makes it so namespaces or deployments have to specify downscaler/exclude=false (default: false)")
-	flag.IntVar(&layerCli.DownscaleReplicas, "downtime-replicas", 0, "the replicas to scale down to (default: 0)")
-	flag.Var(&layerCli.GracePeriod, "grace-period", "the grace period between creation of workload until first downscale (default: 15min)")
+	flag.Var((*values.Int32Value)(&layerCli.DownscaleReplicas), "downtime-replicas", "the replicas to scale down to (default: 0)")
+	flag.Var((*values.DurationValue)(&layerCli.GracePeriod), "grace-period", "the grace period between creation of workload until first downscale (default: 15min)")
 
 	// cli runtime configuration
 	flag.BoolVar(&dryRun, "dry-run", false, "print actions instead of doing them. enables debug logs (default: false)")
 	flag.BoolVar(&debug, "debug", false, "print more debug information (default: false)")
 	flag.BoolVar(&once, "once", false, "run scan only once (default: false)")
-	flag.Var(&interval, "interval", "time between scans (default: 30s)")
-	flag.Var(&includeNamespaces, "namespace", "restrict the downscaler to the specified namespaces (default: all)")
-	flag.Var(&includeResources, "include-resources", "restricts the downscaler to the specified resource types (default: deployments)")
+	flag.Var((*values.DurationValue)(&interval), "interval", "time between scans (default: 30s)")
+	flag.Var((*values.StringListValue)(&includeNamespaces), "namespace", "restrict the downscaler to the specified namespaces (default: all)")
+	flag.Var((*values.StringListValue)(&includeResources), "include-resources", "restricts the downscaler to the specified resource types (default: deployments)")
 	flag.Var(&excludeNamespaces, "exclude-namespaces", "exclude namespaces from being scaled (default: kube-system,kube-downscaler)")
 	flag.Var(&excludeWorkloads, "exclude-deployments", "exclude deployments from being scaled (optional)")
 	flag.Var(&includeLabels, "matching-labels", "restricts the downscaler to workloads with these labels (default: all)")
@@ -96,14 +97,16 @@ func main() {
 	}
 	ctx := context.Background()
 
+	slog.Debug("getting client for kubernetes")
 	client, err := kubernetes.NewClient(kubeconfig, dryRun)
 	if err != nil {
-		slog.Error("failed to create new kubernetes client", "error", err)
+		slog.Error("failed to create new Kubernetes client", "error", err)
 		os.Exit(1)
 	}
 
+	slog.Info("started downscaler")
 	for {
-		slog.Debug("scanning workloads")
+		slog.Info("scanning workloads")
 
 		workloads, err := client.GetWorkloads(includeNamespaces, includeResources, ctx)
 		if err != nil {
@@ -111,6 +114,7 @@ func main() {
 			os.Exit(1)
 		}
 		workloads = scalable.FilterExcluded(workloads, includeLabels, excludeNamespaces, excludeWorkloads)
+		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 
 		var wg sync.WaitGroup
 		for _, workload := range workloads {
@@ -129,6 +133,7 @@ func main() {
 			}()
 		}
 		wg.Wait()
+		slog.Info("successfully scanned all workloads")
 
 		if once {
 			slog.Debug("once is set to true, exiting")

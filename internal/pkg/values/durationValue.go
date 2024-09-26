@@ -6,15 +6,15 @@ import (
 	"time"
 )
 
-// Duration is an alias for time.Duration with a Set function that allows for durations without a unit
-type Duration time.Duration
+// DurationValue is an alias for time.DurationValue with a Set function that allows for durations without a unit
+type DurationValue time.Duration
 
 // Set converts the string value into a duration
-func (d *Duration) Set(value string) error {
+func (d *DurationValue) Set(value string) error {
 	// try parsing as integer seconds
 	seconds, err := strconv.Atoi(value)
 	if err == nil {
-		*d = Duration(time.Duration(seconds) * time.Second)
+		*d = DurationValue(time.Duration(seconds) * time.Second)
 		return nil
 	}
 
@@ -24,10 +24,10 @@ func (d *Duration) Set(value string) error {
 		return fmt.Errorf("failed parsing duration: %w", err)
 	}
 
-	*d = Duration(duration)
+	*d = DurationValue(duration)
 	return nil
 }
 
-func (d *Duration) String() string {
+func (d *DurationValue) String() string {
 	return fmt.Sprint(time.Duration(*d).String())
 }
