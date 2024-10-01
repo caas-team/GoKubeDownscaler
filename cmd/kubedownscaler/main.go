@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	_ "time/tzdata"
+
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
