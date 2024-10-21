@@ -6,49 +6,51 @@ type FeatureItem = {
   title: string;
   Svg: React.ComponentType<React.ComponentProps<"svg">>;
   href: string;
-  description: JSX.Element;
+  supportedResources: string[];
 };
 
 const FeatureList: FeatureItem[] = [
   {
-    title: "Kubernetes",
-    Svg: require("@site/static/img/Kubernetes.svg").default,
-    href: "https://kubernetes.io/",
-    description: (
-      <>
-        batch/CronJob, apps/DeamonSet, apps/Deployment,
-        autoscaling/HorizontalPodAutoscaler, batch/Job,
-        policy/PodDisruptionBudget, apps/StatefulSet
-      </>
-    ),
-  },
-  {
     title: "Prometheus",
     Svg: require("@site/static/img/Prometheus.svg").default,
     href: "https://prometheus.io/",
-    description: <>monitoring.coreos.com/Prometheus</>,
+    supportedResources: ["Prometheuses"],
   },
   {
     title: "Argo",
     Svg: require("@site/static/img/Argo.svg").default,
     href: "https://argoproj.github.io/",
-    description: <>argoproj.io/Rollout</>,
+    supportedResources: ["Rollouts"],
+  },
+  {
+    title: "Kubernetes",
+    Svg: require("@site/static/img/Kubernetes.svg").default,
+    href: "https://kubernetes.io/",
+    supportedResources: [
+      "Deployment",
+      "StatefulSet",
+      "DeamonSet",
+      "CronJob",
+      "HorizontalPodAutoscaler",
+      "PodDisruptionBudget",
+      "Job",
+    ],
   },
   {
     title: "Keda",
     Svg: require("@site/static/img/Keda.svg").default,
     href: "https://keda.sh/",
-    description: <>keda.sh/ScaledObject</>,
+    supportedResources: ["ScaledObjects"],
   },
   {
     title: "Zalando",
     Svg: require("@site/static/img/Zalando.svg").default,
     href: "https://zalando.com/",
-    description: <>zalando.org/Stack</>,
+    supportedResources: ["Stacks"],
   },
 ];
 
-function Feature({ title, Svg, href, description }: FeatureItem) {
+function Feature({ title, Svg, href, supportedResources }: FeatureItem) {
   return (
     <div className={clsx("col", styles.feature)}>
       <div className={clsx("text--center")}>
@@ -56,9 +58,9 @@ function Feature({ title, Svg, href, description }: FeatureItem) {
           <Svg className={styles.image} />
         </a>
       </div>
-      <div className="text--center padding-horiz--md">
+      <div className={"text--center padding-horiz--md"}>
         <Heading as="h3">{title}</Heading>
-        <p>{description}</p>
+        <p>{supportedResources.join(", ")}</p>
       </div>
     </div>
   );
@@ -66,15 +68,17 @@ function Feature({ title, Svg, href, description }: FeatureItem) {
 
 export default function HomepageFeatures(): JSX.Element {
   return (
-    <section className={styles.features}>
+    <>
       <h1 className={styles.heading}>Supported Resources</h1>
-      <div className="container">
-        <div className="row">
-          {FeatureList.map((props, idx) => (
-            <Feature key={idx} {...props} />
-          ))}
+      <section className={styles.features}>
+        <div className="container">
+          <div className="row">
+            {FeatureList.map((props, idx) => (
+              <Feature key={idx} {...props} />
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
