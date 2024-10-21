@@ -1,0 +1,28 @@
+name: Create dev build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create_dev_build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract Chart Version
+        id: chart_version
+        run: |
+          version=$(yq e '.version' ./test-chart/Chart.yaml)
+          echo "version=$version" >> $GITHUB_ENV
+
+      - name: Dispatch event to create dev build
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: caas-team/GoKubeDownscaler
+          event-type: create-dev-build
+          client-payload: '{"version": "${{ env.version }}-dev"}'

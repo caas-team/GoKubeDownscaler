@@ -2,7 +2,7 @@ name: Build and push helm chart
 
 on:
   repository_dispatch:
-    types: [build-new-chart]
+    types: [build-new-chart, create-dev-build]
 
 jobs:
   build_and_push:
@@ -26,10 +26,23 @@ jobs:
           MTR: mtr.devops.telekom.de
 
       - name: Helm Lint, Package, and Push
+        if: github.event.action == 'release-new-version'
         run: |
           cd deployments/chart
           helm lint .
           helm package .
+          helm push $(ls *.tgz | head -1) oci://ghcr.io/caas-team/charts
+          helm push $(ls *.tgz | head -1) oci://${MTR}/${REPO}/charts
+        env:
+          MTR: mtr.devops.telekom.de
+          REPO: caas
+
+      - name: Helm Lint, Package, and Push Dev Build
+        if: github.event.action == 'create-dev-build'
+        run: |
+          cd deployments/chart
+          helm lint .
+          helm package . --version ${{ github.event.client_payload.version }} --app-version dev
           helm push $(ls *.tgz | head -1) oci://ghcr.io/caas-team/charts
           helm push $(ls *.tgz | head -1) oci://${MTR}/${REPO}/charts
         env:
