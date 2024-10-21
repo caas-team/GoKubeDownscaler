@@ -6,8 +6,8 @@ keywords:
   - kube-downscaler
   - go
   - downscaling
-version: 1.1.1
-appVersion: 1.1.1
+version: 1.1.2
+appVersion: 1.1.2
 icon: https://raw.githubusercontent.com/caas-team/GoKubeDownscaler/refs/heads/main/deployments/chart/icon.svg
 sources:
   - https://github.com/caas-team/GoKubeDownscaler
