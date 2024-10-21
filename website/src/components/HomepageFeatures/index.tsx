@@ -1,15 +1,12 @@
 import clsx from "clsx";
 import Heading from "@theme/Heading";
 import styles from "./styles.module.css";
-import { useState } from "react";
 
 type FeatureItem = {
   title: string;
   Svg: React.ComponentType<React.ComponentProps<"svg">>;
   href: string;
   description: JSX.Element;
-  selected?: boolean;
-  onClick?: () => void;
 };
 
 const FeatureList: FeatureItem[] = [
@@ -51,58 +48,33 @@ const FeatureList: FeatureItem[] = [
   },
 ];
 
-function Feature({
-  title,
-  Svg,
-  href,
-  description,
-  selected,
-  onClick,
-}: FeatureItem) {
+function Feature({ title, Svg, href, description }: FeatureItem) {
   return (
-    <div
-      className={clsx(
-        "col",
-        styles.feature,
-        selected ? "col--12" + styles.selectedFeature : ""
-      )}
-      onClick={() => {
-        if (!selected) onClick();
-      }}
-    >
+    <div className={clsx("col", styles.feature)}>
       <div className={clsx("text--center")}>
-        {/*<a href={href}>*/}
-        <Svg className={styles.image} />
-        {/*</a>*/}
+        <a href={href}>
+          <Svg className={styles.image} />
+        </a>
       </div>
       <div className="text--center padding-horiz--md">
         <Heading as="h3">{title}</Heading>
-        {selected && <p>{description}</p>}
+        <p>{description}</p>
       </div>
     </div>
   );
 }
 
 export default function HomepageFeatures(): JSX.Element {
-  const [selected, setSelected] = useState("");
-
   return (
-    <>
+    <section className={styles.features}>
       <h1 className={styles.heading}>Supported Resources</h1>
-      <section className={styles.features}>
-        <div className="container">
-          <div className="row">
-            {FeatureList.map((props, idx) => (
-              <Feature
-                key={idx}
-                {...props}
-                onClick={() => setSelected(props.title)}
-                selected={props.title == selected}
-              />
-            ))}
-          </div>
+      <div className="container">
+        <div className="row">
+          {FeatureList.map((props, idx) => (
+            <Feature key={idx} {...props} />
+          ))}
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }

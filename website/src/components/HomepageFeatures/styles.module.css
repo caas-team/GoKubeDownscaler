@@ -9,12 +9,6 @@
   width: 16rem;
 }
 
-.selectedFeatures {
-  display: block;
-  width: 100%;
-  cursor: pointer;
-}
-
 .image {
   height: 10rem;
   width: 10rem;
@@ -22,7 +16,4 @@
 
 .heading {
   display: block;
-  width: 100%;
-  text-align: center;
-  padding-top: 2rem;
 }
