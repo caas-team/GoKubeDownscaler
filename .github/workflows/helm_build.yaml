@@ -29,7 +29,7 @@ jobs:
         run: |
           cd deployments/chart
           helm lint .
-          helm package . --version ${{ github.event.client_payload.version }} --app-version --version ${{ github.event.client_payload.appVersion }}
+          helm package . --version ${{ github.event.client_payload.version }} --app-version ${{ github.event.client_payload.appVersion }}
           helm push $(ls *.tgz | head -1) oci://ghcr.io/caas-team/charts
           helm push $(ls *.tgz | head -1) oci://${MTR}/${REPO}/charts
         env:
