@@ -14,7 +14,7 @@ jobs:
       version_change: ${{ steps.check_for_version_change.outputs.version_change }}
       app_version_change: ${{ steps.check_for_appVersion_change.outputs.app_version_change }}
       version: ${{ steps.chart_version.outputs.version }}
-      appVersion: ${{ steps.app_version.outputs.app_version }}
+      app_version: ${{ steps.app_version.outputs.app_version }}
 
     steps:
       - name: Checkout code
