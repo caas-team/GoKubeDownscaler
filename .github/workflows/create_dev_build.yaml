@@ -25,4 +25,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: caas-team/GoKubeDownscaler
           event-type: create-dev-build
-          client-payload: '{"version": "${{ env.version }}-dev"}'
+          client-payload: '{"version": "${{ env.version }}-dev","appVersion": "dev", "setLatest": false}'

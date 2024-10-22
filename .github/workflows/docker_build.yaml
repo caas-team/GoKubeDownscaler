@@ -20,18 +20,8 @@ jobs:
             mtr.devops.telekom.de/caas/go-kube-downscaler
             ghcr.io/caas-team/gokubedownscaler
           tags: |
-            latest
+            ${{ github.event.client_payload.setLatest && 'latest' }}
             ${{ github.event.client_payload.appVersion }}
-
-      - name: Dev docker meta
-        id: dev-meta
-        if: github.event.action == 'create-dev-build'
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            mtr.devops.telekom.de/caas/go-kube-downscaler
-            ghcr.io/caas-team/gokubedownscaler
-          tags: dev
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@main
@@ -65,9 +55,7 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
-          tags: |
-            ${{ steps.meta.outputs.tags }}
-            ${{ steps.dev-meta.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
 
       - name: Sign Push
         run: |
