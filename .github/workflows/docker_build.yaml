@@ -19,7 +19,7 @@ jobs:
             mtr.devops.telekom.de/caas/go-kube-downscaler
             ghcr.io/caas-team/gokubedownscaler
           tags: |
-            ${{ github.event.client_payload.setLatest && 'latest' }}
+            ${{ github.event.client_payload.setLatest && 'latest' || '' }}
             ${{ github.event.client_payload.appVersion }}
 
       - name: Install Cosign
