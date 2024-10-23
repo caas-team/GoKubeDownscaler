@@ -64,27 +64,29 @@ func isWorkloadExcluded(workload Workload, excludedWorkloads values.RegexList) b
 }
 
 // setOriginalReplicas sets the original replicas annotation on the workload
-func setOriginalReplicas(originalReplicas int, workload Workload) {
+func setOriginalReplicas(originalReplicas int32, workload Workload) {
 	annotations := workload.GetAnnotations()
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
-	annotations[annotationOriginalReplicas] = strconv.Itoa(originalReplicas)
+	annotations[annotationOriginalReplicas] = strconv.Itoa(int(originalReplicas))
 	workload.SetAnnotations(annotations)
 }
 
 // getOriginalReplicas gets the original replicas annotation on the workload. nil is undefined
-func getOriginalReplicas(workload Workload) (*int, error) {
+func getOriginalReplicas(workload Workload) (*int32, error) {
 	annotations := workload.GetAnnotations()
 	originalReplicasString, ok := annotations[annotationOriginalReplicas]
 	if !ok {
 		return nil, nil
 	}
-	originalReplicas, err := strconv.Atoi(originalReplicasString)
+	originalReplicas, err := strconv.ParseInt(originalReplicasString, 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse original replicas annotation on workload: %w", err)
 	}
-	return &originalReplicas, nil
+	// #nosec G115
+	result := int32(originalReplicas)
+	return &result, nil
 }
 
 // removeOriginalReplicas removes the annotationOriginalReplicas from the workload

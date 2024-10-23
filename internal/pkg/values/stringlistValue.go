@@ -5,10 +5,10 @@ import (
 	"strings"
 )
 
-// StringList is an alias for []string with a Set funciton for the flag package
-type StringList []string
+// StringListValue is an alias for []string with a Set funciton for the flag package
+type StringListValue []string
 
-func (s *StringList) Set(text string) error {
+func (s *StringListValue) Set(text string) error {
 	entries := strings.Split(text, ",")
 	var trimmedEntries []string
 	for _, entry := range entries {
@@ -18,6 +18,6 @@ func (s *StringList) Set(text string) error {
 	return nil
 }
 
-func (s *StringList) String() string {
+func (s *StringListValue) String() string {
 	return fmt.Sprint(*s)
 }

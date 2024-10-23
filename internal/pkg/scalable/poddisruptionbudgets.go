@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"math"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 
@@ -26,13 +25,13 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 	return results, nil
 }
 
-// podDisruptionBudget is a wrapper for policy/v1.podDisruptionBudget to implement the Workload interface
+// podDisruptionBudget is a wrapper for policy/v1.PodDisruptionBudget to implement the Workload interface
 type podDisruptionBudget struct {
 	*policy.PodDisruptionBudget
 }
 
 // getMinAvailableInt returns the spec.MinAvailable value if it is not a percentage
-func (p *podDisruptionBudget) getMinAvailableInt() int {
+func (p *podDisruptionBudget) getMinAvailableInt() int32 {
 	minAvailable := p.Spec.MinAvailable
 	if minAvailable == nil {
 		return values.Undefined
@@ -40,21 +39,17 @@ func (p *podDisruptionBudget) getMinAvailableInt() int {
 	if minAvailable.Type == intstr.String {
 		return values.Undefined
 	}
-	return int(minAvailable.IntVal)
+	return minAvailable.IntVal
 }
 
 // setMinAvailable applies a new value to spec.MinAvailable
-func (p *podDisruptionBudget) setMinAvailable(targetMinAvailable int) error {
-	if targetMinAvailable > math.MaxInt32 || targetMinAvailable < 0 {
-		return errBoundOnScalingTargetValue
-	}
-	// #nosec G115
-	p.Spec.MinAvailable = &intstr.IntOrString{IntVal: int32(targetMinAvailable), Type: intstr.Int}
-	return nil
+func (p *podDisruptionBudget) setMinAvailable(targetMinAvailable int32) {
+	minAvailable := intstr.FromInt32(targetMinAvailable)
+	p.Spec.MinAvailable = &minAvailable
 }
 
 // getMaxUnavailableInt returns the spec.MaxUnavailable value if it is not a percentage
-func (p *podDisruptionBudget) getMaxUnavailableInt() int {
+func (p *podDisruptionBudget) getMaxUnavailableInt() int32 {
 	maxUnavailable := p.Spec.MaxUnavailable
 	if maxUnavailable == nil {
 		return values.Undefined
@@ -62,17 +57,13 @@ func (p *podDisruptionBudget) getMaxUnavailableInt() int {
 	if maxUnavailable.Type == intstr.String {
 		return values.Undefined
 	}
-	return int(maxUnavailable.IntVal)
+	return maxUnavailable.IntVal
 }
 
 // setMaxUnavailable applies a new value to spec.MaxUnavailable
-func (p *podDisruptionBudget) setMaxUnavailable(targetMaxUnavailable int) error {
-	if targetMaxUnavailable > math.MaxInt32 || targetMaxUnavailable < 0 {
-		return errBoundOnScalingTargetValue
-	}
-	// #nosec G115
-	p.Spec.MaxUnavailable = &intstr.IntOrString{IntVal: int32(targetMaxUnavailable), Type: intstr.Int}
-	return nil
+func (p *podDisruptionBudget) setMaxUnavailable(targetMaxUnavailable int32) {
+	maxUnavailable := intstr.FromInt32(targetMaxUnavailable)
+	p.Spec.MaxUnavailable = &maxUnavailable
 }
 
 // ScaleUp scales the resource up
@@ -88,18 +79,12 @@ func (p *podDisruptionBudget) ScaleUp() error {
 	maxUnavailable := p.getMaxUnavailableInt()
 	minAvailable := p.getMinAvailableInt()
 	if maxUnavailable != values.Undefined {
-		err = p.setMaxUnavailable(*originalReplicas)
-		if err != nil {
-			return fmt.Errorf("failed to set maxUnavailable for workload: %w", err)
-		}
+		p.setMaxUnavailable(*originalReplicas)
 		removeOriginalReplicas(p)
 		return nil
 	}
 	if minAvailable != values.Undefined {
-		err = p.setMinAvailable(*originalReplicas)
-		if err != nil {
-			return fmt.Errorf("failed to set minAvailable for workload: %w", err)
-		}
+		p.setMinAvailable(*originalReplicas)
 		removeOriginalReplicas(p)
 		return nil
 	}
@@ -108,7 +93,7 @@ func (p *podDisruptionBudget) ScaleUp() error {
 }
 
 // ScaleDown scales the resource down
-func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int) error {
+func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int32) error {
 	maxUnavailable := p.getMaxUnavailableInt()
 	minAvailable := p.getMinAvailableInt()
 	if maxUnavailable != values.Undefined {
@@ -116,10 +101,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int) error {
 			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
 			return nil
 		}
-		err := p.setMaxUnavailable(downscaleReplicas)
-		if err != nil {
-			return fmt.Errorf("failed to set maxUnavailable for workload: %w", err)
-		}
+		p.setMaxUnavailable(downscaleReplicas)
 		setOriginalReplicas(maxUnavailable, p)
 		return nil
 	}
@@ -128,10 +110,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int) error {
 			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
 			return nil
 		}
-		err := p.setMinAvailable(downscaleReplicas)
-		if err != nil {
-			return fmt.Errorf("failed to set minAvailable for workload: %w", err)
-		}
+		p.setMinAvailable(downscaleReplicas)
 		setOriginalReplicas(minAvailable, p)
 		return nil
 	}

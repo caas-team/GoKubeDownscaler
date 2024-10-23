@@ -2,7 +2,7 @@ name: Build and push helm chart
 
 on:
   repository_dispatch:
-    types: [build-new-chart]
+    types: [build-new-chart, create-dev-build]
 
 jobs:
   build_and_push:
@@ -29,7 +29,7 @@ jobs:
         run: |
           cd deployments/chart
           helm lint .
-          helm package .
+          helm package . --version ${{ github.event.client_payload.version }} --app-version ${{ github.event.client_payload.appVersion }}
           helm push $(ls *.tgz | head -1) oci://ghcr.io/caas-team/charts
           helm push $(ls *.tgz | head -1) oci://${MTR}/${REPO}/charts
         env:
