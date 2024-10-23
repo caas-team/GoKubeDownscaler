@@ -1,6 +1,7 @@
 import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
+import { tailwindPlugin } from "./plugins/tailwind-config.cts";
 
 const config: Config = {
   title: "GoKubeDownscaler",
@@ -31,7 +32,7 @@ const config: Config = {
         docs: {
           sidebarPath: "./sidebars.ts",
           routeBasePath: "/",
-          path: "documenation",
+          path: "content",
           editUrl:
             "https://github.com/caas-team/GoKubeDownscaler/edit/main/website",
         },
@@ -80,6 +81,7 @@ const config: Config = {
       ],
     },
     announcementBar: {
+      id: "star_downscaler",
       content:
         '⭐️ If you like GoKubeDownscaler, give it a star on <a target="_blank" rel="noopener noreferrer" href="https://github.com/caas-team/GoKubeDownscaler">GitHub</a>! ⭐️',
     },
@@ -87,7 +89,7 @@ const config: Config = {
       style: "dark",
       links: [
         {
-          title: "Learn",
+          title: "Content",
           items: [
             {
               label: "Documentation",
@@ -129,6 +131,7 @@ const config: Config = {
       darkTheme: prismThemes.dracula,
     },
   } satisfies Preset.ThemeConfig,
+  plugins: [tailwindPlugin],
 };
 
 export default config;

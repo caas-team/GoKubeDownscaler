@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --ifm-color-primary: #e20074;
   --ifm-code-font-size: 95%;
@@ -7,8 +11,4 @@
 [data-theme='dark'] {
   --ifm-color-primary: #e20074;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
-}
-
-.select-none {
-  user-select: none;
 }

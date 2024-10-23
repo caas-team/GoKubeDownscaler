@@ -6,19 +6,16 @@ export default function CaasAvatar(): JSX.Element {
   const link = "https://github.com/caas-team";
 
   return (
-    <div className="section margin-vert--md">
-      <div className="container avatar">
-        <a
-          className="avatar__photo-link avatar__photo avatar__photo--lg"
-          href={link}
-        >
+    <div className="my-4">
+      <div className="mx-auto max-w-6xl px-4 w-full gap-4 flex">
+        <a className="w-16 overflow-hidden h-16 block rounded-full" href={link}>
           <CaasLogo />
         </a>
-        <div className="avatar__intro">
+        <div className="flex flex-auto flex-col justify-center text-inherit">
           <a href={link}>
-            <div className="avatar__name">{name}</div>
+            <div className="font-bold text-base">{name}</div>
           </a>
-          <small className="avatar__subtitle">{description}</small>
+          <small className="mt-1">{description}</small>
         </div>
       </div>
     </div>
