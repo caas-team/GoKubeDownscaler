@@ -4,7 +4,6 @@
 <svg
    width="777"
    height="753.91779"
-   viewBox="0 0 777 753.91779"
    id="svg2"
    version="1.1"
    inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
@@ -19,6 +18,8 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:cc="http://creativecommons.org/ns#"
    xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <title
+     id="title1221">Kubernetes logo with no border</title>
   <defs
      id="defs4" />
   <sodipodi:namedview
