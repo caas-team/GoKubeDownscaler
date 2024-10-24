@@ -75,7 +75,9 @@ function SupportedResourceGroup({
 export function SupportedResources(): JSX.Element {
   return (
     <>
-      <h1 className="block w-full text-center pt-8">Supported Resources</h1>
+      <h1 className="block w-full text-center pt-8 select-none">
+        Supported Resources
+      </h1>
       <section className="flex items-center p-8 w-full">
         <div className="mx-auto max-w-6xl px-4 w-full">
           <div className="flex flex-wrap -mx-4 space-x-4">

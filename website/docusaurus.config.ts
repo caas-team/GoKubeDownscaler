@@ -125,7 +125,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Deutsche Telekom AG`,
+      copyright: `Copyright © GoKubeDownscaler Authors ${new Date().getFullYear()}`,
     },
     prism: {
       theme: prismThemes.github,
