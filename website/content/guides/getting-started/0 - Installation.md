@@ -6,7 +6,9 @@ id: installation
 We provide a Helm Chart for an easy installation of the GoKubeDownscaler.
 
 ## Prerequisits
+
 In order to get started installing the GoKubeDownscaler using our Helm Chart you need:
+
 - Helm installed on a system
 - have access to a Kubernetes cluster in some kind of way.
 
@@ -23,6 +25,7 @@ helm repo add caas-team https://caas-team.github.io/helm-charts/
 ```
 
 Followed by the actual install command:
+
 ```bash
 helm install go-kube-downscaler caas-team/go-kube-downscaler
 ```
