@@ -18,6 +18,7 @@ includedResources:
 #  - scaledobjects
 #  - stacks
 #  - poddisruptionbudgets
+#  - prometheuses
 
 fullnameOverride: ""
 nameOverride: ""
