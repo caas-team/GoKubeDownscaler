@@ -49,6 +49,7 @@ This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team
   - [Cloning the Repository](#cloning-the-repository)
   - [Setting up Pre-Commit](#setting-up-pre-commit)
   - [Testing the downscaler](#testing-the-downscaler)
+  - [Testing the website](#testing-the-website)
 
 ## Scalable Resources
 
@@ -536,7 +537,7 @@ See [troubleshooting](docs/troubleshooting.md)
 
 Please read the [contribution manifest](./CONTRIBUTING.md)
 
-### Cloning the Repository
+### Cloning the repository
 
 ```bash
 git clone https://github.com/caas-team/GoKubeDownscaler.git
@@ -569,3 +570,19 @@ The downscaler will use the current-context in the kubeconfig.
 ```bash
 go run -k=path/to/kubeconfig # ... additional configuration
 ```
+
+### Testing the website
+
+#### installing dependencies
+
+```bash
+npm install --prefix website
+```
+
+#### running it locally
+
+```bash
+npm run --prefix website start
+```
+
+after that the website is available on `localhost:3000/GoKubeDownscaler`
