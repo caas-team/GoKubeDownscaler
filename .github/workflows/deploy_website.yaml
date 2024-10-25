@@ -9,17 +9,6 @@ on:
       - "website/**"
 
 jobs:
-  cleanup:
-    runs-on: ubuntu-latest
-    permissions: write-all
-
-    steps:
-      - name: Delete deployment
-        uses: strumwolf/delete-deployment-environment@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          environment: github-pages
-          onlyRemoveDeployments: true
   build:
     name: Build Website
     runs-on: ubuntu-latest
@@ -41,6 +30,17 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: website/build
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions: write-all
+
+    steps:
+      - name: Delete deployment
+        uses: strumwolf/delete-deployment-environment@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: github-pages
+          onlyRemoveDeployments: true
   deploy:
     name: Deploy Website
     needs: build
