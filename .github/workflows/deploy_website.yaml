@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - main
-      - feat/add-docusaurus
+      - "feat/add-docusaurus"
     paths:
-      - website
+      - "website/**"
 
 jobs:
   build:
