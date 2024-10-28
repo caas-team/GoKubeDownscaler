@@ -61,15 +61,14 @@ tolerations: []
 
 affinity: {}
 
-configMapName: go-kube-downscaler
-
 excludedNamespaces:
   - kube-downscaler
   - kube-system
 
-# Additional config in the configmap.
-# Add configmap lines via the multiline Operator |
-# e.g.:
-# extraConfig: |
-#   DOWNSCALE_PERIOD: "Mon-Sun 19:00-20:00 Europe/Berlin"
-extraConfig: ""
+configMap:
+  name: go-kube-downscaler
+  # extraConfig adds lines to the configmap
+  # e.g.:
+  # extraConfig: |
+  #   DOWNSCALE_PERIOD: "Mon-Sun 19:00-20:00 Europe/Berlin"
+  extraConfig: ""
