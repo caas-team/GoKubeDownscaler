@@ -5,4 +5,130 @@ id: arguments
 
 # arguments
 
-Defines command line arguments for the container.
+`arguments` set [layer values](#values) and runtime configuration at the start of the program. See the [layers concept](#layers) for more details on which of the layers [values](#values) will be used.
+
+> ℹ️ **The default value for `arguments` is:**
+>
+> ```yaml
+> arguments:
+> ```
+
+By default the `arguments` value is empty. Setting arguments can change how the GoKubeDownscaler behaves.
+
+Possible values are:
+
+## Layer Values:
+
+- ### --upscale-period
+  sets the [upscale-period](#upscale-period) value on the [cli layer](#cli-layer)
+  ```yaml
+  arguments:
+    - --upscale-period=
+  ```
+- ### --default-uptime
+  sets the [uptime](#uptime) value on the [cli layer](#cli-layer)
+  ```yaml
+  arguments:
+    - --default-uptime=
+  ```
+- ### --downscale-period
+  sets the [downscale-period](#downscale-period) value on the [cli layer](#cli-layer)
+  ```yaml
+  arguments:
+    - --downscale-period=
+  ```
+- ### --default-downtime
+  sets the [downtime](#downtime) value on the [cli layer](#cli-layer)
+  ```yaml
+  arguments:
+    - --default-downtime=
+  ```
+- ### --downtime-replicas
+  sets the [downscale replicas](#downscale-replicas) value on the [cli layer](#cli-layer)
+  ```yaml
+  arguments:
+    - --downtime-replicas=
+  ```
+- ### --explicit-include
+  sets the [exclude value](#exclude) on the [cli layer](#cli-layer) to true, which excludes every workload unless the exclude value on the [workload](#workload-layer) or [namespace](#namespace-layer) layer is set to false. See the [layers concept](#layers) for more details.
+  ```yaml
+  arguments:
+    - --explicit-include=
+  ```
+
+## Runtime Configuration:
+
+- ### --dry-run
+  `--dry-run` takes a boolean value that defaults to `false`.\
+  If you set:
+  ```yaml
+  arguments:
+    - --dry-run=true
+  ```
+  the GoKubeDownscaler will be set into dry run mode, which makes it only print the actions it would have performed instead of actually scaling resources.
+- ### --debug
+  `--debug` takes a boolean value that defaults to `false`.\
+  makes the downscaler print more/debug information on what it currently does and what happens to the workloads.
+  ```yaml
+  arguments:
+    - --debug=true
+  ```
+- ### --once
+  `--once` takes a boolean value that defaults to `false`.\
+  makes the downscaler exit after one scan <!-- In the future we should explain what a scan is in the #concepts section and link it here -->
+  ```yaml
+  arguments:
+    - --once=true
+  ```
+- ### --interval
+  `--interval` takes a [duration](#duration) value that defaults to `30s`.\
+  sets the wait time between scans
+  ```yaml
+  arguments:
+    - --interval=
+  ```
+- ### --namespace
+  `--namespace` takes a comma separated list of namespaces that defaults to all namespaces
+  makes the downscaler get workloads only from the specified namespaces
+  ```yaml
+  arguments:
+    - --namespace=
+  ```
+- ### --include-resources
+  `--include-resources` takes a comma separated list of (case-insensitive) [scalable resources](#scalable-resources) that defaults to deployments.
+  enables scaling of workloads with the specified resource type
+  ```yaml
+  arguments:
+    - --include-resources=
+  ```
+- ### --exclude-namespaces
+  `--exclude-namespaces` takes a comma separated list of regex patterns matching namespaces (`some-ns,other-ns,kube-.*` or `some-ns, other-ns, kube-.*`) that defaults to kube-system, kube-downscaler
+  excludes the matching namespaces from being scaled
+  ```yaml
+  arguments:
+    - --exclude-namespaces=
+  ```
+- ### --exclude-deployments
+  `--exclude-deployments` takes a comma separated list of regex patterns matching workload names (`some-workload,other-workload,.*kube-downscaler` or `some-workload, other-workload, .*kube-downscaler`)
+  excludes the matching workloads from being scaled
+  default: none
+  ```yaml
+  arguments:
+    - --exclude-deployments=
+  ```
+- ### --matching-labels
+  comma separated list of regex patterns matching labels with their value (`some-label=val,other-label=value,another-label=.*` or `some-label=val, other-label=value, another-label=.*`)
+  makes the downscaler only include workloads which have any label that matches any of the specified labels and values
+  default: none
+  ```yaml
+  arguments:
+    - --matching-labels=
+  ```
+- ### --time-annotation
+  string key of an annotation on the workload containing a [RFC3339 Timestamp](https://datatracker.ietf.org/doc/html/rfc3339)
+  when set grace-period will use the timestamp in the annotation instead of the creation time of the workload
+  default: none (uses the workloads creation time)
+  ```yaml
+  arguments:
+    - --time-annotation=
+  ```

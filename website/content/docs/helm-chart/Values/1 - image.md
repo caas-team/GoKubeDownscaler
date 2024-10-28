@@ -5,4 +5,21 @@ id: image
 
 # image
 
-Contains the repository URL and the image tag for the image you want to use.
+`image` contains the two fields `repository` and `tag`:
+
+- `repository` is the repository URL where the image versions of the GoKubeDownscaler are located.
+- `tag` is the version tag of the image.
+
+> ℹ️ **The default values for `image` are:**
+>
+> ```yaml
+> image:
+>   repository: ghcr.io/caas-team/gokubedownscaler
+>   tag: ""
+> ```
+
+Changing the value of `repository` will result in the images being pulled from another location. It is advised to leave this as is unless you want or need to pull the images from a private registry of your choice.
+
+Changing the value of `tag` will deploy a different version of the GoKubeDownscaler. If left empty like it is by default the GoKubeDownscaler will use the [appVersion](https://github.com/caas-team/GoKubeDownscaler/blob/main/deployments/chart/Chart.yaml#L10) of the currently used Helm Chart.
+
+More details to versions of the GoKubeDownscaler can be found [here](https://github.com/caas-team/GoKubeDownscaler/releases).

@@ -6,3 +6,11 @@ id: excludedNamespaces
 # excludedNamespaces
 
 A list of namespaces that are supposed to be excluded from the downscaling process of the go-kube-downscaler.
+
+> ℹ️ **The default value for `excludedNamespaces` is:**
+>
+> ```yaml
+> excludedNamespaces:
+>   - kube-downscaler
+>   - kube-system
+> ```
