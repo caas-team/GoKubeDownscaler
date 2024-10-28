@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/caas-team/gokubedownscaler
-  tag: "" # Dynamically set from CI
+  tag: "" # Defaults to appVersion
 
 arguments:
 #  - --interval=60
