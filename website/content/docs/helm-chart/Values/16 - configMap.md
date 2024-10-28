@@ -1,0 +1,10 @@
+---
+title: configMap
+id: configMap
+---
+
+# configMap
+
+The name of the configmap for the go-kube-downscaler.
+
+extraConfig adds additional specified environment variables to the ConfigMap.
