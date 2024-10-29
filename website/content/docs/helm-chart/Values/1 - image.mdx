@@ -10,13 +10,16 @@ id: image
 - `repository` is the repository URL where the image versions of the GoKubeDownscaler are located.
 - `tag` is the version tag of the image.
 
-> ℹ️ **The default values for `image` are:**
->
-> ```yaml
-> image:
->   repository: ghcr.io/caas-team/gokubedownscaler
->   tag: ""
-> ```
+:::info
+The default values for `image` are:
+
+```yaml
+image:
+  repository: ghcr.io/caas-team/gokubedownscaler
+  tag: ""
+```
+
+:::
 
 Changing the value of `repository` will result in the images being pulled from another location. It is advised to leave this as is unless you want or need to pull the images from a private registry of your choice.
 

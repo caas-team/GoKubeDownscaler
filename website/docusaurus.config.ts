@@ -133,6 +133,14 @@ const config: Config = {
     },
   } satisfies Preset.ThemeConfig,
   plugins: [svgoConfigPlugin, tailwindPlugin],
+  markdown: {
+    preprocessor: ({ fileContent }) => {
+      // this injects the global md links into every md file
+      const fs = require("node:fs");
+      const links = fs.readFileSync("./content/_global_md_links.mdx");
+      return fileContent + "\n" + links;
+    },
+  },
 };
 
 export default config;

@@ -7,13 +7,16 @@ id: podSecurityContext
 
 Defines the SecurityContext on pod level. (More info [here](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/))
 
-> ℹ️ **The default values for `podSecurityContext` are:**
->
-> ```yaml
-> podSecurityContext:
->   runAsGroup: 1000
->   runAsNonRoot: true
->   runAsUser: 1000
->   fsGroup: 1000
->   supplementalGroups: [1000]
-> ```
+:::info
+The default values for `podSecurityContext` are:
+
+```yaml
+podSecurityContext:
+  runAsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  supplementalGroups: [1000]
+```
+
+:::
