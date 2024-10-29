@@ -5,7 +5,7 @@ id: includedResources
 
 # includedResources
 
-`includedResources` defines all the resource types that the go-kube-downscaler is supposed to be able to handle.
+`includedResources` defines all the resource types that the GoKubeDownscaler is supposed to be able to handle.
 
 :::info
 The default value for `includedResources` is:
@@ -17,29 +17,25 @@ includedResources:
 
 :::
 
+If you add a resource to this list the Helm Chart will create a set of [permissions][docs-helm-permissions] and assign them to the role for the GoKubeDownscaler.
+
 Supported resources are:
 
-## Deployments
+- Deployments
+- Statefulsets
+- Daemonsets
+- Rollouts
+- HorizontalPodAutoscalers
+- Jobs
+- Cronjobs
+- ScaledObjects
+- Stacks
+- PodDisruptionBudgets
+- Prometheuses
 
-## Statefulsets
+:::tip
 
-## Daemonsets
-
-## Rollouts
-
-## HorizontalPodAutoscalers
-
-## Jobs
-
-## Cronjobs
-
-## ScaledObjects
-
-## Stacks
-
-## PodDisruptionBudgets
-
-## Prometheuses
+An example for including resources can look like this:
 
 ```yaml
 includedResources:
@@ -57,3 +53,5 @@ includedResources:
 ```
 
 You can also find these as comments in the [values.yaml](https://github.com/caas-team/GoKubeDownscaler/blob/main/deployments/chart/values.yaml#L10-L21).
+
+:::

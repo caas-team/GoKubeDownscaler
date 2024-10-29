@@ -13,10 +13,11 @@ The default value of `replicaCount` is:
 ```yaml
 replicaCount: 1
 ```
+
 :::
 
 Changing this to a different integer value will result in the deployment of the provided number of pods.
 
 :::warning
-This value should not be changed because multiple instances of the GoKubeDownscaler would be fighting about downscaling the targeted resources.
+This value should not be changed because multiple instances of the GoKubeDownscaler could lead to errors if they try to scale the same resources simultaneously.
 :::
