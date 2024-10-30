@@ -5,7 +5,7 @@ id: constrainedDownscaler
 
 # constrainedDownscaler
 
-Sets the go-kube-downscaler to a constrained state if true, meaning that it does not run clusterwide but restricted to a list of namespaces. These namespaces are listed in [constrainedNamespaces](#constrainedNamespaces).
+`constrainedDownscaler` sets the GoKubeDownscaler to a constrained state if true, meaning that it does not run clusterwide but restricted to a list of namespaces.
 
 :::info
 The default value for `constrainedDownscaler` is:
@@ -15,3 +15,13 @@ constrainedDownscaler: false
 ```
 
 :::
+
+The namespaces the GoKubeDownscaler is constrained to are listed in [constrainedNamespaces][constrainedNamespaces].
+
+:::warning
+[constrainedNamespaces][constrainedNamespaces] cannot be empty if `constrainedDownscaler` is set to true!
+:::
+
+It will also create roles in each of these namespaces instead of a clusterrole for the needed [permissions][docs-helm-permissions].
+
+This feature is very useful if you don't have the necessary rights to make a clusterwide installation.

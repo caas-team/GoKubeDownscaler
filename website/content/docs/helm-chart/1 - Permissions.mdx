@@ -9,9 +9,7 @@ The GoKubeDownscaler needs certain permissions to scale workloads.
 
 If [constrainedDownscaler][constrainedDownscaler] is set to true the Helm Chart will create roles for each namespace defined in [constrainedNamespaces][constrainedNamespaces].
 
-Otherwise it will always create a cluster role.
-
-::::info
+Otherwise it will always create a cluster role with the needed permissions.
 
 ## Default Permissions
 
@@ -41,6 +39,8 @@ By default the GoKubeDownscaler will always have the following permissions if it
 ```
 
 These are necessary for the GoKubeDownscaler to work properly.
+
+## Admission Controller Permissions
 
 :::note
 If you are using a clusterwide installation of the GoKubeDownscaler it will also have:
@@ -104,173 +104,20 @@ If you are using a clusterwide installation of the GoKubeDownscaler it will also
 
 {/* TODO Explain why these are added. */}
 
-::::
+## Workload Permissions
 
-Otherwise the GoKubeDownscaler assigns permissions depending on the resources defined in [includedResources][includedResources].
+The Helm Chart assigns get, watch, list, update and patch permissions for the workloads defined in [includedResources][includedResources].
 
-This will add the following permissions:
+These resources can be:
 
-## Deployments
-
-```yaml
-- apiGroups:
-    - apps
-  resources:
-    - deployments
-  verbs:
-    - get
-    - watch
-    - list
-    - update
-    - patch
-```
-
-## Statefulsets
-
-```yaml
-- apiGroups:
-    - apps
-  resources:
-    - statefulsets
-  verbs:
-    - get
-    - watch
-    - list
-    - update
-    - patch
-```
-
-## Daemonsets
-
-```yaml
-- apiGroups:
-    - apps
-  resources:
-    - daemonsets
-  verbs:
-    - get
-    - watch
-    - list
-    - update
-    - patch
-```
-
-## Rollouts
-
-```yaml
-- apiGroups:
-    - argoproj.io
-  resources:
-    - rollouts
-  verbs:
-    - get
-    - watch
-    - list
-    - update
-    - patch
-```
-
-## HorizontalPodAutoscalers
-
-```yaml
-- apiGroups:
-    - autoscaling
-  resources:
-    - horizontalpodautoscalers
-  verbs:
-    - get
-    - watch
-    - list
-    - update
-    - patch
-```
-
-## Jobs
-
-```yaml
-- apiGroups:
-    - batch
-  resources:
-    - jobs
-  verbs:
-    - get
-    - watch
-    - list
-    - update
-    - patch
-```
-
-## Cronjobs
-
-```yaml
-- apiGroups:
-    - batch
-  resources:
-    - cronjobs
-  verbs:
-    - get
-    - watch
-    - list
-    - update
-    - patch
-```
-
-## Scaledobjects
-
-```yaml
-- apiGroups:
-    - keda.sh
-  resources:
-    - scaledobjects
-  verbs:
-    - get
-    - watch
-    - list
-    - update
-    - patch
-```
-
-## Stacks
-
-```yaml
-- apiGroups:
-    - zalando.org
-  resources:
-    - stacks
-  verbs:
-    - get
-    - watch
-    - list
-    - update
-    - patch
-```
-
-## Prometheuses
-
-```yaml
-- apiGroups:
-    - monitoring.coreos.com
-  resources:
-    - prometheuses
-  verbs:
-    - get
-    - watch
-    - list
-    - update
-    - patch
-```
-
-## PodDisruptionBudgets
-
-```yaml
-- apiGroups:
-    - policy
-  resources:
-    - poddisruptionbudgets
-  verbs:
-    - get
-    - watch
-    - list
-    - update
-    - patch
-```
+- Deployments
+- Statefulsets
+- Daemonsets
+- Rollouts
+- HorizontalPodAutoscalers
+- Jobs
+- Cronjobs
+- ScaledObjects
+- Stacks
+- PodDisruptionBudgets
+- Prometheuses
