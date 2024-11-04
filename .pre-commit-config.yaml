@@ -22,14 +22,14 @@ repos:
     rev: v3.0.1
     hooks:
       - id: prettier
-        files: \.md$
+        files: \.(md|mdx)$
   - repo: local
     hooks:
       - id: prevent-todo-comments
         name: prevent todo comments
-        entry: '\/\/ *(TODO|FIXME)\b' # matches a golang comment beginning with "TODO" or "FIXME"
+        entry: '(//|#|<!--|/\*)\s*(TODO|FIXME)\b' # matches a comment beginning with "TODO" or "FIXME"
         language: pygrep
-        files: \.go$
+        files: \.(go|md|mdx)$
       - id: prevent-too-small-headings
         name: prevent too small headings
         entry: "^#{5,} " # matches a h5 or smaller markdown heading
