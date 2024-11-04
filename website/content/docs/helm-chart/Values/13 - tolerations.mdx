@@ -5,7 +5,7 @@ id: tolerations
 
 # tolerations
 
-Adds tolerations to the pods of the deployment to be able to be scheduled on nodes with matching taints. (More info [here](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/))
+`tolerations` adds tolerations to the pod of the deployment to be able to be scheduled on nodes with matching taints.
 
 :::info
 The default value for `tolerations` is:
@@ -15,3 +15,17 @@ tolerations: []
 ```
 
 :::
+
+This field allows the GoKubeDownscaler pod to be scheduled on Nodes with certain taints.
+
+If you want to allow the GoKubeDownscaler pod to schedule on a Node with a taint `key1=value1:NoSchedule` you can set:
+
+```yaml
+tolerations:
+  - key: "key1"
+    operator: "Equal"
+    value: "value1"
+    effect: "NoSchedule"
+```
+
+You can find more info about taints and tolerations [here](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).

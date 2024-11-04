@@ -5,7 +5,7 @@ id: nodeSelector
 
 # nodeSelector
 
-Defines labels of nodes that you want the deployment to schedule them on.
+`nodeSelector` defines labels of nodes that you want the deployment to be scheduled on.
 
 :::info
 The default value for `nodeSelector` is:
@@ -13,5 +13,21 @@ The default value for `nodeSelector` is:
 ```yaml
 nodeSelector: {}
 ```
+
+:::
+
+If you want the GoKubeDownscaler to be scheduled on a specific type of node you can specify the determining labels of the node here.
+
+:::tip For example:
+
+If you set:
+
+```yaml
+nodeSelector:
+  disktype: ssd
+  env: production
+```
+
+the GoKubeDownscaler will only be scheduled on a Node that also has the labels `disktype: ssd` and `env: production`.
 
 :::

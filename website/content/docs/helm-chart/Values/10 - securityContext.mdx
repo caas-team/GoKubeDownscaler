@@ -5,7 +5,7 @@ id: securityContext
 
 # securityContext
 
-Defines the SecurityContext on container level. (More info [here](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/))
+`securityContext` defines the SecurityContext on container level.
 
 :::info
 The default values for `securityContext` are:
@@ -21,3 +21,7 @@ securityContext:
 ```
 
 :::
+
+In this field you can customize privilege and access control settings for the GoKubeDownscaler container.
+
+More info on all the possible configurations can be found [here](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).

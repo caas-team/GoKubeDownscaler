@@ -5,7 +5,7 @@ id: resources
 
 # resources
 
-Defines the CPU and memory limits and requests.
+`resources` defines the CPU and memory limits and requests.
 
 :::info
 The default values for `resources` are:
@@ -21,3 +21,9 @@ resources:
 ```
 
 :::
+
+Here you can adjust the minimum and maximum amounts of cpu and memory the GoKubeDownscaler Pod is allowed to use.
+
+The requests being the minimum and the limits being the maximum.
+
+You can read more about this [here](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).

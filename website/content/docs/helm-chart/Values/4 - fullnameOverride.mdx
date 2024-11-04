@@ -5,7 +5,7 @@ id: fullnameOverride
 
 # fullnameOverride
 
-`fullnameOverride` overrides the full names of the created Kubernetes resources with the provided name if set.
+`fullnameOverride` overrides the names of the created Kubernetes objects with the provided name.
 
 :::info
 The default value for `fullnameOverride` is:
@@ -16,4 +16,12 @@ fullnameOverride: ""
 
 :::
 
-If a value for `fullnameOverride` is set the Helm Chart
+If a value for `fullnameOverride` is set the Helm Chart will change the names of the following kubernetes objects to the one provided:
+
+- Deployment
+- ClusterRole
+- ClusterRoleBinding
+- Role
+- RoleBinding
+
+Keep in mind however that the override is being cut off after 63 characters and will trim trailing hyphens.
