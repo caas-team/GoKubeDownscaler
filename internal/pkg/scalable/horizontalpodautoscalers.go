@@ -24,7 +24,7 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 	return results, nil
 }
 
-// horizontalPodAutoscaler is a wrapper for autoscaling/v2.HorizontalPodAutoscaler to implement the replicaScaledResource interface
+// horizontalPodAutoscaler is a wrapper for horizontalpodautoscaler.v2.autoscaling to implement the replicaScaledResource interface
 type horizontalPodAutoscaler struct {
 	*appsv1.HorizontalPodAutoscaler
 }
