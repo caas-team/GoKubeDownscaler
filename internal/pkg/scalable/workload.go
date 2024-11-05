@@ -2,7 +2,6 @@ package scalable
 
 import (
 	"context"
-	"errors"
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
@@ -14,10 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var (
-	timeout                int64 = 30
-	errNoReplicasSpecified       = errors.New("error: workload has no replicas set")
-)
+var timeout int64 = 30
 
 // getResourceFunc is a function that gets a specific resource as a Workload
 type getResourceFunc func(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error)

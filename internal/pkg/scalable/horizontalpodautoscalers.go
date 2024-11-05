@@ -2,14 +2,11 @@ package scalable
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	appsv1 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-var errMinReplicasBoundsExceeded = errors.New("error: a HPAs minReplicas can only be set to int32 values larger than 1")
 
 // getHorizontalPodAutoscalers is the getResourceFunc for horizontalPodAutoscalers
 func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
