@@ -21,8 +21,6 @@ const (
 	componentName = "kubedownscaler"
 )
 
-var errResourceNotSupported = errRessourceNotSupported
-
 // Client is an interface representing a high-level client to get and modify Kubernetes resources
 type Client interface {
 	// GetNamespaceAnnotations gets the annotations of the workload's namespace
@@ -101,7 +99,7 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 			slog.Debug("getting workloads from resource type", "resourceType", resourceType)
 			getWorkloads, ok := scalable.GetWorkloads[strings.ToLower(resourceType)]
 			if !ok {
-				return nil, errResourceNotSupported
+				return nil, errRessourceNotSupported
 			}
 			workloads, err := getWorkloads(namespace, c.clientsets, ctx)
 			if err != nil {
