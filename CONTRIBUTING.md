@@ -36,9 +36,9 @@ Commits:
 
 Try to stick to golang best practices and standards:
 
-<!-- keep this list updated everytime someone opens a pr with best practice issues  -->
+<!-- keep this list updated every time someone opens a pr with best practice issues  -->
 
-- Package structure standards: https://github.com/golang-standards/project-layout
+- [Package structure standards](https://github.com/golang-standards/project-layout)
 - Use guard clauses if applicable
 - Try to avoid using else. Most of the time these can be replaced by just placing the else block content directly after the if or by refactoring the if block to be an additional function.
 - Comments on funcs/types (esp. public ones)
@@ -47,7 +47,7 @@ Try to stick to golang best practices and standards:
 ## Issues
 
 If applicable use the issue template. This ensures a consistent structure which makes it easier to find important details.
-Issues which aren't ready for processing, can be marked as a draft by writing "Draft: " infront of the issue name.
+Issues which aren't ready for processing, can be marked as a draft by writing "Draft: " in front of the issue name.
 
 ## Pull Requests
 
@@ -56,7 +56,7 @@ Set yourself and any other collaborators as assignee.
 
 ## Pre Commit
 
-It is recommended to install pre-commit. This insures that formatting is consistent, you don't commit to protected branches and you don't accidentally commit broken code or new functionality without changing the tests. The installation process is in the [README](README.md#setting-up-pre-commit)
+It is recommended to install pre-commit. This ensures that formatting is consistent, you don't commit to protected branches and you don't accidentally commit broken code or new functionality without changing the tests. The installation process is on [our website](https://caas-team.github.io/GoKubeDownscaler/guides/developing#setting-up-pre-commit)
 
 ## Versioning
 
@@ -67,7 +67,7 @@ Releases are following the semver versioning standard:
 Layout: `<Major>.<Minor>.<Patch>` (example: 1.1.0)
 
 - MAJOR: increment on breaking changes
-- MINOR: increment on new funcitonality/features
+- MINOR: increment on new functionality/features
 - PATCH: increment on small bug fixes
 
-You can find more infomration on semantic versioning here [here](https://semver.org/)
+You can find more information on semantic versioning here [here](https://semver.org/)
