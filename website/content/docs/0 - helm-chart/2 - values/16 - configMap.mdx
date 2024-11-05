@@ -5,7 +5,7 @@ id: configMap
 
 # configMap
 
-`configMap` contains the two fields `name` and `extraConfig`:
+The `configMap` value contains the two fields `name` and `extraConfig`:
 
 - `name` defines the name of the configmap for the GoKubeDownscaler.
 - `extraConfig` adds additional specified environment variables to the ConfigMap.
@@ -21,7 +21,9 @@ configMap:
 
 :::
 
-By default the `extraConfig` field is empty. Adding a line will change how the GoKubeDownscaler behaves.
+By default the `extraConfig` field is empty. Appending a line will add the corresponding environment variable to the configMap.
+
+This then changes how the GoKubeDownscaler behaves.
 
 :::tip For example:
 
@@ -38,4 +40,4 @@ The given configuration will exclude the deployments with the name deployment1 a
 
 :::
 
-You can find a list of all possible environment variables [here][docs-environment-variables].
+You can find a list of all possible environment variables on [our documentation page][docs-environment-variables].

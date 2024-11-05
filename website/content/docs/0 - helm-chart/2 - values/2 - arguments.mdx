@@ -5,7 +5,7 @@ id: arguments
 
 # arguments
 
-`arguments` set [layer values](#values) and runtime configuration at the start of the program.
+The `arguments` value sets [layer values][docs-layer-values] and runtime configuration at the startup of the container.
 
 :::info
 The default value for `arguments` is:
@@ -27,6 +27,7 @@ arguments:
 ```
 
 This configuration will set the GoKubeDownscaler to dry run mode, which makes it only print the actions it would have performed instead of actually scaling resources and sets the wait time between workload scans to 10 seconds.
+
 :::
 
-You can find a list of all possible arguments [here][docs-arguments].
+You can find a list of all possible arguments on [our documentation page][docs-arguments].
