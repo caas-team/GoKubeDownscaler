@@ -16,6 +16,45 @@ affinity: {}
 
 :::
 
-By default the `affinity` field is empty. You can add affinity rules to this field for two .
+By default the `affinity` field is empty.
+
+You can add affinity rules to this field that give you a few more options for pod scheduling than [nodeSelector][nodeSelector].
+
+## Node affinity
+
+You can use Node affinity to achieve something very similar to the [nodeSelector][nodeSelector].
+
+```yaml
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: topology.kubernetes.io/zone
+              operator: In
+              values:
+                - antarctica-east1
+                - antarctica-west1
+```
+
+With the configuration above the GoKubeDownscaler will only be scheduled on a Node where a label `topology.kubernetes.io/zone` exists and has either the value `antarctica-east1` or `antarctica-west1`.
+
+## Pod affinity
+
+Pod affinity on the other hand will compare the labels of all **pods** on a Node.
+
+```yaml
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: security
+              operator: In
+              values:
+                - S1
+```
+
+With this configuration the GoKubeDownscaler will prefer to deploy the pods on a Node where no other pod has the label `security=S1`.
 
 For more information on affinity you can reference [the official Kubernetes documentation][kubernetes-affinity].
