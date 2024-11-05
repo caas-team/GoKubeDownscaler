@@ -49,12 +49,12 @@ affinity:
     preferredDuringSchedulingIgnoredDuringExecution:
       - labelSelector:
           matchExpressions:
-            - key: security
+            - key: env
               operator: In
               values:
-                - S1
+                - test
 ```
 
-With this configuration the GoKubeDownscaler will prefer to deploy the pods on a Node where no other pod has the label `security=S1`.
+With this configuration the GoKubeDownscaler will only try to deploy the pods on a Node where no other pod has the label `env=test`.
 
 For more information on affinity you can reference [the official Kubernetes documentation][kubernetes-affinity].
