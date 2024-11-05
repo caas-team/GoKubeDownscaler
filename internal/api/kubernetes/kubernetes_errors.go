@@ -4,4 +4,7 @@ import (
 	"errors"
 )
 
-var errRessourceNotSupported = errors.New("error: specified ressource type is not supported")
+// Errors for kubernetes package
+var (
+	errRessourceNotSupported = errors.New("error: specified ressource type is not supported")
+)
