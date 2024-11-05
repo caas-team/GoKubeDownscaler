@@ -3,7 +3,6 @@ package kubernetes
 import (
 	"context"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -22,7 +21,7 @@ const (
 	componentName = "kubedownscaler"
 )
 
-var errResourceNotSupported = errors.New("error: specified rescource type is not supported")
+var errResourceNotSupported = errRessourceNotSupported
 
 // Client is an interface representing a high-level client to get and modify Kubernetes resources
 type Client interface {
