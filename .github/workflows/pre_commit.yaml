@@ -24,6 +24,8 @@ jobs:
           go install mvdan.cc/gofumpt@latest
           # install golangci-lint
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+      - name: Autoupdate hooks
+        run: pre-commit autoupdate
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
         env:
