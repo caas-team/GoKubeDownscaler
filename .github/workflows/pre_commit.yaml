@@ -16,6 +16,8 @@ jobs:
         uses: actions/setup-go@v5.0.2
         with:
           go-version-file: "go.mod"
+      - name: Install Pre-Commit
+        run: pip install pre-commit
       - name: Install dependencies
         run: |
           # install required go packages
