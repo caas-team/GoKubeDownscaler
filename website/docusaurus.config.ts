@@ -6,7 +6,7 @@ import { svgoConfigPlugin } from "./plugins/svgo-config.cts";
 
 const config: Config = {
   title: "GoKubeDownscaler",
-  tagline: "A vertical autoscaler for Kubernetes workloads",
+  tagline: "A horizontal autoscaler for Kubernetes workloads",
   favicon: "img/CaaS-Logo.svg",
 
   url: "https://caas-team.github.io",
@@ -98,7 +98,7 @@ const config: Config = {
             },
             {
               label: "Guides",
-              to: "/guides/getting-started",
+              to: "/guides",
             },
           ],
         },
@@ -132,7 +132,24 @@ const config: Config = {
       darkTheme: prismThemes.dracula,
     },
   } satisfies Preset.ThemeConfig,
+  headTags: [
+    {
+      tagName: "link",
+      attributes: {
+        rel: "manifest",
+        href: "/GoKubeDownscaler/manifest.json",
+      },
+    },
+  ],
   plugins: [svgoConfigPlugin, tailwindPlugin],
+  markdown: {
+    preprocessor: ({ fileContent }) => {
+      // this injects the global md links into every md file
+      const fs = require("node:fs");
+      const links = fs.readFileSync("./content/_global_md_links.mdx");
+      return fileContent + "\n" + links;
+    },
+  },
 };
 
 export default config;

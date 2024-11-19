@@ -1,0 +1,99 @@
+---
+title: Developing
+id: developing
+---
+
+import DocCardList from "@theme/DocCardList";
+
+# Developing
+
+Guides on how to start developing on the GoKubeDownscaler.
+
+Before you contribute to the project we would advise you to read the [Contribution Manifest][contribution-manifest].
+
+## Cloning the Repository
+
+To work on the downscaler effectively you should clone the repository on to your system.
+You can find instruction on how to install git [on their website][git-install].
+
+```bash
+git clone https://github.com/caas-team/GoKubeDownscaler.git
+cd GoKubeDownscaler
+```
+
+## Setting up Pre-Commit
+
+[Pre-Commit][pre-commit] is a framework for running checks before committing,
+this ensures that formatting stays consistent,
+stops you from committing to protected branches (locally)
+and stops you from committing broken code or new functionality with out updating the tests.
+
+### Recommended Installation
+
+The recommended way to install pre-commit and the needed dependencies is via `brew`.
+If you don't have brew installed on your system you can find how to install it by following the instructions on [their website][brew].
+
+```bash
+brew install pre-commit
+```
+
+The Pre-Commit checks for the Downscaler have some dependencies which need to be installed manually.
+
+```bash
+brew install golangci-lint
+brew install gofumpt
+```
+
+### Alternative Installation
+
+Alternatively you can install pre-commit and the dependencies manually.
+Installation instructions for pre-commit can be found [on their website][pre-commit-install].
+Additionally you will need to install [golangci-lint][golangci-lint-install]
+and [gofumpt][gofumpt-install] as dependencies for the pre-commit checks of the downscaler.
+
+### Enabling Pre-Commit
+
+Next we will have to enabling pre-commit for the repository.
+Make sure you are in the GoKubeDownscaler git repository.
+
+```bash
+pre-commit install
+```
+
+### Running Pre-Commit manually
+
+Sometimes it can be useful to run pre-commit without also committing
+or just letting it run on all files instead of just the changed ones.
+
+This command lets you start a pre-commit run on all files manually:
+
+```bash
+pre-commit run --all-files
+```
+
+#### Skipping Pre-Commit checks temporarily
+
+Pre-Commit normally shouldn't be ignored, but in some cases you might need to skip some or all pre-commit checks temporarily.
+All checks will run in the pre-commit workflow once you push your changes and haven't resolved the issues.
+
+To disable one or multiple checks:
+
+```bash
+SKIP=prevent-todo-comments,another-check-id-here pre-commit run --all-files
+```
+
+or
+
+```bash
+SKIP=prevent-todo-comments,another-check-id-here git commit
+```
+
+If you need to disable all checks you can run this to skip all git hooks:
+
+```bash
+git commit --no-verify
+```
+
+## Overview
+
+<DocCardList />

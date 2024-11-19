@@ -46,17 +46,21 @@ Try to stick to golang best practices and standards:
 
 ## Issues
 
-If applicable use the issue template. This ensures a consistent structure which makes it easier to find important details.
+If applicable use the issue template.
+This ensures a consistent structure which makes it easier to find important details.
 Issues which aren't ready for processing, can be marked as a draft by writing "Draft: " in front of the issue name.
 
 ## Pull Requests
 
-Use the Pull Request Template. This ensures a consistent structure which makes it easier to find important details.
+Use the Pull Request Template.
+This ensures a consistent structure which makes it easier to find important details.
 Set yourself and any other collaborators as assignee.
 
 ## Pre Commit
 
-It is recommended to install pre-commit. This ensures that formatting is consistent, you don't commit to protected branches and you don't accidentally commit broken code or new functionality without changing the tests. The installation process is on [our website](https://caas-team.github.io/GoKubeDownscaler/guides/developing#setting-up-pre-commit)
+It is recommended to install pre-commit.
+This ensures that formatting is consistent, you don't commit to protected branches and you don't accidentally commit broken code or new functionality without changing the tests.
+The installation process is on [our website](https://caas-team.github.io/GoKubeDownscaler/guides/developing#setting-up-pre-commit).
 
 ## Versioning
 
@@ -70,4 +74,4 @@ Layout: `<Major>.<Minor>.<Patch>` (example: 1.1.0)
 - MINOR: increment on new functionality/features
 - PATCH: increment on small bug fixes
 
-You can find more information on semantic versioning here [here](https://semver.org/)
+You can find more information on semantic versioning [on the official website](https://semver.org/).

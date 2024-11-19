@@ -1,0 +1,161 @@
+---
+title: Website
+id: website
+---
+
+# Website
+
+This section covers how to start developing on the website of the downscaler.
+
+If you haven't already, read and follow the instructions for [setting up the repository locally][guides-developing].
+
+## Installing Prerequisite
+
+Before being able to develop on the website you need to install some prerequisites.
+
+### Installing Npm
+
+NPM is required to be able to install the required packages to start the website.
+
+You can either use brew to install npm:
+
+```bash
+brew install node
+```
+
+Or you can install it [another way][npm-install].
+
+To check if the installation was successful you can run:
+
+```bash
+node -v
+```
+
+and
+
+```bash
+npm -v
+```
+
+The output should be something like:
+
+```text
+v22.6.0
+```
+
+for node and
+
+```text
+10.8.2
+```
+
+for npm.
+
+### Installing Dependencies
+
+After npm is installed you can install the websites dependencies.
+
+```bash
+npm install --prefix website
+```
+
+### Updating Dependencies
+
+After pulling new commits that changed `package.json` you should update your node packages.
+
+To update the dependencies you can use:
+
+```bash
+npm update --prefix website
+```
+
+## Running the Website Locally
+
+Now that the prerequisites are installed you can start the website.
+
+```bash
+npm run --prefix website start
+```
+
+## Starting Development
+
+The following section covers the basics of how to make changes to the website.
+You can find more information on configuring this site in the [official docusaurus documentation][docusaurus].
+
+All files for the website can be found in `./website`.
+
+### Adding/Changing Pages and Categories
+
+The website is built using [Docusaurus][docusaurus] which allows for documentation/guides pages to be markdown or mdx files.
+The markdown files are located in `./website/content/guides` and `./website/content/docs`.
+
+#### Pages
+
+You can edit a page just by editing its mdx file.
+You can find information on markdown and MDX syntax [on the docusaurus website][docusaurus-markdown-docs].
+
+To add a new page you can just add a `.mdx` file into any of the existing folders.
+Docusaurus will automatically build the changes and add the file as a entry into the sidebar.
+
+#### Categories
+
+You can add categories by adding folders in the `guides` or `docs` folders.
+Categories don't have an index by default, so you will need to create one.
+Category indexes are the //TODO
+
+#### Sidebar Structure and Order
+
+The structure of the guides and docs is basically the same as on the built website.
+Folders are categories, mdx files are pages.
+Category indexes are the index.mdx files in their respective categories' folders.
+
+ORder //TODO
+
+### Markdown Links
+
+//TODO
+
+### Best Practices
+
+//TODO
+
+avoid click here links
+
+avoid using inline-html in markdown (excluded Doccard)
+
+try to avoid too small headings h3 is good h4 is to be avoided and h5 and smaller should not be used
+
+Dont make too deep Categories. Try to stick to not putting Categories in Categories in Categories. (3 deep is too deep)
+
+Title case https://en.wikipedia.org/wiki/Capitalization#Title_case
+
+## Troubleshooting
+
+Sometimes the website looks broken/not how you expected, has errors or won't start/open.
+In these cases you have probably tried loads of things to get it working again.
+These are some of the most common fixes for such issues.
+
+### Clear Docusaurus Cache
+
+Docusaurus caches a most files and doesn't rebuild them until they themselves change (eg. rendered markdown files, [SVGO][svgo]/[SVGR][svgr] optimized SVGs, etc.).
+This can lead to problems when there are custom external dependencies which don't trigger a rebuild.
+
+This command forces docusaurus to clear its cache and rebuild all files on the next start.
+
+```bash
+npm run --prefix website docusaurus clear
+```
+
+### (Re-)Install Packages
+
+There are multiple reasons why reinstalling NPMs packages might fix some issues.
+Some of the most common reasons could be:
+
+- corrupted modules
+- outdated packages ([`npm update`][guides-developing-website-update] could also resolve this)
+- ...
+
+```bash
+rm -rf ./website/node_modules
+npm install --prefix website
+```

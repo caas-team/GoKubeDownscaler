@@ -1,0 +1,37 @@
+---
+title: Workflows
+id: workflows
+---
+
+import { GithubLabel } from "/src/components/GithubLabel.tsx";
+
+# Workflows
+
+This section covers documentation on all github workflows in the repository.
+
+All workflows are in `./.github/workflows`.
+
+## Auto Assign Author
+
+This workflow automatically assigns the author of the PR as the assignee unless the assignees were otherwise specified.
+
+File: `auto_assign_author.yaml`
+Runs on: pull_request.opened, pull_request.reopened
+
+## Check for Release
+
+This workflow stops a pull request which when merged would result in a new release from being merged automatically.
+
+The workflow checks if the app version or Helm chart version in the Chart.yaml changed.
+This would result in a new release if the pull request were to be merged.
+
+If merging the PR would result in a new release the <GithubLabel label="needs approval"/> label will be added to it.
+Additionally a message warning about this and explaining the steps needed to merge will be sent in the pull request.
+
+The pull request can not be merged until the <GithubLabel label="new release"/> label gets added to the PR.
+After that the <GithubLabel label="needs approval"/> label will get removed automatically and the PR can be merged.
+
+File: `check_for_release.yaml`
+Runs on: pull_request.opened, pull_request.synchronize, pull_request.labeled, pull_request.unlabeled
+
+## Check Version

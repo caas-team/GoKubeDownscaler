@@ -1,12 +1,4 @@
-import clsx from "clsx";
 import Heading from "@theme/Heading";
-
-type SupportedResourceGroupProps = {
-  title: string;
-  Svg: React.ComponentType<React.ComponentProps<"svg">>;
-  href: string;
-  supportedResources: string[];
-};
 
 const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
   {
@@ -58,7 +50,7 @@ function SupportedResourceGroup({
   return (
     <div className="flex-grow max-w-full px-4 w-full xl:flex-1">
       <div className="text-center">
-        <a href={href}>
+        <a href={href} target="_blank">
           <Svg className="h-40 w-40" />
         </a>
       </div>

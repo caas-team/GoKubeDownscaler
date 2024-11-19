@@ -15,7 +15,7 @@ function HomepageHeader() {
         <p className="text-2xl">{siteConfig.tagline}</p>
         <div className="flex items-center justify-center space-x-3">
           <Button name="Docs" to="/docs" className="w-32" />
-          <Button name="Guides" to="/guides/getting-started" className="w-32" />
+          <Button name="Guides" to="/guides" className="w-32" />
         </div>
       </div>
     </header>
