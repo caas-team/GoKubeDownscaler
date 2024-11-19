@@ -7,7 +7,7 @@
 <a href="https://communityinviter.com/apps/kube-downscaler/kube-downscaler" title="Slack Workspace"><img alt="Slack Workspace" src="https://img.shields.io/badge/slack-kube--downscaler-dark_green?style=flat&logo=slack"></a>
 
 A vertical autoscaler for Kubernetes workloads.
-This is a golang port of the popular [(py-)kube-downscaler](github.com/caas-team/py-kube-downscaler) with improvements and quality of life changes.
+This is a golang port of the popular [(py-)kube-downscaler](https://github.com/caas-team/py-kube-downscaler) with improvements and quality of life changes.
 
 <!-- Don't use any heading or html tag with id smaller/deeper than h4(####) -->
 
