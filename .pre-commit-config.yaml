@@ -29,7 +29,7 @@ repos:
         name: prevent todo comments
         entry: '( |^)(//|#|<!--|/\*)\s*(TODO|FIXME)\b' # matches a comment beginning with "TODO" or "FIXME"
         language: pygrep
-        files: \.(go|md|mdx)$
+        files: \.(go|md|mdx|yaml|json|js|ts|jsx|tsx)$
       - id: prevent-too-small-headings
         name: prevent too small headings
         entry: "^#{5,} " # matches an h5 or smaller markdown heading
