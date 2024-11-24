@@ -1,7 +1,7 @@
 fail_fast: true
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v5.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -34,14 +34,9 @@ repos:
         name: prevent too small headings
         entry: "^#{5,} " # matches an h5 or smaller markdown heading
         language: pygrep
-        files: \.md$
+        files: \.(md|mdx)$
       - id: prevent-overly-nested-hierarchy
         name: prevent overly nested hierarchy
         entry: "^(  ){2,}- " # matches a markdown list with 2 or more indentations
         language: pygrep
-        files: \.md$
-      - id: prevent-invalid-alert-types
-        name: prevent invalid alert types
-        entry: '(?i)^> \[!(?!\b(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\b).+\]' # matches a github markdown callout/alert that doesn't use one of the supported keywords
-        language: pygrep
-        files: \.md$
+        files: \.(md|mdx)$
