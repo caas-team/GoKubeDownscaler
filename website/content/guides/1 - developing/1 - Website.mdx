@@ -101,7 +101,29 @@ Docusaurus will automatically build the changes and add the file as an entry int
 
 You can add categories by adding folders in the `guides` or `docs` folders.
 Categories don't have an index by default, so you will need to create one.
-Category indexes are the //TODO
+
+You can do this by creating an index.mdx file within the folder of the category.
+You could either just put a category description in them or fill them up with content themselves.
+Either way you should present the user with the items in the category with a DocCardList:
+
+```mdx title="index.mdx" showLineNumbers
+---
+title: Some Category Title
+id: some-category
+---
+
+import DocCardList from "@theme/DocCardList";
+
+# Some Category Title
+
+Some category description
+
+{/* Optional Main content for the category */}
+
+## Overview
+
+<DocCardList />
+```
 
 #### Sidebar Structure and Order
 
@@ -109,15 +131,20 @@ The structure of the guides and docs is basically the same as on the built websi
 Folders are categories, mdx files are pages.
 Category indexes are the index.mdx files in their respective categories' folders.
 
-ORder //TODO
+The order in the sidebar is defined by number prefixes:
+
+- 0 - First Document (you could also start with 1)
+- 1 - Second Document
+- 2 - Third Document
+- n - nᵗʰ Document
 
 ### Markdown Links
 
-//TODO
+// TODO
 
 ### Best Practices
 
-//TODO
+// TODO
 
 avoid click here links
 
@@ -152,7 +179,7 @@ There are multiple reasons why reinstalling NPMs packages might fix some issues.
 Some of the most common reasons could be:
 
 - corrupted modules
-- outdated packages ([`npm update`][guides-developing-website-update] could also resolve this)
+- outdated packages ([`npm update`](#updating-dependencies) could also resolve this)
 - ...
 
 ```bash
