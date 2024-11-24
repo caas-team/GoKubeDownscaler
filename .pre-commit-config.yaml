@@ -27,7 +27,7 @@ repos:
     hooks:
       - id: prevent-todo-comments
         name: prevent todo comments
-        entry: '[ ^](//|#|<!--|/\*)\s*(TODO|FIXME)\b' # matches a comment beginning with "TODO" or "FIXME"
+        entry: '( |^)(//|#|<!--|/\*)\s*(TODO|FIXME)\b' # matches a comment beginning with "TODO" or "FIXME"
         language: pygrep
         files: \.(go|md|mdx)$
       - id: prevent-too-small-headings
