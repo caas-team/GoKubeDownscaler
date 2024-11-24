@@ -32,7 +32,7 @@ repos:
         files: \.(go|md|mdx)$
       - id: prevent-too-small-headings
         name: prevent too small headings
-        entry: "^#{5,} " # matches a h5 or smaller markdown heading
+        entry: "^#{5,} " # matches an h5 or smaller markdown heading
         language: pygrep
         files: \.md$
       - id: prevent-overly-nested-hierarchy

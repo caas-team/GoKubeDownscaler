@@ -18,7 +18,7 @@ var (
 // rfc339Regex is a regex that matches an rfc339 timestamp
 const rfc3339Regex = `(.+Z|.+[+-]\d{2}:\d{2})`
 
-// absoluteTimeSpanRegex matches a absolute timespan. It's groups are the two rfc3339 timestamps
+// absoluteTimeSpanRegex matches an absolute timespan. It's groups are the two rfc3339 timestamps
 var absoluteTimeSpanRegex = regexp.MustCompile(fmt.Sprintf(`^%s *- *%s$`, rfc3339Regex, rfc3339Regex))
 
 type TimeSpan interface {
