@@ -140,7 +140,32 @@ The order in the sidebar is defined by number prefixes:
 
 ### Markdown Links
 
-// TODO
+Normally markdown links look like this: `[Some Text](https://example.com)`
+To be able to easily update the links we decided to keep all of them in one place.
+
+All links which aren't just heading refs(e.g. `[Something](#installing-dependencies)`)
+should be handled like this.
+
+To add a new link markdown link reference under the right category in the `_global_md_links.mdx` file in `./website/content`:
+
+```mdx title="website/content/_global_md_links.mdx"
+{/* Example links */}
+[example-link]: https://example.com "Example Website"
+```
+
+Now to use the link go the markdown file where you want to have the link and add the link with this syntax:
+
+```mdx
+Some examples can be found on the [example site][example-link].
+```
+
+:::info
+If you added the link reference in the mdx file
+before adding the new markdown link reference in the \_global_md_links.mdx
+docusaurus might not rebuild your page until you either
+[clear the docusaurus cache](#clear-docusaurus-cache)
+or re-save your file to initiate a rebuild.
+:::
 
 ### Best Practices
 
