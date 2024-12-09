@@ -1,0 +1,82 @@
+---
+title: Arguments
+id: arguments
+---
+
+# Arguments
+
+[Values][docs-values] and [runtime configuration][docs-runtime-configuration] can be set via cli arguments.
+
+## Values
+
+The [Values][docs-values] will be applied to the [cli layer][docs-cli-layer].
+
+### Valid Values
+
+- [--upscale-period][docs-values-upscale-period]
+- [--default-uptime][docs-values-uptime]
+- [--downscale-period][docs-values-downscale-period]
+- [--default-downtime][docs-values-downtime]
+- [--downtime-replicas][docs-values-downscale-replicas]
+- [--explicit-include][docs-values-exclude]
+  :::info
+  This will set the [exclude value][docs-values-exclude] to `true` on the [cli layer][docs-cli-layer].
+  This will exclude every workload unless lower layers (e.g.: [namespace layer][docs-namespace-layer],
+  [workload layer][docs-workload-layer]) [specify][docs-annotations] exclude to `false`.
+  :::
+
+## Runtime Configuration
+
+:::info
+
+The runtime configuration set by the cli arguments will be overwritten by their [respective environment variables][docs-environment-variables-runtime-coniguration] if they are both set argument.
+
+:::
+
+### Valid Values
+
+- [--dry-run][docs-runtime-configuration-dry-run]
+- [--debug][docs-runtime-configuration-debug]
+- [--once][docs-runtime-configuration-once]
+- [--interval][docs-runtime-configuration-interval]
+- [--namespace][docs-runtime-configuration-namespace]
+- [--include-resources][docs-runtime-configuration-include-resources]
+- [--exclude-namespaces][docs-runtime-configuration-exclude-namespaces]
+- [--exclude-deployments][docs-runtime-configuration-exclude-deployments]
+- [--matching-labels][docs-runtime-configuration-matching-labels]
+- [--time-annotation][docs-runtime-configuration-time-annotation]
+
+## Usage
+
+The CLI arguments can be set in different ways, depending on your setup.
+
+### Binary or Go Run
+
+```bash
+go run cmd/kubedownscaler --explicit-include=true --interval 60s --exclude-namespaces "kube-.*"
+```
+
+```bash
+# go build cmd/kubedownscaler -o kubedownscaler
+kubedownscaler --dry-run --namespace=my-namespace
+```
+
+### Via Helm Chart values.yaml
+
+Some arguments already have fields that specify them to make configuring them easier.
+Here is a list compiled of all of the fields that configure their respective cli arguments:
+
+- [`includedResources`][docs-helm-included-resources] directly sets `--include-resources`
+- [`constrainedNamespaces`][docs-helm-constrained-namespaces] directly sets `--namespace`
+  if [`constrainedDownscaler`][docs-helm-constrained-downscaler] is true
+
+All other arguments can be used via the `arguments` field.
+
+```yaml title="values.yaml"
+# ...
+
+arguments:
+  - --interval 2m
+  - --downscale-period "Sat-Sun 00:00-24:00 Europe/Paris"
+# ...
+```

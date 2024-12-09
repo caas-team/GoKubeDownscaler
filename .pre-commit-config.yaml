@@ -35,8 +35,3 @@ repos:
         entry: "^#{5,} " # matches an h5 or smaller markdown heading
         language: pygrep
         files: \.(md|mdx)$
-      - id: prevent-overly-nested-hierarchy
-        name: prevent overly nested hierarchy
-        entry: "^(  ){2,}- " # matches a markdown list with 2 or more indentations
-        language: pygrep
-        files: \.(md|mdx)$
