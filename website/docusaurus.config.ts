@@ -3,6 +3,11 @@ import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 import { tailwindPlugin } from "./plugins/tailwind-config.cts";
 import { svgoConfigPlugin } from "./plugins/svgo-config.cts";
+import {
+  globalRefParseFrontMatter,
+  globalRefPreprocessor,
+} from "./plugins/global-ref-plugin.cts";
+import { repoRefPreprocessor } from "./plugins/repo-ref-plugin.cts";
 
 const config: Config = {
   title: "GoKubeDownscaler",
@@ -144,11 +149,11 @@ const config: Config = {
   ],
   plugins: [svgoConfigPlugin, tailwindPlugin],
   markdown: {
-    preprocessor: ({ fileContent }) => {
-      // this injects the global md links into every md file
-      const fs = require("node:fs");
-      const links = fs.readFileSync("./content/_global_md_links.mdx");
-      return fileContent + "\n" + links;
+    parseFrontMatter: globalRefParseFrontMatter,
+    preprocessor: (args) => {
+      args.fileContent = globalRefPreprocessor(args);
+      args.fileContent = repoRefPreprocessor(args);
+      return args.fileContent;
     },
   },
 };

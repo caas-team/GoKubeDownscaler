@@ -1,13 +1,14 @@
 ---
 title: Downscaler
 id: downscaler
+globalReference: guides-developing-downscaler
 ---
 
 # Downscaler
 
 This section covers how to start development on the downscaler.
 
-If you haven't already, read and follow the instructions for [setting up the repository locally][guides-developing].
+If you haven't already, read and follow the instructions for [setting up the repository locally](ref:guides-developing).
 
 The files for the downscaler can mainly be found in `./cmd/kubedownscaler` and `./internal`.
 
@@ -31,7 +32,7 @@ To update go using brew:
 brew upgrade go
 ```
 
-Or you can follow [these instructions][go-install] to install go another way.
+Or you can follow [these instructions](https://go.dev/doc/install) to install go another way.
 
 After that you can check if your installation was successful.
 
@@ -57,7 +58,7 @@ go mod download
 
 To run the downscaler locally you need to specify a kubeconfig for it to use.
 The downscaler will use the current-context selected in the kubeconfig.
-The user of the selected context has to have the [permissions required to scale][docs-helm-permissions].
+The user of the selected context has to have the [permissions required to scale](ref:docs-helm-permissions).
 
 ```bash
 go run ./cmd/kubedownscaler -k path/to/kubeconfig

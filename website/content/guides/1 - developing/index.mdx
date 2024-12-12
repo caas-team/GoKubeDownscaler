@@ -1,6 +1,7 @@
 ---
 title: Developing
 id: developing
+globalReference: guides-developing
 ---
 
 import DocCardList from "@theme/DocCardList";
@@ -9,12 +10,12 @@ import DocCardList from "@theme/DocCardList";
 
 Guides on how to start developing on the GoKubeDownscaler.
 
-Before you contribute to the project we would advise you to read the [Contribution Manifest][contribution-manifest].
+Before you contribute to the project we would advise you to read the [Contribution Manifest](repo:CONTRIBUTING.md).
 
 ## Cloning the Repository
 
 To work on the downscaler effectively you should clone the repository on to your system.
-You can find instruction on how to install git [on their website][git-install].
+You can find instruction on how to install git [on their website](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
 
 ```bash
 git clone https://github.com/caas-team/GoKubeDownscaler.git
@@ -23,7 +24,7 @@ cd GoKubeDownscaler
 
 ## Setting up Pre-Commit
 
-[Pre-Commit][pre-commit] is a framework for running checks before committing,
+[Pre-Commit](https://pre-commit.com) is a framework for running checks before committing,
 this ensures that formatting stays consistent,
 stops you from committing to protected branches (locally)
 and stops you from committing broken code or new functionality with out updating the tests.
@@ -31,7 +32,7 @@ and stops you from committing broken code or new functionality with out updating
 ### Recommended Installation
 
 The recommended way to install pre-commit and the needed dependencies is via `brew`.
-If you don't have brew installed on your system you can find how to install it by following the instructions on [their website][brew].
+If you don't have brew installed on your system you can find how to install it by following the instructions on [their website](https://brew.sh).
 
 ```bash
 brew install pre-commit
@@ -47,9 +48,9 @@ brew install gofumpt
 ### Alternative Installation
 
 Alternatively you can install pre-commit and the dependencies manually.
-Installation instructions for pre-commit can be found [on their website][pre-commit-install].
-Additionally you will need to install [golangci-lint][golangci-lint-install]
-and [gofumpt][gofumpt-install] as dependencies for the pre-commit checks of the downscaler.
+Installation instructions for pre-commit can be found [on their website](https://pre-commit.com/#install).
+Additionally you will need to install [golangci-lint](https://golangci-lint.run/welcome/install/#local-installation)
+and [gofumpt](https://github.com/mvdan/gofumpt) as dependencies for the pre-commit checks of the downscaler.
 
 ### Enabling Pre-Commit
 

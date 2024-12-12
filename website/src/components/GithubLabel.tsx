@@ -1,7 +1,6 @@
-import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import React, { useEffect, useState } from "react";
-import { hexToRGB, rgbToHSL } from "../util/color";
 import { useGithub } from "./hook/githubHook";
+import Link from "@docusaurus/Link";
 
 export const GithubLabel: React.FC<GithubLabelProps> = ({
   label: labelName,
@@ -15,10 +14,9 @@ export const GithubLabel: React.FC<GithubLabelProps> = ({
   }, [labels]);
 
   return label ? (
-    <a
+    <Link
       title={label.description}
       href={label.url}
-      target="_blank"
       className="px-2.5 py-0.5 border border-solid rounded-3xl text-sm font-medium whitespace-nowrap cursor-pointer no-underline hover:no-underline"
       style={{
         color: `hsl(${label.lightHsl.h}, ${label.lightHsl.s}%, ${label.lightHsl.l}%)`,
@@ -27,7 +25,7 @@ export const GithubLabel: React.FC<GithubLabelProps> = ({
       }}
     >
       {labelName}
-    </a>
+    </Link>
   ) : (
     <code>{labelName}</code>
   );

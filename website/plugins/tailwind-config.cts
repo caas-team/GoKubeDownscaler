@@ -1,16 +1,17 @@
-import { LoadContext, Plugin, PluginOptions } from "@docusaurus/types";
+import { Plugin } from "@docusaurus/types";
+import * as PostCssImport from "postcss-import";
+import * as TailwindCss from "tailwindcss";
+import * as Autoprefixer from "autoprefixer";
 
 export function tailwindPlugin(
-  context: LoadContext,
-  options: PluginOptions
 ): Plugin {
   return {
     name: "tailwind-plugin",
     configurePostCss(postcssOptions) {
       postcssOptions.plugins = [
-        require("postcss-import"),
-        require("tailwindcss"),
-        require("autoprefixer"),
+        PostCssImport,
+        TailwindCss,
+        Autoprefixer,
       ];
       return postcssOptions;
     },

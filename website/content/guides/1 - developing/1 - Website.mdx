@@ -1,13 +1,14 @@
 ---
 title: Website
 id: website
+globalReference: guides-developing-website
 ---
 
 # Website
 
 This section covers how to start developing on the website of the downscaler.
 
-If you haven't already, read and follow the instructions for [setting up the repository locally][guides-developing].
+If you haven't already, read and follow the instructions for [setting up the repository locally](ref:guides-developing).
 
 ## Installing Prerequisite
 
@@ -23,7 +24,7 @@ You can either use brew to install npm:
 brew install node
 ```
 
-Or you can install it [another way][npm-install].
+Or you can install it [another way](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm#using-a-node-installer-to-install-nodejs-and-npm).
 
 To check if the installation was successful you can run:
 
@@ -80,19 +81,19 @@ npm run --prefix website start
 ## Starting Development
 
 The following section covers the basics of how to make changes to the website.
-You can find more information on configuring this site in the [official docusaurus documentation][docusaurus].
+You can find more information on configuring this site in the [official docusaurus documentation](https://docusaurus.io/docs).
 
 All files for the website can be found in `./website`.
 
 ### Adding/Changing Pages and Categories
 
-The website is built using [Docusaurus][docusaurus] which allows for documentation/guides pages to be markdown or mdx files.
+The website is built using [Docusaurus](https://docusaurus.io) which allows for documentation/guides pages to be markdown or mdx files.
 The markdown files are located in `./website/content/guides` and `./website/content/docs`.
 
 #### Pages
 
 You can edit a page just by editing its mdx file.
-You can find information on markdown and MDX syntax [on the docusaurus website][docusaurus-markdown-docs].
+You can find information on markdown and MDX syntax [on the docusaurus website](https://docusaurus.io/docs/markdown-features).
 
 To add a new page you can just add a `.mdx` file into any of the existing folders.
 Docusaurus will automatically build the changes and add the file as an entry into the sidebar.
@@ -140,8 +141,20 @@ The order in the sidebar is defined by number prefixes:
 
 ### Markdown Links
 
+// TODO: change to new version
+// TODO: tell ppl about: `repo`->link to repo, `repo:/path/to/file`, `repo:./path/to/file`, `repo:path/to/file`
+
 Normally markdown links look like this: `[Some Text](https://example.com)`
-To be able to easily update the links we decided to keep all of them in one place.
+To be able to easily update the links we decided to use global references for links to docs or guides.
+
+- Links to external sites are still handled like this: `[some text](https://example.com)`
+- Links to a heading on the same page: `[some text](#heading-id)`
+- Links to the GoKubeDownscaler repository:
+  - `[some text](repo:path/to/file)` or
+    `[some text](repo:/path/to/file)` or
+    `[some text](repo:./path/to/file)`
+    -> `https://github.com/caas-team/GoKubeDownscaler/tree/main/path/to/file`
+  - `[some text](repo)` -> `https://github.com/caas-team/GoKubeDownscaler`
 
 All links which aren't just heading refs(e.g. `[Something](#installing-dependencies)`)
 should be handled like this.
@@ -171,11 +184,11 @@ or re-save your file to initiate a rebuild.
 
 These are a collection of best practices you should be aware of.
 
-- [avoid click here links][avoid-here-links]
+- [avoid click here links](https://heyoka.medium.com/dont-use-click-here-f32f445d1021)
 - try to reduce the use of inline-html elements to a minimum
 - avoid too small headings (keep it under h5 and try to avoid h4)
 - don't nest sidebar categories (no categories in a category in a category)
-- use [title case][title-case]
+- use [title case](https://en.wikipedia.org/wiki/Capitalization#Title_case) for headings
 
 ## Troubleshooting
 
@@ -185,7 +198,7 @@ These are some of the most common fixes for such issues.
 
 ### Clear Docusaurus Cache
 
-Docusaurus caches most files and doesn't rebuild them until they themselves change (eg. rendered markdown files, [SVGO][svgo]/[SVGR][svgr] optimized SVGs, etc.).
+Docusaurus caches most files and doesn't rebuild them until they themselves change (eg. rendered markdown files, [SVGO](https://svgo.dev/)/[SVGR](https://react-svgr.com/) optimized SVGs, etc.).
 This can lead to problems when there are custom external dependencies which don't trigger a rebuild.
 
 This command forces docusaurus to clear its cache and rebuild all files on the next start.

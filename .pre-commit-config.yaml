@@ -35,3 +35,8 @@ repos:
         entry: "^#{5,} " # matches an h5 or smaller markdown heading
         language: pygrep
         files: \.(md|mdx)$
+      - id: eslint
+        name: Run ESLint
+        entry: npx --prefix website eslint --fix .
+        language: node
+        files: website/.*\.(js|jsx|ts|tsx|cts|cjs)$

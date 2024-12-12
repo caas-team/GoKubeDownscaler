@@ -1,6 +1,7 @@
 ---
 title: Maintaining the Repository
 id: maintaining-the-repository
+globalReference: guides-developing-repo
 ---
 
 import { GithubLabel } from "/src/components/GithubLabel.tsx";
@@ -9,7 +10,7 @@ import { GithubLabel } from "/src/components/GithubLabel.tsx";
 
 This section covers how to do some maintainer tasks on the repository.
 
-For documentation on the workflows see [this documentation page][docs-workflows].
+For documentation on the workflows see [this documentation page](ref:docs-workflows).
 
 ## Releasing a New Version
 
@@ -17,8 +18,8 @@ The process to releasing a new version is almost completely automated.
 There are multiple workflows that handle the release process.
 All you need to do is to bump the [semver][semver] of either
 the Helm chart version(`.version`) or the app version(`.appVersion`)
-within the [Chart.yaml][chart-yaml](`./deployments/chart/Chart.yaml`).
-Once merged into main the [workflows][docs-workflows] will automatically start releasing the new version.
+within the [Chart.yaml](repo:deployments/chart/Chart.yaml)(`./deployments/chart/Chart.yaml`).
+Once merged into main the [workflows](ref:docs-workflows) will automatically start releasing the new version.
 
 :::info
 
