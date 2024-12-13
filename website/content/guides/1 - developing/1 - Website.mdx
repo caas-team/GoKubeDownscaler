@@ -141,48 +141,60 @@ The order in the sidebar is defined by number prefixes:
 
 ### Markdown Links
 
-// TODO: change to new version
-// TODO: tell ppl about: `repo`->link to repo, `repo:/path/to/file`, `repo:./path/to/file`, `repo:path/to/file`
+#### External sites
 
-Normally markdown links look like this: `[Some Text](https://example.com)`
-To be able to easily update the links we decided to use global references for links to docs or guides.
+Links to external sites are just normal markdown syntax: `[some text](https://example.com)`
 
-- Links to external sites are still handled like this: `[some text](https://example.com)`
-- Links to a heading on the same page: `[some text](#heading-id)`
-- Links to the GoKubeDownscaler repository:
-  - `[some text](repo:path/to/file)` or
-    `[some text](repo:/path/to/file)` or
-    `[some text](repo:./path/to/file)`
-    -> `https://github.com/caas-team/GoKubeDownscaler/tree/main/path/to/file`
-  - `[some text](repo)` -> `https://github.com/caas-team/GoKubeDownscaler`
+#### Heading
 
-All links which aren't just heading refs(e.g. `[Something](#installing-dependencies)`)
-should be handled like this.
+The same counts for links to a heading on the same page: `[some text](#heading-id)`
 
-To add a new link markdown link reference under the right category in the `_global_md_links.mdx` file in `./website/content`:
+#### Github GoKubeDownscaler Repository
 
-```mdx title="website/content/_global_md_links.mdx"
-{/* Example links */}
-[example-link]: https://example.com "Example Website"
-```
+With path:
 
-Now to use the link go the markdown file where you want to have the link and add the link with this syntax:
+- `[some text](repo:path/to/file)`
+- `[some text](repo:/path/to/file)`
+- `[some text](repo:./path/to/file)`
+
+-> `https://github.com/caas-team/GoKubeDownscaler/tree/main/path/to/file`
+
+Without path:
+
+- `[some text](repo)`
+
+-> `https://github.com/caas-team/GoKubeDownscaler`
+
+#### Another Guide or Documentation
+
+To link to another doc or guide, you first have to define a `globalReference` for that document.
+To do that you just have to add the `globalReference` attribute to the frontmatter of the document:
 
 ```mdx
-Some examples can be found on the [example site][example-link].
+---
+title: Example
+id: example
+globalReference: docs-example
+---
+```
+
+after which you can use this reference to reference the document from any other:
+
+```mdx
+Some [example](ref:docs-example) text.
 ```
 
 :::info
 If you added the link reference in the mdx file
-before adding the new markdown link reference in the \_global_md_links.mdx
+before adding the `globalReference` parameter to the frontmatter
 docusaurus might not rebuild your page until you either
-[clear the docusaurus cache](#clear-docusaurus-cache)
-or re-save your file to initiate a rebuild.
+re-save your file to initiate a rebuild or
+[clear the docusaurus cache](#clear-docusaurus-cache).
 :::
 
 ### Best Practices
 
-These are a collection of best practices you should be aware of.
+These are a collection of best practices you should be aware of:
 
 - [avoid click here links](https://heyoka.medium.com/dont-use-click-here-f32f445d1021)
 - try to reduce the use of inline-html elements to a minimum
