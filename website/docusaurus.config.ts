@@ -4,10 +4,10 @@ import type * as Preset from "@docusaurus/preset-classic";
 import { tailwindPlugin } from "./plugins/tailwind-config.cts";
 import { svgoConfigPlugin } from "./plugins/svgo-config.cts";
 import {
+  docRefRemarkPlugin,
   globalRefParseFrontMatter,
-  globalRefPreprocessor,
 } from "./plugins/global-ref-plugin.cts";
-import { repoRefPreprocessor } from "./plugins/repo-ref-plugin.cts";
+import { repoRefRemarkPlugin } from "./plugins/repo-ref-plugin.cts";
 
 const config: Config = {
   title: "GoKubeDownscaler",
@@ -39,6 +39,7 @@ const config: Config = {
           sidebarPath: "./sidebars.ts",
           routeBasePath: "/",
           path: "content",
+          beforeDefaultRemarkPlugins: [docRefRemarkPlugin, repoRefRemarkPlugin],
           editUrl:
             "https://github.com/caas-team/GoKubeDownscaler/edit/main/website",
         },
@@ -150,11 +151,6 @@ const config: Config = {
   plugins: [svgoConfigPlugin, tailwindPlugin],
   markdown: {
     parseFrontMatter: globalRefParseFrontMatter,
-    preprocessor: (args) => {
-      args.fileContent = globalRefPreprocessor(args);
-      args.fileContent = repoRefPreprocessor(args);
-      return args.fileContent;
-    },
   },
 };
 

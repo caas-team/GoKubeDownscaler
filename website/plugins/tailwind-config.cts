@@ -1,7 +1,5 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { Plugin } from "@docusaurus/types";
-import * as PostCssImport from "postcss-import";
-import * as TailwindCss from "tailwindcss";
-import * as Autoprefixer from "autoprefixer";
 
 export function tailwindPlugin(
 ): Plugin {
@@ -9,9 +7,9 @@ export function tailwindPlugin(
     name: "tailwind-plugin",
     configurePostCss(postcssOptions) {
       postcssOptions.plugins = [
-        PostCssImport,
-        TailwindCss,
-        Autoprefixer,
+        require("postcss-import"),
+        require("tailwindcss"),
+        require("autoprefixer"),
       ];
       return postcssOptions;
     },

@@ -1,7 +1,9 @@
+import { Plugin } from "unified";
+import { visit } from "unist-util-visit";
+import { Node, Literal } from "unist";
 import { ParseFrontMatter } from "@docusaurus/types";
-import { MarkdownPreprocessor } from "@docusaurus/types/src/config";
 
-const references: Map<string, string> = new Map();
+const references: Map<string, { urlPath: string; title: string }> = new Map();
 
 export const globalRefParseFrontMatter: ParseFrontMatter = async ({
   defaultParseFrontMatter,
@@ -13,6 +15,8 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
     filePath,
   });
 
+  if (!result.frontMatter.globalReference) return result;
+
   // generate urlPath from filePath
   const urlPath = filePath
     .replace(/.*\/website\/content/g, "")
@@ -20,48 +24,60 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
     .map((part) => encodeURIComponent(part))
     .join("/");
 
-  // delete old reference
+  const referenceId = result.frontMatter.globalReference as string;
+  if (
+    references.get(referenceId) &&
+    references.get(referenceId).urlPath != urlPath
+  )
+    console.warn(
+      "the globalReference '%s' is set in '%s' and '%s'. if you moved/renamed this file you can ignore this warning.",
+      referenceId,
+      references.get(referenceId).urlPath,
+      urlPath
+    );
+
+  // delete old reference for url path
   references.forEach((value, key) => {
-    if (value == urlPath) references.delete(key);
+    if (value.urlPath == urlPath) references.delete(key);
   });
 
   // set reference to urlPath
-  if (result.frontMatter.globalReference)
-    references.set(result.frontMatter.globalReference as string, urlPath);
+  references.set(referenceId, {
+    urlPath,
+    title: result.frontMatter.title as string,
+  });
 
   return result;
 };
 
-export const globalRefPreprocessor: MarkdownPreprocessor = ({
-  fileContent,
-  filePath,
-}) => {
-  // Regular expression to match both patterns: ref:example-id and ref:example-id#header-id
-  const refPattern = /\[([^\]]+)\]\(ref:([^#)]+)(?:#([^)]+))?\)/g;
+export const docRefRemarkPlugin: Plugin = () => {
+  return (tree: Node, file) => {
+    const refPattern = /ref:([^#)]+)(?:#([^)]+))?/g;
+    visit(tree, "link", (node: { url: string; title: string } & Literal) => {
+      node.url = node.url.replace(
+        refPattern,
+        (match, referenceId, headerId) => {
+          const reference = references.get(referenceId);
 
-  // Replace references with corresponding URLs if they exist in `references`
-  return fileContent.replace(
-    refPattern,
-    (match, altText, reference, headerId) => {
-      const referenceUrl = references.get(reference);
+          // If the reference doesn't exist, log an error.
+          if (!reference) {
+            console.error(
+              `No reference found for '%s'. File: '%s', Node: '%o'`,
+              referenceId,
+              file.path,
+              node
+            );
+            return match;
+          }
 
-      // If the reference exists in the references map
-      if (referenceUrl) {
-        // If there is a header ID, we append it to the URL
-        const newUrl = headerId ? `${referenceUrl}#${headerId}` : referenceUrl;
-        return `[${altText}](${newUrl})`;
-      }
+          if (!node.title && reference.title) node.title = reference.title;
 
-      // If the reference doesn't exist, error.
-      console.error(
-        "no reference found for '%s'. full match: '%s' in '%s'",
-        reference,
-        match,
-        filePath
+          // If there is a header ID, we append it to the URL
+          return headerId
+            ? `${reference.urlPath}#${headerId}`
+            : reference.urlPath;
+        }
       );
-      return `\\[${altText}\\]\\(ref:${reference}${
-        headerId ? "#" + headerId : ""
-      }\\)`;
-    }
-  );
+    });
+  };
 };
