@@ -11,6 +11,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
 	_ "time/tzdata"
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
@@ -63,6 +64,7 @@ func main() {
 		slog.Error("failed to get layer from env", "error", err)
 		os.Exit(1)
 	}
+}
 
 	// set defaults for layers
 	layerCli.GracePeriod = defaultGracePeriod
@@ -79,6 +81,7 @@ func main() {
 		slog.Error("found incompatible fields", "error", err)
 		os.Exit(1)
 	}
+	ctx := context.Background()
 
 	slog.Debug("getting client for kubernetes")
 
@@ -187,16 +190,37 @@ func startScanning(
 
 			go func() {
 				slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-
-				defer waitGroup.Done()
-
-				err := scanWorkload(workload, client, ctx, layerCli, layerEnv, config)
-				if err != nil {
-					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-					return
+				defer wg.Done()
+				attempts := 0
+				for {
+					err := scanWorkload(workload, client, ctx, layerCli, layerEnv)
+					if err != nil {
+						if strings.Contains(err.Error(), "the object has been modified") {
+							if attempts >= maxRetriesOnConflict {
+								if maxRetriesOnConflict > 0 {
+									slog.Error("max retries reached, will try again in the next cycle", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+								} else {
+									slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+								}
+								return
+							}
+							slog.Warn("workload modified, retrying", "attempt", attempts+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+							updatedWorkload, err := client.GetWorkload(workload.GetName(), workload.GetNamespace(), workload.GetResourceType(), ctx)
+							if err != nil {
+								slog.Error("failed to fetch latest workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+								return
+							}
+							workload = updatedWorkload
+						} else {
+							slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+							return
+						}
+					} else {
+						slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+						break
+					}
+					attempts++
 				}
-
-				slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 			}()
 		}
 
