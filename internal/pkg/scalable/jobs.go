@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getDeployments is the getResourceFunc for Jobs
+// getJobs is the getResourceFunc for Jobs
 func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	jobs, err := clientsets.Kubernetes.BatchV1().Jobs(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
@@ -21,14 +21,30 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 	return results, nil
 }
 
+// getJob is the getResourcesFunc for a single CronJob
+func getJob(name string, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	var result Workload
+	batchJob, err := clientsets.Kubernetes.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return result, fmt.Errorf("failed to get job: %w", err)
+	}
+	result = &suspendScaledWorkload{&job{batchJob}}
+	return result, nil
+}
+
 // job is a wrapper for batch/v1.Job to implement the suspendScaledResource interface
 type job struct {
 	*batch.Job
 }
 
+// GetResourceType returns the name of the workload type
+func (j *job) GetResourceType() string {
+	return "job"
+}
+
 // setSuspend sets the value of the suspend field on the job
-func (c *job) setSuspend(suspend bool) {
-	c.Spec.Suspend = &suspend
+func (j *job) setSuspend(suspend bool) {
+	j.Spec.Suspend = &suspend
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource

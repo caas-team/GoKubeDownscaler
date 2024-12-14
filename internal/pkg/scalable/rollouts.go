@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getRollouts is the getResourceFunc for Argo Rollouts
+// getRollouts is the getResourcesFunc for Argo Rollouts
 func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	rollouts, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
@@ -21,9 +21,25 @@ func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) 
 	return results, nil
 }
 
+// getRollout is the getResourceFunc for Argo Rollouts
+func getRollout(name string, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	var result Workload
+	singleRollout, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get rollout: %w", err)
+	}
+	result = &replicaScaledWorkload{&rollout{singleRollout}}
+	return result, nil
+}
+
 // rollout is a wrapper for argoproj.io/v1alpha1.Rollout to implement the replicaScaledResource interface
 type rollout struct {
 	*argov1alpha1.Rollout
+}
+
+// GetResourceType returns the name of the workload type
+func (r *rollout) GetResourceType() string {
+	return "rollout"
 }
 
 // setReplicas sets the amount of replicas on the resource. Changes won't be made on Kubernetes until update() is called

@@ -115,6 +115,22 @@ func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx co
 	return results, nil
 }
 
+// GetWorkload gets the workload of the specified resource for the specified namespace
+func (c client) GetWorkload(name string, namespace string, resourceType string, ctx context.Context) (scalable.Workload, error) {
+	var result scalable.Workload
+	slog.Debug("getting workload from resource type", "resourceType", resourceType)
+	getWorkload, ok := scalable.GetWorkload[strings.ToLower(resourceType)]
+	if !ok {
+		return nil, errResourceNotSupported
+	}
+	result, err := getWorkload(name, namespace, c.clientsets, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get workload: %w", err)
+	}
+
+	return result, nil
+}
+
 // DownscaleWorkload downscales the workload to the specified replicas
 func (c client) DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error {
 	err := workload.ScaleDown(replicas)

@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getStatefulSets is the getResourceFunc for StatefulSets
+// getStatefulSets is the getResourcesFunc for StatefulSets
 func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	statefulsets, err := clientsets.Kubernetes.AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
@@ -21,9 +21,25 @@ func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Conte
 	return results, nil
 }
 
+// getStatefulSet is the getResourceFunc for StatefulSets
+func getStatefulSet(name string, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	var result Workload
+	statefulset, err := clientsets.Kubernetes.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get statefulset: %w", err)
+	}
+	result = &replicaScaledWorkload{&statefulSet{statefulset}}
+	return result, nil
+}
+
 // statefulset is a wrapper for apps/v1.StatefulSet to implement the replicaScaledResource interface
 type statefulSet struct {
 	*appsv1.StatefulSet
+}
+
+// GetResourceType returns the name of the workload type
+func (s *statefulSet) GetResourceType() string {
+	return "statefulSet"
 }
 
 // setReplicas sets the amount of replicas on the resource. Changes won't be made on Kubernetes until update() is called

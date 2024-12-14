@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -43,6 +44,8 @@ var (
 	timeAnnotation string
 	// optional kubeconfig to use for testing purposes instead of the in-cluster config
 	kubeconfig string
+	// optional number of retries to perform when encountering HTTP 409 conflict errors
+	maxRetriesOnConflict int
 )
 
 func init() {
@@ -71,6 +74,7 @@ func init() {
 	flag.Var(&includeLabels, "matching-labels", "restricts the downscaler to workloads with these labels (default: all)")
 	flag.StringVar(&kubeconfig, "k", "", "kubeconfig to use instead of the in-cluster config (optional)")
 	flag.StringVar(&timeAnnotation, "deployment-time-annotation", "", "the annotation to use instead of creation time for grace period (optional)")
+	flag.IntVar(&maxRetriesOnConflict, "max-retries-on-conflict", 0, "optional number of retries to perform when encountering HTTP 409 conflict errors")
 
 	// env runtime configuration
 	err := values.GetEnvValue("EXCLUDE_NAMESPACES", &excludeNamespaces)
@@ -121,18 +125,40 @@ func main() {
 		var wg sync.WaitGroup
 		for _, workload := range workloads {
 			wg.Add(1)
-			go func() {
+			go func(workload scalable.Workload) {
 				slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 				defer wg.Done()
-
-				err := scanWorkload(workload, client, ctx, layerCli, layerEnv)
-				if err != nil {
-					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-					return
+				attempts := 0
+				for {
+					err := scanWorkload(workload, client, ctx, layerCli, layerEnv)
+					if err != nil {
+						if strings.Contains(err.Error(), "the object has been modified") {
+							if attempts >= maxRetriesOnConflict {
+								if maxRetriesOnConflict > 0 {
+									slog.Error("max retries reached, will try again in the next cycle", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+								} else {
+									slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+								}
+								return
+							}
+							slog.Warn("workload modified, retrying", "attempt", attempts+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+							updatedWorkload, err := client.GetWorkload(workload.GetName(), workload.GetNamespace(), workload.GetResourceType(), ctx)
+							if err != nil {
+								slog.Error("failed to fetch latest workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+								return
+							}
+							workload = updatedWorkload
+						} else {
+							slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+							return
+						}
+					} else {
+						slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+						break
+					}
+					attempts++
 				}
-
-				slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-			}()
+			}(workload)
 		}
 		wg.Wait()
 		slog.Info("successfully scanned all workloads")
@@ -146,7 +172,7 @@ func main() {
 	}
 }
 
-// scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload
+// scanWorkload runs a scan on the workload, determining the scaling and scaling the workload
 func scanWorkload(workload scalable.Workload, client kubernetes.Client, ctx context.Context, layerCli, layerEnv values.Layer) error {
 	resourceLogger := kubernetes.NewResourceLogger(client, workload)
 
