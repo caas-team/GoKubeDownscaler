@@ -18,7 +18,7 @@ Causes:
 Fixes:
 
 - do not run multiple downscalers on the same resources
-- it should just scale in the next scan cycle so there are probably no changes needed
+- the `--max-retries-on-conflict` argument enables users to specify the number of retries for the downscaler when a conflict occurs. While the affected resource will likely be scaled in the next cycle without this optional argument, it is highly recommended to use it in conjunction with the `--once` argument
 
 > [!Note]
 > this is a pretty unavoidable issue due to there being no easy way to lock the resource from being edited while the downscaler is scaling it. The py-kube-downscaler solved this by just overwriting the changes made during scaling
