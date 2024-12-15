@@ -171,6 +171,10 @@ Runtime Configuration:
   - string key of an annotation on the workload containing a [RFC3339 Timestamp](https://datatracker.ietf.org/doc/html/rfc3339)
   - when set grace-period will use the timestamp in the annotation instead of the creation time of the workload
   - default: none (uses the workloads creation time)
+- <span id="--max-retries-on-conflict">--max-retries-on-conflict</span>:
+  - integer
+  - sets the maximum number of retries for handling HTTP 409 conflict errors, which occur when another entity modifies a resource that the downscaler is currently processing
+  - default: 0
 
 ### Environment Variables
 
