@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getDeployments is the getResourceFunc for Deployments
+// getDeployments is the getResourcesFunc for Deployments
 func getDeployments(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	deployments, err := clientsets.Kubernetes.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
@@ -21,9 +21,25 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 	return results, nil
 }
 
+// getDeployment is the getResourceFunc for Deployments
+func getDeployment(name string, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	var result Workload
+	singleDeployment, err := clientsets.Kubernetes.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get deployment: %w", err)
+	}
+	result = &replicaScaledWorkload{&deployment{singleDeployment}}
+	return result, nil
+}
+
 // deployment is a wrapper for apps/v1.Deployment to implement the replicaScaledResource interface
 type deployment struct {
 	*appsv1.Deployment
+}
+
+// GetResourceType returns the name of the workload type
+func (d *deployment) GetResourceType() string {
+	return "deployment"
 }
 
 // setReplicas sets the amount of replicas on the resource. Changes won't be made on Kubernetes until update() is called

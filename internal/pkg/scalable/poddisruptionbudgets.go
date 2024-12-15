@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// getPodDisruptionBudgets is the getResourceFunc for podDisruptionBudget
+// getPodDisruptionBudgets is the getResourcesFunc for podDisruptionBudget
 func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	poddisruptionbudgets, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
@@ -25,9 +25,25 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 	return results, nil
 }
 
+// getPodDisruptionBudget is the getResourceFunc for podDisruptionBudget
+func getPodDisruptionBudget(name string, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	var result Workload
+	pdb, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get poddisruptionbudget: %w", err)
+	}
+	result = &podDisruptionBudget{pdb}
+	return result, nil
+}
+
 // podDisruptionBudget is a wrapper for policy/v1.PodDisruptionBudget to implement the Workload interface
 type podDisruptionBudget struct {
 	*policy.PodDisruptionBudget
+}
+
+// GetResourceType returns the name of the workload type
+func (p *podDisruptionBudget) GetResourceType() string {
+	return "poddisruptionbudget"
 }
 
 // getMinAvailableInt returns the spec.MinAvailable value if it is not a percentage

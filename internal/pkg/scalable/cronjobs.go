@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getCronJobs is the getResourceFunc for CronJobs
+// getCronJobs is the getResourcesFunc for CronJobs
 func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	cronjobs, err := clientsets.Kubernetes.BatchV1().CronJobs(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
@@ -21,9 +21,25 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 	return results, nil
 }
 
+// getCronJob is the getResourceFunc for a single CronJob
+func getCronJob(name string, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	var result Workload
+	cronjob, err := clientsets.Kubernetes.BatchV1().CronJobs(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return result, fmt.Errorf("failed to get cronjob: %w", err)
+	}
+	result = &suspendScaledWorkload{&cronJob{cronjob}}
+	return result, nil
+}
+
 // cronJob is a wrapper for batch/v1.CronJob to implement the suspendScaledResource interface
 type cronJob struct {
 	*batch.CronJob
+}
+
+// GetResourceType returns the name of the workload type
+func (c *cronJob) GetResourceType() string {
+	return "cronjob"
 }
 
 // setSuspend sets the value of the suspend field on the cronJob
