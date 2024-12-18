@@ -126,7 +126,7 @@ func main() {
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
 
-		// Goroutine for leader election and lease renewal
+		// Goroutine for leader election
 		go func() {
 			err := client.CreateOrUpdateLease(ctx, downscalerNamespace, &isLeader)
 			if err != nil {
@@ -137,17 +137,19 @@ func main() {
 
 		// pause and wait for termination signal
 		<-sigs
-		slog.Debug("received termination signal, deleting lease")
+		if isLeader.Load() {
+			slog.Debug("received termination signal, deleting lease")
 
-		// delete the lease after termination signal is intercepted
-		err := client.DeleteLease(ctx, downscalerNamespace, &isLeader)
-		if err != nil {
-			slog.Error("failed to delete lease", "error", err)
-		} else {
-			slog.Debug("lease deleted successfully")
+			// delete the lease after termination signal is intercepted
+			err := client.DeleteLease(ctx, downscalerNamespace, &isLeader)
+			if err != nil {
+				slog.Error("failed to delete lease", "error", err)
+			} else {
+				slog.Debug("lease deleted successfully")
+			}
 		}
 
-		// cancel the context to stop the lease renewal goroutine and exit the main process
+		// cancel the context to stop the leader election goroutine and exit the main process
 		cancel()
 		os.Exit(1)
 	}()
