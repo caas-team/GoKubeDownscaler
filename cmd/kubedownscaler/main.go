@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
 	"regexp"
 	"sync"
+	"sync/atomic"
+	"syscall"
 	"time"
 
 	_ "time/tzdata"
@@ -43,6 +46,8 @@ var (
 	timeAnnotation string
 	// optional kubeconfig to use for testing purposes instead of the in-cluster config
 	kubeconfig string
+	// isLeader indicates if the current replica is the leader
+	isLeader atomic.Bool
 )
 
 func init() {
@@ -97,6 +102,11 @@ func main() {
 		slog.Error("found incompatible fields", "error", err)
 		os.Exit(1)
 	}
+	downscalerNamespace, err := kubernetes.GetCurrentNamespaceFromFile()
+	if err != nil {
+		slog.Error("failed to get downscaler namespace", "error", err)
+		os.Exit(1)
+	}
 	ctx := context.Background()
 
 	slog.Debug("getting client for kubernetes")
@@ -106,8 +116,49 @@ func main() {
 		os.Exit(1)
 	}
 
+	// leader election and graceful termination
+	go func() {
+		// create a context to handle termination gracefully
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		// listen for termination signals in a separate goroutine
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
+
+		// Goroutine for leader election and lease renewal
+		go func() {
+			err := client.CreateOrUpdateLease(ctx, downscalerNamespace, &isLeader)
+			if err != nil {
+				slog.Error("failed to acquire lease", "error", err)
+				os.Exit(1)
+			}
+		}()
+
+		// pause and wait for termination signal
+		<-sigs
+		slog.Debug("received termination signal, deleting lease")
+
+		// delete the lease after termination signal is intercepted
+		err := client.DeleteLease(ctx, downscalerNamespace, &isLeader)
+		if err != nil {
+			slog.Error("failed to delete lease", "error", err)
+		} else {
+			slog.Debug("lease deleted successfully")
+		}
+
+		// cancel the context to stop the lease renewal goroutine and exit the main process
+		cancel()
+		os.Exit(1)
+	}()
+
 	slog.Info("started downscaler")
 	for {
+		if !isLeader.Load() {
+			slog.Debug("not the leader, skipping workload scanning")
+			time.Sleep(5 * time.Second) // Sync sleep with lease duration
+			continue
+		}
 		slog.Info("scanning workloads")
 
 		workloads, err := client.GetWorkloads(includeNamespaces, includeResources, ctx)

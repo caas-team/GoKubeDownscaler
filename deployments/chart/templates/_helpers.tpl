@@ -267,3 +267,19 @@ Create defined permissions for roles
 {{- end }}
 {{- end }}
 {{- end }}
+{{/*
+Create defined permissions for lease role
+*/}}
+{{- define "go-kube-downscaler.leases.permissions" -}}
+- apiGroups:
+    - coordination.k8s.io
+  resources:
+    - leases
+  verbs:
+    - get
+    - create
+    - watch
+    - list
+    - update
+    - delete
+{{- end -}}
