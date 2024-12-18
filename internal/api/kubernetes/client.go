@@ -293,11 +293,11 @@ func (c client) DeleteLease(ctx context.Context, leaseNamespace string, isLeader
 
 	err := leasesClient.Delete(ctx, leaseName, metav1.DeleteOptions{})
 	if err != nil {
-		slog.Error("failed to delete lease %s in namespace %s", leaseName, leaseNamespace)
+		slog.Error("failed to delete lease", "lease", leaseName, "namespace", leaseNamespace)
 		return err
 	}
 
 	isLeader.Store(false)
-	slog.Debug("deleted lease %s in namespace %s", leaseName, leaseNamespace)
+	slog.Debug("deleted lease", "lease", leaseName, "namespace", leaseNamespace)
 	return nil
 }
