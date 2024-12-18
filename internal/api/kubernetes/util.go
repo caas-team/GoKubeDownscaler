@@ -2,10 +2,9 @@ package kubernetes
 
 import (
 	"fmt"
-	"os"
-
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"os"
 )
 
 // getConfig gets a rest.Config for the specified kubeconfig or if empty from the in-cluster config.

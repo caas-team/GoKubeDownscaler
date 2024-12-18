@@ -6,9 +6,13 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
 	"regexp"
 	"sync"
+	"sync/atomic"
+	"syscall"
 	"time"
+
 	_ "time/tzdata"
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
@@ -60,6 +64,7 @@ func main() {
 		slog.Error("failed to get layer from env", "error", err)
 		os.Exit(1)
 	}
+}
 
 	if config.Debug || config.DryRun {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
@@ -67,6 +72,11 @@ func main() {
 
 	if err = layerCli.CheckForIncompatibleFields(); err != nil {
 		slog.Error("found incompatible fields", "error", err)
+		os.Exit(1)
+	}
+	downscalerNamespace, err := kubernetes.GetCurrentNamespaceFromFile()
+	if err != nil {
+		slog.Error("failed to get downscaler namespace", "error", err)
 		os.Exit(1)
 	}
 
@@ -79,6 +89,42 @@ func main() {
 		slog.Error("failed to create new Kubernetes client", "error", err)
 		os.Exit(1)
 	}
+
+	// leader election and graceful termination
+	go func() {
+		// create a context to handle termination gracefully
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		// listen for termination signals in a separate goroutine
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
+
+		// Goroutine for leader election and lease renewal
+		go func() {
+			err := client.CreateOrUpdateLease(ctx, downscalerNamespace, &isLeader)
+			if err != nil {
+				slog.Error("failed to acquire lease", "error", err)
+				os.Exit(1)
+			}
+		}()
+
+		// pause and wait for termination signal
+		<-sigs
+		slog.Debug("received termination signal, deleting lease")
+
+		// delete the lease after termination signal is intercepted
+		err := client.DeleteLease(ctx, downscalerNamespace, &isLeader)
+		if err != nil {
+			slog.Error("failed to delete lease", "error", err)
+		} else {
+			slog.Debug("lease deleted successfully")
+		}
+
+		// cancel the context to stop the lease renewal goroutine and exit the main process
+		cancel()
+		os.Exit(1)
+	}()
 
 	slog.Info("started downscaler")
 
@@ -102,6 +148,11 @@ func scanWorkloads(
 	config *util.RuntimeConfiguration,
 ) error {
 	for {
+		if !isLeader.Load() {
+			slog.Debug("not the leader, skipping workload scanning")
+			time.Sleep(5 * time.Second) // Sync sleep with lease duration
+			continue
+		}
 		slog.Info("scanning workloads")
 
 		workloads, err := client.GetWorkloads(config.IncludeNamespaces, config.IncludeResources, ctx)
