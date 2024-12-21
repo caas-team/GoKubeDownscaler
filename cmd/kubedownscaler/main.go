@@ -97,6 +97,7 @@ func main() {
 		slog.Error("found incompatible fields", "error", err)
 		os.Exit(1)
 	}
+	includeResources = values.OrderIncludeResourcesArgument(includeResources)
 	ctx := context.Background()
 
 	slog.Debug("getting client for kubernetes")
@@ -109,7 +110,6 @@ func main() {
 	slog.Info("started downscaler")
 	for {
 		slog.Info("scanning workloads")
-
 		workloads, err := client.GetWorkloads(includeNamespaces, includeResources, ctx)
 		if err != nil {
 			slog.Error("failed to get workloads", "error", err)

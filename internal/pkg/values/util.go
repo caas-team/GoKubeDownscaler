@@ -157,3 +157,29 @@ func GetLayerFromEnv() (Layer, error) {
 
 	return result, nil
 }
+
+// OrderIncludeResourcesArgument orders the includeResources argument to have "scaledobjects" as the first element
+func OrderIncludeResourcesArgument(originalIncludeResources []string) []string {
+	scaledObjectsPresent := false
+	for _, resource := range originalIncludeResources {
+		if resource == "scaledobjects" {
+			scaledObjectsPresent = true
+			break
+		}
+	}
+
+	if scaledObjectsPresent {
+		var orderedIncludeResources []string
+		for _, resource := range originalIncludeResources {
+			if resource != "scaledobjects" {
+				orderedIncludeResources = append(orderedIncludeResources, resource)
+			}
+		}
+
+		orderedIncludeResources = append([]string{"scaledobjects"}, orderedIncludeResources...)
+
+		return orderedIncludeResources
+	}
+
+	return originalIncludeResources
+}

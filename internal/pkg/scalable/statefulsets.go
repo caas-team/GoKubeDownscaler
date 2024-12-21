@@ -4,9 +4,18 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// Define the GVK for statefulsets
+var statefulSetGVK = schema.GroupVersionKind{
+	Group:   "apps",
+	Version: "v1",
+	Kind:    "StatefulSet",
+}
 
 // getStatefulSets is the getResourceFunc for StatefulSets
 func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -24,6 +33,16 @@ func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Conte
 // statefulset is a wrapper for apps/v1.StatefulSet to implement the replicaScaledResource interface
 type statefulSet struct {
 	*appsv1.StatefulSet
+}
+
+// GetObjectKind sets the GVK for statefulSet
+func (s *statefulSet) GetObjectKind() schema.ObjectKind {
+	return s
+}
+
+// GroupVersionKind returns the GVK for statefulSet
+func (s *statefulSet) GroupVersionKind() schema.GroupVersionKind {
+	return statefulSetGVK
 }
 
 // setReplicas sets the amount of replicas on the resource. Changes won't be made on Kubernetes until update() is called

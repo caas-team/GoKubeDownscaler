@@ -5,11 +5,20 @@ import (
 	"errors"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	appsv1 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var errMinReplicasBoundsExceeded = errors.New("error: a HPAs minReplicas can only be set to int32 values larger than 1")
+
+// Define the GVK for horizontalPodAutoscalers
+var horizontalPodAutoscalerGVK = schema.GroupVersionKind{
+	Group:   "autoscaling",
+	Version: "v2",
+	Kind:    "HorizontalPodAutoscaler",
+}
 
 // getHorizontalPodAutoscalers is the getResourceFunc for horizontalPodAutoscalers
 func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -27,6 +36,16 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 // horizontalPodAutoscaler is a wrapper for autoscaling/v2.HorizontalPodAutoscaler to implement the replicaScaledResource interface
 type horizontalPodAutoscaler struct {
 	*appsv1.HorizontalPodAutoscaler
+}
+
+// GetObjectKind sets the GVK for horizontalPodAutoscaler
+func (h *horizontalPodAutoscaler) GetObjectKind() schema.ObjectKind {
+	return h
+}
+
+// GroupVersionKind returns the GVK for horizontalPodAutoscaler
+func (h *horizontalPodAutoscaler) GroupVersionKind() schema.GroupVersionKind {
+	return horizontalPodAutoscalerGVK
 }
 
 // setReplicas sets the amount of replicas on the resource. Changes won't be made on Kubernetes until update() is called

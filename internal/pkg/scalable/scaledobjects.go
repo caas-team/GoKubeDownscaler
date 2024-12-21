@@ -69,3 +69,42 @@ func (s *scaledObject) Update(clientsets *Clientsets, ctx context.Context) error
 
 	return nil
 }
+
+// getTargetRefName return the name of ScaledObject TargetRef
+func (s *scaledObject) getTargetRefName() (string, error) {
+	if s.Spec.ScaleTargetRef.Name == "" {
+		return "", fmt.Errorf("scaledObject %s/%s has no targetRef.Name", s.Namespace, s.Name)
+	}
+	return s.Spec.ScaleTargetRef.Name, nil
+}
+
+// getTargetRefKind return the kind of ScaledObject TargetRef
+func (s *scaledObject) getTargetRefKind() (string, error) {
+	if s.Spec.ScaleTargetRef.Kind == "" {
+		return "", fmt.Errorf("scaledObject %s/%s has no targetRef.Kind", s.Namespace, s.Name)
+	}
+	return s.Spec.ScaleTargetRef.Kind, nil
+}
+
+// computeKedaHash generates a hash for the ScaleTargetRef from a given ScaledObject.
+/*
+func (s *scaledObject) computeKedaHash() (uint64, error) {
+	// Ensure scaledObject is not nil
+	if s == nil {
+		return 0, fmt.Errorf("scaledObject is nil")
+	}
+
+	// Retrieve the ScaleTargetRef
+	scaleTargetRef := s.Spec.ScaleTargetRef
+	if scaleTargetRef.Name == "" || scaleTargetRef.Kind == "" || scaleTargetRef.APIVersion == "" {
+		return 0, fmt.Errorf("ScaleTargetRef fields are incomplete")
+	}
+
+	computedHash, err := computeHash(scaleTargetRef.Kind, scaleTargetRef.Name, s.Namespace)
+	if err != nil {
+		return 0, fmt.Errorf("failed to compute hash: %w", err)
+	}
+
+	// Return the hash as a hexadecimal string
+	return computedHash, nil
+}*/

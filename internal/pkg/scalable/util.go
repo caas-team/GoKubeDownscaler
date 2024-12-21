@@ -2,6 +2,7 @@ package scalable
 
 import (
 	"fmt"
+	"hash/fnv"
 	"log/slog"
 	"strconv"
 
@@ -15,7 +16,11 @@ const (
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads
 func FilterExcluded(workloads []Workload, includeLabels values.RegexList, excludedNamespaces values.RegexList, excludedWorkloads values.RegexList) []Workload {
 	var results []Workload
+	hashedKedaWorkloads := make(map[uint64]bool)
 	for _, workload := range workloads {
+		slog.Debug("Scanning workload", "kind", workload.GetObjectKind().GroupVersionKind().Kind, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		copiedWorkload := workload
+		_ = hashIfScaledObject(copiedWorkload, hashedKedaWorkloads)
 		if !isMatchingLabels(workload, includeLabels) {
 			slog.Debug("workload is not matching any of the specified labels, excluding it from being scanned", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 			continue
@@ -28,9 +33,80 @@ func FilterExcluded(workloads []Workload, includeLabels values.RegexList, exclud
 			slog.Debug("the workloads name is excluded, excluding it from being scanned", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 			continue
 		}
+		if workload.GetObjectKind().GroupVersionKind().Kind != "ScaledObject" {
+			if isManagedByKeda(workload, hashedKedaWorkloads) {
+				slog.Debug("workload managed by keda scaled object, excluding it from being scanned", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			}
+		}
 		results = append(results, workload)
 	}
 	return results
+}
+
+// Function to check if the workload is a ScaledObject and update the hash map
+func hashIfScaledObject(workload Workload, hashedKedaWorkloads map[uint64]bool) error {
+	if workload.GetObjectKind().GroupVersionKind().Kind == "ScaledObject" {
+		if replicaWorkload, ok := workload.(*replicaScaledWorkload); ok {
+			if scaledObj, ok := replicaWorkload.replicaScaledResource.(*scaledObject); ok {
+				targetRefKind, err := scaledObj.getTargetRefKind()
+				if err != nil {
+					slog.Debug("error getting targetRefKind for scaled object:", "err", err)
+				}
+				targetRefName, err := scaledObj.getTargetRefName()
+				if err != nil {
+					slog.Debug("error getting targetRefName for scaled object: ", "err", err)
+				}
+				targetRefNamespace := scaledObj.GetNamespace()
+				computedHash, err := computeHash(targetRefKind, targetRefName, targetRefNamespace)
+				if err != nil {
+					slog.Debug("error computing hash for scaled object: ", "err", err)
+				}
+				// store the hash in the map
+				hashedKedaWorkloads[computedHash] = true
+			} else {
+				slog.Debug("replicaScaledResource is not of type *scaledObject")
+			}
+		} else {
+			slog.Debug("workload is not of type *replicaScaledWorkload")
+		}
+	}
+	return nil
+}
+
+// computeHash computes a 64-bit FNV-1a hash for the given kind, name, and namespace.
+func computeHash(kind string, name string, namespace string) (uint64, error) {
+	slog.Debug(fmt.Sprintf("generating hash for values %s:%s:%s", kind, name, namespace))
+
+	hash := fnv.New64a()
+	_, err := hash.Write([]byte(fmt.Sprintf("%s:%s:%s", kind, name, namespace)))
+	if err != nil {
+		return 0, fmt.Errorf("failed to write to hash: %w", err)
+	}
+
+	computedHash := hash.Sum64()
+
+	return computedHash, nil
+}
+
+func isManagedByKeda(workload Workload, hashedKedaWorkloads map[uint64]bool) bool {
+	kind := workload.GetObjectKind().GroupVersionKind().Kind
+	name := workload.GetName()
+	namespace := workload.GetNamespace()
+
+	if kind == "" {
+		slog.Warn("warning: kind is empty!")
+	}
+
+	computedHash, err := computeHash(kind, name, namespace)
+	if err != nil {
+		slog.Debug("error computing hash for workload: ", "err", err)
+		return false
+	}
+
+	if _, exists := hashedKedaWorkloads[computedHash]; exists {
+		return true
+	}
+	return false
 }
 
 // isMatchingLabels check if the workload is matching any of the specified labels

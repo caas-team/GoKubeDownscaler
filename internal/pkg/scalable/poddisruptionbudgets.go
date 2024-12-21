@@ -5,12 +5,21 @@ import (
 	"fmt"
 	"log/slog"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 
 	policy "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+// Define the GVK for podDisruptionBudget
+var podDisruptionBudgetGVK = schema.GroupVersionKind{
+	Group:   "policy",
+	Version: "v1",
+	Kind:    "PodDisruptionBudget",
+}
 
 // getPodDisruptionBudgets is the getResourceFunc for podDisruptionBudget
 func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -28,6 +37,16 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 // podDisruptionBudget is a wrapper for policy/v1.PodDisruptionBudget to implement the Workload interface
 type podDisruptionBudget struct {
 	*policy.PodDisruptionBudget
+}
+
+// GetObjectKind sets the GVK for podDisruptionBudget
+func (p *podDisruptionBudget) GetObjectKind() schema.ObjectKind {
+	return p
+}
+
+// GroupVersionKind returns the GVK for podDisruptionBudget
+func (p *podDisruptionBudget) GroupVersionKind() schema.GroupVersionKind {
+	return podDisruptionBudgetGVK
 }
 
 // getMinAvailableInt returns the spec.MinAvailable value if it is not a percentage

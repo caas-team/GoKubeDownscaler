@@ -4,9 +4,18 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	batch "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// GVK for cronJobs
+var cronJobGVK = schema.GroupVersionKind{
+	Group:   "batch",
+	Version: "v1",
+	Kind:    "CronJob",
+}
 
 // getCronJobs is the getResourceFunc for CronJobs
 func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -24,6 +33,16 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 // cronJob is a wrapper for batch/v1.CronJob to implement the suspendScaledResource interface
 type cronJob struct {
 	*batch.CronJob
+}
+
+// GetObjectKind sets the GVK for cronJob
+func (c *cronJob) GetObjectKind() schema.ObjectKind {
+	return c
+}
+
+// GroupVersionKind returns the GVK for cronJob
+func (c *cronJob) GroupVersionKind() schema.GroupVersionKind {
+	return cronJobGVK
 }
 
 // setSuspend sets the value of the suspend field on the cronJob

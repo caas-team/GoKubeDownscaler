@@ -4,9 +4,18 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// Define the GVK for deployments
+var deploymentGVK = schema.GroupVersionKind{
+	Group:   "apps",
+	Version: "v1",
+	Kind:    "Deployment",
+}
 
 // getDeployments is the getResourceFunc for Deployments
 func getDeployments(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -24,6 +33,16 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 // deployment is a wrapper for apps/v1.Deployment to implement the replicaScaledResource interface
 type deployment struct {
 	*appsv1.Deployment
+}
+
+// GetObjectKind implements the scalableResource interface and sets the GVK
+func (d *deployment) GetObjectKind() schema.ObjectKind {
+	return d
+}
+
+// GroupVersionKind returns the GVK for deployments
+func (d *deployment) GroupVersionKind() schema.GroupVersionKind {
+	return deploymentGVK
 }
 
 // setReplicas sets the amount of replicas on the resource. Changes won't be made on Kubernetes until update() is called

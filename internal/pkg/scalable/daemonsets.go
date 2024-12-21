@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -11,6 +13,13 @@ import (
 const (
 	labelMatchNone = "downscaler/match-none"
 )
+
+// GVK for daemonSets
+var daemonSetGVK = schema.GroupVersionKind{
+	Group:   "apps",
+	Version: "v1",
+	Kind:    "DaemonSet",
+}
 
 // getDaemonSets is the getResourceFunc for DaemonSets
 func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -28,6 +37,16 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 // daemonSet is a wrapper for apps/v1.DeamonSet to implement the Workload interface
 type daemonSet struct {
 	*appsv1.DaemonSet
+}
+
+// GetObjectKind sets the GVK for daemonSet
+func (d *daemonSet) GetObjectKind() schema.ObjectKind {
+	return d
+}
+
+// GroupVersionKind returns the GVK for daemonSet
+func (d *daemonSet) GroupVersionKind() schema.GroupVersionKind {
+	return daemonSetGVK
 }
 
 // ScaleUp scales the resource up
