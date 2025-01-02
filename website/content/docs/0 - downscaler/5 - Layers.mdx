@@ -6,7 +6,7 @@ globalReference: docs-layers
 
 # Layers
 
-Layers are layers of values.
+Layers are layers of [values](ref:docs-values).
 
 ## How it Works
 
@@ -15,10 +15,30 @@ This means Workload Layer > Namespace Layer > CLI Layer > ENV Layer.
 
 ![Layer Diagram](./assets/layer-diagram.png)
 
-## Environment
+## Workload
 
-## CLI
+Defined by the [annotations](ref:docs-values) on the [workload](ref:docs-workload-types) every scan.
+
+The most specific layer, if a value gets set here it will be used for scaling.
 
 ## Namespace
 
-## Workload
+Defined by the [annotations](ref:docs-values) on the namespace every scan.
+
+Values set here can be overwritten by the [workload layer](#workload)
+
+## CLI
+
+Defined by the [cli arguments](ref:docs-arguments) at startup.
+
+Values set here can be overwritten by the [namespace](#namespace) and [workload layer](#workload)
+
+## Environment
+
+Defined by the [environment variables](ref:docs-environment-variables) at startup.
+
+Values set here can be overwritten by all other layers.
+
+:::info
+With the current setup it is not possible to update these values every scan, as the value of config maps is only passed in at creation of the deployment.
+:::

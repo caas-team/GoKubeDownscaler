@@ -13,21 +13,62 @@ They can be set at any [layer](ref:docs-layers) and therefore can be set via the
 ## Downscale Period
 
 - Type: [Timespans](ref:docs-timespans)
+- Within these periods the [workload](ref:docs-workload-types) will be scaled down.
+  Outside of the periods, scaling will be ignored.
+- Can be paired with [upscale period](#upscale-period)
+- Incompatible with [Downtime](#downtime) and [Uptime](#uptime)
 
 ## Downtime
 
+- Type: [Timespans](ref:docs-timespans)
+- Within these periods the [workload](ref:docs-workload-types) will be scaled down.
+  Outside of the periods the [workload](ref:docs-workload-types) will be scaled up.
+- Incompatible with [downscale period](#downscale-period), [upscale period](#upscale-period) and [Uptime](#uptime)
+
 ## Upscale Period
+
+- Type: [Timespans](ref:docs-timespans)
+- Within these periods the [workload](ref:docs-workload-types) will be scaled up.
+  Outside of the periods, scaling will be ignored.
+- Can be paired with [downscale period](#downscale-period)
+- Incompatible with [Downtime](#downtime) and [Uptime](#uptime)
 
 ## Uptime
 
+- Type: [Timespans](ref:docs-timespans)
+- Within these periods the [workload](ref:docs-workload-types) will be scaled up.
+  Outside of the periods the [workload](ref:docs-workload-types) will be scaled down.
+- Incompatible with [downscale period](#downscale-period), [upscale period](#upscale-period) and [Downtime](#downtime)
+
 ## Exclude
+
+- Type: [Boolean](https://en.wikipedia.org/wiki/Boolean_data_type)
+- Excludes the [workload](ref:docs-workload-types) from being scaled. (Scaling is ignored)
 
 ## Exclude Until
 
+- Type: [RFC3339 timestamp](https://datatracker.ietf.org/doc/html/rfc3339)
+- Excludes the [workload](ref:docs-workload-types) from being scaled until the set time. (Scaling is ignored)
+
 ## Force Uptime
+
+- Type: [Boolean](https://en.wikipedia.org/wiki/Boolean_data_type)
+- Forces the [workload](ref:docs-workload-types) into an uptime state. (Scaling up)
+- Incompatible with [force downtime](#force-downtime)
 
 ## Force Downtime
 
+- Type: [Boolean](https://en.wikipedia.org/wiki/Boolean_data_type)
+- Forces the [workload](ref:docs-workload-types) into an downtime state. (Scaling down)
+- Incompatible with [force uptime](#force-uptime)
+
 ## Downscale Replicas
 
+- Type: [Integer](https://en.wikipedia.org/wiki/Integer)
+- The Replica count the [workload](ref:docs-workload-types) will be scaled to in downtimes.
+
 ## Grace Period
+
+- Type: [Duration](ref:docs-duration)
+- The Duration a workload has to exist for until being scaled the first time.
+  Will check against the timestamp in the [time annotation](ref:docs-runtime-configuration#time-annotation) instead of the creation time when set.
