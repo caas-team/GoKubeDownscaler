@@ -25,7 +25,7 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 	return results, nil
 }
 
-// daemonSet is a wrapper for deamonset.v1.apps to implement the Workload interface
+// daemonSet is a wrapper for daemonset.v1.apps to implement the Workload interface
 type daemonSet struct {
 	*appsv1.DaemonSet
 }
