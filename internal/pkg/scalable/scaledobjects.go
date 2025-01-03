@@ -28,7 +28,7 @@ func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Cont
 	return results, nil
 }
 
-// scaledObject is a wrapper for keda.sh/v1alpha1.ScaledObject to implement the replicaScaledResource interface
+// scaledObject is a wrapper for scaledobject.v1alpha1.keda.sh to implement the replicaScaledResource interface
 type scaledObject struct {
 	*kedav1alpha1.ScaledObject
 }
