@@ -64,7 +64,7 @@ func filterExternallyScaled(workloads []Workload) []Workload {
 		})
 	}
 	for _, workload := range workloads {
-		if !slices.ContainsFunc(excludedWorkloads, func(wi workloadIdentifier) bool { return doesWorkloadMatchIdentifier(workload, wi) }) {
+		if slices.ContainsFunc(excludedWorkloads, func(wi workloadIdentifier) bool { return doesWorkloadMatchIdentifier(workload, wi) }) {
 			continue
 		}
 		result = append(result, workload)
