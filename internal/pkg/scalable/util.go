@@ -64,7 +64,7 @@ func filterExternallyScaled(workloads []Workload) []Workload {
 		})
 	}
 	for _, workload := range workloads {
-		if slices.ContainsFunc(excludedWorkloads, func(wi workloadIdentifier) bool { return doesWorkloadMatchIdentifier(workload, wi) }) {
+		if slices.ContainsFunc(excludedWorkloads, func(wid workloadIdentifier) bool { return doesWorkloadMatchIdentifier(workload, wid) }) {
 			continue
 		}
 		result = append(result, workload)
@@ -73,20 +73,20 @@ func filterExternallyScaled(workloads []Workload) []Workload {
 }
 
 // doesWorkloadMatchIdentifier checks if the workload matches the given workload identifier
-func doesWorkloadMatchIdentifier(workload Workload, wi workloadIdentifier) bool {
-	if wi.name != workload.GetName() {
+func doesWorkloadMatchIdentifier(workload Workload, wid workloadIdentifier) bool {
+	if wid.name != workload.GetName() {
 		return false
 	}
-	if wi.namespace != workload.GetNamespace() {
+	if wid.namespace != workload.GetNamespace() {
 		return false
 	}
-	if !(wi.gvk.Group == "" || wi.gvk.Group == workload.GroupVersionKind().Group) {
+	if !(wid.gvk.Group == "" || wid.gvk.Group == workload.GroupVersionKind().Group) {
 		return false
 	}
-	if !(wi.gvk.Version == "" || wi.gvk.Version == workload.GroupVersionKind().Version) {
+	if !(wid.gvk.Version == "" || wid.gvk.Version == workload.GroupVersionKind().Version) {
 		return false
 	}
-	if !(wi.gvk.Kind == "" || wi.gvk.Kind == workload.GroupVersionKind().Kind) {
+	if !(wid.gvk.Kind == "" || wid.gvk.Kind == workload.GroupVersionKind().Kind) {
 		return false
 	}
 	return true
