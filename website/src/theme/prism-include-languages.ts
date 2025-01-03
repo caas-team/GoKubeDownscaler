@@ -14,11 +14,11 @@ export default function prismIncludeLanguages(
 
   additionalLanguages.forEach((lang) => {
     if (lang === "mdx") {
-      // eslint-disable-next-line global-require, @typescript-eslint/no-require-imports
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("./languages/mdx");
       return;
     }
-    // eslint-disable-next-line global-require, @typescript-eslint/no-require-imports
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     require(`prismjs/components/prism-${lang}`);
   });
 
