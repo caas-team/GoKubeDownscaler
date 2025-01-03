@@ -188,11 +188,11 @@ func (c client) addWorkloadEvent(eventType, reason, id, message string, workload
 			Namespace: workload.GetNamespace(),
 		},
 		InvolvedObject: corev1.ObjectReference{
-			Kind:       workload.GetObjectKind().GroupVersionKind().Kind,
+			Kind:       workload.GroupVersionKind().Kind,
 			Namespace:  workload.GetNamespace(),
 			Name:       workload.GetName(),
 			UID:        workload.GetUID(),
-			APIVersion: workload.GetObjectKind().GroupVersionKind().GroupVersion().String(),
+			APIVersion: workload.GroupVersionKind().GroupVersion().String(),
 		},
 		Reason:         reason,
 		Message:        message,
