@@ -15,7 +15,7 @@ const (
 	annotationKedaPausedReplicas = "autoscaling.keda.sh/paused-replicas"
 )
 
-// getScaledObjects is the getResourceFunc for Keda ScaledObjects
+// getScaledObjects is the getResourcesFunc for Keda ScaledObjects
 func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	scaledobjects, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
@@ -28,9 +28,25 @@ func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Cont
 	return results, nil
 }
 
+// getScaledObject is the getResourceFunc for Keda ScaledObjects
+func getScaledObject(name string, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	var result Workload
+	so, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get scaledobjects: %w", err)
+	}
+	result = &replicaScaledWorkload{&scaledObject{so}}
+	return result, nil
+}
+
 // scaledObject is a wrapper for keda.sh/v1alpha1.ScaledObject to implement the replicaScaledResource interface
 type scaledObject struct {
 	*kedav1alpha1.ScaledObject
+}
+
+// GetResourceType returns the name of the workload type
+func (s *scaledObject) GetResourceType() string {
+	return "scaledObject"
 }
 
 // setReplicas sets the pausedReplicas annotation to the specified replicas. Changes won't be made on Kubernetes until update() is called

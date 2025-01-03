@@ -12,7 +12,7 @@ const (
 	labelMatchNone = "downscaler/match-none"
 )
 
-// getDaemonSets is the getResourceFunc for DaemonSets
+// getDaemonSets is the getResourcesFunc for DaemonSets
 func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	daemonsets, err := clientsets.Kubernetes.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
@@ -25,9 +25,25 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 	return results, nil
 }
 
+// getDaemonSet is the getResourceFunc for DaemonSets
+func getDaemonSet(name string, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	var result Workload
+	daemonset, err := clientsets.Kubernetes.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get daemonset: %w", err)
+	}
+	result = &daemonSet{daemonset}
+	return result, nil
+}
+
 // daemonSet is a wrapper for apps/v1.DeamonSet to implement the Workload interface
 type daemonSet struct {
 	*appsv1.DaemonSet
+}
+
+// GetResourceType returns the name of the workload type
+func (d *daemonSet) GetResourceType() string {
+	return "daemonset"
 }
 
 // ScaleUp scales the resource up

@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getStacks is the getResourceFunc for Zalando Stacks
+// getStacks is the getResourcesFunc for Zalando Stacks
 func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	stacks, err := clientsets.Zalando.ZalandoV1().Stacks(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
@@ -21,9 +21,25 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 	return results, nil
 }
 
+// getStack is the getResourceFunc for Zalando Stacks
+func getStack(name string, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	var result Workload
+	singleStack, err := clientsets.Zalando.ZalandoV1().Stacks(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get stack: %w", err)
+	}
+	result = &replicaScaledWorkload{&stack{singleStack}}
+	return result, nil
+}
+
 // stack is a wrapper for zalando.org/v1.Stack to implement the replicaScaledResource interface
 type stack struct {
 	*zalandov1.Stack
+}
+
+// GetResourceType returns the name of the workload type
+func (s *stack) GetResourceType() string {
+	return "stack"
 }
 
 // setReplicas sets the amount of replicas on the resource. Changes won't be made on Kubernetes until update() is called

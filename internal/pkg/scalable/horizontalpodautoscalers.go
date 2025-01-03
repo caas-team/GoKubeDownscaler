@@ -11,7 +11,7 @@ import (
 
 var errMinReplicasBoundsExceeded = errors.New("error: a HPAs minReplicas can only be set to int32 values larger than 1")
 
-// getHorizontalPodAutoscalers is the getResourceFunc for horizontalPodAutoscalers
+// getHorizontalPodAutoscalers is the getResourcesFunc for horizontalPodAutoscalers
 func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	var results []Workload
 	hpas, err := clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
@@ -24,9 +24,24 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 	return results, nil
 }
 
+// getHorizontalPodAutoscaler is the getResourceFunc for horizontalPodAutoscalers
+func getHorizontalPodAutoscaler(name string, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	var result Workload
+	hpa, err := clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get horizontalpodautoscaler: %w", err)
+	}
+	result = &replicaScaledWorkload{&horizontalPodAutoscaler{hpa}}
+	return result, nil
+}
+
 // horizontalPodAutoscaler is a wrapper for autoscaling/v2.HorizontalPodAutoscaler to implement the replicaScaledResource interface
 type horizontalPodAutoscaler struct {
 	*appsv1.HorizontalPodAutoscaler
+}
+
+func (h *horizontalPodAutoscaler) GetResourceType() string {
+	return "horizontalpodautoscaler"
 }
 
 // setReplicas sets the amount of replicas on the resource. Changes won't be made on Kubernetes until update() is called

@@ -19,11 +19,14 @@ var (
 	errNoReplicasSpecified       = errors.New("error: workload has no replicas set")
 )
 
-// getResourceFunc is a function that gets a specific resource as a Workload
-type getResourceFunc func(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error)
+// getResourcesFunc is a function that gets a specific resource as a Workload
+type (
+	getResourcesFunc func(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error)
+	getResourceFunc  func(name string, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error)
+)
 
-// GetWorkloads maps the resource name to an implementation specific getResourceFunc
-var GetWorkloads = map[string]getResourceFunc{
+// GetWorkloads maps the resource name to an implementation specific getResourcesFunc
+var GetWorkloads = map[string]getResourcesFunc{
 	"deployments":              getDeployments,
 	"statefulsets":             getStatefulSets,
 	"cronjobs":                 getCronJobs,
@@ -35,6 +38,21 @@ var GetWorkloads = map[string]getResourceFunc{
 	"rollouts":                 getRollouts,
 	"stacks":                   getStacks,
 	"prometheuses":             getPrometheuses,
+}
+
+// GetWorkload maps the resource name to an implementation specific getResourceFunc
+var GetWorkload = map[string]getResourceFunc{
+	"deployment":              getDeployment,
+	"statefulset":             getStatefulSet,
+	"cronjob":                 getCronJob,
+	"job":                     getJob,
+	"daemonset":               getDaemonSet,
+	"poddisruptionbudget":     getPodDisruptionBudget,
+	"horizontalpodautoscaler": getHorizontalPodAutoscaler,
+	"scaledobject":            getScaledObject,
+	"rollout":                 getRollout,
+	"stack":                   getStack,
+	"prometheus":              getPrometheus,
 }
 
 // scalableResource provides all functions needed to scale any type of resource
@@ -55,6 +73,8 @@ type scalableResource interface {
 	GetCreationTimestamp() metav1.Time
 	// SetAnnotations sets the annotations on the resource. Changes won't be made on Kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
+	// GetResourceType returns the type of the resource
+	GetResourceType() string
 }
 
 // Workload provides all functions needed to scale the workload
