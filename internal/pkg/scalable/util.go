@@ -48,19 +48,19 @@ func filterExternallyScaled(workloads []Workload) []Workload {
 	var excludedWorkloads []workloadIdentifier
 	var result []Workload
 	for _, workload := range workloads {
-		scaledObject, ok := getWorkloadAsScaledObject(workload)
-		if !ok {
+		scaledobject := getWorkloadAsScaledObject(workload)
+		if scaledobject == nil {
 			continue
 		}
 
 		excludedWorkloads = append(excludedWorkloads, workloadIdentifier{
 			gvk: schema.GroupVersionKind{
-				Kind:    scaledObject.Spec.ScaleTargetRef.Kind,
-				Group:   strings.Split(scaledObject.Spec.ScaleTargetRef.APIVersion, "/")[0],
-				Version: strings.Split(scaledObject.Spec.ScaleTargetRef.APIVersion, "/")[1],
+				Kind:    scaledobject.Spec.ScaleTargetRef.Kind,
+				Group:   strings.Split(scaledobject.Spec.ScaleTargetRef.APIVersion, "/")[0],
+				Version: strings.Split(scaledobject.Spec.ScaleTargetRef.APIVersion, "/")[1],
 			},
-			name:      scaledObject.Spec.ScaleTargetRef.Name,
-			namespace: scaledObject.Namespace,
+			name:      scaledobject.Spec.ScaleTargetRef.Name,
+			namespace: scaledobject.Namespace,
 		})
 	}
 	for _, workload := range workloads {
@@ -72,6 +72,7 @@ func filterExternallyScaled(workloads []Workload) []Workload {
 	return result
 }
 
+// doesWorkloadMatchIdentifier checks if the workload matches the given workload identifier
 func doesWorkloadMatchIdentifier(workload Workload, wi workloadIdentifier) bool {
 	if wi.name != workload.GetName() {
 		return false
@@ -91,16 +92,17 @@ func doesWorkloadMatchIdentifier(workload Workload, wi workloadIdentifier) bool 
 	return true
 }
 
-func getWorkloadAsScaledObject(workload Workload) (*scaledObject, bool) {
+// getWorkloadAsScaledObject tries to get the given workload as an scaled object
+func getWorkloadAsScaledObject(workload Workload) *scaledObject {
 	replicaScaled, ok := workload.(*replicaScaledWorkload)
 	if !ok {
-		return nil, false
+		return nil
 	}
 	scaledobject, ok := replicaScaled.replicaScaledResource.(*scaledObject)
 	if !ok {
-		return nil, false
+		return nil
 	}
-	return scaledobject, true
+	return scaledobject
 }
 
 // isMatchingLabels check if the workload is matching any of the specified labels
