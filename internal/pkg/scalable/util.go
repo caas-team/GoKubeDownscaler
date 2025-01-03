@@ -3,9 +3,12 @@ package scalable
 import (
 	"fmt"
 	"log/slog"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
@@ -30,7 +33,76 @@ func FilterExcluded(workloads []Workload, includeLabels values.RegexList, exclud
 		}
 		results = append(results, workload)
 	}
+	results = filterExternallyScaled(results)
 	return results
+}
+
+type workloadIdentifier struct {
+	gvk       schema.GroupVersionKind
+	name      string
+	namespace string
+}
+
+// filterExternallyScaled filters out workloads which are scaled via external sources like a scaledObject
+func filterExternallyScaled(workloads []Workload) []Workload {
+	var excludedWorkloads []workloadIdentifier
+	var result []Workload
+	for _, workload := range workloads {
+		scaledobject := getWorkloadAsScaledObject(workload)
+		if scaledobject == nil {
+			continue
+		}
+
+		excludedWorkloads = append(excludedWorkloads, workloadIdentifier{
+			gvk: schema.GroupVersionKind{
+				Kind:    scaledobject.Spec.ScaleTargetRef.Kind,
+				Group:   strings.Split(scaledobject.Spec.ScaleTargetRef.APIVersion, "/")[0],
+				Version: strings.Split(scaledobject.Spec.ScaleTargetRef.APIVersion, "/")[1],
+			},
+			name:      scaledobject.Spec.ScaleTargetRef.Name,
+			namespace: scaledobject.Namespace,
+		})
+	}
+	for _, workload := range workloads {
+		if slices.ContainsFunc(excludedWorkloads, func(wid workloadIdentifier) bool { return doesWorkloadMatchIdentifier(workload, wid) }) {
+			continue
+		}
+		result = append(result, workload)
+	}
+	return result
+}
+
+// doesWorkloadMatchIdentifier checks if the workload matches the given workload identifier
+func doesWorkloadMatchIdentifier(workload Workload, wid workloadIdentifier) bool {
+	if wid.name != workload.GetName() {
+		return false
+	}
+	if wid.namespace != workload.GetNamespace() {
+		return false
+	}
+	if !(wid.gvk.Group == "" || wid.gvk.Group == workload.GroupVersionKind().Group) {
+		return false
+	}
+	if !(wid.gvk.Version == "" || wid.gvk.Version == workload.GroupVersionKind().Version) {
+		return false
+	}
+	if !(wid.gvk.Kind == "" || wid.gvk.Kind == workload.GroupVersionKind().Kind) {
+		return false
+	}
+	return true
+}
+
+// getWorkloadAsScaledObject tries to get the given workload as an scaled object
+func getWorkloadAsScaledObject(workload Workload) *scaledObject {
+	replicaScaled, ok := workload.(*replicaScaledWorkload)
+	if !ok {
+		return nil
+	}
+	scaledobject, ok := replicaScaled.replicaScaledResource.(*scaledObject)
+	if !ok {
+		return nil
+	}
+	return scaledobject
 }
 
 // isMatchingLabels check if the workload is matching any of the specified labels
