@@ -16,6 +16,10 @@ jobs:
         uses: actions/setup-go@v5.0.2
         with:
           go-version-file: "go.mod"
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: "website/package.json"
       - name: Install Pre-Commit
         run: pip install pre-commit
       - name: Install dependencies
