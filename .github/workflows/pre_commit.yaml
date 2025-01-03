@@ -24,6 +24,8 @@ jobs:
         run: pip install pre-commit
       - name: Install dependencies
         run: |
+          # install required node packages
+          npm --prefix website install
           # install required go packages
           go mod tidy
           # install gofumpt
