@@ -1,6 +1,7 @@
 ---
 title: affinity
 id: affinity
+globalReference: docs-helm-affinity
 ---
 
 # affinity
@@ -18,11 +19,11 @@ affinity: {}
 
 By default the `affinity` field is empty.
 
-You can add affinity rules to this field that give you a few more options for pod scheduling than [nodeSelector][nodeSelector].
+You can add affinity rules to this field that give you a few more options for pod scheduling than (ref:docs-helm-node-selector)(ref:docs-helm-node-selector).
 
 ## Node affinity
 
-You can use Node affinity to achieve something very similar to the [nodeSelector][nodeSelector].
+You can use Node affinity to achieve something very similar to the (ref:docs-helm-node-selector)(ref:docs-helm-node-selector).
 
 ```yaml
 affinity:
@@ -57,4 +58,4 @@ affinity:
 
 With this configuration the GoKubeDownscaler will only try to deploy the pods on a Node where no other pod has the label `env=test`.
 
-For more information on affinity you can reference [the official Kubernetes documentation][kubernetes-affinity].
+For more information on affinity you can reference [the official Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity).

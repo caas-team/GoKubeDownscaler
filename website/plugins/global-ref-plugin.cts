@@ -15,7 +15,8 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
     filePath,
   });
 
-  if (!result.frontMatter.globalReference) return result;
+  // file is not part of the docs or guides
+  if (!filePath.includes("website/content/")) return result;
 
   // generate urlPath from filePath
   const urlPath = filePath
@@ -23,6 +24,11 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
     .split("/")
     .map((part) => encodeURIComponent(part))
     .join("/");
+
+  if (!result.frontMatter.globalReference) {
+    console.warn("the file '%s' does not have a globalReference set", urlPath);
+    return result;
+  }
 
   const referenceId = result.frontMatter.globalReference as string;
   if (

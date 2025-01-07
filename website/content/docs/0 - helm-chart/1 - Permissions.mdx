@@ -1,13 +1,14 @@
 ---
 title: Permissions
 id: permissions
+globalReference: docs-helm-permissions
 ---
 
 # Permissions
 
 The GoKubeDownscaler needs certain permissions to scale workloads.
 
-If [constrainedDownscaler][constrainedDownscaler] is set to true the Helm Chart will create roles for each namespace defined in [constrainedNamespaces][constrainedNamespaces].
+If (ref:docs-helm-constrained-downscaler)(ref:docs-helm-constrained-downscaler) is set to true the Helm Chart will create roles for each namespace defined in (ref:docs-helm-constrained-namespaces)(ref:docs-helm-constrained-namespaces).
 
 Otherwise it will always create a cluster role with the needed permissions.
 
@@ -106,7 +107,7 @@ If you are using a clusterwide installation of the GoKubeDownscaler it will also
 
 ## Workload Permissions
 
-The Helm Chart assigns get, watch, list, update and patch permissions for the workloads defined in [includedResources][includedResources].
+The Helm Chart assigns get, watch, list, update and patch permissions for the workloads defined in (ref:docs-helm-included-resources)(ref:docs-helm-included-resources).
 
 These resources can be:
 

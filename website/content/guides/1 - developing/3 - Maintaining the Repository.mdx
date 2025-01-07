@@ -16,7 +16,7 @@ For documentation on the workflows see [this documentation page](ref:docs-workfl
 
 The process to releasing a new version is almost completely automated.
 There are multiple workflows that handle the release process.
-All you need to do is to bump the [semver][semver] of either
+All you need to do is to bump the [semver](https://semver.org) of either
 the Helm chart version(`.version`) or the app version(`.appVersion`)
 within the [Chart.yaml](repo:deployments/chart/Chart.yaml)(`./deployments/chart/Chart.yaml`).
 Once merged into main the [workflows](ref:docs-workflows) will automatically start releasing the new version.

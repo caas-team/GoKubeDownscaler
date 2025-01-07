@@ -1,6 +1,7 @@
 ---
 title: image
 id: image
+globalReference: docs-helm-image
 ---
 
 # image
@@ -23,6 +24,6 @@ image:
 
 Changing the value of `repository` will result in the images being pulled from another location. It is advised to leave this as is unless you want or need to pull the images from a private registry of your choice.
 
-Changing the value of `tag` will deploy a different version of the GoKubeDownscaler. If left empty like it is by default the GoKubeDownscaler will use the [appVersion][chart-appversion] of the currently used Helm Chart.
+Changing the value of `tag` will deploy a different version of the GoKubeDownscaler. If left empty like it is by default the GoKubeDownscaler will use the [appVersion](repo:deployments/chart/Chart.yaml#L10) of the currently used Helm Chart.
 
-You can find all versions of the GoKubeDownscaler [on the github releases page][github-releases].
+You can find all versions of the GoKubeDownscaler [on the github releases page](https://github.com/caas-team/GoKubeDownscaler/releases).
