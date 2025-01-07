@@ -16,14 +16,24 @@ jobs:
         uses: actions/setup-go@v5.0.2
         with:
           go-version-file: "go.mod"
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: "website/package.json"
+      - name: Install Pre-Commit
+        run: pip install pre-commit
       - name: Install dependencies
         run: |
+          # install required node packages
+          npm --prefix website install
           # install required go packages
           go mod tidy
           # install gofumpt
           go install mvdan.cc/gofumpt@latest
           # install golangci-lint
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+      - name: Autoupdate hooks
+        run: pre-commit autoupdate
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
         env:

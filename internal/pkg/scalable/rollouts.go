@@ -21,7 +21,7 @@ func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) 
 	return results, nil
 }
 
-// rollout is a wrapper for argoproj.io/v1alpha1.Rollout to implement the replicaScaledResource interface
+// rollout is a wrapper for rollout.v1alpha1.argoproj.io to implement the replicaScaledResource interface
 type rollout struct {
 	*argov1alpha1.Rollout
 }
