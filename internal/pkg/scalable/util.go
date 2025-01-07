@@ -3,7 +3,6 @@ package scalable
 import (
 	"fmt"
 	"log/slog"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -11,12 +10,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-const (
-	annotationOriginalReplicas = "downscaler/original-replicas"
-)
+const annotationOriginalReplicas = "downscaler/original-replicas"
 
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads
 func FilterExcluded(workloads []Workload, includeLabels values.RegexList, excludedNamespaces values.RegexList, excludedWorkloads values.RegexList) []Workload {
+	externallyScaled := getExternallyScaled(workloads)
+
 	var results []Workload
 	for _, workload := range workloads {
 		if !isMatchingLabels(workload, includeLabels) {
@@ -31,9 +30,12 @@ func FilterExcluded(workloads []Workload, includeLabels values.RegexList, exclud
 			slog.Debug("the workloads name is excluded, excluding it from being scanned", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 			continue
 		}
+		if isExternallyScaled(workload, externallyScaled) {
+			slog.Debug("the workload is scaled externally, excluding it from being scanned", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			continue
+		}
 		results = append(results, workload)
 	}
-	results = filterExternallyScaled(results)
 	return results
 }
 
@@ -43,17 +45,16 @@ type workloadIdentifier struct {
 	namespace string
 }
 
-// filterExternallyScaled filters out workloads which are scaled via external sources like a scaledObject
-func filterExternallyScaled(workloads []Workload) []Workload {
-	var excludedWorkloads []workloadIdentifier
-	var result []Workload
+// getExternallyScaled returns identifiers for workloads which are being scaled externally and should therefore be excluded
+func getExternallyScaled(workloads []Workload) []workloadIdentifier {
+	var externallyScaled []workloadIdentifier
 	for _, workload := range workloads {
 		scaledobject := getWorkloadAsScaledObject(workload)
 		if scaledobject == nil {
 			continue
 		}
 
-		excludedWorkloads = append(excludedWorkloads, workloadIdentifier{
+		externallyScaled = append(externallyScaled, workloadIdentifier{
 			gvk: schema.GroupVersionKind{
 				Kind:    scaledobject.Spec.ScaleTargetRef.Kind,
 				Group:   strings.Split(scaledobject.Spec.ScaleTargetRef.APIVersion, "/")[0],
@@ -63,33 +64,30 @@ func filterExternallyScaled(workloads []Workload) []Workload {
 			namespace: scaledobject.Namespace,
 		})
 	}
-	for _, workload := range workloads {
-		if slices.ContainsFunc(excludedWorkloads, func(wid workloadIdentifier) bool { return doesWorkloadMatchIdentifier(workload, wid) }) {
-			continue
-		}
-		result = append(result, workload)
-	}
-	return result
+	return externallyScaled
 }
 
-// doesWorkloadMatchIdentifier checks if the workload matches the given workload identifier
-func doesWorkloadMatchIdentifier(workload Workload, wid workloadIdentifier) bool {
-	if wid.name != workload.GetName() {
-		return false
+// isExternallyScaled checks if the workload matches any of the given workload identifiers
+func isExternallyScaled(workload Workload, externallyScaled []workloadIdentifier) bool {
+	for _, wid := range externallyScaled {
+		if wid.name != workload.GetName() {
+			continue
+		}
+		if wid.namespace != workload.GetNamespace() {
+			continue
+		}
+		if !(wid.gvk.Group == "" || wid.gvk.Group == workload.GroupVersionKind().Group) {
+			continue
+		}
+		if !(wid.gvk.Version == "" || wid.gvk.Version == workload.GroupVersionKind().Version) {
+			continue
+		}
+		if !(wid.gvk.Kind == "" || wid.gvk.Kind == workload.GroupVersionKind().Kind) {
+			continue
+		}
+		return true
 	}
-	if wid.namespace != workload.GetNamespace() {
-		return false
-	}
-	if !(wid.gvk.Group == "" || wid.gvk.Group == workload.GroupVersionKind().Group) {
-		return false
-	}
-	if !(wid.gvk.Version == "" || wid.gvk.Version == workload.GroupVersionKind().Version) {
-		return false
-	}
-	if !(wid.gvk.Kind == "" || wid.gvk.Kind == workload.GroupVersionKind().Kind) {
-		return false
-	}
-	return true
+	return false
 }
 
 // getWorkloadAsScaledObject tries to get the given workload as an scaled object
