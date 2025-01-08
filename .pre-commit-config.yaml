@@ -27,30 +27,25 @@ repos:
         args: [--config, .golangci.yaml, --, --fix]
 
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.3.3
+    rev: v3.4.2
     hooks:
       - id: prettier
-        files: \.md$
+        files: \.(md|mdx)$
 
   - repo: local
     hooks:
       - id: prevent-todo-comments
         name: prevent todo comments
-        entry: '\/\/ *(TODO|FIXME)\b' # matches a golang comment beginning with "TODO" or "FIXME"
+        entry: '( |^)(//|#|<!--|/\*)\s*(TODO|FIXME)\b' # matches a comment beginning with "TODO" or "FIXME"
         language: pygrep
-        files: \.go$
+        files: \.(go|md|mdx|yaml|json|js|ts|jsx|tsx)$
       - id: prevent-too-small-headings
         name: prevent too small headings
-        entry: "^#{5,} " # matches a h5 or smaller markdown heading
+        entry: "^#{5,} " # matches an h5 or smaller markdown heading
         language: pygrep
-        files: \.md$
-      - id: prevent-overly-nested-hierarchy
-        name: prevent overly nested hierarchy
-        entry: "^(  ){2,}- " # matches a markdown list with 2 or more indentations
-        language: pygrep
-        files: \.md$
-      - id: prevent-invalid-alert-types
-        name: prevent invalid alert types
-        entry: '(?i)^> \[!(?!\b(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\b).+\]' # matches a github markdown callout/alert that doesn't use one of the supported keywords
-        language: pygrep
-        files: \.md$
+        files: \.(md|mdx)$
+      - id: eslint
+        name: Run ESLint
+        entry: npx eslint --fix --config=website/eslint.config.mjs "website/**/*.{js,jsx,ts,tsx,cts,cjs}"
+        language: node
+        files: website/.*\.(js|jsx|ts|tsx|cts|cjs)$

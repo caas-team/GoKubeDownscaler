@@ -25,7 +25,7 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 	return results, nil
 }
 
-// podDisruptionBudget is a wrapper for policy/v1.PodDisruptionBudget to implement the Workload interface
+// podDisruptionBudget is a wrapper for poddisruptionbudget.v1.policy to implement the Workload interface
 type podDisruptionBudget struct {
 	*policy.PodDisruptionBudget
 }

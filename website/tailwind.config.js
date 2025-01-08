@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+// eslint-disable-next-line no-undef
 module.exports = {
   content: ["./src/**/*.tsx"],
   corePlugins: {
@@ -12,7 +13,7 @@ module.exports = {
         magenta: {
           DEFAULT: "#E20074",
           hover: "#c00063",
-          active: "#9e0051"
+          active: "#9e0051",
         },
       },
     },
@@ -21,4 +22,4 @@ module.exports = {
     },
   },
   plugins: [],
-}
+};
