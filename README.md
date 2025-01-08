@@ -1,19 +1,25 @@
 # GoKubeDownscaler
 
+<!-- markdownlint-disable MD033 -->
+
 <a target="_blank" href="/../../releases/" title="GitHub Release"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/caas-team/GoKubeDownscaler?style=flat"></a>
 <a target="_blank" href="./LICENSE" title="GitHub License"><img alt="GitHub License" src="https://img.shields.io/github/license/caas-team/GoKubeDownscaler?style=flat"></a>
 <a target="_blank" href="/../../graphs/contributors" title="Contributors"><img alt="Contributors" src="https://img.shields.io/github/contributors/caas-team/GoKubeDownscaler?style=flat"></a>
 <a target="_blank" href="/../../stargazers" title="Stars"><img alt="Stars" src="https://img.shields.io/github/stars/caas-team/GoKubeDownscaler?style=flat"></a>
 <a target="_blank" href="https://communityinviter.com/apps/kube-downscaler/kube-downscaler" title="Slack Workspace"><img alt="Slack Workspace" src="https://img.shields.io/badge/slack-kube--downscaler-dark_green?style=flat&logo=slack"></a>
 
+<!-- markdownlint-enable MD033 -->
+
 A horizontal autoscaler for Kubernetes workloads.
-This is a golang port of the popular [(py-)kube-downscaler](https://github.com/caas-team/py-kube-downscaler) with improvements and quality of life changes.
+This is a golang port of the popular [(py-)kube-downscaler](https://github.com/caas-team/py-kube-downscaler)
+with improvements and quality of life changes.
 
 ## Documentation and Guides
 
 The Documentation and Guides can be found on [our website](https://caas-team.github.io/GoKubeDownscaler).
 
-An Offline copy of the documentation can be found in [`website/content/docs`](./website/content/docs) and [`website/content/guides`](./website/content/guides).
+An Offline copy of the documentation can be found in
+[`website/content/docs`](./website/content/docs) and [`website/content/guides`](./website/content/guides).
 In there are Markdown files which can be viewed in any text editor or inside of a Markdown Viewer.
 
 ## Installation

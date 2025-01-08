@@ -8,12 +8,6 @@ repos:
       - id: no-commit-to-branch
         args: [--branch, main]
 
-  - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.15.0
-    hooks:
-      - id: markdownlint-cli2-rules-docker
-        args: [--fix]
-
   - repo: https://github.com/tekwizely/pre-commit-golang
     rev: v1.0.0-rc.1
     hooks:
@@ -31,6 +25,12 @@ repos:
     hooks:
       - id: prettier
         files: \.(md|mdx)$
+
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.15.0
+    hooks:
+      - id: markdownlint-cli2-rules-docker
+        args: [--fix]
 
   - repo: local
     hooks:
