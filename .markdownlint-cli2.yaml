@@ -1,2 +1,19 @@
+config:
+  # inline-html
+  MD033:
+    allowed_elements:
+      - DocCardList
+      - GithubLabel
+  # line-length
+  MD013:
+    # set max length of lines to 120, which is a bit more reasonable than the 80 (default)
+    line_length: 120
+  # single-title
+  MD025:
+    # to ignore the title field in frontmatter, since we put the title in again anyways
+    front_matter_title: ""
+  # first-line-heading
+  # disable because of frontmatter
+  MD041: false
 customRules:
   - markdownlint-rule-titlecase
