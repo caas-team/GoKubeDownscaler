@@ -25,6 +25,6 @@ helm install go-kube-downscaler caas-team/go-kube-downscaler
 
 ## Customizing Your Installation
 
-You can change a lot about your installation of the GoKubeDownscaler.
+You can change a lot  about your installation of the GoKubeDownscaler.
 
 You can find information on how to do that on our [documentation page](https://caas-team.github.io/GoKubeDownscaler/).
