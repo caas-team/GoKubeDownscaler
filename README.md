@@ -18,8 +18,7 @@ with improvements and quality of life changes.
 
 The Documentation and Guides can be found on [our website](https://caas-team.github.io/GoKubeDownscaler).
 
-An Offline copy of the documentation can be found in
-[`website/content/docs`](./website/content/docs) and [`website/content/guides`](./website/content/guides).
+An Offline copy of the documentation can be found in [`website/content/docs`](./website/content/docs) and [`website/content/guides`](./website/content/guides).
 In there are Markdown files which can be viewed in any text editor or inside of a Markdown Viewer.
 
 ## Installation

@@ -49,3 +49,8 @@ repos:
         entry: npx eslint --fix --config=website/eslint.config.mjs "website/**/*.{js,jsx,ts,tsx,cts,cjs}"
         language: node
         files: website/.*\.(js|jsx|ts|tsx|cts|cjs)$
+      - id: eslint
+        name: Run ESLint
+        entry: npx eslint --fix --config=website/eslint.config.mjs "website/**/*.{js,jsx,ts,tsx,cts,cjs}"
+        language: node
+        files: website/.*\.(js|jsx|ts|tsx|cts|cjs)$
