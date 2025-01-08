@@ -27,7 +27,7 @@ repos:
         files: \.(md|mdx)$
 
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.15.0
+    rev: v0.17.1
     hooks:
       - id: markdownlint-cli2-rules-docker
         args: [--fix]
