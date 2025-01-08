@@ -40,7 +40,10 @@ Try to stick to golang best practices and standards:
 
 - [Package structure standards](https://github.com/golang-standards/project-layout)
 - Use guard clauses if applicable
-- Try to avoid using else. Most of the time these can be replaced by just placing the else block content directly after the if or by refactoring the if block to be an additional function.
+- Try to avoid using else.
+  Most of the time these can be replaced by
+  just placing the else block content directly after the if or
+  by refactoring the if block to be an additional function.
 - Comments on funcs/types (esp. public ones)
 - Only make functions public if necessary
 
@@ -59,12 +62,17 @@ Set yourself and any other collaborators as assignee.
 ## Pre Commit
 
 It is recommended to install pre-commit.
-This ensures that formatting is consistent, you don't commit to protected branches and you don't accidentally commit broken code or new functionality without changing the tests.
+This ensures that
+formatting is consistent,
+you don't commit to protected branches and
+you don't accidentally commit broken code or new functionality without changing the tests.
 The installation process is on [our website](https://caas-team.github.io/GoKubeDownscaler/guides/developing#setting-up-pre-commit).
 
 ## Versioning
 
-New releases are automatically created when the appVersion in the Chart.yaml is updated in the main branch. To merge a pull request which when merged would result in a new release, the [`new release` label](https://github.com/caas-team/GoKubeDownscaler/labels/new%20release) has to be set on the PR.
+New releases are automatically created when the appVersion in the Chart.yaml is updated in the main branch.
+To merge a pull request which when merged would result in a new release,
+the [`new release` label](https://github.com/caas-team/GoKubeDownscaler/labels/new%20release) has to be set on the PR.
 
 Releases are following the semver versioning standard:
 

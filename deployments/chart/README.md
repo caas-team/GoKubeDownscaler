@@ -1,8 +1,9 @@
-# go kubernetes Downscaler - Helm Chart
+# Go Kubernetes Downscaler - Helm Chart
 
 This is the official Helm Chart for the `GoKubeDownscaler`.
 
-In order to installing the GoKubeDownscaler using our Helm Chart you only need to have Helm installed on a system and have access to a Kubernetes cluster in some kind of way.
+In order to installing the GoKubeDownscaler using our Helm Chart
+you only need to have Helm installed on a system and have access to a Kubernetes cluster in some kind of way.
 
 ## Installation
 
@@ -22,7 +23,7 @@ After that you just need to run the following command:
 helm install go-kube-downscaler caas-team/go-kube-downscaler
 ```
 
-## Customizing your installation
+## Customizing Your Installation
 
 You can change a lot about your installation of the GoKubeDownscaler.
 
