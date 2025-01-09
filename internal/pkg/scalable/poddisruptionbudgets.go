@@ -14,13 +14,13 @@ import (
 
 // getPodDisruptionBudgets is the getResourceFunc for podDisruptionBudget
 func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	var results []Workload
 	poddisruptionbudgets, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get poddisruptionbudgets: %w", err)
 	}
-	for _, item := range poddisruptionbudgets.Items {
-		results = append(results, &podDisruptionBudget{&item})
+	results := make([]Workload, len(poddisruptionbudgets.Items))
+	for i, item := range poddisruptionbudgets.Items {
+		results[i] = &podDisruptionBudget{&item}
 	}
 	return results, nil
 }

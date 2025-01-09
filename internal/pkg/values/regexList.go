@@ -10,13 +10,14 @@ type RegexList []*regexp.Regexp
 
 func (r *RegexList) Set(text string) error {
 	entries := strings.Split(text, ",")
-	for _, entry := range entries {
+	*r = make(RegexList, len(entries))
+	for i, entry := range entries {
 		entry = strings.TrimSpace(entry)
 		re, err := regexp.Compile(entry)
 		if err != nil {
 			return fmt.Errorf("failed to compile stringlist entry as a regex: %w", err)
 		}
-		*r = append(*r, re)
+		(*r)[i] = re
 	}
 	return nil
 }
