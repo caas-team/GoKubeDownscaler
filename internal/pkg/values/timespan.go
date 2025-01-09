@@ -41,8 +41,8 @@ func (t *timeSpans) inTimeSpans() bool {
 
 func (t *timeSpans) Set(value string) error {
 	spans := strings.Split(value, ",")
-	timespans := make([]TimeSpan, len(spans))
-	for i, timespanText := range spans {
+	timespans := make([]TimeSpan, 0, len(spans))
+	for _, timespanText := range spans {
 		timespanText = strings.TrimSpace(timespanText)
 
 		if isAbsoluteTimestamp(timespanText) {
@@ -51,7 +51,7 @@ func (t *timeSpans) Set(value string) error {
 			if err != nil {
 				return fmt.Errorf("failed to parse absolute timespan: %w", err)
 			}
-			timespans[i] = timespan
+			timespans = append(timespans, timespan)
 			continue
 		}
 
@@ -60,7 +60,7 @@ func (t *timeSpans) Set(value string) error {
 		if err != nil {
 			return fmt.Errorf("failed to parse relative timespan: %w", err)
 		}
-		timespans[i] = timespan
+		timespans = append(timespans, timespan)
 	}
 	*t = timeSpans(timespans)
 	return nil

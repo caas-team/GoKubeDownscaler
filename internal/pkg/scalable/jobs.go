@@ -14,9 +14,9 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 	if err != nil {
 		return nil, fmt.Errorf("failed to get jobs: %w", err)
 	}
-	results := make([]Workload, len(jobs.Items))
-	for i, item := range jobs.Items {
-		results[i] = &suspendScaledWorkload{&job{&item}}
+	results := make([]Workload, 0, len(jobs.Items))
+	for _, item := range jobs.Items {
+		results = append(results, &suspendScaledWorkload{&job{&item}})
 	}
 	return results, nil
 }

@@ -14,9 +14,9 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cronjobs: %w", err)
 	}
-	results := make([]Workload, len(cronjobs.Items))
-	for i, item := range cronjobs.Items {
-		results[i] = &suspendScaledWorkload{&cronJob{&item}}
+	results := make([]Workload, 0, len(cronjobs.Items))
+	for _, item := range cronjobs.Items {
+		results = append(results, &suspendScaledWorkload{&cronJob{&item}})
 	}
 	return results, nil
 }

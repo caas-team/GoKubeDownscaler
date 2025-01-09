@@ -18,9 +18,9 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 	if err != nil {
 		return nil, fmt.Errorf("failed to get daemonsets: %w", err)
 	}
-	results := make([]Workload, len(daemonsets.Items))
-	for i, item := range daemonsets.Items {
-		results[i] = &daemonSet{&item}
+	results := make([]Workload, 0, len(daemonsets.Items))
+	for _, item := range daemonsets.Items {
+		results = append(results, &daemonSet{&item})
 	}
 	return results, nil
 }

@@ -14,9 +14,9 @@ func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rollouts: %w", err)
 	}
-	results := make([]Workload, len(rollouts.Items))
-	for i, item := range rollouts.Items {
-		results[i] = &replicaScaledWorkload{&rollout{&item}}
+	results := make([]Workload, 0, len(rollouts.Items))
+	for _, item := range rollouts.Items {
+		results = append(results, &replicaScaledWorkload{&rollout{&item}})
 	}
 	return results, nil
 }

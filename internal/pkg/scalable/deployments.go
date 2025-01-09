@@ -14,9 +14,9 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 	if err != nil {
 		return nil, fmt.Errorf("failed to get deployments: %w", err)
 	}
-	results := make([]Workload, len(deployments.Items))
-	for i, item := range deployments.Items {
-		results[i] = &replicaScaledWorkload{&deployment{&item}}
+	results := make([]Workload, 0, len(deployments.Items))
+	for _, item := range deployments.Items {
+		results = append(results, &replicaScaledWorkload{&deployment{&item}})
 	}
 	return results, nil
 }
