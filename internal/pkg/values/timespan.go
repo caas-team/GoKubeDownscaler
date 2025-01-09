@@ -41,7 +41,7 @@ func (t *timeSpans) inTimeSpans() bool {
 
 func (t *timeSpans) Set(value string) error {
 	spans := strings.Split(value, ",")
-	var timespans []TimeSpan
+	timespans := make([]TimeSpan, 0, len(spans))
 	for _, timespanText := range spans {
 		timespanText = strings.TrimSpace(timespanText)
 

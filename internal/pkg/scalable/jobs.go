@@ -10,13 +10,13 @@ import (
 
 // getDeployments is the getResourceFunc for Jobs
 func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	var results []Workload
 	jobs, err := clientsets.Kubernetes.BatchV1().Jobs(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get jobs: %w", err)
 	}
-	for _, item := range jobs.Items {
-		results = append(results, &suspendScaledWorkload{&job{&item}})
+	results := make([]Workload, 0, len(jobs.Items))
+	for i := range jobs.Items {
+		results = append(results, &suspendScaledWorkload{&job{&jobs.Items[i]}})
 	}
 	return results, nil
 }

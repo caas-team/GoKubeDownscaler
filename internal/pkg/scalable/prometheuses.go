@@ -10,13 +10,13 @@ import (
 
 // getPrometheuses is the getResourceFunc for Prometheuses
 func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	var results []Workload
 	prometheuses, err := clientsets.Monitoring.MonitoringV1().Prometheuses(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get prometheuses: %w", err)
 	}
-	for _, item := range prometheuses.Items {
-		results = append(results, &replicaScaledWorkload{&prometheus{item}})
+	results := make([]Workload, 0, len(prometheuses.Items))
+	for i := range prometheuses.Items {
+		results = append(results, &replicaScaledWorkload{&prometheus{prometheuses.Items[i]}})
 	}
 	return results, nil
 }
