@@ -22,8 +22,8 @@ func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Cont
 		return nil, fmt.Errorf("failed to get scaledobjects: %w", err)
 	}
 	results := make([]Workload, 0, len(scaledobjects.Items))
-	for _, item := range scaledobjects.Items {
-		results = append(results, &replicaScaledWorkload{&scaledObject{&item}})
+	for i := range scaledobjects.Items {
+		results = append(results, &replicaScaledWorkload{&scaledObject{&scaledobjects.Items[i]}})
 	}
 	return results, nil
 }

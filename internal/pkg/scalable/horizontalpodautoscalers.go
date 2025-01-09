@@ -18,8 +18,8 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 		return nil, fmt.Errorf("failed to get horizontalpodautoscalers: %w", err)
 	}
 	results := make([]Workload, 0, len(hpas.Items))
-	for _, item := range hpas.Items {
-		results = append(results, &replicaScaledWorkload{&horizontalPodAutoscaler{&item}})
+	for i := range hpas.Items {
+		results = append(results, &replicaScaledWorkload{&horizontalPodAutoscaler{&hpas.Items[i]}})
 	}
 	return results, nil
 }

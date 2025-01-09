@@ -15,8 +15,8 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 		return nil, fmt.Errorf("failed to get stacks: %w", err)
 	}
 	results := make([]Workload, 0, len(stacks.Items))
-	for _, item := range stacks.Items {
-		results = append(results, &replicaScaledWorkload{&stack{&item}})
+	for i := range stacks.Items {
+		results = append(results, &replicaScaledWorkload{&stack{&stacks.Items[i]}})
 	}
 	return results, nil
 }

@@ -15,8 +15,8 @@ func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Conte
 		return nil, fmt.Errorf("failed to get statefulsets: %w", err)
 	}
 	results := make([]Workload, 0, len(statefulsets.Items))
-	for _, item := range statefulsets.Items {
-		results = append(results, &replicaScaledWorkload{&statefulSet{&item}})
+	for i := range statefulsets.Items {
+		results = append(results, &replicaScaledWorkload{&statefulSet{&statefulsets.Items[i]}})
 	}
 	return results, nil
 }

@@ -15,8 +15,8 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 		return nil, fmt.Errorf("failed to get prometheuses: %w", err)
 	}
 	results := make([]Workload, 0, len(prometheuses.Items))
-	for _, item := range prometheuses.Items {
-		results = append(results, &replicaScaledWorkload{&prometheus{item}})
+	for i := range prometheuses.Items {
+		results = append(results, &replicaScaledWorkload{&prometheus{prometheuses.Items[i]}})
 	}
 	return results, nil
 }

@@ -19,8 +19,8 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 		return nil, fmt.Errorf("failed to get poddisruptionbudgets: %w", err)
 	}
 	results := make([]Workload, 0, len(poddisruptionbudgets.Items))
-	for _, item := range poddisruptionbudgets.Items {
-		results = append(results, &podDisruptionBudget{&item})
+	for i := range poddisruptionbudgets.Items {
+		results = append(results, &podDisruptionBudget{&poddisruptionbudgets.Items[i]})
 	}
 	return results, nil
 }
