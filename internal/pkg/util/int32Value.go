@@ -1,4 +1,4 @@
-package values
+package util
 
 import (
 	"fmt"
@@ -14,6 +14,7 @@ func (i *Int32Value) Set(s string) error {
 	}
 	// #nosec G115
 	*i = Int32Value(v)
+
 	return nil
 }
 
