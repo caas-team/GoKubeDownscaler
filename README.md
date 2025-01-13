@@ -39,7 +39,9 @@ This section covers the basics of developing on this repo, a more detailed guide
 
 Please read the [contribution manifest](./CONTRIBUTING.md).
 
-### Cloning the Repository
+Please read the [contribution manifest](./CONTRIBUTING.md).
+
+### Cloning the repository
 
 ```bash
 git clone https://github.com/caas-team/GoKubeDownscaler.git

@@ -1,0 +1,56 @@
+---
+title: includedResources
+id: includedResources
+globalReference: docs-helm-included-resources
+---
+
+# includedResources
+
+The `includedResources` value defines all the resource types that the GoKubeDownscaler is supposed to be able to handle.
+
+:::info
+The default value for `includedResources` is:
+
+```yaml
+includedResources:
+  - deployments
+```
+
+:::
+
+For every resource in this list the Helm Chart will create a set of [permissions](ref:docs-helm-permissions) and assign them to the role for the GoKubeDownscaler.
+
+Supported resources are:
+
+- Deployments
+- Statefulsets
+- Daemonsets
+- Rollouts
+- HorizontalPodAutoscalers
+- Jobs
+- Cronjobs
+- ScaledObjects
+- Stacks
+- PodDisruptionBudgets
+- Prometheuses
+
+:::tip
+
+An example for including resources can look like this:
+
+```yaml
+includedResources:
+  - deployments
+  - statefulsets
+  - daemonsets
+  - rollouts
+  - horizontalpodautoscalers
+  - jobs
+  - cronjobs
+  - scaledobjects
+  - stacks
+  - poddisruptionbudgets
+  - prometheuses
+```
+
+:::
