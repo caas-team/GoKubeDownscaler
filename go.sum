@@ -447,8 +447,8 @@ k8s.io/utils v0.0.0-20210802155522-efc7438f0176/go.mod h1:jPW/WVKK9YHAvNhRxK0md/
 k8s.io/utils v0.0.0-20230406110748-d93618cff8a2/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 k8s.io/utils v0.0.0-20241210054802-24370beab758 h1:sdbE21q2nlQtFh65saZY+rRM6x6aJJI8IUa1AmH/qa0=
 k8s.io/utils v0.0.0-20241210054802-24370beab758/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
-knative.dev/pkg v0.0.0-20250109201817-83cd52ed87d9 h1:b4S5OUBLwlbfC9Twr+4AfEcH7zK8CKUdjdyOTirfvoU=
-knative.dev/pkg v0.0.0-20250109201817-83cd52ed87d9/go.mod h1:C1u0e6tMiEkqcKsurZn2wGTH6utcTbODFwJBPyZ56lA=
+knative.dev/pkg v0.0.0-20250110150618-accfe3649188 h1:xM2blxCAN0VzKQPYqeq2jNBL7xN6Iyn1avs+Ib+ogaM=
+knative.dev/pkg v0.0.0-20250110150618-accfe3649188/go.mod h1:C1u0e6tMiEkqcKsurZn2wGTH6utcTbODFwJBPyZ56lA=
 sigs.k8s.io/controller-runtime v0.19.4 h1:SUmheabttt0nx8uJtoII4oIP27BVVvAKFvdvGFwV/Qo=
 sigs.k8s.io/controller-runtime v0.19.4/go.mod h1:iRmWllt8IlaLjvTTDLhRBXIEtkCK6hwVBJJsYS9Ajf4=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd/go.mod h1:B8JuhiUyNFVKdsE8h686QcCxMaH6HrOAZj4vswFpcB0=
