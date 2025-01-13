@@ -8,7 +8,7 @@ globalReference: docs-layers
 
 Layers are layers of [values](ref:docs-values).
 
-## How it Works
+## How It Works
 
 The resulting value is always the one set by the most specific layer.
 This means Workload Layer > Namespace Layer > CLI Layer > ENV Layer.
@@ -40,5 +40,6 @@ Defined by the [environment variables](ref:docs-environment-variables) at startu
 Values set here can be overwritten by all other layers.
 
 :::info
-With the current setup it is not possible to update these values every scan, as the value of config maps is only passed in at creation of the deployment.
+With the current setup it is not possible to update these values every scan,
+as the value of config maps is only passed in at creation of the deployment.
 :::

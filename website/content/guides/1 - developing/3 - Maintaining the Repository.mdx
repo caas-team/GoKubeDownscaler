@@ -27,6 +27,8 @@ To merge a pull request which would result in a new version once merged into mai
 there is an additional approval step to stop you from accidentally merging it without realizing.
 
 To allow the pull request to make a new release after being merged you need to add the <GithubLabel label="new release"/> label to it.
-This will intern retrigger [the workflow](ref:docs-workflows#check-for-release) run which then automatically removes the <GithubLabel label="needs approval"/> label and allows for the pull request to be merged.
+This will intern retrigger [the workflow](ref:docs-workflows#check-for-release) run
+which then automatically removes the <GithubLabel label="needs approval"/> label
+and allows for the pull request to be merged.
 
 :::

@@ -71,7 +71,8 @@ Runtime Configurations change how the Downscaler operates.
 ## Time Annotation
 
 - Type: string (annotation on workload containing an [RFC3339 formatted timestamp](https://datatracker.ietf.org/doc/html/rfc3339))
-- Description: Makes the downscaler check the [grace period](ref:docs-values#grace-period) against the value of the annotation instead of the creation time of the workload.
+- Description: Makes the downscaler check the [grace period](ref:docs-values#grace-period) against the value of the annotation
+  instead of the creation time of the workload.
 - Default: none (the downscaler will use the creation time of the workload)
 
 ## Kubeconfig

@@ -28,6 +28,9 @@ repos:
     hooks:
       - id: markdownlint-cli2-rules-docker
         args: [--fix]
+        files: \.(md|mdx)$
+        types_or: [markdown, mdx]
+        types: []
   - repo: local
     hooks:
       - id: prevent-todo-comments
@@ -42,6 +45,6 @@ repos:
         files: \.(md|mdx)$
       - id: eslint
         name: Run ESLint
-        entry: npx eslint --fix --config=website/eslint.config.mjs "website/**/*.{js,jsx,ts,tsx,cts,cjs}"
+        entry: npx eslint --fix --config=website/eslint.config.mjs "website/**/*.{js,jsx,ts,tsx,cts,cjs,mdx}"
         language: node
-        files: website/.*\.(js|jsx|ts|tsx|cts|cjs)$
+        files: website/.*\.(js|jsx|ts|tsx|cts|cjs|mdx)$

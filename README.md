@@ -28,7 +28,8 @@ Information on how to install the Downscaler is on [our website](https://caas-te
 
 ### Missing Features
 
-Currently the GoKubeDownscaler is still a WIP. This means that there still might be some features missing from the py-kube-downscaler.
+Currently the GoKubeDownscaler is still a WIP.
+This means that there still might be some features missing from the py-kube-downscaler.
 You can find a list of the known-missing features [under the `missing feature` label](/../../labels/missing%20feature).
 If you think that any other features are missing or you have an idea for a new feature, feel free to open an [Issue](/../../issues/).
 
