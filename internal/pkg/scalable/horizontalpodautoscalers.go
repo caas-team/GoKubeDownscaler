@@ -13,13 +13,13 @@ var errMinReplicasBoundsExceeded = errors.New("error: a HPAs minReplicas can onl
 
 // getHorizontalPodAutoscalers is the getResourceFunc for horizontalPodAutoscalers
 func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	var results []Workload
 	hpas, err := clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(namespace).List(ctx, metav1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get horizontalpodautoscalers: %w", err)
 	}
-	for _, item := range hpas.Items {
-		results = append(results, &replicaScaledWorkload{&horizontalPodAutoscaler{&item}})
+	results := make([]Workload, 0, len(hpas.Items))
+	for i := range hpas.Items {
+		results = append(results, &replicaScaledWorkload{&horizontalPodAutoscaler{&hpas.Items[i]}})
 	}
 	return results, nil
 }

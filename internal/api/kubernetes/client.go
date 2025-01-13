@@ -106,7 +106,7 @@ func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (
 func (c client) GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error) {
 	var results []scalable.Workload
 	if namespaces == nil {
-		namespaces = append(namespaces, "")
+		namespaces = []string{""}
 	}
 	for _, namespace := range namespaces {
 		for _, resourceType := range resourceTypes {

@@ -10,6 +10,7 @@ type RegexList []*regexp.Regexp
 
 func (r *RegexList) Set(text string) error {
 	entries := strings.Split(text, ",")
+	*r = make(RegexList, 0, len(entries))
 	for _, entry := range entries {
 		entry = strings.TrimSpace(entry)
 		re, err := regexp.Compile(entry)
