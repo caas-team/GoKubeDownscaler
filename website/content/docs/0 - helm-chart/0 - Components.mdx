@@ -18,11 +18,13 @@ The [serviceaccount.yaml](repo:deployments/chart/templates/serviceaccount.yaml) 
 
 ## Configmap
 
-The [configmap.yaml](repo:deployments/chart/templates/configmap.yaml) file creates a new ConfigMap with the provided name. It is used to store environment variables like `EXCLUDE_NAMESPACES`.
+The [configmap.yaml](repo:deployments/chart/templates/configmap.yaml) file creates a new ConfigMap with the provided name.
+It is used to store environment variables like `EXCLUDE_NAMESPACES`.
 
 ## Clusterrole
 
-The [clusterrole.yaml](repo:deployments/chart/templates/clusterrole.yaml) file creates a ClusterRole and a ClusterRoleBinding for the desired cluster if (ref:docs-helm-constrained-downscaler)(ref:docs-helm-constrained-downscaler) is set to false. These allow the actions the GoKubeDownscaler needs to scale down workloads in a clusterwide context.
+The [clusterrole.yaml](repo:deployments/chart/templates/clusterrole.yaml) file creates a ClusterRole and a ClusterRoleBinding for the desired cluster if (ref:docs-helm-constrained-downscaler)(ref:docs-helm-constrained-downscaler) is set to false.
+These allow the actions the GoKubeDownscaler needs to scale down workloads in a clusterwide context.
 
 ## Role
 
