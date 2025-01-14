@@ -1,13 +1,18 @@
 # GoKubeDownscaler
 
+<!-- markdownlint-disable MD033 MD013 -->
+
 <a target="_blank" href="/../../releases/" title="GitHub Release"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/caas-team/GoKubeDownscaler?style=flat"></a>
 <a target="_blank" href="./LICENSE" title="GitHub License"><img alt="GitHub License" src="https://img.shields.io/github/license/caas-team/GoKubeDownscaler?style=flat"></a>
 <a target="_blank" href="/../../graphs/contributors" title="Contributors"><img alt="Contributors" src="https://img.shields.io/github/contributors/caas-team/GoKubeDownscaler?style=flat"></a>
 <a target="_blank" href="/../../stargazers" title="Stars"><img alt="Stars" src="https://img.shields.io/github/stars/caas-team/GoKubeDownscaler?style=flat"></a>
 <a target="_blank" href="https://communityinviter.com/apps/kube-downscaler/kube-downscaler" title="Slack Workspace"><img alt="Slack Workspace" src="https://img.shields.io/badge/slack-kube--downscaler-dark_green?style=flat&logo=slack"></a>
 
+<!-- markdownlint-enable MD033 MD013 -->
+
 A horizontal autoscaler for Kubernetes workloads.
-This is a golang port of the popular [(py-)kube-downscaler](https://github.com/caas-team/py-kube-downscaler) with improvements and quality of life changes.
+This is a golang port of the popular [(py-)kube-downscaler](https://github.com/caas-team/py-kube-downscaler)
+with improvements and quality of life changes.
 
 ## Documentation and Guides
 
@@ -23,7 +28,10 @@ Information on how to install the Downscaler is on [our website](https://caas-te
 
 ### Missing Features
 
-Currently the GoKubeDownscaler is still a WIP. This means that there still might be some features missing from the py-kube-downscaler. You can find a list of the known-missing features [under the `missing feature` label](/../../labels/missing%20feature). If you think that any other features are missing or you have an idea for a new feature, feel free to open an [Issue](/../../issues/)
+Currently the GoKubeDownscaler is still a WIP.
+This means that there still might be some features missing from the py-kube-downscaler.
+You can find a list of the known-missing features [under the `missing feature` label](/../../labels/missing%20feature).
+If you think that any other features are missing or you have an idea for a new feature, feel free to open an [Issue](/../../issues/).
 
 ## Developing
 
@@ -31,7 +39,7 @@ This section covers the basics of developing on this repo, a more detailed guide
 
 Please read the [contribution manifest](./CONTRIBUTING.md).
 
-### Cloning the repository
+### Cloning the Repository
 
 ```bash
 git clone https://github.com/caas-team/GoKubeDownscaler.git
@@ -47,15 +55,15 @@ brew install golangci-lint
 brew install gofumpt
 ```
 
-### Testing the downscaler
+### Testing the Downscaler
 
-#### running the unit tests
+#### Running the Unit Tests
 
 ```bash
 go test -v --cover ./...
 ```
 
-#### running the downscaler locally
+#### Running the Downscaler Locally
 
 The downscaler can be run locally by specifying a kubeconfig to use.
 The kubeconfig should have at least the permissions as the Helm Charts [role.yaml](./deployments/chart/templates/role.yaml).
@@ -65,15 +73,15 @@ The downscaler will use the current-context in the kubeconfig.
 go run -k=path/to/kubeconfig # ... additional configuration
 ```
 
-### Testing the website
+### Testing the Website
 
-#### installing dependencies
+#### Installing Dependencies
 
 ```bash
 npm install --prefix website
 ```
 
-#### running it locally
+#### Running It Locally
 
 ```bash
 npm run --prefix website start

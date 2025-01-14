@@ -4,7 +4,7 @@ id: arguments
 globalReference: docs-helm-arguments
 ---
 
-# arguments
+# Arguments
 
 The `arguments` value sets [layer values](ref:docs-layers) and runtime configuration at the startup of the container.
 
@@ -17,7 +17,8 @@ arguments:
 
 :::
 
-By default the `arguments` field is empty. Adding an argument will change how the GoKubeDownscaler behaves.
+By default the `arguments` field is empty.
+Adding an argument will change how the GoKubeDownscaler behaves.
 
 :::tip For example:
 
@@ -27,7 +28,9 @@ arguments:
   - --dry-run=true
 ```
 
-This configuration will set the GoKubeDownscaler to dry run mode, which makes it only print the actions it would have performed instead of actually scaling resources and sets the wait time between workload scans to 10 seconds.
+This configuration will set the GoKubeDownscaler to dry run mode,
+which makes it only print the actions it would have performed instead of actually scaling resources.
+Additionally, it sets the wait time between workload scans to 10 seconds.
 
 :::
 

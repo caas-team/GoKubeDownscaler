@@ -12,14 +12,14 @@ assignees: ""
 Briefly describe the issue.
 -->
 
-### Problem to solve
+### Problem to Solve
 
 <!-- Include the following detail as necessary:
 * What product or feature(s) affected?
 * Any other ideas or requests?
 -->
 
-### Further details
+### Further Details
 
 <!--
 * Any concepts, procedures, reference info *
@@ -30,10 +30,10 @@ Briefly describe the issue.
 
 <!-- Further specifics for how can we solve the problem. -->
 
-### Who can address the issue
+### Who Can Address the Issue
 
 <!-- What if any special expertise is required to resolve this issue? -->
 
-### Other links/references
+### Other Links/references
 
 <!-- E.g. related Github issues/MRs -->

@@ -26,6 +26,7 @@ See [RFC3339 Timestamps](https://datatracker.ietf.org/doc/html/rfc3339) for more
 
 - Format: `<Weekday-From>-<Weekday-To> <Time-Of-Day-From>-<Time-Of-Day-To> <Timezone>`
 - Examples:
+
   ```text
   Mon-Fri 08:00-20:00 Asia/Tokyo          # From Monday to Friday: from 08:00 to 20:00
   Sat-Sun 00:00-24:00 UTC                 # On The Weekend: the entire day
@@ -57,11 +58,13 @@ Case-insensitive:
 The timezones are from the [IANA Time Zone database](https://www.iana.org/time-zones).
 
 :::note
-The IANA Time Zone database mainly supports regional/city timezones (example: `Europe/Berlin`, `America/Los_Angeles`) instead of abbreviations (example: `CEST`, `PST`, `PDT`).
-It supports some abbreviations like `CET`, `MET` and `PST8PDT` but these (not including `UTC`) shouldn't be used, and only exist for backwards compatibility.
+The IANA Time Zone database mainly supports regional/city timezones (example: `Europe/Berlin`, `America/Los_Angeles`)
+instead of abbreviations (example: `CEST`, `PST`, `PDT`).
+It supports some abbreviations like `CET`, `MET` and `PST8PDT` but these
+(not including `UTC`) shouldn't be used, and only exist for backwards compatibility.
 :::
 
-#### Time of day
+#### Time of Day
 
 Values from: 00:00 - 24:00
 

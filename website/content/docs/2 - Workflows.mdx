@@ -93,7 +93,8 @@ Info:
 
 ## Docker Build
 
-This workflow builds the docker image for the downscaler when the [release-new-version event](#release-new-version-event) or the [create-dev-build event](#create-dev-build-event) is triggered.
+This workflow builds the docker image for the downscaler when the [release-new-version event](#release-new-version-event) or
+the [create-dev-build event](#create-dev-build-event) is triggered.
 
 The workflow sets up Cosign and Docker Buildx.
 Additionally it logs in to the GitHub Container Registry(GHCR) and Telekom's Magenta Trusted Registry(MTR) registry.
@@ -134,7 +135,7 @@ Info:
 
 ## Events
 
-### build-new-chart Event
+### Build-New-Chart Event
 
 Info:
 
@@ -148,7 +149,7 @@ Payload:
 | version    | string | The new version of the Helm chart. |
 | appVersion | string | The version of the application.    |
 
-### release-new-version Event
+### Release-New-Version Event
 
 Info:
 
@@ -162,7 +163,7 @@ Payload:
 | appVersion | string | The new version of the application.            |
 | setLatest  | bool   | If the new release should be marked as latest. |
 
-### create-dev-build Event
+### Create-Dev-Build Event
 
 Info:
 
