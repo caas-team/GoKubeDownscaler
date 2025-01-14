@@ -94,6 +94,7 @@ func main() {
 	}
 }
 
+// scanWorkloads scans over all workloads every scan.
 func scanWorkloads(
 	client kubernetes.Client,
 	ctx context.Context,
@@ -223,6 +224,7 @@ func scanWorkload(
 	return nil
 }
 
+// scaleWorkload scales the given workload according to the given wanted scaling state.
 func scaleWorkload(
 	scaling values.Scaling,
 	workload scalable.Workload,

@@ -23,6 +23,7 @@ var (
 // getResourceFunc is a function that gets a specific resource as a Workload.
 type getResourceFunc func(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error)
 
+// GetWorkloads gets all workloads of the given resource in the cluster.
 func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	resourceFuncMap := map[string]getResourceFunc{
 		"deployments":              getDeployments,

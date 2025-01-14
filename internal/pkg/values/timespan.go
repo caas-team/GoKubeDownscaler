@@ -22,7 +22,7 @@ const rfc3339Regex = `(.+Z|.+[+-]\d{2}:\d{2})`
 var absoluteTimeSpanRegex = regexp.MustCompile(fmt.Sprintf(`^%s *- *%s$`, rfc3339Regex, rfc3339Regex))
 
 type TimeSpan interface {
-	// inTimeSpan checks if time is in the timespan or not
+	// isTimeInSpan checks if time is in the timespan or not
 	isTimeInSpan(time time.Time) bool
 }
 

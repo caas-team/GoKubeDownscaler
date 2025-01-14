@@ -32,6 +32,7 @@ type RuntimeConfiguration struct {
 	Kubeconfig string
 }
 
+// ParseConfigFlags sets all cli flags required for the runtime configuration.
 func (c *RuntimeConfiguration) ParseConfigFlags() {
 	flag.BoolVar(
 		&c.DryRun,
@@ -95,8 +96,8 @@ func (c *RuntimeConfiguration) ParseConfigFlags() {
 	)
 }
 
+// ParseConfigEnvVars parses all environment variables for the runtime configuration.
 func (c *RuntimeConfiguration) ParseConfigEnvVars() error {
-	// env runtime configuration
 	err := GetEnvValue("EXCLUDE_NAMESPACES", &c.ExcludeNamespaces)
 	if err != nil {
 		return fmt.Errorf("error while getting EXCLUDE_NAMESPACES environment variable: %w", err)
