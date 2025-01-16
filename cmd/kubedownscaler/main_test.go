@@ -2,14 +2,16 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 	"time"
 
 	client "github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -59,10 +61,15 @@ func (m *MockWorkload) GetCreationTimestamp() v1.Time {
 }
 
 func TestScanWorkload(t *testing.T) {
+	t.Parallel()
+
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+
 	ctx := context.TODO()
 
 	layerCli := values.NewLayer()
 	layerEnv := values.NewLayer()
+	config := &util.RuntimeConfiguration{}
 
 	layerCli.DownscaleReplicas = 0
 	layerCli.GracePeriod = 15 * time.Minute
@@ -72,7 +79,7 @@ func TestScanWorkload(t *testing.T) {
 
 	mockWorkload.On("GetNamespace").Return("test-namespace")
 	mockWorkload.On("GetName").Return("test-workload")
-	mockWorkload.On("GetCreationTimestamp").Return(time.Now().Add(-time.Duration(layerCli.GracePeriod)))
+	mockWorkload.On("GetCreationTimestamp").Return(time.Now().Add(-layerCli.GracePeriod))
 	mockWorkload.On("GetAnnotations").Return(map[string]string{
 		"downscaler/force-downtime": "true",
 	})
@@ -80,9 +87,9 @@ func TestScanWorkload(t *testing.T) {
 	mockClient.On("GetNamespaceAnnotations", "test-namespace", ctx).Return(map[string]string{}, nil)
 	mockClient.On("DownscaleWorkload", int32(0), mockWorkload, ctx).Return(nil)
 
-	err := scanWorkload(mockWorkload, mockClient, ctx, layerCli, layerEnv)
+	err := scanWorkload(mockWorkload, mockClient, ctx, &layerCli, &layerEnv, config)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	mockClient.AssertExpectations(t)
 	mockWorkload.AssertExpectations(t)

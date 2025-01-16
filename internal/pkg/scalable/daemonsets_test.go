@@ -4,10 +4,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 )
 
 func TestDaemonSet_ScaleUp(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name         string
 		labelSet     bool
@@ -27,20 +30,26 @@ func TestDaemonSet_ScaleUp(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ds := daemonSet{&appsv1.DaemonSet{}}
+			t.Parallel()
+
+			deamonset := daemonSet{&appsv1.DaemonSet{}}
+
 			if test.labelSet {
-				ds.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: "true"}
+				deamonset.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: "true"}
 			}
 
-			err := ds.ScaleUp()
-			assert.NoError(t, err)
-			_, ok := ds.Spec.Template.Spec.NodeSelector[labelMatchNone]
+			err := deamonset.ScaleUp()
+			require.NoError(t, err)
+
+			_, ok := deamonset.Spec.Template.Spec.NodeSelector[labelMatchNone]
 			assert.Equal(t, test.wantLabelSet, ok)
 		})
 	}
 }
 
 func TestDaemonSet_ScaleDown(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name         string
 		labelSet     bool
@@ -60,14 +69,18 @@ func TestDaemonSet_ScaleDown(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ds := daemonSet{&appsv1.DaemonSet{}}
+			t.Parallel()
+
+			deamonset := daemonSet{&appsv1.DaemonSet{}}
+
 			if test.labelSet {
-				ds.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: "true"}
+				deamonset.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: "true"}
 			}
 
-			err := ds.ScaleDown(0)
-			assert.NoError(t, err)
-			_, ok := ds.Spec.Template.Spec.NodeSelector[labelMatchNone]
+			err := deamonset.ScaleDown(0)
+			require.NoError(t, err)
+
+			_, ok := deamonset.Spec.Template.Spec.NodeSelector[labelMatchNone]
 			assert.Equal(t, test.wantLabelSet, ok)
 		})
 	}

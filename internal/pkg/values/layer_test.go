@@ -8,6 +8,8 @@ import (
 )
 
 func TestLayer_checkForIncompatibleFields(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		layer   Layer
@@ -80,6 +82,8 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := test.layer.CheckForIncompatibleFields()
 			if test.wantErr {
 				assert.Error(t, err)
@@ -91,6 +95,7 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 }
 
 func TestLayer_getCurrentScaling(t *testing.T) {
+	t.Parallel()
 	var (
 		inTimeSpan = timeSpans{absoluteTimeSpan{
 			from: time.Now().Add(-time.Hour),
@@ -105,7 +110,7 @@ func TestLayer_getCurrentScaling(t *testing.T) {
 	tests := []struct {
 		name        string
 		layer       Layer
-		wantScaling scaling
+		wantScaling Scaling
 	}{
 		{
 			name: "in downtime",
@@ -172,6 +177,8 @@ func TestLayer_getCurrentScaling(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			scaling := test.layer.getCurrentScaling()
 			assert.Equal(t, test.wantScaling, scaling)
 		})

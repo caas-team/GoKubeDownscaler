@@ -6,11 +6,14 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var zeroTime = time.Date(0, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 func TestParseRelativeTimeSpan(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name           string
 		timespanString string
@@ -81,18 +84,23 @@ func TestParseRelativeTimeSpan(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			gotResult, gotErr := parseRelativeTimeSpan(test.timespanString)
 			if test.wantErr {
-				assert.Error(t, gotErr)
+				require.Error(t, gotErr)
 			} else {
-				assert.NoError(t, gotErr)
+				require.NoError(t, gotErr)
 			}
+
 			assert.Equal(t, test.wantResult, gotResult)
 		})
 	}
 }
 
 func TestRelativeTimeSpan_isWeekdayInRange(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name       string
 		timespan   relativeTimeSpan
@@ -139,6 +147,8 @@ func TestRelativeTimeSpan_isWeekdayInRange(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			gotResult := test.timespan.isWeekdayInRange(test.weekday)
 			assert.Equal(t, test.wantResult, gotResult)
 		})
@@ -146,6 +156,8 @@ func TestRelativeTimeSpan_isWeekdayInRange(t *testing.T) {
 }
 
 func TestRelativeTimeSpan_isTimeOfDayInRange(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name       string
 		timespan   relativeTimeSpan
@@ -234,6 +246,8 @@ func TestRelativeTimeSpan_isTimeOfDayInRange(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			gotResult := test.timespan.isTimeOfDayInRange(test.timeOfDay)
 			assert.Equal(t, test.wantResult, gotResult)
 		})
@@ -241,6 +255,8 @@ func TestRelativeTimeSpan_isTimeOfDayInRange(t *testing.T) {
 }
 
 func TestGetTimeOfDay(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name       string
 		time       time.Time
@@ -260,6 +276,8 @@ func TestGetTimeOfDay(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			gotResult := getTimeOfDay(test.time)
 			assert.Equal(t, test.wantResult, gotResult)
 		})
@@ -267,6 +285,8 @@ func TestGetTimeOfDay(t *testing.T) {
 }
 
 func TestAbsoluteTimeSpan_isTimeInSpan(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name       string
 		timespan   absoluteTimeSpan
@@ -313,6 +333,8 @@ func TestAbsoluteTimeSpan_isTimeInSpan(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			gotResult := test.timespan.isTimeInSpan(test.time)
 			assert.Equal(t, test.wantResult, gotResult)
 		})
@@ -320,6 +342,8 @@ func TestAbsoluteTimeSpan_isTimeInSpan(t *testing.T) {
 }
 
 func TestParseAbsoluteTimeSpan(t *testing.T) {
+	t.Parallel()
+
 	time1 := time.Date(2024, time.February, 27, 0, 0, 0, 0, time.UTC)
 	time2 := time1.Add(48 * time.Hour)
 
@@ -357,18 +381,24 @@ func TestParseAbsoluteTimeSpan(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			gotResult, gotErr := parseAbsoluteTimeSpan(test.timespanString)
+
 			if test.wantErr {
-				assert.Error(t, gotErr)
+				require.Error(t, gotErr)
 			} else {
-				assert.NoError(t, gotErr)
+				require.NoError(t, gotErr)
 			}
+
 			assert.Equal(t, test.wantResult, gotResult)
 		})
 	}
 }
 
 func TestIsAbsoluteTimestamp(t *testing.T) {
+	t.Parallel()
+
 	time1 := time.Date(2024, time.February, 27, 0, 0, 0, 0, time.UTC)
 	time2 := time1.Add(48 * time.Hour)
 
@@ -401,6 +431,8 @@ func TestIsAbsoluteTimestamp(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			gotResult := isAbsoluteTimestamp(test.timespanString)
 			assert.Equal(t, test.wantResult, gotResult)
 		})

@@ -1,4 +1,4 @@
-package values
+package util
 
 import (
 	"fmt"
@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-// DurationValue is an alias for time.DurationValue with a Set function that allows for durations without a unit
+// DurationValue is an alias for time.DurationValue with a Set function that allows for durations without a unit.
 type DurationValue time.Duration
 
-// Set converts the string value into a duration
+// Set converts the string value into a duration.
 func (d *DurationValue) Set(value string) error {
 	// try parsing as integer seconds
 	seconds, err := strconv.Atoi(value)
@@ -25,9 +25,10 @@ func (d *DurationValue) Set(value string) error {
 	}
 
 	*d = DurationValue(duration)
+
 	return nil
 }
 
 func (d *DurationValue) String() string {
-	return fmt.Sprint(time.Duration(*d).String())
+	return time.Duration(*d).String()
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-// suspendScaledResource provides all the functions needed to scale a resource which is scaled by setting a suspend field
+// suspendScaledResource provides all the functions needed to scale a resource which is scaled by setting a suspend field.
 type suspendScaledResource interface {
 	scalableResource
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
@@ -13,18 +13,18 @@ type suspendScaledResource interface {
 	setSuspend(suspend bool)
 }
 
-// suspendScaledWorkload is a wrapper for all resources which are scaled by setting a suspend field
+// suspendScaledWorkload is a wrapper for all resources which are scaled by setting a suspend field.
 type suspendScaledWorkload struct {
 	suspendScaledResource
 }
 
-// ScaleUp scales up the underlying suspendScaledResource
+// ScaleUp scales up the underlying suspendScaledResource.
 func (r *suspendScaledWorkload) ScaleUp() error {
 	r.setSuspend(false)
 	return nil
 }
 
-// ScaleDown scales down the underlying suspendScaledResource
+// ScaleDown scales down the underlying suspendScaledResource.
 func (r *suspendScaledWorkload) ScaleDown(_ int32) error {
 	r.setSuspend(true)
 	return nil
