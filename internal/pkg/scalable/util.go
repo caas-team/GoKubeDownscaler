@@ -4,16 +4,18 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-const (
-	annotationOriginalReplicas = "downscaler/original-replicas"
-)
+const annotationOriginalReplicas = "downscaler/original-replicas"
 
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads
 func FilterExcluded(workloads []Workload, includeLabels values.RegexList, excludedNamespaces values.RegexList, excludedWorkloads values.RegexList) []Workload {
+	externallyScaled := getExternallyScaled(workloads)
+
 	var results []Workload
 	for _, workload := range workloads {
 		if !isMatchingLabels(workload, includeLabels) {
@@ -28,9 +30,77 @@ func FilterExcluded(workloads []Workload, includeLabels values.RegexList, exclud
 			slog.Debug("the workloads name is excluded, excluding it from being scanned", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 			continue
 		}
+		if isExternallyScaled(workload, externallyScaled) {
+			slog.Debug("the workload is scaled externally, excluding it from being scanned", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			continue
+		}
 		results = append(results, workload)
 	}
 	return results
+}
+
+type workloadIdentifier struct {
+	gvk       schema.GroupVersionKind
+	name      string
+	namespace string
+}
+
+// getExternallyScaled returns identifiers for workloads which are being scaled externally and should therefore be excluded
+func getExternallyScaled(workloads []Workload) []workloadIdentifier {
+	var externallyScaled []workloadIdentifier
+	for _, workload := range workloads {
+		scaledobject := getWorkloadAsScaledObject(workload)
+		if scaledobject == nil {
+			continue
+		}
+
+		externallyScaled = append(externallyScaled, workloadIdentifier{
+			gvk: schema.GroupVersionKind{
+				Kind:    scaledobject.Spec.ScaleTargetRef.Kind,
+				Group:   strings.Split(scaledobject.Spec.ScaleTargetRef.APIVersion, "/")[0],
+				Version: strings.Split(scaledobject.Spec.ScaleTargetRef.APIVersion, "/")[1],
+			},
+			name:      scaledobject.Spec.ScaleTargetRef.Name,
+			namespace: scaledobject.Namespace,
+		})
+	}
+	return externallyScaled
+}
+
+// isExternallyScaled checks if the workload matches any of the given workload identifiers
+func isExternallyScaled(workload Workload, externallyScaled []workloadIdentifier) bool {
+	for _, wid := range externallyScaled {
+		if wid.name != workload.GetName() {
+			continue
+		}
+		if wid.namespace != workload.GetNamespace() {
+			continue
+		}
+		if !(wid.gvk.Group == "" || wid.gvk.Group == workload.GroupVersionKind().Group) {
+			continue
+		}
+		if !(wid.gvk.Version == "" || wid.gvk.Version == workload.GroupVersionKind().Version) {
+			continue
+		}
+		if !(wid.gvk.Kind == "" || wid.gvk.Kind == workload.GroupVersionKind().Kind) {
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+// getWorkloadAsScaledObject tries to get the given workload as an scaled object
+func getWorkloadAsScaledObject(workload Workload) *scaledObject {
+	replicaScaled, ok := workload.(*replicaScaledWorkload)
+	if !ok {
+		return nil
+	}
+	scaledobject, ok := replicaScaled.replicaScaledResource.(*scaledObject)
+	if !ok {
+		return nil
+	}
+	return scaledobject
 }
 
 // isMatchingLabels check if the workload is matching any of the specified labels
