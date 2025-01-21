@@ -3,6 +3,7 @@ package scalable
 import (
 	"fmt"
 	"log/slog"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -62,7 +63,7 @@ func FilterExcluded(workloads []Workload, includeLabels, excludedNamespaces, exc
 		results = append(results, workload)
 	}
 
-	return results[:len(results):len(results)] // unallocate excess capacity
+	return slices.Clip(results)
 }
 
 type workloadIdentifier struct {
@@ -92,7 +93,7 @@ func getExternallyScaled(workloads []Workload) []workloadIdentifier {
 		})
 	}
 
-	return externallyScaled[:len(externallyScaled):len(externallyScaled)]
+	return slices.Clip(externallyScaled)
 }
 
 // isExternallyScaled checks if the workload matches any of the given workload identifiers.
