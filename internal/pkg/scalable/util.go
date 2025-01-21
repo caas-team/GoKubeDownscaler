@@ -126,17 +126,17 @@ func isExternallyScaled(workload Workload, externallyScaled []workloadIdentifier
 
 // getWorkloadAsScaledObject tries to get the given workload as a scaled object.
 func getWorkloadAsScaledObject(workload Workload) *scaledObject {
-	replicaScaledWorkload, isReplicaScaled := workload.(*replicaScaledWorkload)
+	replicaScaled, isReplicaScaled := workload.(*replicaScaledWorkload)
 	if !isReplicaScaled {
 		return nil
 	}
 
-	scaledObjectResource, isScaledObject := replicaScaledWorkload.replicaScaledResource.(*scaledObject)
+	scaledObject, isScaledObject := replicaScaled.replicaScaledResource.(*scaledObject)
 	if !isScaledObject {
 		return nil
 	}
 
-	return scaledObjectResource
+	return scaledObject
 }
 
 // isMatchingLabels check if the workload is matching any of the specified labels.
