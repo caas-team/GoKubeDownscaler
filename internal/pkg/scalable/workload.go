@@ -62,14 +62,14 @@ type scalableResource interface {
 	GetName() string
 	// GetUID gets the uid of the workload
 	GetUID() types.UID
-	// GetObjectKind gets the ObjectKind of the workload
-	GetObjectKind() schema.ObjectKind
 	// GetLabels gets the labels of the workload
 	GetLabels() map[string]string
 	// GetCreationTimestamp gets the creation timestamp of the workload
 	GetCreationTimestamp() metav1.Time
 	// SetAnnotations sets the annotations on the resource. Changes won't be made on Kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
+	// GroupVersionKind gets the group version kind of the workload
+	GroupVersionKind() schema.GroupVersionKind
 }
 
 // Workload provides all functions needed to scale the workload.
