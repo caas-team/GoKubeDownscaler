@@ -1,4 +1,4 @@
-# GoKubeDownscaler
+![GoKubeDownscaler Logo](./logo/kubedownscaler-name-light.svg)
 
 <a target="_blank" href="/../../releases/" title="GitHub Release"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/caas-team/GoKubeDownscaler?style=flat"></a>
 <a target="_blank" href="./LICENSE" title="GitHub License"><img alt="GitHub License" src="https://img.shields.io/github/license/caas-team/GoKubeDownscaler?style=flat"></a>
