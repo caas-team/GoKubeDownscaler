@@ -12,7 +12,7 @@ import { repoRefRemarkPlugin } from "./plugins/repo-ref-plugin.cts";
 const config: Config = {
   title: "GoKubeDownscaler",
   tagline: "A horizontal autoscaler for Kubernetes workloads",
-  favicon: "img/kubedownscaler-light.svg",
+  favicon: "img/kubedownscaler.svg",
 
   url: "https://caas-team.github.io",
 
@@ -56,11 +56,10 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      //title: "GoKubeDownscaler",
       logo: {
         alt: "CaaS Logo",
-        src: "img/kubedownscaler-dark-text.svg",
-        srcDark: "img/kubedownscaler-light-text.svg",
+        src: "img/kubedownscaler-name-dark.svg",
+        srcDark: "img/kubedownscaler-name-light.svg",
       },
       items: [
         {
