@@ -140,8 +140,8 @@ func loop(client kubernetes.Client, ctx context.Context, layerCli, layerEnv *val
 		slog.Error("failed to scan over workloads",
 			"error", err,
 			"config", config,
-			"CliLayer", &layerCli,
-			"EnvLayer", &layerEnv,
+			"CliLayer", *layerCli,
+			"EnvLayer", *layerEnv,
 		)
 		os.Exit(1)
 	}
