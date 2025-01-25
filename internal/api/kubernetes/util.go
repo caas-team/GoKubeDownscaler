@@ -23,7 +23,7 @@ func GetCurrentNamespaceFromFile() (string, error) {
 
 	namespace, err := os.ReadFile(namespaceFile)
 	if err != nil {
-		return "", fmt.Errorf("failed to read namespace file: %v", err)
+		return "", fmt.Errorf("failed to read namespace file: %w", err)
 	}
 
 	return string(namespace), nil
