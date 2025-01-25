@@ -4,7 +4,17 @@ metadata:
   name: {{ include "go-kube-downscaler.fullname" . }}-lease-role
   namespace:  {{ .Release.Namespace }}
 rules:
-{{ include "go-kube-downscaler.leases.permissions" . }}
+- apiGroups:
+    - coordination.k8s.io
+  resources:
+    - leases
+  verbs:
+    - get
+    - create
+    - watch
+    - list
+    - update
+    - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
