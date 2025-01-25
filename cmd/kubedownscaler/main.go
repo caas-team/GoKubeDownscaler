@@ -11,15 +11,13 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
-	"k8s.io/client-go/tools/leaderelection"
-
 	_ "time/tzdata"
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"k8s.io/client-go/tools/leaderelection"
 )
 
 const (
@@ -76,6 +74,7 @@ func main() {
 		slog.Error("found incompatible fields", "error", err)
 		os.Exit(1)
 	}
+
 	downscalerNamespace, err := kubernetes.GetCurrentNamespaceFromFile()
 	if err != nil {
 		slog.Error("failed to get downscaler namespace", "error", err)
@@ -91,7 +90,7 @@ func main() {
 	}
 
 	run := func(ctx context.Context) {
-		loop(client, ctx, layerCli, layerEnv, config)
+		loop(client, ctx, &layerCli, &layerEnv, config)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -106,6 +105,7 @@ func main() {
 
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+
 	go func() {
 		<-ch
 		cancel()
@@ -132,16 +132,16 @@ func main() {
 	})
 }
 
-func loop(client kubernetes.Client, ctx context.Context, layerCli values.Layer, layerEnv values.Layer, config *util.RuntimeConfiguration) {
+func loop(client kubernetes.Client, ctx context.Context, layerCli, layerEnv *values.Layer, config *util.RuntimeConfiguration) {
 	slog.Info("started downscaler")
 
-	err := scanWorkloads(client, ctx, &layerCli, &layerEnv, config)
+	err := scanWorkloads(client, ctx, layerCli, layerEnv, config)
 	if err != nil {
 		slog.Error("failed to scan over workloads",
 			"error", err,
 			"config", config,
-			"CliLayer", layerCli,
-			"EnvLayer", layerEnv,
+			"CliLayer", &layerCli,
+			"EnvLayer", &layerEnv,
 		)
 		os.Exit(1)
 	}

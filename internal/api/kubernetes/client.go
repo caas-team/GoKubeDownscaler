@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/client-go/tools/leaderelection/resourcelock"
-
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
@@ -19,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 )
 
 const (
@@ -26,7 +25,7 @@ const (
 	timeout       = 30 * time.Second
 )
 
-// Client is an interface representing a high-level client to get and modify Kubernetes resources
+// Client is an interface representing a high-level client to get and modify Kubernetes resources.
 type Client interface {
 	// GetNamespaceAnnotations gets the annotations of the workload's namespace
 	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
@@ -92,13 +91,13 @@ func NewClient(kubeconfig string, dryRun bool) (client, error) {
 	return kubeclient, nil
 }
 
-// client is a Kubernetes client with downscaling specific functions
+// client is a Kubernetes client with downscaling specific functions.
 type client struct {
 	clientsets *scalable.Clientsets
 	dryRun     bool
 }
 
-// GetNamespaceAnnotations gets the annotations of the workload's namespace
+// GetNamespaceAnnotations gets the annotations of the workload's namespace.
 func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
 	ns, err := c.clientsets.Kubernetes.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
@@ -268,7 +267,7 @@ func (c client) CreateLease(leaseName string, leaseNamespace string, ctx context
 		},
 	}
 
-	return lease, err
+	return lease, fmt.Errorf("failed to create lease: %w", err)
 }
 
 /*
