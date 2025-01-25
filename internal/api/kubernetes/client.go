@@ -36,13 +36,9 @@ type Client interface {
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
 	// CreateLease creates a new lease for the downscaler
-	CreateLease(leaseName string, leaseNamespace string, ctx context.Context) (*resourcelock.LeaseLock, error)
+	CreateLease(leaseName, leaseNamespace string) (*resourcelock.LeaseLock, error)
 	// addWorkloadEvent creates a new event on the workload
 	addWorkloadEvent(eventType string, reason string, id string, message string, workload scalable.Workload, ctx context.Context) error
-	// CreateOrUpdateLease creates or update the downscaler lease
-	// CreateOrUpdateLease(ctx context.Context, leaseNamespace string, isLeader *atomic.Bool) error
-	// DeleteLease deletes the downscaler lease
-	// DeleteLease(ctx context.Context, leaseNamespace string, isLeader *atomic.Bool) error
 }
 
 // NewClient makes a new Client.
@@ -249,11 +245,11 @@ func (c client) addWorkloadEvent(eventType, reason, identifier, message string, 
 	return nil
 }
 
-func (c client) CreateLease(leaseName string, leaseNamespace string, ctx context.Context) (*resourcelock.LeaseLock, error) {
+func (c client) CreateLease(leaseName, leaseNamespace string) (*resourcelock.LeaseLock, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		slog.Error("failed to get hostname", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get hostname: %w", err)
 	}
 
 	lease := &resourcelock.LeaseLock{
@@ -269,87 +265,3 @@ func (c client) CreateLease(leaseName string, leaseNamespace string, ctx context
 
 	return lease, fmt.Errorf("failed to create lease: %w", err)
 }
-
-/*
-// CreateOrUpdateLease attempts to acquire and maintain a lease for leadership.
-func (c client) CreateOrUpdateLease(ctx context.Context, leaseNamespace string, isLeader *atomic.Bool) error {
-	// get hostname for holder identity
-	holderIdentity, err := os.Hostname()
-	if err != nil {
-		slog.Error("failed to get hostname", "error", err)
-		return err
-	}
-
-	leasesClient := c.clientsets.Kubernetes.CoordinationV1().Leases(leaseNamespace)
-	leaseDurationSeconds := int32(leaseDuration.Seconds())
-
-	for {
-		// lease Object
-		lease := &coordv1.Lease{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      leaseName,
-				Namespace: leaseNamespace,
-			},
-			Spec: coordv1.LeaseSpec{
-				HolderIdentity:       &holderIdentity,
-				LeaseDurationSeconds: &leaseDurationSeconds,
-				RenewTime:            &metav1.MicroTime{Time: time.Now()},
-			},
-		}
-
-		// search for an existing lease inside the namespace
-		existingLease, err := leasesClient.Get(ctx, leaseName, metav1.GetOptions{})
-		if err != nil {
-			// creates new lease if lease doesn't exist, and jump to the next iteration
-			slog.Debug("creating new lease", "lease", leaseName, "namespace", leaseNamespace)
-			_, err = leasesClient.Create(ctx, lease, metav1.CreateOptions{})
-			if err != nil {
-				slog.Error("failed to create lease", "error", err)
-				time.Sleep(leaseCheckSleepDuration)
-				continue
-			}
-			slog.Debug("acquired lease", "holder", holderIdentity, "namespace", leaseNamespace)
-			isLeader.Store(true)
-		} else {
-			// check if the existing lease has expired or is held by another pod; if it is held by another pod jump to the next iteration
-			if existingLease.Spec.RenewTime != nil &&
-				time.Since(existingLease.Spec.RenewTime.Time) < leaseDuration {
-				if *existingLease.Spec.HolderIdentity != holderIdentity {
-					slog.Debug("lease already held by another", "holder", *existingLease.Spec.HolderIdentity)
-					isLeader.Store(false)
-					time.Sleep(leaseCheckSleepDuration)
-					continue
-				}
-			}
-
-			// update the lease if it is currently held by the current pod
-			existingLease.Spec.HolderIdentity = &holderIdentity
-			existingLease.Spec.RenewTime = &metav1.MicroTime{Time: time.Now()}
-			_, err = leasesClient.Update(ctx, existingLease, metav1.UpdateOptions{})
-			if err != nil {
-				slog.Error("failed to update lease", "error", err)
-				time.Sleep(leaseCheckSleepDuration)
-				continue
-			}
-			slog.Debug("lease renewed", "holder", holderIdentity, "namespace", leaseNamespace)
-			isLeader.Store(true)
-		}
-
-		// sleep before renewing
-		time.Sleep(leaseCheckSleepDuration)
-	}
-}
-
-func (c client) DeleteLease(ctx context.Context, leaseNamespace string, isLeader *atomic.Bool) error {
-	leasesClient := c.clientsets.Kubernetes.CoordinationV1().Leases(leaseNamespace)
-
-	err := leasesClient.Delete(ctx, leaseName, metav1.DeleteOptions{})
-	if err != nil {
-		slog.Error("failed to delete lease %s in namespace %s", leaseName, leaseNamespace)
-		return err
-	}
-
-	isLeader.Store(false)
-	slog.Debug("deleted lease %s in namespace %s", leaseName, leaseNamespace)
-	return nil
-}*/

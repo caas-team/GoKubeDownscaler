@@ -95,7 +95,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	lease, err := client.CreateLease(leaseName, downscalerNamespace, ctx)
+	lease, err := client.CreateLease(leaseName, downscalerNamespace)
 	if err != nil {
 		slog.Error("failed to create lease", "error", err)
 		os.Exit(1)
