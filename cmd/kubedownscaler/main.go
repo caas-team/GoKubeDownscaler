@@ -126,7 +126,7 @@ func main() {
 				slog.Info("stopped leading")
 			},
 			OnNewLeader: func(identity string) {
-				slog.Info("new leader elected: ", "identity", identity)
+				slog.Info("new leader elected", "identity", identity)
 			},
 		},
 	})

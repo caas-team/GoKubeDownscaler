@@ -263,5 +263,5 @@ func (c client) CreateLease(leaseName, leaseNamespace string) (*resourcelock.Lea
 		},
 	}
 
-	return lease, fmt.Errorf("failed to create lease: %w", err)
+	return lease, nil
 }
