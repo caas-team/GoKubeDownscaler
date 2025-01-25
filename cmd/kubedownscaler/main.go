@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"k8s.io/client-go/tools/leaderelection"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -12,6 +11,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"k8s.io/client-go/tools/leaderelection"
 
 	_ "time/tzdata"
 
@@ -129,7 +130,6 @@ func main() {
 			},
 		},
 	})
-
 }
 
 func loop(client kubernetes.Client, ctx context.Context, layerCli values.Layer, layerEnv values.Layer, config *util.RuntimeConfiguration) {
