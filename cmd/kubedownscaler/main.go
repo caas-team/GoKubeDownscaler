@@ -4,12 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"k8s.io/client-go/tools/leaderelection"
 	"log/slog"
 	"os"
 	"os/signal"
 	"regexp"
 	"sync"
-	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -25,6 +25,8 @@ const (
 	// value defaults.
 	defaultGracePeriod       = 15 * time.Minute
 	defaultDownscaleReplicas = 0
+
+	leaseName = "downscaler-lease"
 
 	// runtime config defaults.
 	defaultInterval = 30 * time.Second
@@ -64,7 +66,6 @@ func main() {
 		slog.Error("failed to get layer from env", "error", err)
 		os.Exit(1)
 	}
-}
 
 	if config.Debug || config.DryRun {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
@@ -80,8 +81,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
-
 	slog.Debug("getting client for kubernetes")
 
 	client, err := kubernetes.NewClient(config.Kubeconfig, config.DryRun)
@@ -90,45 +89,53 @@ func main() {
 		os.Exit(1)
 	}
 
-	// leader election and graceful termination
-	go func() {
-		// create a context to handle termination gracefully
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
+	run := func(ctx context.Context) {
+		loop(client, ctx, layerCli, layerEnv, config)
+	}
 
-		// listen for termination signals in a separate goroutine
-		sigs := make(chan os.Signal, 1)
-		signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
+	ctx, cancel := context.WithCancel(context.Background())
 
-		// Goroutine for leader election and lease renewal
-		go func() {
-			err := client.CreateOrUpdateLease(ctx, downscalerNamespace, &isLeader)
-			if err != nil {
-				slog.Error("failed to acquire lease", "error", err)
-				os.Exit(1)
-			}
-		}()
-
-		// pause and wait for termination signal
-		<-sigs
-		slog.Debug("received termination signal, deleting lease")
-
-		// delete the lease after termination signal is intercepted
-		err := client.DeleteLease(ctx, downscalerNamespace, &isLeader)
-		if err != nil {
-			slog.Error("failed to delete lease", "error", err)
-		} else {
-			slog.Debug("lease deleted successfully")
-		}
-
-		// cancel the context to stop the lease renewal goroutine and exit the main process
-		cancel()
+	lease, err := client.CreateLease(leaseName, downscalerNamespace, ctx)
+	if err != nil {
+		slog.Error("failed to create lease", "error", err)
 		os.Exit(1)
+	}
+
+	defer cancel()
+
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-ch
+		cancel()
 	}()
 
+	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
+		Lock:            lease,
+		ReleaseOnCancel: true,
+		LeaseDuration:   60 * time.Second,
+		RenewDeadline:   15 * time.Second,
+		RetryPeriod:     5 * time.Second,
+		Callbacks: leaderelection.LeaderCallbacks{
+			OnStartedLeading: func(ctx context.Context) {
+				slog.Info("started leading")
+				run(ctx)
+			},
+			OnStoppedLeading: func() {
+				slog.Info("stopped leading")
+			},
+			OnNewLeader: func(identity string) {
+				slog.Info("new leader elected: ", "identity", identity)
+			},
+		},
+	})
+
+}
+
+func loop(client kubernetes.Client, ctx context.Context, layerCli values.Layer, layerEnv values.Layer, config *util.RuntimeConfiguration) {
 	slog.Info("started downscaler")
 
-	err = scanWorkloads(client, ctx, &layerCli, &layerEnv, config)
+	err := scanWorkloads(client, ctx, &layerCli, &layerEnv, config)
 	if err != nil {
 		slog.Error("failed to scan over workloads",
 			"error", err,
@@ -148,11 +155,6 @@ func scanWorkloads(
 	config *util.RuntimeConfiguration,
 ) error {
 	for {
-		if !isLeader.Load() {
-			slog.Debug("not the leader, skipping workload scanning")
-			time.Sleep(5 * time.Second) // Sync sleep with lease duration
-			continue
-		}
 		slog.Info("scanning workloads")
 
 		workloads, err := client.GetWorkloads(config.IncludeNamespaces, config.IncludeResources, ctx)

@@ -3,20 +3,19 @@ package kubernetes
 import (
 	"context"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"strings"
 	"time"
-	"sync/atomic"
+
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
-	coordv1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -25,13 +24,7 @@ import (
 const (
 	componentName = "kubedownscaler"
 	timeout       = 30 * time.Second
-	componentName           = "kubedownscaler"
-	leaseName               = "downscaler-lease"
-	leaseDuration           = 30 * time.Second
-	leaseCheckSleepDuration = leaseDuration / 2
 )
-
-var errResourceNotSupported = errors.New("error: specified rescource type is not supported")
 
 // Client is an interface representing a high-level client to get and modify Kubernetes resources
 type Client interface {
@@ -43,12 +36,14 @@ type Client interface {
 	DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
+	// CreateLease creates a new lease for the downscaler
+	CreateLease(leaseName string, leaseNamespace string, ctx context.Context) (*resourcelock.LeaseLock, error)
 	// addWorkloadEvent creates a new event on the workload
 	addWorkloadEvent(eventType string, reason string, id string, message string, workload scalable.Workload, ctx context.Context) error
 	// CreateOrUpdateLease creates or update the downscaler lease
-	CreateOrUpdateLease(ctx context.Context, leaseNamespace string, isLeader *atomic.Bool) error
+	// CreateOrUpdateLease(ctx context.Context, leaseNamespace string, isLeader *atomic.Bool) error
 	// DeleteLease deletes the downscaler lease
-	DeleteLease(ctx context.Context, leaseNamespace string, isLeader *atomic.Bool) error
+	// DeleteLease(ctx context.Context, leaseNamespace string, isLeader *atomic.Bool) error
 }
 
 // NewClient makes a new Client.
@@ -255,6 +250,28 @@ func (c client) addWorkloadEvent(eventType, reason, identifier, message string, 
 	return nil
 }
 
+func (c client) CreateLease(leaseName string, leaseNamespace string, ctx context.Context) (*resourcelock.LeaseLock, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		slog.Error("failed to get hostname", "error", err)
+		return nil, err
+	}
+
+	lease := &resourcelock.LeaseLock{
+		LeaseMeta: metav1.ObjectMeta{
+			Name:      leaseName,
+			Namespace: leaseNamespace,
+		},
+		Client: c.clientsets.Kubernetes.CoordinationV1(),
+		LockConfig: resourcelock.ResourceLockConfig{
+			Identity: hostname,
+		},
+	}
+
+	return lease, err
+}
+
+/*
 // CreateOrUpdateLease attempts to acquire and maintain a lease for leadership.
 func (c client) CreateOrUpdateLease(ctx context.Context, leaseNamespace string, isLeader *atomic.Bool) error {
 	// get hostname for holder identity
@@ -336,4 +353,4 @@ func (c client) DeleteLease(ctx context.Context, leaseNamespace string, isLeader
 	isLeader.Store(false)
 	slog.Debug("deleted lease %s in namespace %s", leaseName, leaseNamespace)
 	return nil
-}
+}*/
