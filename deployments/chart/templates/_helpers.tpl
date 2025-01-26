@@ -267,6 +267,3 @@ Create defined permissions for roles
 {{- end }}
 {{- end }}
 {{- end }}
-{{/*
-Create defined permissions for lease role
-*/}}

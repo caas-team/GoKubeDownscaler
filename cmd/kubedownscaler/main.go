@@ -75,12 +75,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	downscalerNamespace, err := kubernetes.GetCurrentNamespaceFromFile()
-	if err != nil {
-		slog.Error("failed to get downscaler namespace", "error", err)
-		os.Exit(1)
-	}
-
 	slog.Debug("getting client for kubernetes")
 
 	client, err := kubernetes.NewClient(config.Kubeconfig, config.DryRun)
@@ -89,25 +83,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	run := func(ctx context.Context) {
-		loop(client, ctx, &layerCli, &layerEnv, config)
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
-
-	lease, err := client.CreateLease(leaseName, downscalerNamespace)
-	if err != nil {
-		slog.Error("failed to create lease", "error", err)
-		os.Exit(1)
-	}
 
 	defer cancel()
 
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	downscalerNamespace, err := kubernetes.GetCurrentNamespace()
+	if err != nil {
+		slog.Warn("couldn't get namespace or running outside of cluster; skipping leader election", "error", err)
+		startScanning(client, ctx, &layerCli, &layerEnv, config)
+
+		return
+	}
+
+	lease, err := client.CreateLease(leaseName, downscalerNamespace)
+	if err != nil {
+		slog.Warn("failed to create lease", "error", err)
+		slog.Warn("proceeding without leader election, this may cause multiple instances to conflict when modifying the same resources")
+		startScanning(client, ctx, &layerCli, &layerEnv, config)
+	}
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		<-ch
+		<-sigs
 		cancel()
 	}()
 
@@ -120,7 +119,7 @@ func main() {
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				slog.Info("started leading")
-				run(ctx)
+				startScanning(client, ctx, &layerCli, &layerEnv, config)
 			},
 			OnStoppedLeading: func() {
 				slog.Info("stopped leading")
@@ -132,7 +131,7 @@ func main() {
 	})
 }
 
-func loop(client kubernetes.Client, ctx context.Context, layerCli, layerEnv *values.Layer, config *util.RuntimeConfiguration) {
+func startScanning(client kubernetes.Client, ctx context.Context, layerCli, layerEnv *values.Layer, config *util.RuntimeConfiguration) {
 	slog.Info("started downscaler")
 
 	err := scanWorkloads(client, ctx, layerCli, layerEnv, config)
