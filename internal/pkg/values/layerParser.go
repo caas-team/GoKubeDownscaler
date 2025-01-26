@@ -22,10 +22,12 @@ const (
 	annotationDownscaleReplicas = "downscaler/downscale-replicas"
 	annotationGracePeriod       = "downscaler/grace-period"
 
-	envUpscalePeriod   = "UPSCALE_PERIOD"
-	envUptime          = "DEFAULT_UPTIME"
-	envDownscalePeriod = "DOWNSCALE_PERIOD"
-	envDowntime        = "DEFAULT_DOWNTIME"
+	envUpscalePeriod      = "UPSCALE_PERIOD"
+	envUptime             = "DEFAULT_UPTIME"
+	envDownscalePeriod    = "DOWNSCALE_PERIOD"
+	envDowntime           = "DEFAULT_DOWNTIME"
+	envExcludeNamespaces  = "EXCLUDE_NAMESPACES"
+	envExcludeDeployments = "EXCLUDE_DEPLOYMENTS"
 )
 
 // ParseLayerFlags sets all flags corresponding to layer values to fill into l.
@@ -91,6 +93,16 @@ func (l *Layer) GetLayerFromEnv() error {
 	err = util.GetEnvValue(envDowntime, &l.DownTime)
 	if err != nil {
 		return fmt.Errorf("error while getting %q environment variable: %w", envDowntime, err)
+	}
+
+	err = util.GetEnvValue(envExcludeNamespaces, &l.DownTime)
+	if err != nil {
+		return fmt.Errorf("error while getting %q environment variable: %w", envExcludeNamespaces, err)
+	}
+
+	err = util.GetEnvValue(envExcludeDeployments, &l.DownTime)
+	if err != nil {
+		return fmt.Errorf("error while getting %q environment variable: %w", envExcludeDeployments, err)
 	}
 
 	if err = l.CheckForIncompatibleFields(); err != nil {
