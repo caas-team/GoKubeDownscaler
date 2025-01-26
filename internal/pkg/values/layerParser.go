@@ -71,6 +71,22 @@ func (l *Layer) ParseLayerFlags() {
 		"grace-period",
 		"the grace period between creation of workload until first downscale (default: 15min)",
 	)
+
+	if flag.Lookup("exclude-namespaces") == nil {
+		flag.Var(
+			&l.ExcludeNamespaces,
+			"exclude-namespaces",
+			"exclude namespaces from being scaled (default: kube-system,kube-downscaler)",
+		)
+	}
+
+	if flag.Lookup("exclude-deployments") == nil {
+		flag.Var(
+			&l.ExcludeDeployments,
+			"exclude-deployments",
+			"exclude deployments from being scaled (optional)",
+		)
+	}
 }
 
 // GetLayerFromEnv fills l with all values from environment variables and checks for compatibility.
@@ -95,12 +111,12 @@ func (l *Layer) GetLayerFromEnv() error {
 		return fmt.Errorf("error while getting %q environment variable: %w", envDowntime, err)
 	}
 
-	err = util.GetEnvValue(envExcludeNamespaces, &l.DownTime)
+	err = util.GetEnvValue(envExcludeNamespaces, &l.ExcludeNamespaces)
 	if err != nil {
 		return fmt.Errorf("error while getting %q environment variable: %w", envExcludeNamespaces, err)
 	}
 
-	err = util.GetEnvValue(envExcludeDeployments, &l.DownTime)
+	err = util.GetEnvValue(envExcludeDeployments, &l.ExcludeDeployments)
 	if err != nil {
 		return fmt.Errorf("error while getting %q environment variable: %w", envExcludeDeployments, err)
 	}

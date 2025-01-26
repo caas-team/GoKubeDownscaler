@@ -43,16 +43,18 @@ func NewLayer() Layer {
 
 // Layer represents a value Layer.
 type Layer struct {
-	DownscalePeriod   timeSpans     // periods to downscale in
-	DownTime          timeSpans     // within these timespans workloads will be scaled down, outside of them they will be scaled up
-	UpscalePeriod     timeSpans     // periods to upscale in
-	UpTime            timeSpans     // within these timespans workloads will be scaled up, outside of them they will be scaled down
-	Exclude           triStateBool  // if workload should be excluded
-	ExcludeUntil      time.Time     // until when the workload should be excluded
-	ForceUptime       triStateBool  // force workload into a uptime state
-	ForceDowntime     triStateBool  // force workload into a downtime state
-	DownscaleReplicas int32         // the replicas to scale down to
-	GracePeriod       time.Duration // grace period until new workloads will be scaled down
+	DownscalePeriod    timeSpans      // periods to downscale in
+	DownTime           timeSpans      // within these timespans workloads will be scaled down, outside of them they will be scaled up
+	UpscalePeriod      timeSpans      // periods to upscale in
+	UpTime             timeSpans      // within these timespans workloads will be scaled up, outside of them they will be scaled down
+	Exclude            triStateBool   // if workload should be excluded
+	ExcludeUntil       time.Time      // until when the workload should be excluded
+	ForceUptime        triStateBool   // force workload into a uptime state
+	ForceDowntime      triStateBool   // force workload into a downtime state
+	DownscaleReplicas  int32          // the replicas to scale down to
+	GracePeriod        time.Duration  // grace period until new workloads will be scaled down
+	ExcludeNamespaces  util.RegexList // excluded namespaces
+	ExcludeDeployments util.RegexList // excluded deployments
 }
 
 // isScalingExcluded checks if scaling is excluded, nil represents a not set state.
@@ -265,7 +267,9 @@ func (l Layers) LayersToString(layers []*Layer) []string {
 				"ForceUptime:%s, "+
 				"ForceDowntime:%s, "+
 				"DownscaleReplicas:%d, "+
-				"GracePeriod:%v}",
+				"GracePeriod:%v, "+
+				"ExcludeNamespaces:%v, "+
+				"ExcludeDeployments:%v}",
 			layersName[iterationNumber],
 			layer.DownscalePeriod.String(),
 			layer.DownTime.String(),
@@ -277,6 +281,8 @@ func (l Layers) LayersToString(layers []*Layer) []string {
 			layer.ForceDowntime.String(),
 			layer.DownscaleReplicas,
 			layer.GracePeriod,
+			layer.ExcludeNamespaces,
+			layer.ExcludeDeployments,
 		)
 	}
 
