@@ -75,7 +75,38 @@ func (t *timeSpans) Set(value string) error {
 }
 
 func (t *timeSpans) String() string {
-	return fmt.Sprint(*t)
+	var stringBuilder strings.Builder
+
+	for i, timespan := range *t {
+		if i > 0 {
+			stringBuilder.WriteString(", ")
+		}
+
+		switch span := timespan.(type) {
+		case absoluteTimeSpan:
+			stringBuilder.WriteString(fmt.Sprintf("AbsoluteTimeSpan(%s - %s)", span.from.Format(time.RFC3339), span.to.Format(time.RFC3339)))
+		case *relativeTimeSpan:
+			weekdayFrom := span.weekdayFrom.String()[:3] // Get first 3 letters of the weekday
+			weekdayTo := span.weekdayTo.String()[:3]     // Get first 3 letters of the weekday
+			timeFrom := span.timeFrom.Format("15:04")    // Format time to "HH:MM"
+			timeTo := span.timeTo.Format("15:04")        // Format time to "HH:MM"
+			stringBuilder.WriteString(fmt.Sprintf(
+				"RelativeTimeSpan(%s-%s %s-%s %s)",
+				weekdayFrom,
+				weekdayTo,
+				timeFrom,
+				timeTo,
+				span.timezone.String()))
+		default:
+			stringBuilder.WriteString("UnknownTimeSpan")
+		}
+	}
+
+	if stringBuilder.Len() == 0 {
+		return UndefinedString
+	}
+
+	return stringBuilder.String()
 }
 
 // parseAbsoluteTimespans parses an absolute timespan. will panic if timespan is not an absolute timespan.

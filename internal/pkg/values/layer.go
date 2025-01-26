@@ -18,7 +18,10 @@ var (
 	errAnnotationNotSet         = errors.New("error: annotation isn't set on workload")
 )
 
-const Undefined = -1 // Undefined represents an undefined integer value
+const (
+	Undefined       = -1          // Undefined represents an undefined integer value
+	UndefinedString = "undefined" // UndefinedString epresents an undefined value
+)
 
 // Scaling is an enum that describes the current Scaling.
 type Scaling int
@@ -237,4 +240,45 @@ func (l Layers) IsInGracePeriod(
 	gracePeriodUntil := creationTime.Add(gracePeriod)
 
 	return time.Now().Before(gracePeriodUntil), nil
+}
+
+// LayersToString gets a string representation of the layers with all fields printed explicitly.
+func (l Layers) LayersToString(layers []*Layer) []string {
+	result := make([]string, len(layers))
+
+	layersName := []string{"layerWorkload", "layerNamespace", "layerCli", "layerEnv"}
+
+	for iterationNumber, layer := range layers {
+		excludeUntilStr := UndefinedString
+		if !layer.ExcludeUntil.IsZero() {
+			excludeUntilStr = layer.ExcludeUntil.String()
+		}
+
+		result[iterationNumber] = fmt.Sprintf(
+			"{LayerName:%s, "+
+				"DownscalePeriod:%s, "+
+				"DownTime:%s, "+
+				"UpscalePeriod:%s, "+
+				"UpTime:%s, "+
+				"Exclude:%s, "+
+				"ExcludeUntil:%v, "+
+				"ForceUptime:%s, "+
+				"ForceDowntime:%s, "+
+				"DownscaleReplicas:%d, "+
+				"GracePeriod:%v}",
+			layersName[iterationNumber],
+			layer.DownscalePeriod.String(),
+			layer.DownTime.String(),
+			layer.UpscalePeriod.String(),
+			layer.UpTime.String(),
+			layer.Exclude.String(),
+			excludeUntilStr,
+			layer.ForceUptime.String(),
+			layer.ForceDowntime.String(),
+			layer.DownscaleReplicas,
+			layer.GracePeriod,
+		)
+	}
+
+	return result
 }

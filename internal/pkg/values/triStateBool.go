@@ -27,7 +27,7 @@ func (t *triStateBool) Set(value string) error {
 
 func (t *triStateBool) String() string {
 	if !t.isSet {
-		return "undefined"
+		return UndefinedString
 	}
 
 	return strconv.FormatBool(t.value)
