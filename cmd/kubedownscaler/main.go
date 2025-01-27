@@ -42,24 +42,29 @@ func main() {
 		Kubeconfig:        "",
 	}
 
+	config.ParseConfigFlags()
+
+	err := config.ParseConfigEnvVars()
+	if err != nil {
+		slog.Error("failed to parse env vars for config", "error", err)
+		os.Exit(1)
+	}
+
 	layerCli := values.NewLayer()
 	layerEnv := values.NewLayer()
 
-	// set defaults for layers
-	layerCli.GracePeriod = defaultGracePeriod
-	layerCli.DownscaleReplicas = defaultDownscaleReplicas
-
-	config.ParseConfigFlags()
-
-	layerCli.ParseLayerFlags()
-
-	flag.Parse()
-
-	err := layerEnv.GetLayerFromEnv()
+	err = layerEnv.GetLayerFromEnv()
 	if err != nil {
 		slog.Error("failed to get layer from env", "error", err)
 		os.Exit(1)
 	}
+
+	// set defaults for layers
+	layerCli.GracePeriod = defaultGracePeriod
+	layerCli.DownscaleReplicas = defaultDownscaleReplicas
+	layerCli.ParseLayerFlags()
+
+	flag.Parse()
 
 	if config.Debug || config.DryRun {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
