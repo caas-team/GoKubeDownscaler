@@ -85,11 +85,10 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	defer cancel()
-
 	downscalerNamespace, err := kubernetes.GetCurrentNamespace()
 	if err != nil {
 		slog.Warn("couldn't get namespace or running outside of cluster; skipping leader election", "error", err)
+		slog.Warn("proceeding without leader election, this may cause multiple instances to conflict when modifying the same resources")
 		startScanning(client, ctx, &layerCli, &layerEnv, config)
 
 		return
@@ -98,9 +97,10 @@ func main() {
 	lease, err := client.CreateLease(leaseName, downscalerNamespace)
 	if err != nil {
 		slog.Warn("failed to create lease", "error", err)
-		slog.Warn("proceeding without leader election, this may cause multiple instances to conflict when modifying the same resources")
-		startScanning(client, ctx, &layerCli, &layerEnv, config)
+		os.Exit(1)
 	}
+
+	defer cancel()
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
@@ -113,8 +113,8 @@ func main() {
 	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
 		Lock:            lease,
 		ReleaseOnCancel: true,
-		LeaseDuration:   60 * time.Second,
-		RenewDeadline:   15 * time.Second,
+		LeaseDuration:   30 * time.Second,
+		RenewDeadline:   20 * time.Second,
 		RetryPeriod:     5 * time.Second,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
