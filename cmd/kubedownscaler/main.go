@@ -186,9 +186,8 @@ func scanWorkload(
 	}
 
 	layers := values.Layers{&layerWorkload, &layerNamespace, layerCli, layerEnv}
-	layersString := layers.LayersToString(layers)
 
-	slog.Debug("finished parsing all layers", "layers", layersString, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	slog.Debug("finished parsing all layers", "layers", layers, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	isInGracePeriod, err := layers.IsInGracePeriod(
 		config.TimeAnnotation,

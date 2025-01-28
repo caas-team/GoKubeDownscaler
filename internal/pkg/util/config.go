@@ -2,6 +2,7 @@ package util
 
 import (
 	"flag"
+	"fmt"
 	"time"
 )
 
@@ -93,4 +94,19 @@ func (c *RuntimeConfiguration) ParseConfigFlags() {
 		"",
 		"the annotation to use instead of creation time for grace period (optional)",
 	)
+}
+
+// ParseConfigEnvVars parses all environment variables for the runtime configuration.
+func (c *RuntimeConfiguration) ParseConfigEnvVars() error {
+	err := GetEnvValue("EXCLUDE_NAMESPACES", &c.ExcludeNamespaces)
+	if err != nil {
+		return fmt.Errorf("error while getting EXCLUDE_NAMESPACES environment variable: %w", err)
+	}
+
+	err = GetEnvValue("EXCLUDE_DEPLOYMENTS", &c.ExcludeWorkloads)
+	if err != nil {
+		return fmt.Errorf("error while getting EXCLUDE_DEPLOYMENTS environment variable: %w", err)
+	}
+
+	return nil
 }

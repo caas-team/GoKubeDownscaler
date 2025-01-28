@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
@@ -33,6 +35,26 @@ const (
 	ScalingUp                    // scaling up
 )
 
+// LayerID is an enum that describes the current Layer.
+type LayerID int
+
+const (
+	LayerWorkload    LayerID = iota // identifies the layer present in the workload
+	LayerNamespace                  // identifies the layer present in the namespace
+	LayerCli                        // identifies the layer defined in the CLI
+	LayerEnvironment                // identifies the layer defined in the environment variables
+)
+
+// String gets the string representation of the LayerID.
+func (l LayerID) String() string {
+	return map[LayerID]string{
+		LayerWorkload:    "LayerWorkload",
+		LayerNamespace:   "LayerNamespace",
+		LayerCli:         "LayerCli",
+		LayerEnvironment: "LayerEnvironment",
+	}[l]
+}
+
 // NewLayer gets a new layer with the default values.
 func NewLayer() Layer {
 	return Layer{
@@ -43,18 +65,16 @@ func NewLayer() Layer {
 
 // Layer represents a value Layer.
 type Layer struct {
-	DownscalePeriod    timeSpans      // periods to downscale in
-	DownTime           timeSpans      // within these timespans workloads will be scaled down, outside of them they will be scaled up
-	UpscalePeriod      timeSpans      // periods to upscale in
-	UpTime             timeSpans      // within these timespans workloads will be scaled up, outside of them they will be scaled down
-	Exclude            triStateBool   // if workload should be excluded
-	ExcludeUntil       time.Time      // until when the workload should be excluded
-	ForceUptime        triStateBool   // force workload into a uptime state
-	ForceDowntime      triStateBool   // force workload into a downtime state
-	DownscaleReplicas  int32          // the replicas to scale down to
-	GracePeriod        time.Duration  // grace period until new workloads will be scaled down
-	ExcludeNamespaces  util.RegexList // excluded namespaces
-	ExcludeDeployments util.RegexList // excluded deployments
+	DownscalePeriod   timeSpans     // periods to downscale in
+	DownTime          timeSpans     // within these timespans workloads will be scaled down, outside of them they will be scaled up
+	UpscalePeriod     timeSpans     // periods to upscale in
+	UpTime            timeSpans     // within these timespans workloads will be scaled up, outside of them they will be scaled down
+	Exclude           triStateBool  // if workload should be excluded
+	ExcludeUntil      time.Time     // until when the workload should be excluded
+	ForceUptime       triStateBool  // force workload into a uptime state
+	ForceDowntime     triStateBool  // force workload into a downtime state
+	DownscaleReplicas int32         // the replicas to scale down to
+	GracePeriod       time.Duration // grace period until new workloads will be scaled down
 }
 
 // isScalingExcluded checks if scaling is excluded, nil represents a not set state.
@@ -146,7 +166,7 @@ func (l *Layer) getForcedScaling() Scaling {
 	return forcedScaling
 }
 
-type Layers []*Layer
+type Layers [4]*Layer
 
 // GetCurrentScaling gets the current scaling of the first layer that implements scaling.
 func (l Layers) GetCurrentScaling() Scaling {
@@ -244,47 +264,23 @@ func (l Layers) IsInGracePeriod(
 	return time.Now().Before(gracePeriodUntil), nil
 }
 
-// LayersToString gets a string representation of the layers with all fields printed explicitly.
-func (l Layers) LayersToString(layers []*Layer) []string {
-	result := make([]string, len(layers))
+// String gets the string representation of the layers.
+func (l Layers) String() string {
+	var builder strings.Builder
 
-	layersName := []string{"layerWorkload", "layerNamespace", "layerCli", "layerEnv"}
+	builder.WriteString("[")
 
-	for iterationNumber, layer := range layers {
-		excludeUntilStr := UndefinedString
-		if !layer.ExcludeUntil.IsZero() {
-			excludeUntilStr = layer.ExcludeUntil.String()
+	for iteration, item := range l {
+		if iteration > 0 {
+			builder.WriteString(" ")
 		}
 
-		result[iterationNumber] = fmt.Sprintf(
-			"{LayerName:%s, "+
-				"DownscalePeriod:%s, "+
-				"DownTime:%s, "+
-				"UpscalePeriod:%s, "+
-				"UpTime:%s, "+
-				"Exclude:%s, "+
-				"ExcludeUntil:%v, "+
-				"ForceUptime:%s, "+
-				"ForceDowntime:%s, "+
-				"DownscaleReplicas:%d, "+
-				"GracePeriod:%v, "+
-				"ExcludeNamespaces:%v, "+
-				"ExcludeDeployments:%v}",
-			layersName[iterationNumber],
-			layer.DownscalePeriod.String(),
-			layer.DownTime.String(),
-			layer.UpscalePeriod.String(),
-			layer.UpTime.String(),
-			layer.Exclude.String(),
-			excludeUntilStr,
-			layer.ForceUptime.String(),
-			layer.ForceDowntime.String(),
-			layer.DownscaleReplicas,
-			layer.GracePeriod,
-			layer.ExcludeNamespaces,
-			layer.ExcludeDeployments,
-		)
+		builder.WriteString(strconv.Itoa(int(LayerID(iteration))))
+		builder.WriteString(":")
+		builder.WriteString(fmt.Sprintf("%+v", item))
 	}
 
-	return result
+	builder.WriteString("]")
+
+	return builder.String()
 }
