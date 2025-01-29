@@ -26,8 +26,11 @@ repos:
   - repo: https://github.com/DavidAnson/markdownlint-cli2
     rev: v0.17.1
     hooks:
-      - id: markdownlint-cli2-rules-docker
+      - id: markdownlint-cli2
         args: [--fix]
+        additional_dependencies:
+          - sentences-per-line
+          - "@jonathan-mayer/markdownlint-rule-titlecase"
         files: \.(md|mdx)$
         types_or: [markdown, mdx]
         types: []

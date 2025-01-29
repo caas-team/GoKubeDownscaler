@@ -12,4 +12,4 @@ config:
   no-space-in-emphasis: false # disabled, since it messes up mdx' jsx comments
 customRules:
   - sentences-per-line
-  - markdownlint-rule-titlecase
+  - "@jonathan-mayer/markdownlint-rule-titlecase"
