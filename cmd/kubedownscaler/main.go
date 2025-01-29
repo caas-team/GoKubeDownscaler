@@ -89,7 +89,12 @@ func main() {
 	if err != nil {
 		slog.Warn("couldn't get namespace or running outside of cluster; skipping leader election", "error", err)
 		slog.Warn("proceeding without leader election, this may cause multiple instances to conflict when modifying the same resources")
-		startScanning(client, ctx, &layerCli, &layerEnv, config)
+		err = startScanning(client, ctx, &layerCli, &layerEnv, config)
+
+		if err != nil {
+			slog.Error("an error occurred while scanning workloads", "error", err)
+			os.Exit(1)
+		}
 
 		return
 	}
@@ -119,9 +124,10 @@ func main() {
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				slog.Info("started leading")
-				err := startScanning(client, ctx, &layerCli, &layerEnv, config)
+				err = startScanning(client, ctx, &layerCli, &layerEnv, config)
 				if err != nil {
-					return
+					slog.Error("an error occurred while scanning workloads", "error", err)
+					cancel()
 				}
 			},
 			OnStoppedLeading: func() {
@@ -134,7 +140,12 @@ func main() {
 	})
 }
 
-func startScanning(client kubernetes.Client, ctx context.Context, layerCli, layerEnv *values.Layer, config *util.RuntimeConfiguration) error {
+func startScanning(
+	client kubernetes.Client,
+	ctx context.Context,
+	layerCli, layerEnv *values.Layer,
+	config *util.RuntimeConfiguration,
+) error {
 	slog.Info("started downscaler")
 
 	err := scanWorkloads(client, ctx, layerCli, layerEnv, config)
