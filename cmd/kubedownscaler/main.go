@@ -89,7 +89,9 @@ func main() {
 	if err != nil {
 		slog.Warn("couldn't get namespace or running outside of cluster; skipping leader election", "error", err)
 		slog.Warn("proceeding without leader election, this may cause multiple instances to conflict when modifying the same resources")
+
 		err = startScanning(client, ctx, &layerCli, &layerEnv, config)
+
 		if err != nil {
 			slog.Error("an error occurred while scanning workloads", "error", err)
 			os.Exit(1)
