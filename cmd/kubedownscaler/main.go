@@ -119,7 +119,10 @@ func main() {
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				slog.Info("started leading")
-				startScanning(client, ctx, &layerCli, &layerEnv, config)
+				err := startScanning(client, ctx, &layerCli, &layerEnv, config)
+				if err != nil {
+					return
+				}
 			},
 			OnStoppedLeading: func() {
 				slog.Info("stopped leading")
@@ -131,7 +134,7 @@ func main() {
 	})
 }
 
-func startScanning(client kubernetes.Client, ctx context.Context, layerCli, layerEnv *values.Layer, config *util.RuntimeConfiguration) {
+func startScanning(client kubernetes.Client, ctx context.Context, layerCli, layerEnv *values.Layer, config *util.RuntimeConfiguration) error {
 	slog.Info("started downscaler")
 
 	err := scanWorkloads(client, ctx, layerCli, layerEnv, config)
@@ -142,8 +145,11 @@ func startScanning(client kubernetes.Client, ctx context.Context, layerCli, laye
 			"CliLayer", *layerCli,
 			"EnvLayer", *layerEnv,
 		)
-		os.Exit(1)
+
+		return err
 	}
+
+	return nil
 }
 
 // scanWorkloads scans over all workloads every scan.
