@@ -92,7 +92,7 @@ func main() {
 
 		err = startScanning(client, ctx, &layerCli, &layerEnv, config)
 		if err != nil {
-			slog.Error("an error occurred while scanning workloads", "error", err)
+			slog.Error("an error occurred while scanning workloads, exiting", "error", err)
 			os.Exit(1)
 		}
 
