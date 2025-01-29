@@ -3,10 +3,15 @@ import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 import { tailwindPlugin } from "./plugins/tailwind-config.cts";
 import { svgoConfigPlugin } from "./plugins/svgo-config.cts";
+import {
+  docRefRemarkPlugin,
+  globalRefParseFrontMatter,
+} from "./plugins/global-ref-plugin.cts";
+import { repoRefRemarkPlugin } from "./plugins/repo-ref-plugin.cts";
 
 const config: Config = {
   title: "GoKubeDownscaler",
-  tagline: "A vertical autoscaler for Kubernetes workloads",
+  tagline: "A horizontal autoscaler for Kubernetes workloads",
   favicon: "img/CaaS-Logo.svg",
 
   url: "https://caas-team.github.io",
@@ -34,6 +39,7 @@ const config: Config = {
           sidebarPath: "./sidebars.ts",
           routeBasePath: "/",
           path: "content",
+          beforeDefaultRemarkPlugins: [docRefRemarkPlugin, repoRefRemarkPlugin],
           editUrl:
             "https://github.com/caas-team/GoKubeDownscaler/edit/main/website",
         },
@@ -98,7 +104,7 @@ const config: Config = {
             },
             {
               label: "Guides",
-              to: "/guides/getting-started",
+              to: "/guides",
             },
           ],
         },
@@ -130,9 +136,29 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      additionalLanguages: ["mdx", "bash"],
+      magicComments: [
+        {
+          className: "theme-code-block-highlighted-line",
+          line: "highlight-next-line",
+          block: { start: "highlight-start", end: "highlight-end" },
+        },
+      ],
     },
   } satisfies Preset.ThemeConfig,
+  headTags: [
+    {
+      tagName: "link",
+      attributes: {
+        rel: "manifest",
+        href: "/GoKubeDownscaler/manifest.json",
+      },
+    },
+  ],
   plugins: [svgoConfigPlugin, tailwindPlugin],
+  markdown: {
+    parseFrontMatter: globalRefParseFrontMatter,
+  },
 };
 
 export default config;

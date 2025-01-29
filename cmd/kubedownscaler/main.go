@@ -97,6 +97,21 @@ func main() {
 		slog.Error("found incompatible fields", "error", err)
 		os.Exit(1)
 	}
+	slog.Debug("finished getting startup config",
+		"envLayer", layerEnv,
+		"cliLayer", layerCli,
+		"dryRun", dryRun,
+		"debug", debug,
+		"once", once,
+		"interval", interval,
+		"includeNamespaces", includeNamespaces,
+		"includeResources", includeResources,
+		"excludeNamespaces", excludeNamespaces,
+		"excludeWorkloads", excludeWorkloads,
+		"includeLabels", includeLabels,
+		"timeAnnotation", timeAnnotation,
+		"kubeconfig", kubeconfig,
+	)
 	ctx := context.Background()
 
 	slog.Debug("getting client for kubernetes")
