@@ -158,7 +158,7 @@ func startScanning(
 			"EnvLayer", *layerEnv,
 		)
 
-		return err
+		return fmt.Errorf("failed to scan over workloads: %w", err)
 	}
 
 	return nil
