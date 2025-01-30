@@ -43,28 +43,12 @@ func (t *timeSpans) inTimeSpans() bool {
 
 // String implementation for timeSpans.
 func (t *timeSpans) String() string {
-	if len(*t) == 0 {
-		return UndefinedString
+
+	if *t != nil {
+		return "invalid value"
 	}
 
-	var builder strings.Builder
-
-	for iteration, timespan := range *t {
-		if iteration > 0 {
-			builder.WriteString(", ")
-		}
-
-		switch span := timespan.(type) {
-		case *absoluteTimeSpan:
-			builder.WriteString(span.String())
-		case *relativeTimeSpan:
-			builder.WriteString(span.String())
-		default:
-			builder.WriteString("UnknownTimeSpan")
-		}
-	}
-
-	return builder.String()
+	return fmt.Sprint(*t)
 }
 
 func (t *timeSpans) Set(value string) error {
@@ -228,7 +212,11 @@ func (t absoluteTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 
 // String implementation for absoluteTimeSpan.
 func (t absoluteTimeSpan) String() string {
-	return fmt.Sprintf("absoluteTimeSpan(%s - %s)", t.from.Format(time.RFC3339), t.to.Format(time.RFC3339))
+	return fmt.Sprintf(
+		"absoluteTimeSpan(%s - %s)",
+		t.from.Format(time.RFC3339),
+		t.to.Format(time.RFC3339),
+	)
 }
 
 // isAbsoluteTimestamp checks if timestamp string is absolute.

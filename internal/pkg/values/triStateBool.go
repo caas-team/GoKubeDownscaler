@@ -2,6 +2,7 @@ package values
 
 import (
 	"fmt"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"strconv"
 )
 
@@ -27,7 +28,7 @@ func (t *triStateBool) Set(value string) error {
 
 func (t *triStateBool) String() string {
 	if !t.isSet {
-		return UndefinedString
+		return util.UndefinedString
 	}
 
 	return strconv.FormatBool(t.value)

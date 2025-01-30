@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -18,11 +17,6 @@ var (
 	errInvalidDownscaleReplicas = errors.New("error: downscale replicas value is invalid")
 	errValueNotSet              = errors.New("error: no layer implements this value")
 	errAnnotationNotSet         = errors.New("error: annotation isn't set on workload")
-)
-
-const (
-	Undefined       = -1          // Undefined represents an undefined integer value
-	UndefinedString = "undefined" // UndefinedString epresents an undefined value
 )
 
 // Scaling is an enum that describes the current Scaling.
@@ -58,8 +52,8 @@ func (l LayerID) String() string {
 // NewLayer gets a new layer with the default values.
 func NewLayer() Layer {
 	return Layer{
-		DownscaleReplicas: Undefined,
-		GracePeriod:       Undefined,
+		DownscaleReplicas: util.Undefined,
+		GracePeriod:       util.Undefined,
 	}
 }
 
@@ -100,7 +94,7 @@ func (l *Layer) CheckForIncompatibleFields() error { //nolint: cyclop // this is
 		return errForceUpAndDownTime
 	}
 	// downscale replicas invalid
-	if l.DownscaleReplicas != Undefined && l.DownscaleReplicas < 0 {
+	if l.DownscaleReplicas != util.Undefined && l.DownscaleReplicas < 0 {
 		return errInvalidDownscaleReplicas
 	}
 	// up- and downtime
@@ -194,7 +188,7 @@ func (l Layers) GetCurrentScaling() Scaling {
 func (l Layers) GetDownscaleReplicas() (int32, error) {
 	for _, layer := range l {
 		downscaleReplicas := layer.DownscaleReplicas
-		if downscaleReplicas == Undefined {
+		if downscaleReplicas == util.Undefined {
 			continue
 		}
 
@@ -227,10 +221,10 @@ func (l Layers) IsInGracePeriod(
 	ctx context.Context,
 ) (bool, error) {
 	var err error
-	var gracePeriod time.Duration = Undefined
+	var gracePeriod time.Duration = util.Undefined
 
 	for _, layer := range l {
-		if layer.GracePeriod == Undefined {
+		if layer.GracePeriod == util.Undefined {
 			continue
 		}
 
@@ -239,7 +233,7 @@ func (l Layers) IsInGracePeriod(
 		break
 	}
 
-	if gracePeriod == Undefined {
+	if gracePeriod == util.Undefined {
 		return false, nil
 	}
 
@@ -275,7 +269,7 @@ func (l Layers) String() string {
 			builder.WriteString(" ")
 		}
 
-		fmt.Fprintf(&builder, "%s:%+v", LayerId(i), item)
+		fmt.Fprintf(&builder, "%s:%+v", LayerID(iteration), item)
 	}
 
 	builder.WriteString("]")

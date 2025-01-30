@@ -22,12 +22,10 @@ const (
 	annotationDownscaleReplicas = "downscaler/downscale-replicas"
 	annotationGracePeriod       = "downscaler/grace-period"
 
-	envUpscalePeriod      = "UPSCALE_PERIOD"
-	envUptime             = "DEFAULT_UPTIME"
-	envDownscalePeriod    = "DOWNSCALE_PERIOD"
-	envDowntime           = "DEFAULT_DOWNTIME"
-	envExcludeNamespaces  = "EXCLUDE_NAMESPACES"
-	envExcludeDeployments = "EXCLUDE_DEPLOYMENTS"
+	envUpscalePeriod   = "UPSCALE_PERIOD"
+	envUptime          = "DEFAULT_UPTIME"
+	envDownscalePeriod = "DOWNSCALE_PERIOD"
+	envDowntime        = "DEFAULT_DOWNTIME"
 )
 
 // ParseLayerFlags sets all flags corresponding to layer values to fill into l.
