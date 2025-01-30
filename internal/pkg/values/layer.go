@@ -275,9 +275,7 @@ func (l Layers) String() string {
 			builder.WriteString(" ")
 		}
 
-		builder.WriteString(strconv.Itoa(int(LayerID(iteration))))
-		builder.WriteString(":")
-		builder.WriteString(fmt.Sprintf("%+v", item))
+		fmt.Fprintf(&builder, "%s:%+v", LayerId(i), item)
 	}
 
 	builder.WriteString("]")
