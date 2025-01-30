@@ -43,7 +43,6 @@ func (t *timeSpans) inTimeSpans() bool {
 
 // String implementation for timeSpans.
 func (t *timeSpans) String() string {
-
 	if *t != nil {
 		return "invalid value"
 	}

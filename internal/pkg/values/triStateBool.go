@@ -2,8 +2,9 @@ package values
 
 import (
 	"fmt"
-	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"strconv"
+
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 )
 
 // triStateBool represents a boolean with an additional isSet field.

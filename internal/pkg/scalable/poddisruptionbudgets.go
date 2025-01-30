@@ -3,8 +3,9 @@ package scalable
 import (
 	"context"
 	"fmt"
-	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"log/slog"
+
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 
 	policy "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
