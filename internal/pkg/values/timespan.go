@@ -3,11 +3,12 @@ package values
 import (
 	"errors"
 	"fmt"
-	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 )
 
 var (
