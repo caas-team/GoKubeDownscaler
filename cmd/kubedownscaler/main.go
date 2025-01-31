@@ -151,13 +151,6 @@ func startScanning(
 
 	err := scanWorkloads(client, ctx, layerCli, layerEnv, config)
 	if err != nil {
-		slog.Error("failed to scan over workloads",
-			"error", err,
-			"config", config,
-			"CliLayer", *layerCli,
-			"EnvLayer", *layerEnv,
-		)
-
 		return fmt.Errorf("failed to scan over workloads: %w", err)
 	}
 
