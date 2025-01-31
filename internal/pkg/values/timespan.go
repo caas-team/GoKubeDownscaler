@@ -3,6 +3,7 @@ package values
 import (
 	"errors"
 	"fmt"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"regexp"
 	"strconv"
 	"strings"
@@ -44,7 +45,7 @@ func (t *timeSpans) inTimeSpans() bool {
 // String implementation for timeSpans.
 func (t *timeSpans) String() string {
 	if *t != nil {
-		return "invalid value"
+		return util.UndefinedString
 	}
 
 	return fmt.Sprint(*t)
