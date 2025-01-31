@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 )
 
 var (
@@ -41,6 +43,15 @@ func (t *timeSpans) inTimeSpans() bool {
 	return false
 }
 
+// String implementation for timeSpans.
+func (t *timeSpans) String() string {
+	if *t != nil {
+		return util.UndefinedString
+	}
+
+	return fmt.Sprint(*t)
+}
+
 func (t *timeSpans) Set(value string) error {
 	spans := strings.Split(value, ",")
 	timespans := make([]TimeSpan, 0, len(spans))
@@ -72,10 +83,6 @@ func (t *timeSpans) Set(value string) error {
 	*t = timeSpans(timespans)
 
 	return nil
-}
-
-func (t *timeSpans) String() string {
-	return fmt.Sprint(*t)
 }
 
 // parseAbsoluteTimespans parses an absolute timespan. will panic if timespan is not an absolute timespan.
@@ -182,6 +189,18 @@ func (t relativeTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 	return t.isTimeOfDayInRange(timeOfDay) && t.isWeekdayInRange(weekday)
 }
 
+// String implementation for relativeTimeSpan.
+func (t relativeTimeSpan) String() string {
+	return fmt.Sprintf(
+		"relativeTimeSpan(%.3s-%.3s %s-%s %s)",
+		t.weekdayFrom,
+		t.weekdayTo,
+		t.timeFrom.Format("15:04"),
+		t.timeTo.Format("15:04"),
+		t.timezone,
+	)
+}
+
 type absoluteTimeSpan struct {
 	from time.Time
 	to   time.Time
@@ -190,6 +209,15 @@ type absoluteTimeSpan struct {
 // isTimeInSpan check if the time is in the span.
 func (t absoluteTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 	return (t.from.Before(targetTime) || t.from.Equal(targetTime)) && t.to.After(targetTime)
+}
+
+// String implementation for absoluteTimeSpan.
+func (t absoluteTimeSpan) String() string {
+	return fmt.Sprintf(
+		"absoluteTimeSpan(%s - %s)",
+		t.from.Format(time.RFC3339),
+		t.to.Format(time.RFC3339),
+	)
 }
 
 // isAbsoluteTimestamp checks if timestamp string is absolute.
