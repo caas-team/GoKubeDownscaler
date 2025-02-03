@@ -264,12 +264,12 @@ func (l Layers) String() string {
 
 	builder.WriteString("[")
 
-	for iteration, item := range l {
-		if iteration > 0 {
+	for i, layer := range l {
+		if i > 0 {
 			builder.WriteString(" ")
 		}
 
-		fmt.Fprintf(&builder, "%s:%+v", LayerID(iteration), item)
+		fmt.Fprintf(&builder, "%s:%+v", LayerID(i), layer)
 	}
 
 	builder.WriteString("]")
