@@ -32,36 +32,11 @@ const (
 )
 
 func main() {
-	// set defaults for runtime configuration
-	config := &util.RuntimeConfiguration{
-		DryRun:                false,
-		Debug:                 false,
-		Once:                  false,
-		LeaderElectionEnabled: false,
-		Interval:              defaultInterval,
-		IncludeNamespaces:     nil,
-		IncludeResources:      []string{"deployments"},
-		ExcludeNamespaces:     util.RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
-		ExcludeWorkloads:      nil,
-		IncludeLabels:         nil,
-		TimeAnnotation:        "",
-		Kubeconfig:            "",
-	}
+	// set defaults for runtime configuration and layers
+	config := initializeConfig()
+	layerCli, layerEnv := initializeLayers()
 
-	layerCli := values.NewLayer()
-	layerEnv := values.NewLayer()
-
-	// set defaults for layers
-	layerCli.GracePeriod = defaultGracePeriod
-	layerCli.DownscaleReplicas = defaultDownscaleReplicas
-
-	config.ParseConfigFlags()
-
-	layerCli.ParseLayerFlags()
-
-	flag.Parse()
-
-	err := layerEnv.GetLayerFromEnv()
+	err := setupEnv(&layerEnv)
 	if err != nil {
 		slog.Error("failed to get layer from env", "error", err)
 		os.Exit(1)
@@ -96,6 +71,60 @@ func main() {
 		return
 	}
 
+	runWithLeaderElection(client, downscalerNamespace, cancel, ctx, &layerCli, &layerEnv, config)
+}
+
+func initializeConfig() *util.RuntimeConfiguration {
+	config := &util.RuntimeConfiguration{
+		DryRun:                false,
+		Debug:                 false,
+		Once:                  false,
+		LeaderElectionEnabled: false,
+		Interval:              defaultInterval,
+		IncludeNamespaces:     nil,
+		IncludeResources:      []string{"deployments"},
+		ExcludeNamespaces:     util.RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
+		ExcludeWorkloads:      nil,
+		IncludeLabels:         nil,
+		TimeAnnotation:        "",
+		Kubeconfig:            "",
+	}
+	config.ParseConfigFlags()
+
+	return config
+}
+
+func initializeLayers() (values.Layer, values.Layer) {
+	// Initialize layers
+	layerCli := values.NewLayer()
+	layerEnv := values.NewLayer()
+
+	// Configure layerCli
+	layerCli.GracePeriod = defaultGracePeriod
+	layerCli.DownscaleReplicas = defaultDownscaleReplicas
+	layerCli.ParseLayerFlags()
+	flag.Parse()
+
+	return layerCli, layerEnv
+}
+
+func setupEnv(layerEnv *values.Layer) error {
+	err := layerEnv.GetLayerFromEnv()
+	if err != nil {
+		return fmt.Errorf("failed to get layer from env: %w", err)
+	}
+
+	return nil
+}
+
+func runWithLeaderElection(
+	client kubernetes.Client,
+	downscalerNamespace string,
+	cancel context.CancelFunc,
+	ctx context.Context,
+	layerCli, layerEnv *values.Layer,
+	config *util.RuntimeConfiguration,
+) {
 	lease, err := client.CreateLease(leaseName, downscalerNamespace)
 	if err != nil {
 		slog.Warn("failed to create lease", "error", err)
@@ -121,7 +150,7 @@ func main() {
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				slog.Info("started leading")
-				err = startScanning(client, ctx, &layerCli, &layerEnv, config)
+				err = startScanning(client, ctx, layerCli, layerEnv, config)
 				if err != nil {
 					slog.Error("an error occurred while scanning workloads", "error", err)
 					cancel()
