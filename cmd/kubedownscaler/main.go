@@ -34,17 +34,18 @@ const (
 func main() {
 	// set defaults for runtime configuration
 	config := &util.RuntimeConfiguration{
-		DryRun:            false,
-		Debug:             false,
-		Once:              false,
-		Interval:          defaultInterval,
-		IncludeNamespaces: nil,
-		IncludeResources:  []string{"deployments"},
-		ExcludeNamespaces: util.RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
-		ExcludeWorkloads:  nil,
-		IncludeLabels:     nil,
-		TimeAnnotation:    "",
-		Kubeconfig:        "",
+		DryRun:                false,
+		Debug:                 false,
+		Once:                  false,
+		LeaderElectionEnabled: false,
+		Interval:              defaultInterval,
+		IncludeNamespaces:     nil,
+		IncludeResources:      []string{"deployments"},
+		ExcludeNamespaces:     util.RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
+		ExcludeWorkloads:      nil,
+		IncludeLabels:         nil,
+		TimeAnnotation:        "",
+		Kubeconfig:            "",
 	}
 
 	layerCli := values.NewLayer()
@@ -88,14 +89,10 @@ func main() {
 	downscalerNamespace, err := kubernetes.GetCurrentNamespace()
 	if err != nil {
 		slog.Warn("couldn't get namespace or running outside of cluster; skipping leader election", "error", err)
-		slog.Warn("proceeding without leader election, this may cause multiple instances to conflict when modifying the same resources")
+	}
 
-		err = startScanning(client, ctx, &layerCli, &layerEnv, config)
-		if err != nil {
-			slog.Error("an error occurred while scanning workloads, exiting", "error", err)
-			os.Exit(1)
-		}
-
+	if !config.LeaderElectionEnabled {
+		runWithoutLeaderElection(client, ctx, &layerCli, &layerEnv, config)
 		return
 	}
 
@@ -139,6 +136,21 @@ func main() {
 			},
 		},
 	})
+}
+
+func runWithoutLeaderElection(
+	client kubernetes.Client,
+	ctx context.Context,
+	layerCli, layerEnv *values.Layer,
+	config *util.RuntimeConfiguration,
+) {
+	slog.Warn("proceeding without leader election, this may cause multiple downscaler instances to conflict when modifying the same resources")
+
+	err := startScanning(client, ctx, layerCli, layerEnv, config)
+	if err != nil {
+		slog.Error("an error occurred while scanning workloads, exiting", "error", err)
+		os.Exit(1)
+	}
 }
 
 func startScanning(
