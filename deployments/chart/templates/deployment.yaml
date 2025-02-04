@@ -23,6 +23,9 @@ spec:
           {{- with .Values.arguments }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          {{- if gt .Values.replicaCount 1 }}
+          - --leader-election-enabled
+          {{- end }}
           {{- if .Values.constrainedDownscaler }}
           - --namespace={{ join "," .Values.constrainedNamespaces }}
           {{- end }}
