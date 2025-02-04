@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -36,7 +36,7 @@ type scaledObject struct {
 
 // setReplicas sets the pausedReplicas annotation to the specified replicas. Changes won't be made on Kubernetes until update() is called.
 func (s *scaledObject) setReplicas(replicas int32) error {
-	if replicas == values.Undefined { // pausedAnnotation was not defined before workload was downscaled
+	if replicas == util.Undefined { // pausedAnnotation was not defined before workload was downscaled
 		delete(s.Annotations, annotationKedaPausedReplicas)
 		return nil
 	}
@@ -54,7 +54,7 @@ func (s *scaledObject) setReplicas(replicas int32) error {
 func (s *scaledObject) getReplicas() (int32, error) {
 	pausedReplicasAnnotation, ok := s.Annotations[annotationKedaPausedReplicas]
 	if !ok {
-		return values.Undefined, nil
+		return util.Undefined, nil
 	}
 
 	pausedReplicas, err := strconv.ParseInt(pausedReplicasAnnotation, 10, 32)

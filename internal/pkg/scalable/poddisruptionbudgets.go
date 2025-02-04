@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	policy "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -35,11 +35,11 @@ type podDisruptionBudget struct {
 func (p *podDisruptionBudget) getMinAvailableInt() int32 {
 	minAvailable := p.Spec.MinAvailable
 	if minAvailable == nil {
-		return values.Undefined
+		return util.Undefined
 	}
 
 	if minAvailable.Type == intstr.String {
-		return values.Undefined
+		return util.Undefined
 	}
 
 	return minAvailable.IntVal
@@ -55,11 +55,11 @@ func (p *podDisruptionBudget) setMinAvailable(targetMinAvailable int32) {
 func (p *podDisruptionBudget) getMaxUnavailableInt() int32 {
 	maxUnavailable := p.Spec.MaxUnavailable
 	if maxUnavailable == nil {
-		return values.Undefined
+		return util.Undefined
 	}
 
 	if maxUnavailable.Type == intstr.String {
-		return values.Undefined
+		return util.Undefined
 	}
 
 	return maxUnavailable.IntVal
@@ -84,7 +84,7 @@ func (p *podDisruptionBudget) ScaleUp() error {
 	}
 
 	maxUnavailable := p.getMaxUnavailableInt()
-	if maxUnavailable != values.Undefined {
+	if maxUnavailable != util.Undefined {
 		p.setMaxUnavailable(*originalReplicas)
 		removeOriginalReplicas(p)
 
@@ -92,7 +92,7 @@ func (p *podDisruptionBudget) ScaleUp() error {
 	}
 
 	minAvailable := p.getMinAvailableInt()
-	if minAvailable != values.Undefined {
+	if minAvailable != util.Undefined {
 		p.setMinAvailable(*originalReplicas)
 		removeOriginalReplicas(p)
 
@@ -107,7 +107,7 @@ func (p *podDisruptionBudget) ScaleUp() error {
 // ScaleDown scales the resource down.
 func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int32) error {
 	maxUnavailable := p.getMaxUnavailableInt()
-	if maxUnavailable != values.Undefined {
+	if maxUnavailable != util.Undefined {
 		if maxUnavailable == downscaleReplicas {
 			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
 			return nil
@@ -120,7 +120,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int32) error {
 	}
 
 	minAvailable := p.getMinAvailableInt()
-	if minAvailable != values.Undefined {
+	if minAvailable != util.Undefined {
 		if minAvailable == downscaleReplicas {
 			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
 			return nil

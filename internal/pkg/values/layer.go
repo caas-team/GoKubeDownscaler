@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
@@ -18,8 +19,6 @@ var (
 	errAnnotationNotSet         = errors.New("error: annotation isn't set on workload")
 )
 
-const Undefined = -1 // Undefined represents an undefined integer value
-
 // Scaling is an enum that describes the current Scaling.
 type Scaling int
 
@@ -30,11 +29,31 @@ const (
 	ScalingUp                    // scaling up
 )
 
+// LayerID is an enum that describes the current Layer.
+type LayerID int
+
+const (
+	LayerWorkload    LayerID = iota // identifies the layer present in the workload
+	LayerNamespace                  // identifies the layer present in the namespace
+	LayerCli                        // identifies the layer defined in the CLI
+	LayerEnvironment                // identifies the layer defined in the environment variables
+)
+
+// String gets the string representation of the LayerID.
+func (l LayerID) String() string {
+	return map[LayerID]string{
+		LayerWorkload:    "LayerWorkload",
+		LayerNamespace:   "LayerNamespace",
+		LayerCli:         "LayerCli",
+		LayerEnvironment: "LayerEnvironment",
+	}[l]
+}
+
 // NewLayer gets a new layer with the default values.
 func NewLayer() Layer {
 	return Layer{
-		DownscaleReplicas: Undefined,
-		GracePeriod:       Undefined,
+		DownscaleReplicas: util.Undefined,
+		GracePeriod:       util.Undefined,
 	}
 }
 
@@ -75,7 +94,7 @@ func (l *Layer) CheckForIncompatibleFields() error { //nolint: cyclop // this is
 		return errForceUpAndDownTime
 	}
 	// downscale replicas invalid
-	if l.DownscaleReplicas != Undefined && l.DownscaleReplicas < 0 {
+	if l.DownscaleReplicas != util.Undefined && l.DownscaleReplicas < 0 {
 		return errInvalidDownscaleReplicas
 	}
 	// up- and downtime
@@ -141,7 +160,7 @@ func (l *Layer) getForcedScaling() Scaling {
 	return forcedScaling
 }
 
-type Layers []*Layer
+type Layers [4]*Layer
 
 // GetCurrentScaling gets the current scaling of the first layer that implements scaling.
 func (l Layers) GetCurrentScaling() Scaling {
@@ -169,7 +188,7 @@ func (l Layers) GetCurrentScaling() Scaling {
 func (l Layers) GetDownscaleReplicas() (int32, error) {
 	for _, layer := range l {
 		downscaleReplicas := layer.DownscaleReplicas
-		if downscaleReplicas == Undefined {
+		if downscaleReplicas == util.Undefined {
 			continue
 		}
 
@@ -202,10 +221,10 @@ func (l Layers) IsInGracePeriod(
 	ctx context.Context,
 ) (bool, error) {
 	var err error
-	var gracePeriod time.Duration = Undefined
+	var gracePeriod time.Duration = util.Undefined
 
 	for _, layer := range l {
-		if layer.GracePeriod == Undefined {
+		if layer.GracePeriod == util.Undefined {
 			continue
 		}
 
@@ -214,7 +233,7 @@ func (l Layers) IsInGracePeriod(
 		break
 	}
 
-	if gracePeriod == Undefined {
+	if gracePeriod == util.Undefined {
 		return false, nil
 	}
 
@@ -237,4 +256,23 @@ func (l Layers) IsInGracePeriod(
 	gracePeriodUntil := creationTime.Add(gracePeriod)
 
 	return time.Now().Before(gracePeriodUntil), nil
+}
+
+// String gets the string representation of the layers.
+func (l Layers) String() string {
+	var builder strings.Builder
+
+	builder.WriteString("[")
+
+	for i, layer := range l {
+		if i > 0 {
+			builder.WriteString(" ")
+		}
+
+		fmt.Fprintf(&builder, "%s:%+v", LayerID(i), layer)
+	}
+
+	builder.WriteString("]")
+
+	return builder.String()
 }
