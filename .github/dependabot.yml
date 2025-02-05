@@ -10,6 +10,12 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    groups:
+      version-bump:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -19,6 +25,12 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    groups:
+      version-bump:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
@@ -28,3 +40,9 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    groups:
+      version-bump:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
