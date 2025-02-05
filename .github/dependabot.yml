@@ -33,9 +33,6 @@ updates:
         update-types:
           - "minor"
           - "patch"
-    ignore:
-      - dependency-name: "*"
-        versions: ["*-rc.*"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
