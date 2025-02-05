@@ -1,4 +1,4 @@
-FROM golang:1.23.5 AS build
+FROM golang:1.24rc2 AS build
 
 WORKDIR /tmp/kubedownscaler
 
