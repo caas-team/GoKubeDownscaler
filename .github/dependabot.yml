@@ -1,22 +1,5 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/website/"
-    schedule:
-      interval: "daily"
-    labels:
-      - "housekeeping"
-      - "documentation"
-      - "dependencies"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-    groups:
-      version-bump:
-        applies-to: version-updates
-        update-types:
-          - "minor"
-          - "patch"
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
