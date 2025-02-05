@@ -46,6 +46,3 @@ updates:
         update-types:
           - "minor"
           - "patch"
-    ignore:
-      - dependency-name: "golang"
-        versions: ["*rc*"]
