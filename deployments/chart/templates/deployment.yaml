@@ -23,7 +23,7 @@ spec:
           {{- with .Values.arguments }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- if gt .Values.replicaCount 1 }}
+          {{- if include "go-kube-downscaler.leaderElection" . }}
           - --leader-election-enabled
           {{- end }}
           {{- if .Values.constrainedDownscaler }}
