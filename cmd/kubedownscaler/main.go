@@ -32,15 +32,44 @@ const (
 )
 
 func main() {
-	// set defaults for runtime configuration and layers
-	config := initializeConfig()
-	layerCli, layerEnv := initializeLayers()
+	// set defaults for runtime configuration
+	config := &util.RuntimeConfiguration{
+		DryRun:            false,
+		Debug:             false,
+		Once:              false,
+		Interval:          defaultInterval,
+		IncludeNamespaces: nil,
+		IncludeResources:  []string{"deployments"},
+		ExcludeNamespaces: util.RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
+		ExcludeWorkloads:  nil,
+		IncludeLabels:     nil,
+		TimeAnnotation:    "",
+		Kubeconfig:        "",
+	}
 
-	err := setupEnv(&layerEnv)
+	config.ParseConfigFlags()
+
+	err := config.ParseConfigEnvVars()
+	if err != nil {
+		slog.Error("failed to parse env vars for config", "error", err)
+		os.Exit(1)
+	}
+
+	layerCli := values.NewLayer()
+	layerEnv := values.NewLayer()
+
+	err = layerEnv.GetLayerFromEnv()
 	if err != nil {
 		slog.Error("failed to get layer from env", "error", err)
 		os.Exit(1)
 	}
+
+	// set defaults for layers
+	layerCli.GracePeriod = defaultGracePeriod
+	layerCli.DownscaleReplicas = defaultDownscaleReplicas
+	layerCli.ParseLayerFlags()
+
+	flag.Parse()
 
 	if config.Debug || config.DryRun {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
@@ -61,60 +90,18 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	downscalerNamespace, err := kubernetes.GetCurrentNamespace()
-	if err != nil {
-		slog.Warn("couldn't get namespace or running outside of cluster; skipping leader election", "error", err)
-	}
-
-	if !config.LeaderElectionEnabled {
+	if !config.LeaderElection {
 		runWithoutLeaderElection(client, ctx, &layerCli, &layerEnv, config)
 		return
 	}
 
-	runWithLeaderElection(client, downscalerNamespace, cancel, ctx, &layerCli, &layerEnv, config)
-}
-
-func initializeConfig() *util.RuntimeConfiguration {
-	config := &util.RuntimeConfiguration{
-		DryRun:                false,
-		Debug:                 false,
-		Once:                  false,
-		LeaderElectionEnabled: false,
-		Interval:              defaultInterval,
-		IncludeNamespaces:     nil,
-		IncludeResources:      []string{"deployments"},
-		ExcludeNamespaces:     util.RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
-		ExcludeWorkloads:      nil,
-		IncludeLabels:         nil,
-		TimeAnnotation:        "",
-		Kubeconfig:            "",
-	}
-	config.ParseConfigFlags()
-
-	return config
-}
-
-func initializeLayers() (values.Layer, values.Layer) {
-	// Initialize layers
-	layerCli := values.NewLayer()
-	layerEnv := values.NewLayer()
-
-	// Configure layerCli
-	layerCli.GracePeriod = defaultGracePeriod
-	layerCli.DownscaleReplicas = defaultDownscaleReplicas
-	layerCli.ParseLayerFlags()
-	flag.Parse()
-
-	return layerCli, layerEnv
-}
-
-func setupEnv(layerEnv *values.Layer) error {
-	err := layerEnv.GetLayerFromEnv()
+	downscalerNamespace, err := kubernetes.GetCurrentNamespace()
 	if err != nil {
-		return fmt.Errorf("failed to get layer from env: %w", err)
+		slog.Warn("couldn't get namespace or running outside of cluster; skipping leader election", "error", err)
+		runWithoutLeaderElection(client, ctx, &layerCli, &layerEnv, config)
 	}
 
-	return nil
+	runWithLeaderElection(client, downscalerNamespace, cancel, ctx, &layerCli, &layerEnv, config)
 }
 
 func runWithLeaderElection(
