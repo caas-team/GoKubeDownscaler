@@ -1,4 +1,5 @@
 replicaCount: 1
+# If replicaCount is greater than 1, the leader election is enabled by default
 
 image:
   repository: ghcr.io/caas-team/gokubedownscaler
@@ -6,8 +7,6 @@ image:
 
 arguments:
 #  - --interval=60
-
-leaderElection: false
 
 includedResources:
   - deployments
