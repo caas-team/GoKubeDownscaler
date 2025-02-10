@@ -98,7 +98,7 @@ func main() {
 	downscalerNamespace, err := kubernetes.GetCurrentNamespace()
 	if err != nil {
 		slog.Warn("couldn't get namespace or running outside of cluster; skipping leader election", "error", err)
-		runWithoutLeaderElection(client, ctx, &layerCli, &layerEnv, config)
+		os.Exit(1)
 	}
 
 	runWithLeaderElection(client, downscalerNamespace, cancel, ctx, &layerCli, &layerEnv, config)
