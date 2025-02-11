@@ -170,21 +170,6 @@ func startScanning(
 ) error {
 	slog.Info("started downscaler")
 
-	err := scanWorkloads(client, ctx, layerCli, layerEnv, config)
-	if err != nil {
-		return fmt.Errorf("failed to scan over workloads: %w", err)
-	}
-
-	return nil
-}
-
-// scanWorkloads scans over all workloads every scan.
-func scanWorkloads(
-	client kubernetes.Client,
-	ctx context.Context,
-	layerCli, layerEnv *values.Layer,
-	config *util.RuntimeConfiguration,
-) error {
 	for {
 		slog.Info("scanning workloads")
 
