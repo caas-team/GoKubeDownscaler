@@ -97,7 +97,7 @@ func main() {
 
 	downscalerNamespace, err := kubernetes.GetCurrentNamespace()
 	if err != nil {
-		slog.Warn("couldn't get namespace or running outside of cluster; skipping leader election", "error", err)
+		slog.Error("couldn't get namespace or running outside of cluster", "error", err)
 		os.Exit(1)
 	}
 
@@ -114,7 +114,7 @@ func runWithLeaderElection(
 ) {
 	lease, err := client.CreateLease(leaseName, downscalerNamespace)
 	if err != nil {
-		slog.Warn("failed to create lease", "error", err)
+		slog.Error("failed to create lease", "error", err)
 		os.Exit(1)
 	}
 
@@ -160,7 +160,7 @@ func runWithoutLeaderElection(
 	layerCli, layerEnv *values.Layer,
 	config *util.RuntimeConfiguration,
 ) {
-	slog.Warn("proceeding without leader election, this may cause multiple downscaler instances to conflict when modifying the same resources")
+	slog.Warn("proceeding without leader election; this could cause errors when running with multiple replicas")
 
 	err := startScanning(client, ctx, layerCli, layerEnv, config)
 	if err != nil {
