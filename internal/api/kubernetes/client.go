@@ -255,7 +255,7 @@ func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
 	leaseNamespace, err := getCurrentNamespace()
 	if err != nil {
 		slog.Error("couldn't get namespace or running outside of cluster", "error", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("couldn't get namespace: %w", err)
 	}
 
 	lease := &resourcelock.LeaseLock{
