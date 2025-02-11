@@ -95,24 +95,17 @@ func main() {
 		return
 	}
 
-	downscalerNamespace, err := kubernetes.GetCurrentNamespace()
-	if err != nil {
-		slog.Error("couldn't get namespace or running outside of cluster", "error", err)
-		os.Exit(1)
-	}
-
-	runWithLeaderElection(client, downscalerNamespace, cancel, ctx, &layerCli, &layerEnv, config)
+	runWithLeaderElection(client, cancel, ctx, &layerCli, &layerEnv, config)
 }
 
 func runWithLeaderElection(
 	client kubernetes.Client,
-	downscalerNamespace string,
 	cancel context.CancelFunc,
 	ctx context.Context,
 	layerCli, layerEnv *values.Layer,
 	config *util.RuntimeConfiguration,
 ) {
-	lease, err := client.CreateLease(leaseName, downscalerNamespace)
+	lease, err := client.CreateLease(leaseName)
 	if err != nil {
 		slog.Error("failed to create lease", "error", err)
 		os.Exit(1)

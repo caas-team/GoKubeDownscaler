@@ -36,7 +36,7 @@ type Client interface {
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
 	// CreateLease creates a new lease for the downscaler
-	CreateLease(leaseName, leaseNamespace string) (*resourcelock.LeaseLock, error)
+	CreateLease(leaseName string) (*resourcelock.LeaseLock, error)
 	// addWorkloadEvent creates a new event on the workload
 	addWorkloadEvent(eventType string, reason string, id string, message string, workload scalable.Workload, ctx context.Context) error
 }
@@ -245,11 +245,17 @@ func (c client) addWorkloadEvent(eventType, reason, identifier, message string, 
 	return nil
 }
 
-func (c client) CreateLease(leaseName, leaseNamespace string) (*resourcelock.LeaseLock, error) {
+func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		slog.Error("failed to get hostname", "error", err)
 		return nil, fmt.Errorf("failed to get hostname: %w", err)
+	}
+
+	leaseNamespace, err := getCurrentNamespace()
+	if err != nil {
+		slog.Error("couldn't get namespace or running outside of cluster", "error", err)
+		os.Exit(1)
 	}
 
 	lease := &resourcelock.LeaseLock{

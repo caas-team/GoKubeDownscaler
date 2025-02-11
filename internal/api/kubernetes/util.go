@@ -18,7 +18,7 @@ func getConfig(kubeconfig string) (*rest.Config, error) {
 }
 
 // GetCurrentNamespace retrieves downscaler namespace from its service account file.
-func GetCurrentNamespace() (string, error) {
+func getCurrentNamespace() (string, error) {
 	const namespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 
 	namespace, err := os.ReadFile(namespaceFile)
