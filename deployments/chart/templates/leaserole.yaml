@@ -1,4 +1,4 @@
-{{- if include "go-kube-downscaler.leaderElection" . }}
+{{- if include "go-kube-downscaler.leaderElection" . -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
