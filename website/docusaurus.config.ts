@@ -8,6 +8,7 @@ import {
   globalRefParseFrontMatter,
 } from "./plugins/global-ref-plugin.cts";
 import { repoRefRemarkPlugin } from "./plugins/repo-ref-plugin.cts";
+import { PluginOptions } from "@easyops-cn/docusaurus-search-local";
 
 const config: Config = {
   title: "GoKubeDownscaler",
@@ -155,6 +156,19 @@ const config: Config = {
         href: "/GoKubeDownscaler/manifest.json",
       },
     },
+  ],
+  themes: [
+    [
+      require.resolve("@easyops-cn/docusaurus-search-local"),
+      {
+        hashed: true,
+
+        indexPages: true,
+        docsRouteBasePath: ["/docs", "/guides"],
+        docsDir: "content",
+        searchBarShortcutHint: false,
+      } as Partial<PluginOptions>,
+    ],
   ],
   plugins: [svgoConfigPlugin, tailwindPlugin],
   markdown: {
