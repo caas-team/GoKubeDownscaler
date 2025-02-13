@@ -13,7 +13,7 @@ const compat = new FlatCompat({
   allConfig: js.configs.all,
 });
 
-const gitignorePath = path.resolve(__dirname, ".gitignore");
+const gitignorePath = path.resolve(__dirname, "../.gitignore");
 
 export default [
   ...compat.extends(

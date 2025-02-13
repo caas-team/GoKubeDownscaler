@@ -78,6 +78,12 @@ Now that the prerequisites are installed you can start the website.
 npm run --prefix website start
 ```
 
+If you want to test features which are only available on the built site (e.g. search) use:
+
+```bash
+npm run --prefix website build && npm run --prefix website serve
+```
+
 ## Starting Development
 
 The following section covers the basics of how to make changes to the website.
