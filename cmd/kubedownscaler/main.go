@@ -90,6 +90,8 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
+	defer cancel()
+
 	if !config.LeaderElection {
 		runWithoutLeaderElection(client, ctx, &layerCli, &layerEnv, config)
 		return
@@ -110,8 +112,6 @@ func runWithLeaderElection(
 		slog.Error("failed to create lease", "error", err)
 		os.Exit(1)
 	}
-
-	defer cancel()
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)

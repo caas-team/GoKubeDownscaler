@@ -248,7 +248,6 @@ func (c client) addWorkloadEvent(eventType, reason, identifier, message string, 
 func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
-		slog.Error("failed to get hostname", "error", err)
 		return nil, fmt.Errorf("failed to get hostname: %w", err)
 	}
 
