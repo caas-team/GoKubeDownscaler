@@ -5,7 +5,7 @@ import "fmt"
 // Error is a custom error type that includes the original error, a message and a value.
 type Error struct {
 	Message string
-	Value   interface{}
+	Value   any
 }
 
 // Error returns the error message.
@@ -18,7 +18,7 @@ func (e *Error) Error() string {
 //
 
 // NewForceUpAndDownTimeError returns an error when both forceUptime and forceDowntime are defined.
-func NewForceUpAndDownTimeError(value interface{}) error {
+func NewForceUpAndDownTimeError(value any) error {
 	return &Error{
 		Message: "both forceUptime and forceDowntime are defined",
 		Value:   value,
@@ -26,7 +26,7 @@ func NewForceUpAndDownTimeError(value interface{}) error {
 }
 
 // NewUpAndDownTimeError returns an error when both uptime and downtime are defined.
-func NewUpAndDownTimeError(value interface{}) error {
+func NewUpAndDownTimeError(value any) error {
 	return &Error{
 		Message: "both uptime and downtime are defined",
 		Value:   value,
@@ -34,7 +34,7 @@ func NewUpAndDownTimeError(value interface{}) error {
 }
 
 // NewTimeAndPeriodError returns an error when both a time and a period is defined.
-func NewTimeAndPeriodError(value interface{}) error {
+func NewTimeAndPeriodError(value any) error {
 	return &Error{
 		Message: "both a time and a period is defined",
 		Value:   value,
@@ -42,7 +42,7 @@ func NewTimeAndPeriodError(value interface{}) error {
 }
 
 // NewInvalidDownscaleReplicasError returns an error when the downscale replicas value is invalid.
-func NewInvalidDownscaleReplicasError(value interface{}) error {
+func NewInvalidDownscaleReplicasError(value any) error {
 	return &Error{
 		Message: "downscale replicas value is invalid",
 		Value:   value,
@@ -50,7 +50,7 @@ func NewInvalidDownscaleReplicasError(value interface{}) error {
 }
 
 // NewValueNotSetError returns an error when no layer implements this value.
-func NewValueNotSetError(value interface{}) error {
+func NewValueNotSetError(value any) error {
 	return &Error{
 		Message: "no layer implements this value",
 		Value:   value,
@@ -58,7 +58,7 @@ func NewValueNotSetError(value interface{}) error {
 }
 
 // NewAnnotationsNotSetError returns an error when the annotation isn't set on workload.
-func NewAnnotationsNotSetError(value interface{}) error {
+func NewAnnotationsNotSetError(value any) error {
 	return &Error{
 		Message: "annotation isn't set on workload",
 		Value:   value,
@@ -70,7 +70,7 @@ func NewAnnotationsNotSetError(value interface{}) error {
 //
 
 // NewInvalidWeekdayError returns an error when the specific weekday is invalid.
-func NewInvalidWeekdayError(value interface{}) error {
+func NewInvalidWeekdayError(value any) error {
 	return &Error{
 		Message: "specific weekday is invalid",
 		Value:   value,
@@ -78,7 +78,7 @@ func NewInvalidWeekdayError(value interface{}) error {
 }
 
 // NewInvalidRelativeTimespanError returns an error when the specific relative timespan is invalid.
-func NewInvalidRelativeTimespanError(value interface{}) error {
+func NewInvalidRelativeTimespanError(value any) error {
 	return &Error{
 		Message: "specific relative timespan is invalid",
 		Value:   value,
@@ -86,7 +86,7 @@ func NewInvalidRelativeTimespanError(value interface{}) error {
 }
 
 // NewTimeOfDateOutOfRangeError returns an error when the time of day has fields that are out of range.
-func NewTimeOfDateOutOfRangeError(value interface{}) error {
+func NewTimeOfDateOutOfRangeError(value any) error {
 	return &Error{
 		Message: "the time of day has fields that are out of range",
 	}
