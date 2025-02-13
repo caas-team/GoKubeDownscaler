@@ -24,6 +24,13 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
+If replicaCount is greater than 1 leader election is enabled by default.
+*/}}
+{{- define "go-kube-downscaler.leaderElection" -}}
+{{- if (.Values.replicaCount | int | gt 1) }}
+{{- end }}
+
+{{/*
 Common labels
 */}}
 {{- define "go-kube-downscaler.labels" -}}

@@ -1,3 +1,4 @@
+# If replicaCount is greater than 1, leader election is enabled by default
 replicaCount: 1
 
 image:
