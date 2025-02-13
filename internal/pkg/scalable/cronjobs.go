@@ -21,7 +21,7 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 	return results, nil
 }
 
-// cronJob is a wrapper for batch/v1.CronJob to implement the suspendScaledResource interface
+// cronJob is a wrapper for cronjob.v1.batch to implement the suspendScaledResource interface
 type cronJob struct {
 	*batch.CronJob
 }

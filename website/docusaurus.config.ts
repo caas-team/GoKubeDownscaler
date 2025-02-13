@@ -3,11 +3,17 @@ import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 import { tailwindPlugin } from "./plugins/tailwind-config.cts";
 import { svgoConfigPlugin } from "./plugins/svgo-config.cts";
+import {
+  docRefRemarkPlugin,
+  globalRefParseFrontMatter,
+} from "./plugins/global-ref-plugin.cts";
+import { repoRefRemarkPlugin } from "./plugins/repo-ref-plugin.cts";
+import { PluginOptions } from "@easyops-cn/docusaurus-search-local";
 
 const config: Config = {
   title: "GoKubeDownscaler",
-  tagline: "A vertical autoscaler for Kubernetes workloads",
-  favicon: "img/CaaS-Logo.svg",
+  tagline: "A horizontal autoscaler for Kubernetes workloads",
+  favicon: "img/kubedownscaler.svg",
 
   url: "https://caas-team.github.io",
 
@@ -19,7 +25,8 @@ const config: Config = {
   trailingSlash: false,
 
   onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "warn",
+  onBrokenMarkdownLinks: "throw",
+  onBrokenAnchors: "throw",
 
   i18n: {
     defaultLocale: "en",
@@ -34,6 +41,7 @@ const config: Config = {
           sidebarPath: "./sidebars.ts",
           routeBasePath: "/",
           path: "content",
+          beforeDefaultRemarkPlugins: [docRefRemarkPlugin, repoRefRemarkPlugin],
           editUrl:
             "https://github.com/caas-team/GoKubeDownscaler/edit/main/website",
         },
@@ -50,10 +58,10 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: "GoKubeDownscaler",
       logo: {
         alt: "CaaS Logo",
-        src: "img/CaaS-Logo.svg",
+        src: "img/kubedownscaler-name-dark.svg",
+        srcDark: "img/kubedownscaler-name-light.svg",
       },
       items: [
         {
@@ -98,7 +106,7 @@ const config: Config = {
             },
             {
               label: "Guides",
-              to: "/guides/getting-started",
+              to: "/guides",
             },
           ],
         },
@@ -130,9 +138,42 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      additionalLanguages: ["mdx", "bash"],
+      magicComments: [
+        {
+          className: "theme-code-block-highlighted-line",
+          line: "highlight-next-line",
+          block: { start: "highlight-start", end: "highlight-end" },
+        },
+      ],
     },
   } satisfies Preset.ThemeConfig,
+  headTags: [
+    {
+      tagName: "link",
+      attributes: {
+        rel: "manifest",
+        href: "/GoKubeDownscaler/manifest.json",
+      },
+    },
+  ],
+  themes: [
+    [
+      require.resolve("@easyops-cn/docusaurus-search-local"),
+      {
+        hashed: true,
+        indexBlog: false,
+
+        docsRouteBasePath: ["/docs", "/guides"],
+        docsDir: "content",
+        searchBarShortcutHint: false,
+      } as Partial<PluginOptions>,
+    ],
+  ],
   plugins: [svgoConfigPlugin, tailwindPlugin],
+  markdown: {
+    parseFrontMatter: globalRefParseFrontMatter,
+  },
 };
 
 export default config;

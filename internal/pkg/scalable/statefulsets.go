@@ -21,7 +21,7 @@ func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Conte
 	return results, nil
 }
 
-// statefulset is a wrapper for apps/v1.StatefulSet to implement the replicaScaledResource interface
+// statefulset is a wrapper for statefulset.v1.apps to implement the replicaScaledResource interface
 type statefulSet struct {
 	*appsv1.StatefulSet
 }

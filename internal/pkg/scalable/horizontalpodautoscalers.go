@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var errMinReplicasBoundsExceeded = errors.New("error: a HPAs minReplicas can only be set to int32 values larger than 1")
+var errMinReplicasBoundsExceeded = errors.New("error: an HPAs minReplicas can only be set to int32 values larger than 1")
 
 // getHorizontalPodAutoscalers is the getResourceFunc for horizontalPodAutoscalers
 func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -24,7 +24,7 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 	return results, nil
 }
 
-// horizontalPodAutoscaler is a wrapper for autoscaling/v2.HorizontalPodAutoscaler to implement the replicaScaledResource interface
+// horizontalPodAutoscaler is a wrapper for horizontalpodautoscaler.v2.autoscaling to implement the replicaScaledResource interface
 type horizontalPodAutoscaler struct {
 	*appsv1.HorizontalPodAutoscaler
 }
