@@ -69,6 +69,33 @@ func NewAnnotationsNotSetError(value interface{}) error {
 //
 //
 
+// NewInvalidWeekdayError returns an error when the specific weekday is invalid.
+func NewInvalidWeekdayError(value interface{}) error {
+	return &Error{
+		Message: "specific weekday is invalid",
+		Value:   value,
+	}
+}
+
+// NewInvalidRelativeTimespanError returns an error when the specific relative timespan is invalid.
+func NewInvalidRelativeTimespanError(value interface{}) error {
+	return &Error{
+		Message: "specific relative timespan is invalid",
+		Value:   value,
+	}
+}
+
+// NewTimeOfDateOutOfRangeError returns an error when the time of day has fields that are out of range.
+func NewTimeOfDateOutOfRangeError(value interface{}) error {
+	return &Error{
+		Message: "the time of day has fields that are out of range",
+	}
+}
+
 //
 //
 //
+
+///
+///
+///

@@ -57,3 +57,30 @@ func TestNewAnnotationsNotSetError(t *testing.T) {
 		t.Error("NewAnnotationsNotSetError()-method should have thrown an error")
 	}
 }
+
+// Runs the test for NewInvalidWeekdayError()-method
+func TestNewInvalidWeekdayError(t *testing.T) {
+	t.Parallel()
+	err := NewInvalidWeekdayError(nil)
+	if err == nil {
+		t.Error("NewInvalidWeekdayError()-method should have thrown an error")
+	}
+}
+
+// Runs the test for NewInvalidRelativeTimespanError()-method
+func TestNewInvalidRelativeTimespanError(t *testing.T) {
+	t.Parallel()
+	err := NewInvalidRelativeTimespanError(nil)
+	if err == nil {
+		t.Error("NewInvalidRelativeTimespanError()-method should have thrown an error")
+	}
+}
+
+// Runs the test for NewTimeOfDataeOutOfRangeError()-method
+func TestNewTimeOfDateOutOfRangeError(t *testing.T) {
+	t.Parallel()
+	err := NewTimeOfDateOutOfRangeError(nil)
+	if err == nil {
+		t.Error("NewTimeOfDateOutOfRangeError()-method should have thrown an error")
+	}
+}
