@@ -30,7 +30,7 @@ The [Values](ref:docs-values) will be applied to the [cli layer](ref:docs-layers
 
 :::info
 
-The runtime configuration set by the cli arguments will be overwritten by their [respective environment variables](ref:docs-environment-variables#runtime-configuration) if they are both set argument.
+The runtime configuration set by the cli arguments will take precedence over [their respective environment variables](ref:docs-environment-variables#runtime-configuration) if they are both set.
 
 :::
 
@@ -55,12 +55,12 @@ The CLI arguments can be set in different ways, depending on your setup.
 ### Binary or Go Run
 
 ```bash
-go run cmd/kubedownscaler --explicit-include=true --interval 60s --exclude-namespaces "kube-.*"
+# go build cmd/kubedownscaler -o kubedownscaler
+kubedownscaler --dry-run --namespace=my-namespace
 ```
 
 ```bash
-# go build cmd/kubedownscaler -o kubedownscaler
-kubedownscaler --dry-run --namespace=my-namespace
+go run cmd/kubedownscaler --explicit-include=true --interval 60s --exclude-namespaces "kube-.*"
 ```
 
 ### Via Helm Chart values.yaml
