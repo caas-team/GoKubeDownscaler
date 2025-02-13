@@ -1,7 +1,6 @@
 package values
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -9,12 +8,6 @@ import (
 	"time"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
-)
-
-var (
-	errInvalidWeekday          = errors.New("error: specified weekday is invalid")
-	errRelativeTimespanInvalid = errors.New("error: specified relative timespan is invalid")
-	errTimeOfDayOutOfRange     = errors.New("error: the time of day has fields that are out of rane")
 )
 
 // rfc339Regex is a regex that matches an rfc339 timestamp.
@@ -111,17 +104,17 @@ func parseRelativeTimeSpan(timespanString string) (*relativeTimeSpan, error) {
 
 	parts := strings.Split(timespanString, " ")
 	if len(parts) != 3 {
-		return nil, errRelativeTimespanInvalid
+		return nil, NewInvalidRelativeTimespanError(timespanString)
 	}
 
 	weekdaySpan := strings.Split(parts[0], "-")
 	if len(weekdaySpan) != 2 {
-		return nil, errRelativeTimespanInvalid
+		return nil, NewInvalidRelativeTimespanError(timespanString)
 	}
 
 	timeSpan := strings.Split(parts[1], "-")
 	if len(timeSpan) != 2 {
-		return nil, errRelativeTimespanInvalid
+		return nil, NewInvalidRelativeTimespanError(timespanString)
 	}
 
 	timezone := parts[2]
@@ -241,7 +234,7 @@ func getWeekday(weekday string) (time.Weekday, error) {
 		return day, nil
 	}
 
-	return 0, errInvalidWeekday
+	return 0, NewInvalidWeekdayError(weekday)
 }
 
 // parseDayTime parses the given time of day string to a zero date time.
@@ -254,7 +247,7 @@ func parseDayTime(daytime string, timezone *time.Location) (time.Time, error) {
 	}
 
 	if hour < 0 || hour > 24 {
-		return time.Time{}, errTimeOfDayOutOfRange
+		return time.Time{}, NewTimeOfDateOutOfRangeError(daytime)
 	}
 
 	minute, err := strconv.Atoi(parts[1])
@@ -263,7 +256,7 @@ func parseDayTime(daytime string, timezone *time.Location) (time.Time, error) {
 	}
 
 	if minute < 0 || minute >= 60 {
-		return time.Time{}, errTimeOfDayOutOfRange
+		return time.Time{}, NewTimeOfDateOutOfRangeError(daytime)
 	}
 
 	return time.Date(0, time.January, 1, hour, minute, 0, 0, timezone), nil

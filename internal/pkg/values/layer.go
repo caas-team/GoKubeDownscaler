@@ -91,20 +91,20 @@ func (l *Layer) CheckForIncompatibleFields() error { //nolint: cyclop // this is
 		l.ForceDowntime.value &&
 		l.ForceUptime.isSet &&
 		l.ForceUptime.value {
-		return errForceUpAndDownTime
+		return NewForceUpAndDownTimeError(l)
 	}
 	// downscale replicas invalid
 	if l.DownscaleReplicas != util.Undefined && l.DownscaleReplicas < 0 {
-		return errInvalidDownscaleReplicas
+		return NewInvalidDownscaleReplicasError(l)
 	}
 	// up- and downtime
 	if l.UpTime != nil && l.DownTime != nil {
-		return errUpAndDownTime
+		return NewUpAndDownTimeError(l)
 	}
 	// *time and *period
 	if (l.UpTime != nil || l.DownTime != nil) &&
 		(l.UpscalePeriod != nil || l.DownscalePeriod != nil) {
-		return errTimeAndPeriod
+		return NewTimeAndPeriodError(l)
 	}
 
 	return nil
