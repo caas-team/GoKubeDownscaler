@@ -3,7 +3,7 @@
     "name": "GoKubeDownscaler",
     "icons": [
         {
-            "src": "/GoKubeDownscaler/img/CaaS-Logo.svg",
+            "src": "/GoKubeDownscaler/img/kubedownscaler.svg",
             "type": "image/svg+xml",
             "sizes": "any"
         }
@@ -22,7 +22,7 @@
             "url": "/GoKubeDownscaler/docs",
             "icons": [
                 {
-                    "src": "/GoKubeDownscaler/img/CaaS-Logo.svg",
+                    "src": "/GoKubeDownscaler/img/kubedownscaler.svg",
                     "sizes": "any"
                 }
             ]
@@ -34,7 +34,7 @@
             "url": "/GoKubeDownscaler/guides",
             "icons": [
                 {
-                    "src": "/GoKubeDownscaler/img/CaaS-Logo.svg",
+                    "src": "/GoKubeDownscaler/img/kubedownscaler.svg",
                     "sizes": "any"
                 }
             ]
@@ -46,7 +46,7 @@
             "url": "/GoKubeDownscaler/about",
             "icons": [
                 {
-                    "src": "/GoKubeDownscaler/img/CaaS-Logo.svg",
+                    "src": "/GoKubeDownscaler/img/kubedownscaler.svg",
                     "sizes": "any"
                 }
             ]

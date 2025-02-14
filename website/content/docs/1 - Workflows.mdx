@@ -93,10 +93,10 @@ Info:
 
 ## Docker Build
 
-This workflow builds [the docker image for the downscaler](ref:docs-docker-image) when the [release-new-version event](#release-new-version-event) or the [create-dev-build event](#create-dev-build-event) is triggered.
+This workflow builds [the docker image for the downscaler](ref:docs-docker-image) when the [`release-new-version` event](#release-new-version-event) or the [create-dev-build event](#create-dev-build-event) is triggered.
 
 The workflow sets up Cosign and Docker Buildx.
-Additionally it logs in to the GitHub Container Registry(GHCR) and Telekom's Magenta Trusted Registry(MTR) registry.
+Additionally it logs in to the GitHub Container Registry(GHCR) and Telekom's Magenta Trusted Registry(MTR).
 After which it builds the image and pushes it to both container registries.
 Finally it signs the image with Cosign.
 
@@ -107,11 +107,11 @@ Info:
 
 ## Helm Build
 
-This workflow builds the helm chart for the downscaler when the [build-new-chart event](#build-new-chart-event) is triggered.
+This workflow builds the helm chart for the downscaler when the [`build-new-chart` event](#build-new-chart-event) is triggered.
 
 The workflow installs Helm as its needed to build the helm chart,
 lints the helm chart, packages the helm chart and pushes it to
-the GitHub Container Registry(GHCR) and Telekom's Magenta Trusted Registry(MTR) registry.
+the GitHub Container Registry(GHCR) and Telekom's Magenta Trusted Registry(MTR).
 Additionally it also triggers a repository dispatch event on
 the [helm-charts repo](https://github.com/caas-team/helm-charts) which adds the new helm chart to the helm-charts repo.
 

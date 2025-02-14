@@ -163,7 +163,6 @@ const config: Config = {
       {
         hashed: true,
         indexBlog: false,
-
         docsRouteBasePath: ["/docs", "/guides"],
         docsDir: "content",
         searchBarShortcutHint: false,
