@@ -96,43 +96,6 @@ const config: Config = {
     },
     footer: {
       style: "dark",
-      links: [
-        {
-          title: "Content",
-          items: [
-            {
-              label: "Documentation",
-              to: "/docs",
-            },
-            {
-              label: "Guides",
-              to: "/guides",
-            },
-          ],
-        },
-        {
-          title: "Community",
-          items: [
-            {
-              label: "Slack",
-              href: "https://communityinviter.com/apps/kube-downscaler/kube-downscaler",
-            },
-            {
-              label: "GitHub",
-              href: "https://github.com/caas-team/GoKubeDownscaler",
-            },
-          ],
-        },
-        {
-          title: "More",
-          items: [
-            {
-              label: "About",
-              to: "/about",
-            },
-          ],
-        },
-      ],
       copyright: `Copyright © GoKubeDownscaler Authors ${new Date().getFullYear()}`,
     },
     prism: {
