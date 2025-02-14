@@ -78,7 +78,7 @@ go test ./...
 
 You normally don't need to build the binary or docker image locally
 as workflows handle building those for releasing new versions.
-This is only necessary for eg. testing the docker image.
+This is only necessary for e.g. testing the docker image.
 
 ### Binary
 
@@ -88,7 +88,7 @@ This is how you can build a binary of the kubedownscaler:
 CGO_ENABLED=0 go build -o bin/gokubedownscaler ./cmd/kubedownscaler
 ```
 
-Disabling CGO isn't strictly required although it does sometimes lead to problems.
+Disabling CGO isn't strictly required although leaving it enabled does sometimes lead to problems.
 
 ### Docker Image
 

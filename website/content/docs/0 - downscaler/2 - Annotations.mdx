@@ -28,16 +28,20 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: example-namespace
+  # highlight-start
   annotations:
     downscaler/downscale-replicas: "1"
     downscaler/exclude: "false"
+  # highlight-end
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: example-deployment
+  # highlight-start
   annotations:
     downscaler/uptime: "Mon-Fri 08:00-20:00 UTC"
+  # highlight-end
 spec:
   replicas: 3
   selector:

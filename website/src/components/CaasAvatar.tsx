@@ -3,7 +3,7 @@ import CaasLogo from "/img/CaaS-Logo.svg";
 
 export default function CaasAvatar(): JSX.Element {
   const name = "CaaS@DTIT";
-  const description = "The container as a service team at Deutsch Telekom IT";
+  const description = "The container as a service team at Deutsche Telekom IT";
   const link = "https://github.com/caas-team";
 
   return (

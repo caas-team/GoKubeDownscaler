@@ -78,6 +78,14 @@ Now that the prerequisites are installed you can start the website.
 npm run --prefix website start
 ```
 
+If you want to test features which are only available on the built site (e.g. search) use:
+
+```bash
+npm run --prefix website build && npm run --prefix website serve
+```
+
+This will disable hot reloads, so you will have to rerun the command every time you changed something to see it on the site.
+
 ## Starting Development
 
 The following section covers the basics of how to make changes to the website.
@@ -130,7 +138,7 @@ Some category description
 
 The structure of the guides and docs is basically the same as on the built website.
 Folders are categories, mdx files are pages.
-Category indexes are the index.mdx files in their respective categories' folders.
+Category indexes are the `index.mdx` files located in the folders of their respective categories.
 
 The order in the sidebar is defined by number prefixes:
 
@@ -151,7 +159,7 @@ The same counts for links to a heading on the same page: `[some text](#heading-i
 
 #### Github GoKubeDownscaler Repository
 
-With path:
+To link to a file in the repository you can use the `repo:` directive:
 
 - `[some text](repo:path/to/file)`
 - `[some text](repo:/path/to/file)`
@@ -159,7 +167,7 @@ With path:
 
 -> `https://github.com/caas-team/GoKubeDownscaler/tree/main/path/to/file`
 
-Without path:
+To just link to the Downscaler repository:
 
 - `[some text](repo)`
 
@@ -179,7 +187,7 @@ globalReference: docs-example
 ---
 ```
 
-after which you can use this reference to reference the document from any other:
+after which you can use the reference to link to the document from any other:
 
 ```mdx
 Some [example](ref:docs-example) text.
@@ -211,8 +219,7 @@ These are some of the most common fixes for such issues.
 
 ### Clear Docusaurus Cache
 
-Docusaurus caches most files and doesn't rebuild them until they themselves change
-(eg. rendered markdown files, [SVGO](https://svgo.dev/)/[SVGR](https://react-svgr.com/) optimized SVGs, etc.).
+Docusaurus caches most files and doesn't rebuild them until they themselves change (e.g. rendered markdown files, [SVGO](https://svgo.dev/)/[SVGR](https://react-svgr.com/) optimized SVGs, etc.).
 This can lead to problems when there are custom external dependencies which don't trigger a rebuild.
 
 This command forces docusaurus to clear its cache and rebuild all files on the next start.

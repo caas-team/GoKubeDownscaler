@@ -8,11 +8,12 @@ import {
   globalRefParseFrontMatter,
 } from "./plugins/global-ref-plugin.cts";
 import { repoRefRemarkPlugin } from "./plugins/repo-ref-plugin.cts";
+import { PluginOptions } from "@easyops-cn/docusaurus-search-local";
 
 const config: Config = {
   title: "GoKubeDownscaler",
   tagline: "A horizontal autoscaler for Kubernetes workloads",
-  favicon: "img/CaaS-Logo.svg",
+  favicon: "img/kubedownscaler.svg",
 
   url: "https://caas-team.github.io",
 
@@ -24,7 +25,8 @@ const config: Config = {
   trailingSlash: false,
 
   onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "warn",
+  onBrokenMarkdownLinks: "throw",
+  onBrokenAnchors: "throw",
 
   i18n: {
     defaultLocale: "en",
@@ -56,10 +58,10 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: "GoKubeDownscaler",
       logo: {
         alt: "CaaS Logo",
-        src: "img/CaaS-Logo.svg",
+        src: "img/kubedownscaler-name-dark.svg",
+        srcDark: "img/kubedownscaler-name-light.svg",
       },
       items: [
         {
@@ -94,43 +96,6 @@ const config: Config = {
     },
     footer: {
       style: "dark",
-      links: [
-        {
-          title: "Content",
-          items: [
-            {
-              label: "Documentation",
-              to: "/docs",
-            },
-            {
-              label: "Guides",
-              to: "/guides",
-            },
-          ],
-        },
-        {
-          title: "Community",
-          items: [
-            {
-              label: "Slack",
-              href: "https://communityinviter.com/apps/kube-downscaler/kube-downscaler",
-            },
-            {
-              label: "GitHub",
-              href: "https://github.com/caas-team/GoKubeDownscaler",
-            },
-          ],
-        },
-        {
-          title: "More",
-          items: [
-            {
-              label: "About",
-              to: "/about",
-            },
-          ],
-        },
-      ],
       copyright: `Copyright © GoKubeDownscaler Authors ${new Date().getFullYear()}`,
     },
     prism: {
@@ -154,6 +119,18 @@ const config: Config = {
         href: "/GoKubeDownscaler/manifest.json",
       },
     },
+  ],
+  themes: [
+    [
+      require.resolve("@easyops-cn/docusaurus-search-local"),
+      {
+        hashed: true,
+        indexBlog: false,
+        docsRouteBasePath: ["/docs", "/guides"],
+        docsDir: "content",
+        searchBarShortcutHint: false,
+      } as Partial<PluginOptions>,
+    ],
   ],
   plugins: [svgoConfigPlugin, tailwindPlugin],
   markdown: {
