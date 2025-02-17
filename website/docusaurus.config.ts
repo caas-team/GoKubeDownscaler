@@ -99,7 +99,6 @@ const config: Config = {
           position: "left",
           label: "Guides",
         },
-        { to: "/about", label: "About", position: "left" },
         {
           href: "https://github.com/caas-team/GoKubeDownscaler",
           label: "GitHub",
