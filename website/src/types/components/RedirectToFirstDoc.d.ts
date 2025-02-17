@@ -1,0 +1,3 @@
+interface RedirectToFirstDocProps {
+  sidebar: string;
+}
