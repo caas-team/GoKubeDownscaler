@@ -81,8 +81,9 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
+      hideOnScroll: true,
       logo: {
-        alt: "CaaS Logo",
+        alt: "Kubedownscaler Logo",
         src: "img/kubedownscaler-name-dark.svg",
         srcDark: "img/kubedownscaler-name-light.svg",
       },
@@ -101,13 +102,17 @@ const config: Config = {
         },
         {
           href: "https://github.com/caas-team/GoKubeDownscaler",
-          label: "GitHub",
+          "aria-label": "GitHub",
           position: "right",
+          title: "GoKubeDownscaler | Github",
+          className: "navbar-icon icon-github",
         },
         {
-          href: "https://communityinviter.com/apps/kube-downscaler/kube-downscaler",
-          label: "Slack",
+          href: "https://inviter.co/kube-downscaler",
+          "aria-label": "GitHub",
           position: "right",
+          title: "kube-downscaler | Slack",
+          className: "navbar-icon icon-slack",
         },
       ],
     },

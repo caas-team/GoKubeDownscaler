@@ -11,3 +11,29 @@
   --ifm-color-primary: #e20074;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+.navbar-icon {
+  content: "";
+  margin-inline: 0.5rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.icon-github {
+  background-image: url("/img/Github.svg");
+}
+
+html[data-theme="dark"] .icon-github {
+  background-image: url("/img/Github-white.svg");
+}
+
+.icon-slack {
+  background-image: url("/img/Slack-black.svg");
+}
+
+html[data-theme="dark"] .icon-slack {
+  background-image: url("/img/Slack-white.svg");
+}
