@@ -11,9 +11,9 @@ import (
 
 // getStacks is the getResourceFunc for Zalando Stacks.
 func getStacks(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	var results []Workload
-
 	if name != "" {
+		results := make([]Workload, 0, 1)
+
 		singleStack, err := clientsets.Zalando.ZalandoV1().Stacks(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to get stack: %w", err)
@@ -29,7 +29,7 @@ func getStacks(name, namespace string, clientsets *Clientsets, ctx context.Conte
 		return nil, fmt.Errorf("failed to get stacks: %w", err)
 	}
 
-	results = make([]Workload, 0, len(stacks.Items))
+	results := make([]Workload, 0, len(stacks.Items))
 	for i := range stacks.Items {
 		results = append(results, &replicaScaledWorkload{&stack{&stacks.Items[i]}})
 	}

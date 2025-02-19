@@ -168,7 +168,7 @@ func startScanning(
 
 				scanSucceded := false
 
-				for i := 0; i <= config.MaxRetriesOnConflict; i++ {
+				for retry := 0; retry <= config.MaxRetriesOnConflict; retry++ {
 					err := scanWorkload(workload, client, ctx, layerCli, layerEnv, config)
 					if err != nil {
 						if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
@@ -176,7 +176,7 @@ func startScanning(
 							return
 						}
 
-						slog.Warn("workload modified, retrying", "attempt", i+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+						slog.Warn("workload modified, retrying", "attempt", retry+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 						updatedWorkload, err := client.GetWorkloads(
 							workload.GetName(),
