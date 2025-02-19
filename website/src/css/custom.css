@@ -1,5 +1,16 @@
 @import "tailwindcss";
-@config "../../tailwind.config.js";
+
+@custom-variant dark (&:is([data-theme="dark"] *));
+
+@theme {
+  --color-magenta: #e20074;
+  --color-magenta-hover: #c00063;
+  --color-magenta-active: #9e0051;
+}
+
+@utility container {
+  margin-inline: auto;
+}
 
 :root {
   --ifm-color-primary: #e20074;

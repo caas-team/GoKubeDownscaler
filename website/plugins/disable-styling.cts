@@ -7,12 +7,19 @@ const disableStylingPlugin = (): AcceptedPlugin => {
     postcssPlugin: "disable-styling",
     Once(root) {
       root.walkRules((rule) => {
-        if (rule.selector.includes(":not(.useTailwind)")) return;
+        if (
+          rule.selector.includes(":not(.useTailwind)") ||
+          rule.selector.startsWith(":") //||
+          //rule.selectors.some((selector) => selector.startsWith("."))
+        )
+          return;
 
         rule.selector = rule.selector
           .split(",")
           .map((selector) => {
-            return `${selector}:not(.useTailwind)`;
+            const parts = selector.split(":");
+            parts.splice(1, 0, `not(.useTailwind)`);
+            return parts.join(":");
           })
           .join(",");
       });
