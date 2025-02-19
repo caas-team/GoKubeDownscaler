@@ -10,7 +10,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
 	_ "time/tzdata"
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
@@ -150,7 +149,7 @@ func startScanning(
 	for {
 		slog.Info("scanning workloads")
 
-		workloads, err := client.GetWorkloads(config.IncludeNamespaces, config.IncludeResources, ctx)
+		workloads, err := client.GetWorkloads("", config.IncludeNamespaces, config.IncludeResources, ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get workloads: %w", err)
 		}
@@ -162,40 +161,56 @@ func startScanning(
 		for _, workload := range workloads {
 			waitGroup.Add(1)
 
-			go func() {
+			go func(workload scalable.Workload) {
 				slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-				defer wg.Done()
-				attempts := 0
-				for {
-					err := scanWorkload(workload, client, ctx, layerCli, layerEnv)
+
+				defer waitGroup.Done()
+
+				scanSucceded := false
+
+				for i := 0; i <= config.MaxRetriesOnConflict; i++ {
+					err := scanWorkload(workload, client, ctx, layerCli, layerEnv, config)
 					if err != nil {
-						if strings.Contains(err.Error(), "the object has been modified") {
-							if attempts >= maxRetriesOnConflict {
-								if maxRetriesOnConflict > 0 {
-									slog.Error("max retries reached, will try again in the next cycle", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-								} else {
-									slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-								}
-								return
-							}
-							slog.Warn("workload modified, retrying", "attempt", attempts+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-							updatedWorkload, err := client.GetWorkload(workload.GetName(), workload.GetNamespace(), workload.GetResourceType(), ctx)
-							if err != nil {
-								slog.Error("failed to fetch latest workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-								return
-							}
-							workload = updatedWorkload
-						} else {
+						if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
 							slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 							return
 						}
-					} else {
-						slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-						break
+
+						slog.Warn("workload modified, retrying", "attempt", i+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
+						updatedWorkload, err := client.GetWorkloads(
+							workload.GetName(),
+							[]string{workload.GetNamespace()},
+							[]string{strings.ToLower(workload.GroupVersionKind().Kind)},
+							ctx,
+						)
+						if err != nil {
+							slog.Error("failed to fetch latest workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+							return
+						}
+
+						workload = updatedWorkload[0]
+
+						continue
 					}
-					attempts++
+
+					slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
+					scanSucceded = true
+
+					break
 				}
-			}()
+
+				if !scanSucceded && config.MaxRetriesOnConflict > 0 {
+					slog.Warn("max retries reached, will try again in the next scan", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+					return
+				}
+
+				if !scanSucceded && config.MaxRetriesOnConflict == 0 {
+					slog.Error("failed to scan workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+					return
+				}
+			}(workload)
 		}
 
 		waitGroup.Wait()

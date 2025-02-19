@@ -10,13 +10,26 @@ import (
 )
 
 // getCronJobs is the getResourceFunc for CronJobs.
-func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+func getCronJobs(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+	var results []Workload
+
+	if name != "" {
+		singleCronJob, err := clientsets.Kubernetes.BatchV1().CronJobs(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get cronjob: %w", err)
+		}
+
+		results = append(results, &suspendScaledWorkload{&cronJob{singleCronJob}})
+
+		return results, nil
+	}
+
 	cronjobs, err := clientsets.Kubernetes.BatchV1().CronJobs(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cronjobs: %w", err)
 	}
 
-	results := make([]Workload, 0, len(cronjobs.Items))
+	results = make([]Workload, 0, len(cronjobs.Items))
 	for i := range cronjobs.Items {
 		results = append(results, &suspendScaledWorkload{&cronJob{&cronjobs.Items[i]}})
 	}
