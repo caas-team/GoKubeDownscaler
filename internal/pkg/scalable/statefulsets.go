@@ -11,9 +11,9 @@ import (
 
 // getStatefulSets is the getResourceFunc for StatefulSets.
 func getStatefulSets(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	var results []Workload
-
 	if name != "" {
+		results := make([]Workload, 0, 1)
+
 		statefulset, err := clientsets.Kubernetes.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to get statefulset: %w", err)
@@ -29,7 +29,7 @@ func getStatefulSets(name, namespace string, clientsets *Clientsets, ctx context
 		return nil, fmt.Errorf("failed to get statefulsets: %w", err)
 	}
 
-	results = make([]Workload, 0, len(statefulsets.Items))
+	results := make([]Workload, 0, len(statefulsets.Items))
 	for i := range statefulsets.Items {
 		results = append(results, &replicaScaledWorkload{&statefulSet{&statefulsets.Items[i]}})
 	}

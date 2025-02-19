@@ -11,9 +11,9 @@ import (
 
 // getRollouts is the getResourceFunc for Argo Rollouts.
 func getRollouts(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	var results []Workload
-
 	if name != "" {
+		results := make([]Workload, 0, 1)
+
 		singleRollout, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to get rollout: %w", err)
@@ -29,7 +29,7 @@ func getRollouts(name, namespace string, clientsets *Clientsets, ctx context.Con
 		return nil, fmt.Errorf("failed to get rollouts: %w", err)
 	}
 
-	results = make([]Workload, 0, len(rollouts.Items))
+	results := make([]Workload, 0, len(rollouts.Items))
 	for i := range rollouts.Items {
 		results = append(results, &replicaScaledWorkload{&rollout{&rollouts.Items[i]}})
 	}

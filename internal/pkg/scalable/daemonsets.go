@@ -14,9 +14,9 @@ const (
 
 // getDaemonSets is the getResourceFunc for DaemonSets.
 func getDaemonSets(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	var results []Workload
-
 	if name != "" {
+		results := make([]Workload, 0, 1)
+
 		daemonset, err := clientsets.Kubernetes.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to get daemonset: %w", err)
@@ -32,7 +32,7 @@ func getDaemonSets(name, namespace string, clientsets *Clientsets, ctx context.C
 		return nil, fmt.Errorf("failed to get daemonsets: %w", err)
 	}
 
-	results = make([]Workload, 0, len(daemonsets.Items))
+	results := make([]Workload, 0, len(daemonsets.Items))
 	for i := range daemonsets.Items {
 		results = append(results, &daemonSet{&daemonsets.Items[i]})
 	}
