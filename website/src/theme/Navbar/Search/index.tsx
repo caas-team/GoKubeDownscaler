@@ -13,7 +13,8 @@ export default function NavbarSearch({
       className={clsx(
         className,
         styles.navbarSearchContainer,
-        styles.darkSearchIcon
+        styles.darkSearchIcon,
+        "select-none"
       )}
     >
       {children}
