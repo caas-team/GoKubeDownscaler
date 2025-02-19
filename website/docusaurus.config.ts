@@ -87,6 +87,7 @@ const config: Config = {
         src: "img/kubedownscaler-name-dark.svg",
         srcDark: "img/kubedownscaler-name-light.svg",
       },
+      title: "GoKubeDownscaler",
       items: [
         {
           type: "docSidebar",
