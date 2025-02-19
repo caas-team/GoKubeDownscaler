@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"log/slog"
+	"os"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 )
 
 const (
@@ -33,6 +35,8 @@ type Client interface {
 	DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
+	// CreateLease creates a new lease for the downscaler
+	CreateLease(leaseName string) (*resourcelock.LeaseLock, error)
 	// addWorkloadEvent creates a new event on the workload
 	addWorkloadEvent(eventType string, reason string, id string, message string, workload scalable.Workload, ctx context.Context) error
 }
@@ -239,4 +243,29 @@ func (c client) addWorkloadEvent(eventType, reason, identifier, message string, 
 	}
 
 	return nil
+}
+
+func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get hostname: %w", err)
+	}
+
+	leaseNamespace, err := getCurrentNamespace()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get namespace or running outside of cluster: %w", err)
+	}
+
+	lease := &resourcelock.LeaseLock{
+		LeaseMeta: metav1.ObjectMeta{
+			Name:      leaseName,
+			Namespace: leaseNamespace,
+		},
+		Client: c.clientsets.Kubernetes.CoordinationV1(),
+		LockConfig: resourcelock.ResourceLockConfig{
+			Identity: hostname,
+		},
+	}
+
+	return lease, nil
 }

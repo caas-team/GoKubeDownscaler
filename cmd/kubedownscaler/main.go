@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
 	"regexp"
 	"sync"
+	"syscall"
 	"time"
 	_ "time/tzdata"
 
@@ -15,12 +17,15 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"k8s.io/client-go/tools/leaderelection"
 )
 
 const (
 	// value defaults.
 	defaultGracePeriod       = 15 * time.Minute
 	defaultDownscaleReplicas = 0
+
+	leaseName = "downscaler-lease"
 
 	// runtime config defaults.
 	defaultInterval = 30 * time.Second
@@ -75,8 +80,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
-
 	slog.Debug("getting client for kubernetes")
 
 	client, err := kubernetes.NewClient(config.Kubeconfig, config.DryRun)
@@ -85,27 +88,88 @@ func main() {
 		os.Exit(1)
 	}
 
-	slog.Info("started downscaler")
+	ctx, cancel := context.WithCancel(context.Background())
 
-	err = scanWorkloads(client, ctx, &layerCli, &layerEnv, config)
+	defer cancel()
+
+	if !config.LeaderElection {
+		runWithoutLeaderElection(client, ctx, &layerCli, &layerEnv, config)
+		return
+	}
+
+	runWithLeaderElection(client, cancel, ctx, &layerCli, &layerEnv, config)
+}
+
+func runWithLeaderElection(
+	client kubernetes.Client,
+	cancel context.CancelFunc,
+	ctx context.Context,
+	layerCli, layerEnv *values.Layer,
+	config *util.RuntimeConfiguration,
+) {
+	lease, err := client.CreateLease(leaseName)
 	if err != nil {
-		slog.Error("failed to scan over workloads",
-			"error", err,
-			"config", config,
-			"CliLayer", layerCli,
-			"EnvLayer", layerEnv,
-		)
+		slog.Error("failed to create lease", "error", err)
+		os.Exit(1)
+	}
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-sigs
+		cancel()
+	}()
+
+	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
+		Lock:            lease,
+		ReleaseOnCancel: true,
+		LeaseDuration:   30 * time.Second,
+		RenewDeadline:   20 * time.Second,
+		RetryPeriod:     5 * time.Second,
+		Callbacks: leaderelection.LeaderCallbacks{
+			OnStartedLeading: func(ctx context.Context) {
+				slog.Info("started leading")
+				err = startScanning(client, ctx, layerCli, layerEnv, config)
+				if err != nil {
+					slog.Error("an error occurred while scanning workloads", "error", err)
+					cancel()
+				}
+			},
+			OnStoppedLeading: func() {
+				slog.Info("stopped leading")
+				cancel()
+			},
+			OnNewLeader: func(identity string) {
+				slog.Info("new leader elected", "identity", identity)
+			},
+		},
+	})
+}
+
+func runWithoutLeaderElection(
+	client kubernetes.Client,
+	ctx context.Context,
+	layerCli, layerEnv *values.Layer,
+	config *util.RuntimeConfiguration,
+) {
+	slog.Warn("proceeding without leader election; this could cause errors when running with multiple replicas")
+
+	err := startScanning(client, ctx, layerCli, layerEnv, config)
+	if err != nil {
+		slog.Error("an error occurred while scanning workloads, exiting", "error", err)
 		os.Exit(1)
 	}
 }
 
-// scanWorkloads scans over all workloads every scan.
-func scanWorkloads(
+func startScanning(
 	client kubernetes.Client,
 	ctx context.Context,
 	layerCli, layerEnv *values.Layer,
 	config *util.RuntimeConfiguration,
 ) error {
+	slog.Info("started downscaler")
+
 	for {
 		slog.Info("scanning workloads")
 

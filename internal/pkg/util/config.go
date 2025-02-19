@@ -14,6 +14,8 @@ type RuntimeConfiguration struct {
 	Debug bool
 	// Once sets if the scan should only run once.
 	Once bool
+	// LeaderElection sets if leader election should be performed.
+	LeaderElection bool
 	// Interval sets how long to wait between scans.
 	Interval time.Duration
 	// IncludeNamespaces sets the list of namespaces to restrict the downscaler to.
@@ -51,6 +53,12 @@ func (c *RuntimeConfiguration) ParseConfigFlags() {
 		"once",
 		false,
 		"run scan only once (default: false)",
+	)
+	flag.BoolVar(
+		&c.Once,
+		"leader-election",
+		false,
+		"enables leader election (default: false)",
 	)
 	flag.Var(
 		(*DurationValue)(&c.Interval),
