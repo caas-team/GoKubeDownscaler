@@ -42,7 +42,7 @@ const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
   {
     title: "Zalando",
     Svg: ZalandoSVG.default,
-    href: "https://zalando.com/",
+    href: "https://opensource.zalando.com/",
     supportedResources: ["Stacks"],
   },
 ];
