@@ -10,13 +10,26 @@ import (
 )
 
 // getDeployments is the getResourceFunc for Deployments.
-func getDeployments(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+func getDeployments(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+	var results []Workload
+
+	if name != "" {
+		singleDeployment, err := clientsets.Kubernetes.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get deployment: %w", err)
+		}
+
+		results = append(results, &replicaScaledWorkload{&deployment{singleDeployment}})
+
+		return results, nil
+	}
+
 	deployments, err := clientsets.Kubernetes.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get deployments: %w", err)
 	}
 
-	results := make([]Workload, 0, len(deployments.Items))
+	results = make([]Workload, 0, len(deployments.Items))
 	for i := range deployments.Items {
 		results = append(results, &replicaScaledWorkload{&deployment{&deployments.Items[i]}})
 	}

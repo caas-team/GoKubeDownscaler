@@ -12,13 +12,26 @@ import (
 var errMinReplicasBoundsExceeded = errors.New("error: a HPAs minReplicas can only be set to int32 values larger than 1")
 
 // getHorizontalPodAutoscalers is the getResourceFunc for horizontalPodAutoscalers.
-func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+func getHorizontalPodAutoscalers(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+	var results []Workload
+
+	if name != "" {
+		hpa, err := clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get horizontalpodautoscaler: %w", err)
+		}
+
+		results = append(results, &replicaScaledWorkload{&horizontalPodAutoscaler{hpa}})
+
+		return results, nil
+	}
+
 	hpas, err := clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get horizontalpodautoscalers: %w", err)
 	}
 
-	results := make([]Workload, 0, len(hpas.Items))
+	results = make([]Workload, 0, len(hpas.Items))
 	for i := range hpas.Items {
 		results = append(results, &replicaScaledWorkload{&horizontalPodAutoscaler{&hpas.Items[i]}})
 	}

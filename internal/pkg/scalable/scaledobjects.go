@@ -15,13 +15,26 @@ const (
 )
 
 // getScaledObjects is the getResourceFunc for Keda ScaledObjects.
-func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+func getScaledObjects(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+	var results []Workload
+
+	if name != "" {
+		scaledobject, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get scaledobject: %w", err)
+		}
+
+		results = append(results, &replicaScaledWorkload{&scaledObject{scaledobject}})
+
+		return results, nil
+	}
+
 	scaledobjects, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get scaledobjects: %w", err)
 	}
 
-	results := make([]Workload, 0, len(scaledobjects.Items))
+	results = make([]Workload, 0, len(scaledobjects.Items))
 	for i := range scaledobjects.Items {
 		results = append(results, &replicaScaledWorkload{&scaledObject{&scaledobjects.Items[i]}})
 	}
