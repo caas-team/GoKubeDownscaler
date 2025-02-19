@@ -9,12 +9,12 @@ import Heading from "@theme/Heading";
 function HomepageHeader() {
   const { siteConfig } = useDocusaurusContext();
   return (
-    <div className="useTailwind relative overflow-x-hidden overflow-y-visible h-fit pb-20 md:pb-0">
-      <div className=" transform bg-magenta -skew-y-6 md:hidden h-full w-full absolute top-0 origin-top-left" />
+    <div className="useTailwind relative overflow-x-hidden overflow-y-visible h-fit pb-35 xl:pb-0">
+      <div className=" transform bg-magenta -skew-y-6 xl:hidden h-full w-full absolute top-0 origin-top-left" />
       <header className="select-none text-white bg-magenta items-center flex py-16 px-8 overflow-hidden relative text-center h-fit">
         <div className="px-4 w-full flex flex-col items-center justify-center">
-          <KubedownscalerNameSVG.default className="h-10 hidden md:block" />
-          <div className="md:hidden flex flex-col justify-center">
+          <KubedownscalerNameSVG.default className="h-10 hidden xl:block" />
+          <div className="xl:hidden flex flex-col justify-center">
             <KubedownscalerSVG.default className="h-30" />
             <Heading as="h1" className="text-5xl">
               {siteConfig.title}
