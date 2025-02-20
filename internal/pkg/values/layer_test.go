@@ -27,8 +27,8 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 		{
 			name: "forced up and downtime",
 			layer: Layer{
-				ForceUptime:   true,
-				ForceDowntime: true,
+				ForceUptime:   triStateBool{isSet: true, value: true},
+				ForceDowntime: triStateBool{isSet: true, value: true},
 			},
 			wantErr: true,
 		},
