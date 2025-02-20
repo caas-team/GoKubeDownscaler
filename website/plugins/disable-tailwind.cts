@@ -1,7 +1,7 @@
 import { type AcceptedPlugin, type PluginCreator } from "postcss";
 
-// this will add an "useTailwind" css class which enabled tailwinds global css classes unless the "useTailwind" class is set
-// this is to be able to allow infima/docusaurus to do its thing without getting influenced by tailwind
+// this will add a "useTailwind" css class which disables tailwinds global css classes unless the "useTailwind" class is set
+// this is needed to allow infima/docusaurus to do its thing without getting influenced by tailwind
 const disableTailwindPlugin = (): AcceptedPlugin => {
   return {
     postcssPlugin: "disable-tailwind",

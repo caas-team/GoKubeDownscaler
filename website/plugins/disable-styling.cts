@@ -1,7 +1,7 @@
 import { type AcceptedPlugin, type PluginCreator } from "postcss";
 
-// this will add an "useTailwind" css class which disables all css classes
-// this is to be able to disable infimas/docusauruses globally applied element selectors
+// this will add a "useTailwind" css class which disables all css classes
+// this is needed to disable infimas/docusauruses globally applied element selectors
 const disableStylingPlugin = (): AcceptedPlugin => {
   return {
     postcssPlugin: "disable-styling",
