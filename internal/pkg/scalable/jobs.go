@@ -10,7 +10,20 @@ import (
 )
 
 // getDeployments is the getResourceFunc for Jobs.
-func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+func getJobs(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+	if name != "" {
+		results := make([]Workload, 0, 1)
+
+		singleJob, err := clientsets.Kubernetes.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get job: %w", err)
+		}
+
+		results = append(results, &suspendScaledWorkload{&job{singleJob}})
+
+		return results, nil
+	}
+
 	jobs, err := clientsets.Kubernetes.BatchV1().Jobs(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get jobs: %w", err)
