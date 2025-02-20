@@ -3,6 +3,7 @@ package util
 import (
 	"flag"
 	"fmt"
+	"regexp"
 	"time"
 )
 
@@ -32,6 +33,22 @@ type RuntimeConfiguration struct {
 	TimeAnnotation string
 	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
 	Kubeconfig string
+}
+
+func GetDefaultConfig() *RuntimeConfiguration {
+	return &RuntimeConfiguration{
+		DryRun:            false,
+		Debug:             false,
+		Once:              false,
+		Interval:          30 * time.Second,
+		IncludeNamespaces: nil,
+		IncludeResources:  []string{"deployments"},
+		ExcludeNamespaces: RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
+		ExcludeWorkloads:  nil,
+		IncludeLabels:     nil,
+		TimeAnnotation:    "",
+		Kubeconfig:        "",
+	}
 }
 
 // ParseConfigFlags sets all cli flags required for the runtime configuration.
