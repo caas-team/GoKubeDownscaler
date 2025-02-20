@@ -160,57 +160,7 @@ func startScanning(
 		var waitGroup sync.WaitGroup
 		for _, workload := range workloads {
 			waitGroup.Add(1)
-
-			go func(workload scalable.Workload) {
-				slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-
-				defer waitGroup.Done()
-
-				scanSucceded := false
-
-				for retry := 0; retry <= config.MaxRetriesOnConflict; retry++ {
-					err := scanWorkload(workload, client, ctx, layerCli, layerEnv, config)
-					if err != nil {
-						if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
-							slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-							return
-						}
-
-						slog.Warn("workload modified, retrying", "attempt", retry+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-
-						updatedWorkload, err := client.GetWorkloads(
-							workload.GetName(),
-							[]string{workload.GetNamespace()},
-							[]string{strings.ToLower(workload.GroupVersionKind().Kind)},
-							ctx,
-						)
-						if err != nil {
-							slog.Error("failed to fetch latest workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-							return
-						}
-
-						workload = updatedWorkload[0]
-
-						continue
-					}
-
-					slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-
-					scanSucceded = true
-
-					break
-				}
-
-				if !scanSucceded && config.MaxRetriesOnConflict > 0 {
-					slog.Warn("max retries reached, will try again in the next scan", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-					return
-				}
-
-				if !scanSucceded && config.MaxRetriesOnConflict == 0 {
-					slog.Error("failed to scan workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-					return
-				}
-			}(workload)
+			scanAttempt(client, ctx, layerCli, layerEnv, config, &waitGroup, workload)
 		}
 
 		waitGroup.Wait()
@@ -226,6 +176,66 @@ func startScanning(
 	}
 
 	return nil
+}
+
+func scanAttempt(
+	client kubernetes.Client,
+	ctx context.Context,
+	layerCli, layerEnv *values.Layer,
+	config *util.RuntimeConfiguration,
+	waitGroup *sync.WaitGroup,
+	workload scalable.Workload,
+) {
+	go func(workload scalable.Workload) {
+		slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
+		defer waitGroup.Done()
+
+		scanSucceded := false
+
+		for retry := 0; retry <= config.MaxRetriesOnConflict; retry++ {
+			err := scanWorkload(workload, client, ctx, layerCli, layerEnv, config)
+			if err != nil {
+				if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
+					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+					return
+				}
+
+				slog.Warn("workload modified, retrying", "attempt", retry+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
+				updatedWorkload, err := client.GetWorkloads(
+					workload.GetName(),
+					[]string{workload.GetNamespace()},
+					[]string{strings.ToLower(workload.GroupVersionKind().Kind)},
+					ctx,
+				)
+				if err != nil {
+					slog.Error("failed to fetch latest workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+					return
+				}
+
+				workload = updatedWorkload[0]
+
+				continue
+			}
+
+			slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
+			scanSucceded = true
+
+			break
+		}
+
+		if !scanSucceded && config.MaxRetriesOnConflict > 0 {
+			slog.Warn("max retries reached, will try again in the next scan", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			return
+		}
+
+		if !scanSucceded && config.MaxRetriesOnConflict == 0 {
+			slog.Error("failed to scan workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			return
+		}
+	}(workload)
 }
 
 // scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload.
