@@ -169,7 +169,7 @@ func (l *Layer) GetLayerFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 	}
 
 	if forceUptime, ok := annotations[annotationForceUptime]; ok {
-		err = l.ForceUptime.Set(forceUptime)
+		l.ForceUptime, err = strconv.ParseBool(forceUptime)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationForceUptime, err)
 			logEvent.ErrorInvalidAnnotation(annotationForceUptime, err.Error(), ctx)
@@ -179,7 +179,7 @@ func (l *Layer) GetLayerFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 	}
 
 	if forceDowntime, ok := annotations[annotationForceDowntime]; ok {
-		err = l.ForceDowntime.Set(forceDowntime)
+		l.ForceDowntime, err = strconv.ParseBool(forceDowntime)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationForceDowntime, err)
 			logEvent.ErrorInvalidAnnotation(annotationForceDowntime, err.Error(), ctx)

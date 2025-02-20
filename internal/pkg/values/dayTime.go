@@ -16,7 +16,6 @@ const (
 var errTimeOfDayOutOfRange = errors.New("error: the specified time of day is out of range")
 
 func extractDayTime(t time.Time) dayTime {
-	t = t.UTC()
 	return dayTime(t.Hour())*Hour +
 		dayTime(t.Minute())*Minute
 }
@@ -50,13 +49,12 @@ func parseDayTime(s string) (*dayTime, error) {
 	return &result, nil
 }
 
-// dayTime is a integer representing minutes passed in the day
-// this will always be in utc
+// dayTime is a integer representing minutes passed in the day.
 type dayTime int
 
 func (d dayTime) String() string {
 	minute := d % Hour
 	hour := d - minute
 
-	return fmt.Sprintf("%s:%s", hour, minute)
+	return fmt.Sprintf("%d:%d", hour, minute)
 }

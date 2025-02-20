@@ -65,16 +65,31 @@ type Layer struct {
 	UpTime            timeSpans     // within these timespans workloads will be scaled up, outside of them they will be scaled down
 	Exclude           triStateBool  // if workload should be excluded
 	ExcludeUntil      time.Time     // until when the workload should be excluded
-	ForceUptime       triStateBool  // force workload into a uptime state
-	ForceDowntime     triStateBool  // force workload into a downtime state
+	ForceUptime       bool          // force workload into a uptime state
+	ForceDowntime     bool          // force workload into a downtime state
 	DownscaleReplicas int32         // the replicas to scale down to
 	GracePeriod       time.Duration // grace period until new workloads will be scaled down
+}
+
+func GetDefaultLayer() *Layer {
+	return &Layer{
+		DownscalePeriod:   nil,
+		DownTime:          nil,
+		UpscalePeriod:     nil,
+		UpTime:            nil,
+		Exclude:           triStateBool{isSet: true, value: false},
+		ExcludeUntil:      time.Time{},
+		ForceUptime:       false,
+		ForceDowntime:     false,
+		DownscaleReplicas: 0,
+		GracePeriod:       15 * time.Minute,
+	}
 }
 
 // isScalingExcluded checks if scaling is excluded, nil represents a not set state.
 func (l *Layer) isScalingExcluded() *bool {
 	if l.Exclude.isSet {
-		return &l.Exclude.value
+		return &l.Exclude.value // TODO should setting exclude = false really take presedence over ExcludeUntil
 	}
 
 	if ok := l.ExcludeUntil.After(time.Now()); ok {
@@ -87,10 +102,7 @@ func (l *Layer) isScalingExcluded() *bool {
 // CheckForIncompatibleFields checks if there are incompatible fields.
 func (l *Layer) CheckForIncompatibleFields() error { //nolint: cyclop // this is still fine to read, we could defnitly consider refactoring this in the future
 	// force down and uptime
-	if l.ForceDowntime.isSet &&
-		l.ForceDowntime.value &&
-		l.ForceUptime.isSet &&
-		l.ForceUptime.value {
+	if l.ForceDowntime && l.ForceUptime {
 		return errForceUpAndDownTime
 	}
 	// downscale replicas invalid
@@ -149,18 +161,18 @@ func (l *Layer) getCurrentScaling() Scaling {
 func (l *Layer) getForcedScaling() Scaling {
 	var forcedScaling Scaling
 
-	if l.ForceDowntime.isSet && l.ForceDowntime.value {
+	if l.ForceDowntime {
 		forcedScaling = ScalingDown
 	}
 
-	if l.ForceUptime.isSet && l.ForceUptime.value {
+	if l.ForceUptime {
 		forcedScaling = ScalingUp
 	}
 
 	return forcedScaling
 }
 
-type Layers [4]*Layer
+type Layers [5]*Layer
 
 // GetCurrentScaling gets the current scaling of the first layer that implements scaling.
 func (l Layers) GetCurrentScaling() Scaling {
