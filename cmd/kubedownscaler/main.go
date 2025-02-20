@@ -186,7 +186,7 @@ func startScanning(
 		var waitGroup sync.WaitGroup
 		for _, workload := range workloads {
 			waitGroup.Add(1)
-			scanAttempt(client, ctx, layerCli, layerEnv, config, &waitGroup, workload)
+			attemptScan(client, ctx, layerCli, layerEnv, config, &waitGroup, workload)
 		}
 
 		waitGroup.Wait()
@@ -204,7 +204,7 @@ func startScanning(
 	return nil
 }
 
-func scanAttempt(
+func attemptScan(
 	client kubernetes.Client,
 	ctx context.Context,
 	layerCli, layerEnv *values.Layer,
