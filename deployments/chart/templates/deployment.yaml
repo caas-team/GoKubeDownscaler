@@ -23,6 +23,9 @@ spec:
           {{- with .Values.arguments }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          {{- if include "go-kube-downscaler.leaderElection" . }}
+          - --leader-election
+          {{- end }}
           {{- if .Values.constrainedDownscaler }}
           - --namespace={{ join "," .Values.constrainedNamespaces }}
           {{- end }}

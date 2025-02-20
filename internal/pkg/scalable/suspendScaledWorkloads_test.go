@@ -3,11 +3,13 @@ package scalable
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	batch "k8s.io/api/batch/v1"
 )
 
 func TestSuspendScaledWorkload_ScaleUp(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
 		suspend     *bool
@@ -32,18 +34,22 @@ func TestSuspendScaledWorkload_ScaleUp(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cj := cronJob{&batch.CronJob{}}
-			cj.Spec.Suspend = test.suspend
-			s := suspendScaledWorkload{&cj}
+			t.Parallel()
+
+			cronjob := cronJob{&batch.CronJob{}}
+			cronjob.Spec.Suspend = test.suspend
+			s := suspendScaledWorkload{&cronjob}
 
 			err := s.ScaleUp()
-			assert.NoError(t, err)
-			assertBoolPointerEqual(t, test.wantSuspend, cj.Spec.Suspend)
+			require.NoError(t, err)
+			assertBoolPointerEqual(t, test.wantSuspend, cronjob.Spec.Suspend)
 		})
 	}
 }
 
 func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
 		suspend     *bool
@@ -68,13 +74,15 @@ func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cj := cronJob{&batch.CronJob{}}
-			cj.Spec.Suspend = test.suspend
-			s := suspendScaledWorkload{&cj}
+			t.Parallel()
+
+			cronjob := cronJob{&batch.CronJob{}}
+			cronjob.Spec.Suspend = test.suspend
+			s := suspendScaledWorkload{&cronjob}
 
 			err := s.ScaleDown(0)
-			assert.NoError(t, err)
-			assertBoolPointerEqual(t, test.wantSuspend, cj.Spec.Suspend)
+			require.NoError(t, err)
+			assertBoolPointerEqual(t, test.wantSuspend, cronjob.Spec.Suspend)
 		})
 	}
 }

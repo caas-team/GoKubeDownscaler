@@ -4,11 +4,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	policy "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
+	t.Parallel()
+
 	replicasUpscaled := intstr.FromInt32(5)
 	replicasDownscaled := intstr.FromInt32(0)
 	percentile := intstr.FromString("50%")
@@ -115,20 +118,25 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			pdb := &podDisruptionBudget{&policy.PodDisruptionBudget{}}
 			pdb.Spec.MaxUnavailable = test.maxUnavailable
 			pdb.Spec.MinAvailable = test.minAvailable
+
 			if test.originalReplicas != nil {
 				setOriginalReplicas(*test.originalReplicas, pdb)
 			}
 
 			err := pdb.ScaleUp()
-			assert.NoError(t, err)
+			require.NoError(t, err)
+
 			if test.wantMaxUnavailable != nil {
 				if assert.NotNil(t, pdb.Spec.MaxUnavailable) {
 					assert.Equal(t, *test.wantMaxUnavailable, *pdb.Spec.MaxUnavailable)
 				}
 			}
+
 			if test.wantMinAvailable != nil {
 				if assert.NotNil(t, pdb.Spec.MinAvailable) {
 					assert.Equal(t, *test.wantMinAvailable, *pdb.Spec.MinAvailable)
@@ -136,13 +144,15 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 			}
 
 			oringalReplicas, err := getOriginalReplicas(pdb)
-			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			require.NoError(t, err) // Scaling set OrignialReplicas to faulty value
 			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
 		})
 	}
 }
 
 func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
+	t.Parallel()
+
 	replicasUpscaled := intstr.FromInt32(5)
 	replicasUpscaled2 := intstr.FromInt32(2)
 	replicasDownscaled := intstr.FromInt32(0)
@@ -250,20 +260,25 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			pdb := &podDisruptionBudget{&policy.PodDisruptionBudget{}}
 			pdb.Spec.MaxUnavailable = test.maxUnavailable
 			pdb.Spec.MinAvailable = test.minAvailable
+
 			if test.originalReplicas != nil {
 				setOriginalReplicas(*test.originalReplicas, pdb)
 			}
 
 			err := pdb.ScaleDown(0)
-			assert.NoError(t, err)
+			require.NoError(t, err)
+
 			if test.wantMaxUnavailable != nil {
 				if assert.NotNil(t, pdb.Spec.MaxUnavailable) {
 					assert.Equal(t, *test.wantMaxUnavailable, *pdb.Spec.MaxUnavailable)
 				}
 			}
+
 			if test.wantMinAvailable != nil {
 				if assert.NotNil(t, pdb.Spec.MinAvailable) {
 					assert.Equal(t, *test.wantMinAvailable, *pdb.Spec.MinAvailable)
@@ -271,7 +286,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			}
 
 			oringalReplicas, err := getOriginalReplicas(pdb)
-			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			require.NoError(t, err) // Scaling set OrignialReplicas to faulty value
 			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
 		})
 	}
