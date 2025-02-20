@@ -88,8 +88,8 @@ func GetDefaultLayer() *Layer {
 
 // isScalingExcluded checks if scaling is excluded, nil represents a not set state.
 func (l *Layer) isScalingExcluded() *bool {
-	if l.Exclude.isSet {
-		return &l.Exclude.value // TODO should setting exclude = false really take presedence over ExcludeUntil
+	if l.Exclude.isSet && l.Exclude.value {
+		return &l.Exclude.value
 	}
 
 	if ok := l.ExcludeUntil.After(time.Now()); ok {
