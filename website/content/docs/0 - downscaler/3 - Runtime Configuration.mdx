@@ -61,10 +61,13 @@ Runtime Configurations change how the Downscaler operates.
 
 - Type: [Regex List](ref:docs-regex-list) (list of regex patterns matching labels)
   :::info
+
   The Pattern has to match this pattern: `LABEL_NAME=LABEL_VALUE`.
   This means that to match the `example` label to be `"true"` you would put in `example=true`.
   To match a workload having the label no matter the value you would use `example=.*`.
+
   :::
+
 - Description: Makes the downscaler only scale workloads whose labels match at least one of the patterns.
 - Default: none (the workloads don't have to match any label)
 

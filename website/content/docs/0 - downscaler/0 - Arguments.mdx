@@ -21,9 +21,11 @@ The [Values](ref:docs-values) will be applied to the [cli layer](ref:docs-layers
 - [--downtime-replicas](ref:docs-values#downscale-replicas)
 - [--explicit-include](ref:docs-values#exclude)
   :::info
+
   This will set the [exclude value](ref:docs-values#exclude) to `true` on the [cli layer](ref:docs-layers#cli-layer).
   This will exclude every workload unless lower layers (e.g.: [namespace layer](ref:docs-layers#namespace-layer),
   [workload layer](ref:docs-layers#workload-layer)) [specify](ref:docs-annotations) exclude to `false`.
+
   :::
 
 ## Runtime Configuration
