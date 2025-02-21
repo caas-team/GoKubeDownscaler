@@ -9,7 +9,8 @@ const disableStylingPlugin = (): AcceptedPlugin => {
       root.walkRules((rule) => {
         if (
           rule.selector.includes(":not(.useTailwind)") ||
-          rule.selector.startsWith(":") //||
+          rule.selector.startsWith(":") ||
+          rule.selector.startsWith("*") //||
           //rule.selectors.some((selector) => selector.startsWith("."))
         )
           return;
@@ -18,7 +19,7 @@ const disableStylingPlugin = (): AcceptedPlugin => {
           .split(",")
           .map((selector) => {
             const parts = selector.split(":");
-            parts.splice(1, 0, `not(.useTailwind)`);
+            parts.splice(1, 0, `not(.useTailwind):not(.useTailwind *)`);
             return parts.join(":");
           })
           .join(",");
