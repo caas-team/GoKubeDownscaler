@@ -15,6 +15,7 @@ func NewResourceLogger(client Client, workload scalable.Workload) resourceLogger
 		workload: workload,
 		client:   client,
 	}
+
 	return logger
 }
 
@@ -23,7 +24,7 @@ type resourceLogger struct {
 	client   Client
 }
 
-// ErrorInvalidAnnotation adds an annotation error on the resource
+// ErrorInvalidAnnotation adds an annotation error on the resource.
 func (r resourceLogger) ErrorInvalidAnnotation(annotation, message string, ctx context.Context) {
 	err := r.client.addWorkloadEvent(v1.EventTypeWarning, reasonInvalidConfiguration, annotation, message, r.workload, ctx)
 	if err != nil {
@@ -32,7 +33,7 @@ func (r resourceLogger) ErrorInvalidAnnotation(annotation, message string, ctx c
 	}
 }
 
-// ErrorIncompatibleFields adds an incompatible fields error on the resource
+// ErrorIncompatibleFields adds an incompatible fields error on the resource.
 func (r resourceLogger) ErrorIncompatibleFields(message string, ctx context.Context) {
 	err := r.client.addWorkloadEvent(v1.EventTypeWarning, reasonInvalidConfiguration, reasonInvalidConfiguration, message, r.workload, ctx)
 	if err != nil {

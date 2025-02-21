@@ -1,0 +1,43 @@
+---
+title: Duration
+id: duration
+globalReference: docs-duration
+---
+
+# Duration
+
+A duration can be represented as an [integer, in which case it represents seconds](#integer-seconds) or a [duration string](#duration-string).
+
+## Duration String
+
+### Examples
+
+```text
+"1h30m" # 1 hour and 30 minutes
+"1.5h"  # 1 hour and 30 minutes
+"2m"    # 2 minutes
+"10s"   # 10 seconds
+"300s"  # 300 seconds
+```
+
+### Units
+
+```text
+"ns"      # nanoseconds
+"us"/"µs" # microseconds
+"ms"      # milliseconds
+"s"       # seconds
+"m"       # minutes
+"h"       # hours
+```
+
+See [Golangs official documentation](https://pkg.go.dev/time#ParseDuration) for more information
+
+## Integer Seconds
+
+Examples:
+
+```text
+"120" # 120 seconds (2 minutes)
+"900" # 900 seconds (15 minutes)
+```
