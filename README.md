@@ -11,7 +11,8 @@
 <!-- markdownlint-enable MD033 MD013 -->
 
 A horizontal autoscaler for Kubernetes workloads.
-This is a golang port and successor of the popular [(py-)kube-downscaler](https://github.com/caas-team/py-kube-downscaler) with improvements and quality of life changes.
+This is a golang port and successor of the popular [(py-)kube-downscaler](https://github.com/caas-team/py-kube-downscaler)
+with improvements and quality of life changes.
 
 ## Documentation and Guides
 

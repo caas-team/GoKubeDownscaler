@@ -215,7 +215,8 @@ These are some of the most common fixes for such issues.
 
 ### Clear Docusaurus Cache
 
-Docusaurus caches most files and doesn't rebuild them until they themselves change (e.g. rendered markdown files, [SVGO](https://svgo.dev/)/[SVGR](https://react-svgr.com/) optimized SVGs, etc.).
+Docusaurus caches most files and doesn't rebuild them until they themselves change
+(e.g. rendered markdown files, [SVGO](https://svgo.dev/)/[SVGR](https://react-svgr.com/) optimized SVGs, etc.).
 This can lead to problems when there are custom external dependencies which don't trigger a rebuild.
 
 This command forces docusaurus to clear its cache and rebuild all files on the next start.
