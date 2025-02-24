@@ -4,10 +4,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 )
 
 func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name                 string
 		replicas             int32
@@ -40,26 +43,33 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			r := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
-			_ = r.setReplicas(test.replicas)
+			t.Parallel()
+
+			deployment := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
+			_ = deployment.setReplicas(test.replicas)
+
 			if test.originalReplicas != nil {
-				setOriginalReplicas(*test.originalReplicas, r)
+				setOriginalReplicas(*test.originalReplicas, deployment)
 			}
 
-			err := r.ScaleUp()
-			assert.NoError(t, err)
-			replicas, err := r.getReplicas()
+			err := deployment.ScaleUp()
+			require.NoError(t, err)
+			replicas, err := deployment.getReplicas()
+
 			if assert.NoError(t, err) {
 				assert.Equal(t, test.wantReplicas, replicas)
 			}
-			oringalReplicas, err := getOriginalReplicas(r)
-			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+
+			oringalReplicas, err := getOriginalReplicas(deployment)
+			require.NoError(t, err) // Scaling set OrignialReplicas to faulty value
 			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
 		})
 	}
 }
 
 func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name                 string
 		replicas             int32
@@ -92,20 +102,25 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			r := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
-			_ = r.setReplicas(test.replicas)
+			t.Parallel()
+
+			deployment := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
+			_ = deployment.setReplicas(test.replicas)
+
 			if test.originalReplicas != nil {
-				setOriginalReplicas(*test.originalReplicas, r)
+				setOriginalReplicas(*test.originalReplicas, deployment)
 			}
 
-			err := r.ScaleDown(0)
-			assert.NoError(t, err)
-			replicas, err := r.getReplicas()
+			err := deployment.ScaleDown(0)
+			require.NoError(t, err)
+
+			replicas, err := deployment.getReplicas()
 			if assert.NoError(t, err) {
 				assert.Equal(t, test.wantReplicas, replicas)
 			}
-			oringalReplicas, err := getOriginalReplicas(r)
-			assert.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+
+			oringalReplicas, err := getOriginalReplicas(deployment)
+			require.NoError(t, err) // Scaling set OrignialReplicas to faulty value
 			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
 		})
 	}

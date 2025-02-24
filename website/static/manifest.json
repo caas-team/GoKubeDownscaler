@@ -38,18 +38,6 @@
                     "sizes": "any"
                 }
             ]
-        },
-        {
-            "name": "About",
-            "short_name": "About",
-            "description": "Information about the GoKubeDownscaler",
-            "url": "/GoKubeDownscaler/about",
-            "icons": [
-                {
-                    "src": "/GoKubeDownscaler/img/kubedownscaler.svg",
-                    "sizes": "any"
-                }
-            ]
         }
     ],
     "description": "A horizontal autoscaler for Kubernetes workloads"

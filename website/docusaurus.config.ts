@@ -2,13 +2,14 @@ import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 import { tailwindPlugin } from "./plugins/tailwind-config.cts";
-import { svgoConfigPlugin } from "./plugins/svgo-config.cts";
 import {
   docRefRemarkPlugin,
   globalRefParseFrontMatter,
 } from "./plugins/global-ref-plugin.cts";
 import { repoRefRemarkPlugin } from "./plugins/repo-ref-plugin.cts";
 import { PluginOptions } from "@easyops-cn/docusaurus-search-local";
+import { PluginConfig } from "svgo/lib/svgo";
+import path from "path";
 
 const config: Config = {
   title: "GoKubeDownscaler",
@@ -37,6 +38,28 @@ const config: Config = {
     [
       "classic",
       {
+        svgr: {
+          svgrConfig: {
+            svgoConfig: {
+              plugins: [
+                "preset-default", // extend default config
+                "removeDimensions", // automatically switch from width and height to viewbox
+                {
+                  // prefix ids and class names with the filename, to prevent duplicate ids from interfering with eachother
+                  name: "prefixIds",
+                  params: {
+                    delim: "_",
+                    prefix: (_, file) => {
+                      return path.basename(file?.path ?? "").split(".")[0];
+                    },
+                    prefixIds: true,
+                    prefixClassNames: true,
+                  },
+                },
+              ] satisfies PluginConfig[],
+            },
+          },
+        },
         docs: {
           sidebarPath: "./sidebars.ts",
           routeBasePath: "/",
@@ -58,11 +81,13 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
+      hideOnScroll: true,
       logo: {
-        alt: "CaaS Logo",
+        alt: "Kubedownscaler Logo",
         src: "img/kubedownscaler-name-dark.svg",
         srcDark: "img/kubedownscaler-name-light.svg",
       },
+      title: "GoKubeDownscaler",
       items: [
         {
           type: "docSidebar",
@@ -76,16 +101,19 @@ const config: Config = {
           position: "left",
           label: "Guides",
         },
-        { to: "/about", label: "About", position: "left" },
         {
           href: "https://github.com/caas-team/GoKubeDownscaler",
-          label: "GitHub",
+          "aria-label": "GitHub",
           position: "right",
+          title: "GoKubeDownscaler | Github",
+          className: "navbar-icon icon-github",
         },
         {
-          href: "https://communityinviter.com/apps/kube-downscaler/kube-downscaler",
-          label: "Slack",
+          href: "https://inviter.co/kube-downscaler",
+          "aria-label": "GitHub",
           position: "right",
+          title: "kube-downscaler | Slack",
+          className: "navbar-icon icon-slack",
         },
       ],
     },
@@ -132,7 +160,7 @@ const config: Config = {
       } as Partial<PluginOptions>,
     ],
   ],
-  plugins: [svgoConfigPlugin, tailwindPlugin],
+  plugins: [tailwindPlugin],
   markdown: {
     parseFrontMatter: globalRefParseFrontMatter,
   },

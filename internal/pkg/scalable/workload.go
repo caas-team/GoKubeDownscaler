@@ -3,6 +3,7 @@ package scalable
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
@@ -15,29 +16,43 @@ import (
 )
 
 var (
-	timeout                int64 = 30
-	errNoReplicasSpecified       = errors.New("error: workload has no replicas set")
+	errResourceNotSupported = errors.New("error: specified rescource type is not supported")
+	errNoReplicasSpecified  = errors.New("error: workload has no replicas set")
 )
 
-// getResourceFunc is a function that gets a specific resource as a Workload
+// getResourceFunc is a function that gets a specific resource as a Workload.
 type getResourceFunc func(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error)
 
-// GetWorkloads maps the resource name to an implementation specific getResourceFunc
-var GetWorkloads = map[string]getResourceFunc{
-	"deployments":              getDeployments,
-	"statefulsets":             getStatefulSets,
-	"cronjobs":                 getCronJobs,
-	"jobs":                     getJobs,
-	"daemonsets":               getDaemonSets,
-	"poddisruptionbudgets":     getPodDisruptionBudgets,
-	"horizontalpodautoscalers": getHorizontalPodAutoscalers,
-	"scaledobjects":            getScaledObjects,
-	"rollouts":                 getRollouts,
-	"stacks":                   getStacks,
-	"prometheuses":             getPrometheuses,
+// GetWorkloads gets all workloads of the given resource in the cluster.
+func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+	resourceFuncMap := map[string]getResourceFunc{
+		"deployments":              getDeployments,
+		"statefulsets":             getStatefulSets,
+		"cronjobs":                 getCronJobs,
+		"jobs":                     getJobs,
+		"daemonsets":               getDaemonSets,
+		"poddisruptionbudgets":     getPodDisruptionBudgets,
+		"horizontalpodautoscalers": getHorizontalPodAutoscalers,
+		"scaledobjects":            getScaledObjects,
+		"rollouts":                 getRollouts,
+		"stacks":                   getStacks,
+		"prometheuses":             getPrometheuses,
+	}
+
+	resourceFunc, exists := resourceFuncMap[resource]
+	if !exists {
+		return nil, errResourceNotSupported
+	}
+
+	workloads, err := resourceFunc(namespace, clientsets, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get workloads of type %q: %w", resource, err)
+	}
+
+	return workloads, nil
 }
 
-// scalableResource provides all functions needed to scale any type of resource
+// scalableResource provides all functions needed to scale any type of resource.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource
 	GetAnnotations() map[string]string
@@ -47,17 +62,17 @@ type scalableResource interface {
 	GetName() string
 	// GetUID gets the uid of the workload
 	GetUID() types.UID
-	// GetObjectKind gets the ObjectKind of the workload
-	GetObjectKind() schema.ObjectKind
 	// GetLabels gets the labels of the workload
 	GetLabels() map[string]string
 	// GetCreationTimestamp gets the creation timestamp of the workload
 	GetCreationTimestamp() metav1.Time
 	// SetAnnotations sets the annotations on the resource. Changes won't be made on Kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
+	// GroupVersionKind gets the group version kind of the workload
+	GroupVersionKind() schema.GroupVersionKind
 }
 
-// Workload provides all functions needed to scale the workload
+// Workload provides all functions needed to scale the workload.
 type Workload interface {
 	scalableResource
 	// Update updates the resource with all changes made to it. It should only be called once on a resource

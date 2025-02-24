@@ -68,10 +68,11 @@ export const docRefRemarkPlugin: Plugin = () => {
           // If the reference doesn't exist, log an error.
           if (!reference) {
             console.error(
-              `No reference found for '%s'. File: '%s', Node: '%o'`,
-              referenceId,
+              `"%s:%d:%d": No reference found for '%s'`,
               file.path,
-              node
+              node.position.start.line,
+              node.position.start.column,
+              referenceId
             );
             return match;
           }

@@ -42,7 +42,7 @@ const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
   {
     title: "Zalando",
     Svg: ZalandoSVG.default,
-    href: "https://zalando.com/",
+    href: "https://opensource.zalando.com/",
     supportedResources: ["Stacks"],
   },
 ];
@@ -54,13 +54,13 @@ function SupportedResourceGroup({
   supportedResources,
 }: SupportedResourceGroupProps) {
   return (
-    <div className="flex-grow max-w-full px-4 w-full xl:flex-1">
-      <div className="text-center">
+    <div className="max-w-full px-4 pb-8 w-full xl:flex-1">
+      <div className="flex justify-center mb-2">
         <Link href={href}>
           <Svg className="h-40 w-40" />
         </Link>
       </div>
-      <div className="text-center px-4">
+      <div className="text-center px-4 max-w-64 mx-auto">
         <Heading as="h3" className="select-none">
           {title}
         </Heading>
@@ -72,7 +72,7 @@ function SupportedResourceGroup({
 
 export function SupportedResources(): JSX.Element {
   return (
-    <>
+    <div className="useTailwind">
       <Heading className="block w-full text-center pt-8 select-none" as="h1">
         Supported Resources
       </Heading>
@@ -85,6 +85,6 @@ export function SupportedResources(): JSX.Element {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
