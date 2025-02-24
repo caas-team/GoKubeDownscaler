@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: admission-webhook
+  name: admission-webhook
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admission-webhook
+  template:
+    metadata:
+      labels:
+        app: admission-webhook
+    spec:
+      containers:
+        - image: samesp/go-kube-admission:0.1
+          imagePullPolicy: Never
+          name: admission-webhook
+          env:
+            - name: TLS
+              value: "true"
+          volumeMounts:
+            - name: tls
+              mountPath: "/etc/admission-webhook/tls"
+              readOnly: true
+      volumes:
+        - name: tls
+          secret:
+            secretName: admission-webhook-tls
