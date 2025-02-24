@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	admissionv1 "k8s.io/api/admission/v1"
 	"sync"
 
 	"github.com/wI2L/jsondiff"
