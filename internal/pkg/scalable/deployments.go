@@ -3,7 +3,9 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	admissionv1 "k8s.io/api/admission/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,6 +24,15 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 	}
 
 	return results, nil
+}
+
+// parseDeploymentFromAdmissionRequest parses the admission review and returns the deployment.
+func parseDeploymentFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var dep appsv1.Deployment
+	if err := json.Unmarshal(review.Request.Object.Raw, &dep); err != nil {
+		return nil, fmt.Errorf("failed to decode deployment: %v", err)
+	}
+	return &replicaScaledWorkload{&deployment{&dep}}, nil
 }
 
 // deployment is a wrapper for deployment.v1.apps to implement the replicaScaledResource interface.

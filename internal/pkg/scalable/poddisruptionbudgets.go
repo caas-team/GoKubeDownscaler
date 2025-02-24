@@ -3,7 +3,9 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	admissionv1 "k8s.io/api/admission/v1"
 	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
@@ -25,6 +27,14 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 	}
 
 	return results, nil
+}
+
+func parsePodDisruptionBudgetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var pdb policy.PodDisruptionBudget
+	if err := json.Unmarshal(review.Request.Object.Raw, &pdb); err != nil {
+		return nil, fmt.Errorf("failed to decode Deployment: %v", err)
+	}
+	return &podDisruptionBudget{&pdb}, nil
 }
 
 // podDisruptionBudget is a wrapper for poddisruptionbudget.v1.policy to implement the Workload interface.
