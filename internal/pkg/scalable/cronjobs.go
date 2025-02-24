@@ -2,8 +2,10 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	admissionv1 "k8s.io/api/admission/v1"
 	"sync"
 
 	batch "k8s.io/api/batch/v1"
@@ -24,6 +26,15 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 	}
 
 	return results, nil
+}
+
+// parseCronJobFromAdmissionRequest parses the admission review and returns the cronjob.
+func parseCronJobFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var cj batch.CronJob
+	if err := json.Unmarshal(review.Request.Object.Raw, &cj); err != nil {
+		return nil, fmt.Errorf("failed to decode cronjob: %v", err)
+	}
+	return &suspendScaledWorkload{&cronJob{&cj}}, nil
 }
 
 // cronJob is a wrapper for cronjob.v1.batch to implement the suspendScaledResource interface.

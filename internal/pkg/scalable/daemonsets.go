@@ -2,7 +2,9 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	admissionv1 "k8s.io/api/admission/v1"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	appsv1 "k8s.io/api/apps/v1"
@@ -26,6 +28,15 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 	}
 
 	return results, nil
+}
+
+// parseDaemonSetFromAdmissionRequest parses the admission review and returns the daemonset.
+func parseDaemonSetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var ds appsv1.DaemonSet
+	if err := json.Unmarshal(review.Request.Object.Raw, &ds); err != nil {
+		return nil, fmt.Errorf("failed to decode daemonset: %v", err)
+	}
+	return &daemonSet{&ds}, nil
 }
 
 // daemonSet is a wrapper for daemonset.v1.apps to implement the Workload interface.

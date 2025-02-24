@@ -69,7 +69,7 @@ func TestScanWorkload(t *testing.T) {
 
 	scopeCli := values.NewScope()
 	scopeEnv := values.NewScope()
-	config := &util.RuntimeConfiguration{}
+	config := &util.KubeDownscalerRuntimeConfiguration{}
 
 	scopeCli.DownscaleReplicas = values.AbsoluteReplicas(0)
 	scopeCli.GracePeriod = 15 * time.Minute

@@ -9,6 +9,7 @@ import (
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
+	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -45,6 +46,38 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 	}
 
 	return workloads, nil
+}
+
+// parseWorkloadFunc is a function that parses a specific admission review as a Workload.
+type parseWorkloadFunc func(review *admissionv1.AdmissionReview) (Workload, error)
+
+// ParseWorkloadFromAdmissionReview parse the admission review and returns the workloads.
+func ParseWorkloadFromAdmissionReview(resource string, review *admissionv1.AdmissionReview) (Workload, error) {
+	parseWorkloadFuncMap := map[string]parseWorkloadFunc{
+		"deployment":              parseDeploymentFromAdmissionRequest,
+		"statefulset":             parseStatefulSetFromAdmissionRequest,
+		"cronjob":                 parseCronJobFromAdmissionRequest,
+		"job":                     parseJobFromAdmissionRequest,
+		"daemonset":               parseDaemonSetFromAdmissionRequest,
+		"poddisruptionbudget":     parsePodDisruptionBudgetFromAdmissionRequest,
+		"horizontalpodautoscaler": parseHorizontalPodAutoscalerFromAdmissionRequest,
+		"scaledobject":            parseScaledObjectFromAdmissionRequest,
+		"rollout":                 parseRolloutFromAdmissionRequest,
+		"stack":                   parseStackFromAdmissionRequest,
+		"prometheus":              parsePrometheusFromAdmissionRequest,
+	}
+
+	parseFunc, exists := parseWorkloadFuncMap[resource]
+	if !exists {
+		return nil, errResourceNotSupported
+	}
+
+	workload, err := parseFunc(review)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse workloads of type %q: %w from admission request", resource, err)
+	}
+
+	return workload, nil
 }
 
 type ParentWorkload interface {

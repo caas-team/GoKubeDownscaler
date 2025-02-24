@@ -2,8 +2,10 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	admissionv1 "k8s.io/api/admission/v1"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	appsv1 "k8s.io/api/autoscaling/v2"
@@ -25,6 +27,15 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 	}
 
 	return results, nil
+}
+
+// parseHorizontalPodAutoscalerFromAdmissionRequest parses the admission review and returns the horizontalPodAutoscaler.
+func parseHorizontalPodAutoscalerFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var hpa appsv1.HorizontalPodAutoscaler
+	if err := json.Unmarshal(review.Request.Object.Raw, &hpa); err != nil {
+		return nil, fmt.Errorf("failed to decode horizontalpodautoscaler: %v", err)
+	}
+	return &replicaScaledWorkload{&horizontalPodAutoscaler{&hpa}}, nil
 }
 
 // horizontalPodAutoscaler is a wrapper for horizontalpodautoscaler.v2.autoscaling to implement the replicaScaledResource interface.
