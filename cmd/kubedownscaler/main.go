@@ -33,7 +33,7 @@ const (
 
 func main() {
 	// set defaults for runtime configuration
-	config := &util.RuntimeConfiguration{
+	config := &util.KubeDownscalerRuntimeConfiguration{
 		DryRun:            false,
 		Debug:             false,
 		Once:              false,
@@ -105,7 +105,7 @@ func runWithLeaderElection(
 	cancel context.CancelFunc,
 	ctx context.Context,
 	layerCli, layerEnv *values.Layer,
-	config *util.RuntimeConfiguration,
+	config *util.KubeDownscalerRuntimeConfiguration,
 ) {
 	lease, err := client.CreateLease(leaseName)
 	if err != nil {
@@ -151,7 +151,7 @@ func runWithoutLeaderElection(
 	client kubernetes.Client,
 	ctx context.Context,
 	layerCli, layerEnv *values.Layer,
-	config *util.RuntimeConfiguration,
+	config *util.KubeDownscalerRuntimeConfiguration,
 ) {
 	slog.Warn("proceeding without leader election; this could cause errors when running with multiple replicas")
 
@@ -166,7 +166,7 @@ func startScanning(
 	client kubernetes.Client,
 	ctx context.Context,
 	layerCli, layerEnv *values.Layer,
-	config *util.RuntimeConfiguration,
+	config *util.KubeDownscalerRuntimeConfiguration,
 ) error {
 	slog.Info("started downscaler")
 
@@ -215,13 +215,13 @@ func startScanning(
 	return nil
 }
 
-// scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload.
+// scanWorkload runs a scan on the workload, determining the scaling and scaling the workload.
 func scanWorkload(
 	workload scalable.Workload,
 	client kubernetes.Client,
 	ctx context.Context,
 	layerCli, layerEnv *values.Layer,
-	config *util.RuntimeConfiguration,
+	config *util.KubeDownscalerRuntimeConfiguration,
 ) error {
 	resourceLogger := kubernetes.NewResourceLogger(client, workload)
 

@@ -69,7 +69,7 @@ func TestScanWorkload(t *testing.T) {
 
 	layerCli := values.NewLayer()
 	layerEnv := values.NewLayer()
-	config := &util.RuntimeConfiguration{}
+	config := &util.KubeDownscalerRuntimeConfiguration{}
 
 	layerCli.DownscaleReplicas = 0
 	layerCli.GracePeriod = 15 * time.Minute
