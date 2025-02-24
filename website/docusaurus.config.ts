@@ -2,12 +2,19 @@ import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 import { tailwindPlugin } from "./plugins/tailwind-config.cts";
-import { svgoConfigPlugin } from "./plugins/svgo-config.cts";
+import {
+  docRefRemarkPlugin,
+  globalRefParseFrontMatter,
+} from "./plugins/global-ref-plugin.cts";
+import { repoRefRemarkPlugin } from "./plugins/repo-ref-plugin.cts";
+import { PluginOptions } from "@easyops-cn/docusaurus-search-local";
+import { PluginConfig } from "svgo/lib/svgo";
+import path from "path";
 
 const config: Config = {
   title: "GoKubeDownscaler",
-  tagline: "A vertical autoscaler for Kubernetes workloads",
-  favicon: "img/CaaS-Logo.svg",
+  tagline: "A horizontal autoscaler for Kubernetes workloads",
+  favicon: "img/kubedownscaler.svg",
 
   url: "https://caas-team.github.io",
 
@@ -19,7 +26,8 @@ const config: Config = {
   trailingSlash: false,
 
   onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "warn",
+  onBrokenMarkdownLinks: "throw",
+  onBrokenAnchors: "throw",
 
   i18n: {
     defaultLocale: "en",
@@ -30,10 +38,33 @@ const config: Config = {
     [
       "classic",
       {
+        svgr: {
+          svgrConfig: {
+            svgoConfig: {
+              plugins: [
+                "preset-default", // extend default config
+                "removeDimensions", // automatically switch from width and height to viewbox
+                {
+                  // prefix ids and class names with the filename, to prevent duplicate ids from interfering with eachother
+                  name: "prefixIds",
+                  params: {
+                    delim: "_",
+                    prefix: (_, file) => {
+                      return path.basename(file?.path ?? "").split(".")[0];
+                    },
+                    prefixIds: true,
+                    prefixClassNames: true,
+                  },
+                },
+              ] satisfies PluginConfig[],
+            },
+          },
+        },
         docs: {
           sidebarPath: "./sidebars.ts",
           routeBasePath: "/",
           path: "content",
+          beforeDefaultRemarkPlugins: [docRefRemarkPlugin, repoRefRemarkPlugin],
           editUrl:
             "https://github.com/caas-team/GoKubeDownscaler/edit/main/website",
         },
@@ -50,11 +81,13 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: "GoKubeDownscaler",
+      hideOnScroll: true,
       logo: {
-        alt: "CaaS Logo",
-        src: "img/CaaS-Logo.svg",
+        alt: "Kubedownscaler Logo",
+        src: "img/kubedownscaler-name-dark.svg",
+        srcDark: "img/kubedownscaler-name-light.svg",
       },
+      title: "GoKubeDownscaler",
       items: [
         {
           type: "docSidebar",
@@ -68,16 +101,19 @@ const config: Config = {
           position: "left",
           label: "Guides",
         },
-        { to: "/about", label: "About", position: "left" },
         {
           href: "https://github.com/caas-team/GoKubeDownscaler",
-          label: "GitHub",
+          "aria-label": "GitHub",
           position: "right",
+          title: "GoKubeDownscaler | Github",
+          className: "navbar-icon icon-github",
         },
         {
-          href: "https://communityinviter.com/apps/kube-downscaler/kube-downscaler",
-          label: "Slack",
+          href: "https://inviter.co/kube-downscaler",
+          "aria-label": "GitHub",
           position: "right",
+          title: "kube-downscaler | Slack",
+          className: "navbar-icon icon-slack",
         },
       ],
     },
@@ -88,51 +124,46 @@ const config: Config = {
     },
     footer: {
       style: "dark",
-      links: [
-        {
-          title: "Content",
-          items: [
-            {
-              label: "Documentation",
-              to: "/docs",
-            },
-            {
-              label: "Guides",
-              to: "/guides/getting-started",
-            },
-          ],
-        },
-        {
-          title: "Community",
-          items: [
-            {
-              label: "Slack",
-              href: "https://communityinviter.com/apps/kube-downscaler/kube-downscaler",
-            },
-            {
-              label: "GitHub",
-              href: "https://github.com/caas-team/GoKubeDownscaler",
-            },
-          ],
-        },
-        {
-          title: "More",
-          items: [
-            {
-              label: "About",
-              to: "/about",
-            },
-          ],
-        },
-      ],
       copyright: `Copyright © GoKubeDownscaler Authors ${new Date().getFullYear()}`,
     },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      additionalLanguages: ["mdx", "bash"],
+      magicComments: [
+        {
+          className: "theme-code-block-highlighted-line",
+          line: "highlight-next-line",
+          block: { start: "highlight-start", end: "highlight-end" },
+        },
+      ],
     },
   } satisfies Preset.ThemeConfig,
-  plugins: [svgoConfigPlugin, tailwindPlugin],
+  headTags: [
+    {
+      tagName: "link",
+      attributes: {
+        rel: "manifest",
+        href: "/GoKubeDownscaler/manifest.json",
+      },
+    },
+  ],
+  themes: [
+    [
+      require.resolve("@easyops-cn/docusaurus-search-local"),
+      {
+        hashed: true,
+        indexBlog: false,
+        docsRouteBasePath: ["/docs", "/guides"],
+        docsDir: "content",
+        searchBarShortcutHint: false,
+      } as Partial<PluginOptions>,
+    ],
+  ],
+  plugins: [tailwindPlugin],
+  markdown: {
+    parseFrontMatter: globalRefParseFrontMatter,
+  },
 };
 
 export default config;

@@ -1,29 +1,27 @@
-import clsx from "clsx";
 import Heading from "@theme/Heading";
-
-type SupportedResourceGroupProps = {
-  title: string;
-  Svg: React.ComponentType<React.ComponentProps<"svg">>;
-  href: string;
-  supportedResources: string[];
-};
+import * as PrometheusSVG from "@site/static/img/Prometheus.svg";
+import * as ArgoSVG from "@site/static/img/Argo.svg";
+import * as KubernetesSVG from "@site/static/img/Kubernetes.svg";
+import * as KedaSVG from "@site/static/img/Keda.svg";
+import * as ZalandoSVG from "@site/static/img/Zalando.svg";
+import Link from "@docusaurus/Link";
 
 const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
   {
     title: "Prometheus",
-    Svg: require("@site/static/img/Prometheus.svg").default,
+    Svg: PrometheusSVG.default,
     href: "https://prometheus.io/",
     supportedResources: ["Prometheuses"],
   },
   {
     title: "Argo",
-    Svg: require("@site/static/img/Argo.svg").default,
+    Svg: ArgoSVG.default,
     href: "https://argoproj.github.io/",
     supportedResources: ["Rollouts"],
   },
   {
     title: "Kubernetes",
-    Svg: require("@site/static/img/Kubernetes.svg").default,
+    Svg: KubernetesSVG.default,
     href: "https://kubernetes.io/",
     supportedResources: [
       "Deployment",
@@ -37,14 +35,14 @@ const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
   },
   {
     title: "Keda",
-    Svg: require("@site/static/img/Keda.svg").default,
+    Svg: KedaSVG.default,
     href: "https://keda.sh/",
     supportedResources: ["ScaledObjects"],
   },
   {
     title: "Zalando",
-    Svg: require("@site/static/img/Zalando.svg").default,
-    href: "https://zalando.com/",
+    Svg: ZalandoSVG.default,
+    href: "https://opensource.zalando.com/",
     supportedResources: ["Stacks"],
   },
 ];
@@ -56,13 +54,13 @@ function SupportedResourceGroup({
   supportedResources,
 }: SupportedResourceGroupProps) {
   return (
-    <div className="flex-grow max-w-full px-4 w-full xl:flex-1">
-      <div className="text-center">
-        <a href={href}>
+    <div className="max-w-full px-4 pb-8 w-full xl:flex-1">
+      <div className="flex justify-center mb-2">
+        <Link href={href}>
           <Svg className="h-40 w-40" />
-        </a>
+        </Link>
       </div>
-      <div className="text-center px-4">
+      <div className="text-center px-4 max-w-64 mx-auto">
         <Heading as="h3" className="select-none">
           {title}
         </Heading>
@@ -74,10 +72,10 @@ function SupportedResourceGroup({
 
 export function SupportedResources(): JSX.Element {
   return (
-    <>
-      <h1 className="block w-full text-center pt-8 select-none">
+    <div className="useTailwind">
+      <Heading className="block w-full text-center pt-8 select-none" as="h1">
         Supported Resources
-      </h1>
+      </Heading>
       <section className="flex items-center p-8 w-full">
         <div className="mx-auto max-w-6xl px-4 w-full">
           <div className="flex flex-wrap -mx-4 space-x-4">
@@ -87,6 +85,6 @@ export function SupportedResources(): JSX.Element {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

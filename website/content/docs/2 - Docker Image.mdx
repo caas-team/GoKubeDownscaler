@@ -1,0 +1,30 @@
+---
+title: Docker Image
+id: docker-image
+globalReference: docs-docker-image
+---
+
+# Docker Image
+
+This section covers documentation on the docker image of the downscaler.
+
+## Verifying the Cosign Signature
+
+The Docker Image gets built and signed in [the Docker build workflow](ref:docs-workflows#docker-build).
+
+Public Key:
+
+```text title="cosign.pub"
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEgei36FSIhT8a9lOHs1Sem5KvmrT+
+Xi2EcyjLvaJzqu5n0TiygGeO4ZcU30A1PQv6xoI0xBxpyZAw7XeqzrRDOQ==
+-----END PUBLIC KEY-----
+```
+
+Basic local verification:
+
+```bash
+cosign verify --key cosign.pub --insecure-ignore-tlog ghcr.io/caas-team/gokubedownscaler:latest
+```
+
+See [the Cosign documentation](https://docs.sigstore.dev/cosign/verifying/verify) for more information.

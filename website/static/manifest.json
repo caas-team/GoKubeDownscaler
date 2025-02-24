@@ -1,0 +1,44 @@
+{
+    "short_name": "GoKubeDownscaler",
+    "name": "GoKubeDownscaler",
+    "icons": [
+        {
+            "src": "/GoKubeDownscaler/img/kubedownscaler.svg",
+            "type": "image/svg+xml",
+            "sizes": "any"
+        }
+    ],
+    "id": "/GoKubeDownscaler",
+    "start_url": "/GoKubeDownscaler",
+    "background_color": "#FFFFFF",
+    "display": "standalone",
+    "scope": "/GoKubeDownscaler",
+    "theme_color": "#FFFFFF",
+    "shortcuts": [
+        {
+            "name": "Documentation",
+            "short_name": "Documentation",
+            "description": "Documentation on the GoKubeDownscaler",
+            "url": "/GoKubeDownscaler/docs",
+            "icons": [
+                {
+                    "src": "/GoKubeDownscaler/img/kubedownscaler.svg",
+                    "sizes": "any"
+                }
+            ]
+        },
+        {
+            "name": "Guides",
+            "short_name": "Guides",
+            "description": "Guides for the GoKubeDownscaler",
+            "url": "/GoKubeDownscaler/guides",
+            "icons": [
+                {
+                    "src": "/GoKubeDownscaler/img/kubedownscaler.svg",
+                    "sizes": "any"
+                }
+            ]
+        }
+    ],
+    "description": "A horizontal autoscaler for Kubernetes workloads"
+}

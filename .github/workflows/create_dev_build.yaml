@@ -16,7 +16,7 @@ jobs:
       - name: Extract Chart Version
         id: chart_version
         run: |
-          version=$(yq e '.version' ./test-chart/Chart.yaml)
+          version=$(yq e '.version' ./deployments/chart/Chart.yaml)
           echo "version=$version" >> $GITHUB_ENV
 
       - name: Dispatch event to create dev build
