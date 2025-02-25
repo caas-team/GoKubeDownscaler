@@ -31,6 +31,8 @@ type Client interface {
 	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
 	GetWorkloads(name string, namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
+	// RegetWorkload gets the workload again to ensure the latest state
+	RegetWorkload(name, namespace, resourceType string, ctx context.Context) ([]scalable.Workload, error)
 	// DownscaleWorkload downscales the workload to the specified replicas
 	DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error
 	// UpscaleWorkload upscales the workload to the original replicas

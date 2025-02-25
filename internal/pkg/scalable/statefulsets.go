@@ -9,6 +9,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// regetStatefulSet is the regetResourceFunc for StatefulSets.
+func regetStatefulSet(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	statefulset, err := clientsets.Kubernetes.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get statefulset: %w", err)
+	}
+
+	return &replicaScaledWorkload{&statefulSet{statefulset}}, nil
+}
+
 // getStatefulSets is the getResourceFunc for StatefulSets.
 func getStatefulSets(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	if name != "" {

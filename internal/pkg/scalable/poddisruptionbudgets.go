@@ -11,21 +11,18 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// getPodDisruptionBudgets is the getResourceFunc for podDisruptionBudget.
-func getPodDisruptionBudgets(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	if name != "" {
-		results := make([]Workload, 0, 1)
-
-		poddisruptionbudget, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to get poddisruptionbudget: %w", err)
-		}
-
-		results = append(results, &podDisruptionBudget{poddisruptionbudget})
-
-		return results, nil
+// regetPodDisruptionBudget is the regetResourceFunc for PodDisruptionBudgets.
+func regetPodDisruptionBudget(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	poddisruptionbudget, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get poddisruptionbudget: %w", err)
 	}
 
+	return &podDisruptionBudget{poddisruptionbudget}, nil
+}
+
+// getPodDisruptionBudgets is the getResourceFunc for podDisruptionBudget.
+func getPodDisruptionBudgets(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	poddisruptionbudgets, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get poddisruptionbudgets: %w", err)

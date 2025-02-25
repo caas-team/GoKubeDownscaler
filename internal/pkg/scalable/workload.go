@@ -52,6 +52,38 @@ func GetWorkloads(resource, name, namespace string, clientsets *Clientsets, ctx 
 	return workloads, nil
 }
 
+// regetResourceFunc is a function that gets a specific resource as a Workload.
+type regetResourceFunc func(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error)
+
+// RegetWorkload gets the workload again to ensure the latest state.
+func RegetWorkload(resource, name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	regetResourceFuncMap := map[string]regetResourceFunc{
+		"deployments":              regetDeployment,
+		"statefulsets":             regetStatefulSet,
+		"cronjobs":                 regetCronJob,
+		"jobs":                     regetJob,
+		"daemonsets":               regetDaemonSet,
+		"poddisruptionbudgets":     regetPodDisruptionBudget,
+		"horizontalpodautoscalers": regetHorizontalPodAutoscaler,
+		"scaledobjects":            regetScaledObject,
+		"rollouts":                 regetRollout,
+		"stacks":                   regetStack,
+		"prometheuses":             regetPrometheuse,
+	}
+
+	resourceFunc, exists := regetResourceFuncMap[resource]
+	if !exists {
+		return nil, errResourceNotSupported
+	}
+
+	workload, err := resourceFunc(name, namespace, clientsets, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reget workload of type %q: %w", resource, err)
+	}
+
+	return workload, nil
+}
+
 // scalableResource provides all functions needed to scale any type of resource.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource

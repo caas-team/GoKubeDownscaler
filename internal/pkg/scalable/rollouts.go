@@ -9,21 +9,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getRollouts is the getResourceFunc for Argo Rollouts.
-func getRollouts(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	if name != "" {
-		results := make([]Workload, 0, 1)
-
-		singleRollout, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to get rollout: %w", err)
-		}
-
-		results = append(results, &replicaScaledWorkload{&rollout{singleRollout}})
-
-		return results, nil
+// regetRollout is the regetResourceFunc for Argo Rollouts.
+func regetRollout(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	singleRollout, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get rollout: %w", err)
 	}
 
+	return &replicaScaledWorkload{&rollout{singleRollout}}, nil
+}
+
+// getRollouts is the getResourceFunc for Argo Rollouts.
+func getRollouts(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	rollouts, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rollouts: %w", err)

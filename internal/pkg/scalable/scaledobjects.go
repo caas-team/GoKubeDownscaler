@@ -14,21 +14,18 @@ const (
 	annotationKedaPausedReplicas = "autoscaling.keda.sh/paused-replicas"
 )
 
-// getScaledObjects is the getResourceFunc for Keda ScaledObjects.
-func getScaledObjects(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	if name != "" {
-		results := make([]Workload, 0, 1)
-
-		scaledobject, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to get scaledobject: %w", err)
-		}
-
-		results = append(results, &replicaScaledWorkload{&scaledObject{scaledobject}})
-
-		return results, nil
+// regetScaledObject is the regetResourceFunc for Keda ScaledObjects.
+func regetScaledObject(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	scaledobject, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get scaledobject: %w", err)
 	}
 
+	return &replicaScaledWorkload{&scaledObject{scaledobject}}, nil
+}
+
+// getScaledObjects is the getResourceFunc for Keda ScaledObjects.
+func getScaledObjects(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	scaledobjects, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get scaledobjects: %w", err)

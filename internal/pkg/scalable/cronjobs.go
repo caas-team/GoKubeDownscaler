@@ -9,21 +9,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getCronJobs is the getResourceFunc for CronJobs.
-func getCronJobs(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	if name != "" {
-		results := make([]Workload, 0, 1)
-
-		singleCronJob, err := clientsets.Kubernetes.BatchV1().CronJobs(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to get cronjob: %w", err)
-		}
-
-		results = append(results, &suspendScaledWorkload{&cronJob{singleCronJob}})
-
-		return results, nil
+// regetCronJob is the regetResourceFunc for CronJobs.
+func regetCronJob(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	singleCronJob, err := clientsets.Kubernetes.BatchV1().CronJobs(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cronjob: %w", err)
 	}
 
+	return &suspendScaledWorkload{&cronJob{singleCronJob}}, nil
+}
+
+// getCronJobs is the getResourceFunc for CronJobs.
+func getCronJobs(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	cronjobs, err := clientsets.Kubernetes.BatchV1().CronJobs(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cronjobs: %w", err)

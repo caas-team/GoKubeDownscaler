@@ -12,21 +12,18 @@ const (
 	labelMatchNone = "downscaler/match-none"
 )
 
-// getDaemonSets is the getResourceFunc for DaemonSets.
-func getDaemonSets(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	if name != "" {
-		results := make([]Workload, 0, 1)
-
-		daemonset, err := clientsets.Kubernetes.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to get daemonset: %w", err)
-		}
-
-		results = append(results, &daemonSet{daemonset})
-
-		return results, nil
+// regetDaemonSet is the regetResourceFunc for DaemonSets.
+func regetDaemonSet(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	daemonset, err := clientsets.Kubernetes.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get daemonset: %w", err)
 	}
 
+	return &daemonSet{daemonset}, nil
+}
+
+// getDaemonSets is the getResourceFunc for DaemonSets.
+func getDaemonSets(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	daemonsets, err := clientsets.Kubernetes.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get daemonsets: %w", err)

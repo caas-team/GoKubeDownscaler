@@ -23,6 +23,9 @@ const (
 	leaseName = "downscaler-lease"
 )
 
+var errorMaxRetriesReached = fmt.Errorf("max retries reached")
+var errorMaxRetriesReachedNoRetryAllowed = fmt.Errorf("max retries reached, no retries allowed")
+
 func main() {
 	config := util.GetDefaultConfig()
 	config.ParseConfigFlags()
@@ -161,7 +164,8 @@ func startScanning(
 		for _, workload := range workloads {
 			waitGroup.Add(1)
 
-			go attemptScan(client, ctx, layerCli, layerEnv, config, &waitGroup, workload)
+			go attemptScan(client, ctx, layerCli, layerEnv, config, waitGroup.Done, workload)
+
 		}
 
 		waitGroup.Wait()
@@ -184,16 +188,16 @@ func attemptScan(
 	ctx context.Context,
 	layerCli, layerEnv *values.Layer,
 	config *util.RuntimeConfiguration,
-	waitGroup *sync.WaitGroup,
+	deferFunc func(),
 	workload scalable.Workload,
 ) {
 	slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-	defer waitGroup.Done()
+	defer deferFunc()
 
-	scanSucceded := false
+	var scanSucceded bool
 
-	for retry := 0; retry <= config.MaxRetriesOnConflict; retry++ {
+	for retry := range config.MaxRetriesOnConflict + 1 {
 		err := scanWorkload(workload, client, ctx, layerCli, layerEnv, config)
 		if err != nil {
 			if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
@@ -203,14 +207,14 @@ func attemptScan(
 
 			slog.Warn("workload modified, retrying", "attempt", retry+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-			updatedWorkload, err := client.GetWorkloads(
+			updatedWorkload, err := client.RegetWorkload(
 				workload.GetName(),
-				[]string{workload.GetNamespace()},
-				[]string{strings.ToLower(workload.GroupVersionKind().Kind)},
+				workload.GetNamespace(),
+				strings.ToLower(workload.GroupVersionKind().Kind),
 				ctx,
 			)
 			if err != nil {
-				slog.Error("failed to fetch latest workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+				slog.Error("failed to fetch updated workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 				return
 			}
 
@@ -232,9 +236,11 @@ func attemptScan(
 	}
 
 	if !scanSucceded && config.MaxRetriesOnConflict == 0 {
-		slog.Error("failed to scan workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Error("failed to scan workload and no retries allowed, will try again in the next scan", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return
 	}
+
+	return
 }
 
 // scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload.
