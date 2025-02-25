@@ -123,7 +123,7 @@ func (c *RuntimeConfiguration) ParseConfigFlags() {
 	)
 	flag.IntVar(
 		&c.MaxRetriesOnConflict,
-		"max-retries-on-error",
+		"max-retries-on-conflict",
 		0,
 		"the annotation to use instead of creation time for grace period (optional)",
 	)
