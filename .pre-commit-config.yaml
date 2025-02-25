@@ -51,5 +51,3 @@ repos:
         entry: npx eslint --fix --config=website/eslint.config.mjs "website/**/*.{js,jsx,ts,tsx,cts,cjs,mdx}"
         language: node
         files: website/.*\.(js|jsx|ts|tsx|cts|cjs|mdx)$
-        additional_dependencies:
-          - eslint-plugin-markdown
