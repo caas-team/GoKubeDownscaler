@@ -20,7 +20,7 @@ func regetPrometheus(name, namespace string, clientsets *Clientsets, ctx context
 }
 
 // getPrometheuses is the getResourceFunc for Prometheuses.
-func getPrometheuses(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	prometheuses, err := clientsets.Monitoring.MonitoringV1().Prometheuses(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get prometheuses: %w", err)

@@ -21,10 +21,10 @@ var (
 )
 
 // getResourceFunc is a function that gets a specific resource as a Workload.
-type getResourceFunc func(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error)
+type getResourceFunc func(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error)
 
 // GetWorkloads gets all workloads of the given resource in the cluster.
-func GetWorkloads(resource, name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	resourceFuncMap := map[string]getResourceFunc{
 		"deployments":              getDeployments,
 		"statefulsets":             getStatefulSets,
@@ -44,7 +44,7 @@ func GetWorkloads(resource, name, namespace string, clientsets *Clientsets, ctx 
 		return nil, errResourceNotSupported
 	}
 
-	workloads, err := resourceFunc(name, namespace, clientsets, ctx)
+	workloads, err := resourceFunc(namespace, clientsets, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get workloads of type %q: %w", resource, err)
 	}
@@ -68,7 +68,7 @@ func RegetWorkload(resource, name, namespace string, clientsets *Clientsets, ctx
 		"scaledobjects":            regetScaledObject,
 		"rollouts":                 regetRollout,
 		"stacks":                   regetStack,
-		"prometheuses":             regetPrometheuse,
+		"prometheuses":             regetPrometheus,
 	}
 
 	resourceFunc, exists := regetResourceFuncMap[resource]

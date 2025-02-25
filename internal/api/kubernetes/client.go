@@ -30,9 +30,9 @@ type Client interface {
 	// GetNamespaceAnnotations gets the annotations of the workload's namespace
 	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
-	GetWorkloads(name string, namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
+	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
 	// RegetWorkload gets the workload again to ensure the latest state
-	RegetWorkload(name, namespace, resourceType string, ctx context.Context) ([]scalable.Workload, error)
+	RegetWorkload(name, namespace, resourceType string, ctx context.Context) (scalable.Workload, error)
 	// DownscaleWorkload downscales the workload to the specified replicas
 	DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error
 	// UpscaleWorkload upscales the workload to the original replicas
@@ -106,7 +106,7 @@ func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (
 }
 
 // GetWorkloads gets all workloads of the specified resources for the specified namespaces.
-func (c client) GetWorkloads(name string, namespaces, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error) {
+func (c client) GetWorkloads(namespaces, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -120,7 +120,7 @@ func (c client) GetWorkloads(name string, namespaces, resourceTypes []string, ct
 		for _, resourceType := range resourceTypes {
 			slog.Debug("getting workloads from resource type", "resourceType", resourceType)
 
-			workloads, err := scalable.GetWorkloads(strings.ToLower(resourceType), name, namespace, c.clientsets, ctx)
+			workloads, err := scalable.GetWorkloads(strings.ToLower(resourceType), namespace, c.clientsets, ctx)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get workloads: %w", err)
 			}
@@ -130,6 +130,18 @@ func (c client) GetWorkloads(name string, namespaces, resourceTypes []string, ct
 	}
 
 	return results, nil
+}
+
+// RegetWorkload gets the workload again to ensure the latest state.
+func (c client) RegetWorkload(name, namespace, resourceType string, ctx context.Context) (scalable.Workload, error) {
+	var result scalable.Workload
+
+	result, err := scalable.RegetWorkload(resourceType, name, namespace, c.clientsets, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get workload: %w", err)
+	}
+
+	return result, nil
 }
 
 // DownscaleWorkload downscales the workload to the specified replicas.

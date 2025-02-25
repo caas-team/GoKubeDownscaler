@@ -1,4 +1,3 @@
-//nolint:dupl // this code is very similar for every resource, but its not really abstractable to avoid more duplication
 package scalable
 
 import (
@@ -20,20 +19,7 @@ func regetStatefulSet(name, namespace string, clientsets *Clientsets, ctx contex
 }
 
 // getStatefulSets is the getResourceFunc for StatefulSets.
-func getStatefulSets(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	if name != "" {
-		results := make([]Workload, 0, 1)
-
-		statefulset, err := clientsets.Kubernetes.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to get statefulset: %w", err)
-		}
-
-		results = append(results, &replicaScaledWorkload{&statefulSet{statefulset}})
-
-		return results, nil
-	}
-
+func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	statefulsets, err := clientsets.Kubernetes.AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get statefulsets: %w", err)

@@ -20,7 +20,7 @@ func regetRollout(name, namespace string, clientsets *Clientsets, ctx context.Co
 }
 
 // getRollouts is the getResourceFunc for Argo Rollouts.
-func getRollouts(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	rollouts, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rollouts: %w", err)

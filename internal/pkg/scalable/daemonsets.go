@@ -23,7 +23,7 @@ func regetDaemonSet(name, namespace string, clientsets *Clientsets, ctx context.
 }
 
 // getDaemonSets is the getResourceFunc for DaemonSets.
-func getDaemonSets(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	daemonsets, err := clientsets.Kubernetes.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get daemonsets: %w", err)

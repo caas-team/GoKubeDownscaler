@@ -20,7 +20,7 @@ func regetCronJob(name, namespace string, clientsets *Clientsets, ctx context.Co
 }
 
 // getCronJobs is the getResourceFunc for CronJobs.
-func getCronJobs(name, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	cronjobs, err := clientsets.Kubernetes.BatchV1().CronJobs(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cronjobs: %w", err)
