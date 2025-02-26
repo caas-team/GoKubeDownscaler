@@ -14,16 +14,6 @@ const (
 	annotationKedaPausedReplicas = "autoscaling.keda.sh/paused-replicas"
 )
 
-// regetScaledObject is the regetResourceFunc for Keda ScaledObjects.
-func regetScaledObject(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
-	scaledobject, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get scaledobject: %w", err)
-	}
-
-	return &replicaScaledWorkload{&scaledObject{scaledobject}}, nil
-}
-
 // getScaledObjects is the getResourceFunc for Keda ScaledObjects.
 func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	scaledobjects, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(namespace).List(ctx, metav1.ListOptions{})
@@ -74,6 +64,16 @@ func (s *scaledObject) getReplicas() (int32, error) {
 
 	// #nosec G115
 	return int32(pausedReplicas), nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (s *scaledObject) Reget(clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	singleScaledObject, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get scaledObject: %w", err)
+	}
+
+	return &replicaScaledWorkload{&scaledObject{singleScaledObject}}, nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

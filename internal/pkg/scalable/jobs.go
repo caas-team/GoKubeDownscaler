@@ -1,4 +1,3 @@
-//nolint:dupl // this code is very similar for every resource, but its not really abstractable to avoid more duplication
 package scalable
 
 import (
@@ -8,16 +7,6 @@ import (
 	batch "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-// regetJob is the regetResourceFunc for Jobs.
-func regetJob(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
-	singleJob, err := clientsets.Kubernetes.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get job: %w", err)
-	}
-
-	return &suspendScaledWorkload{&job{singleJob}}, nil
-}
 
 // getDeployments is the getResourceFunc for Jobs.
 func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -42,6 +31,16 @@ type job struct {
 // setSuspend sets the value of the suspend field on the job.
 func (j *job) setSuspend(suspend bool) {
 	j.Spec.Suspend = &suspend
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (j *job) Reget(clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	singleJob, err := clientsets.Kubernetes.BatchV1().Jobs(j.Namespace).Get(ctx, j.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get job: %w", err)
+	}
+
+	return &suspendScaledWorkload{&job{singleJob}}, nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

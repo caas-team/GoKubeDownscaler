@@ -9,16 +9,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// regetStack is the regetResourceFunc for Zalando Stacks.
-func regetStack(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
-	singleStack, err := clientsets.Zalando.ZalandoV1().Stacks(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get stack: %w", err)
-	}
-
-	return &replicaScaledWorkload{&stack{singleStack}}, nil
-}
-
 // getStacks is the getResourceFunc for Zalando Stacks.
 func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	stacks, err := clientsets.Zalando.ZalandoV1().Stacks(namespace).List(ctx, metav1.ListOptions{})
@@ -53,6 +43,16 @@ func (s *stack) getReplicas() (int32, error) {
 	}
 
 	return *s.Spec.Replicas, nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (s *stack) Reget(clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	singleStack, err := clientsets.Zalando.ZalandoV1().Stacks(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get stack: %w", err)
+	}
+
+	return &replicaScaledWorkload{&stack{singleStack}}, nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

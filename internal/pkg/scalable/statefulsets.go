@@ -8,16 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// regetStatefulSet is the regetResourceFunc for StatefulSets.
-func regetStatefulSet(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
-	statefulset, err := clientsets.Kubernetes.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get statefulset: %w", err)
-	}
-
-	return &replicaScaledWorkload{&statefulSet{statefulset}}, nil
-}
-
 // getStatefulSets is the getResourceFunc for StatefulSets.
 func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	statefulsets, err := clientsets.Kubernetes.AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{})
@@ -52,6 +42,16 @@ func (s *statefulSet) getReplicas() (int32, error) {
 	}
 
 	return *s.Spec.Replicas, nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (s *statefulSet) Reget(clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	singleStatefulSet, err := clientsets.Kubernetes.AppsV1().StatefulSets(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get statefulset: %w", err)
+	}
+
+	return &replicaScaledWorkload{&statefulSet{singleStatefulSet}}, nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

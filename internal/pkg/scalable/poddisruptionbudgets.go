@@ -11,16 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// regetPodDisruptionBudget is the regetResourceFunc for PodDisruptionBudgets.
-func regetPodDisruptionBudget(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
-	poddisruptionbudget, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get poddisruptionbudget: %w", err)
-	}
-
-	return &podDisruptionBudget{poddisruptionbudget}, nil
-}
-
 // getPodDisruptionBudgets is the getResourceFunc for podDisruptionBudget.
 func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	poddisruptionbudgets, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(namespace).List(ctx, metav1.ListOptions{})
@@ -145,6 +135,16 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int32) error {
 	slog.Debug("can't scale PodDisruptionBudgets with percent availability", "workload", p.GetName(), "namespace", p.GetNamespace())
 
 	return nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (p *podDisruptionBudget) Reget(clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	singlePdb, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(p.Namespace).Get(ctx, p.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get poddisruptionbudget: %w", err)
+	}
+
+	return &podDisruptionBudget{singlePdb}, nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

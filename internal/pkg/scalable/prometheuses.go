@@ -9,16 +9,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// regetPrometheus is the regetResourceFunc for Prometheuses.
-func regetPrometheus(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
-	singlePrometheus, err := clientsets.Monitoring.MonitoringV1().Prometheuses(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get prometheus: %w", err)
-	}
-
-	return &replicaScaledWorkload{&prometheus{singlePrometheus}}, nil
-}
-
 // getPrometheuses is the getResourceFunc for Prometheuses.
 func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	prometheuses, err := clientsets.Monitoring.MonitoringV1().Prometheuses(namespace).List(ctx, metav1.ListOptions{})
@@ -53,6 +43,16 @@ func (p *prometheus) getReplicas() (int32, error) {
 	}
 
 	return *p.Spec.Replicas, nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (p *prometheus) Reget(clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	singlePrometheus, err := clientsets.Monitoring.MonitoringV1().Prometheuses(p.Namespace).Get(ctx, p.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get prometheus: %w", err)
+	}
+
+	return &replicaScaledWorkload{&prometheus{singlePrometheus}}, nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

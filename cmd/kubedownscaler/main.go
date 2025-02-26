@@ -184,12 +184,12 @@ func attemptScan(
 	ctx context.Context,
 	layerCli, layerEnv *values.Layer,
 	config *util.RuntimeConfiguration,
-	deferFunc func(),
+	doneFunc func(),
 	workload scalable.Workload,
 ) {
 	slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-	defer deferFunc()
+	defer doneFunc()
 
 	var scanSucceded bool
 
@@ -203,12 +203,7 @@ func attemptScan(
 
 			slog.Warn("workload modified, retrying", "attempt", retry+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-			updatedWorkload, err := client.RegetWorkload(
-				workload.GetName(),
-				workload.GetNamespace(),
-				strings.ToLower(workload.GroupVersionKind().Kind),
-				ctx,
-			)
+			updatedWorkload, err := client.RegetWorkload(workload, ctx)
 			if err != nil {
 				slog.Error("failed to fetch updated workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 				return

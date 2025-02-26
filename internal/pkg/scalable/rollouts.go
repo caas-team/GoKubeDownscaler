@@ -1,4 +1,3 @@
-//nolint:dupl // this code is very similar for every resource, but its not really abstractable to avoid more duplication
 package scalable
 
 import (
@@ -8,16 +7,6 @@ import (
 	argov1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-// regetRollout is the regetResourceFunc for Argo Rollouts.
-func regetRollout(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
-	singleRollout, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get rollout: %w", err)
-	}
-
-	return &replicaScaledWorkload{&rollout{singleRollout}}, nil
-}
 
 // getRollouts is the getResourceFunc for Argo Rollouts.
 func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -53,6 +42,16 @@ func (r *rollout) getReplicas() (int32, error) {
 	}
 
 	return *r.Spec.Replicas, nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (r *rollout) Reget(clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	singleRollout, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(r.Namespace).Get(ctx, r.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get rollout: %w", err)
+	}
+
+	return &replicaScaledWorkload{&rollout{singleRollout}}, nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

@@ -12,16 +12,6 @@ const (
 	labelMatchNone = "downscaler/match-none"
 )
 
-// regetDaemonSet is the regetResourceFunc for DaemonSets.
-func regetDaemonSet(name, namespace string, clientsets *Clientsets, ctx context.Context) (Workload, error) {
-	daemonset, err := clientsets.Kubernetes.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get daemonset: %w", err)
-	}
-
-	return &daemonSet{daemonset}, nil
-}
-
 // getDaemonSets is the getResourceFunc for DaemonSets.
 func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	daemonsets, err := clientsets.Kubernetes.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{})
@@ -57,6 +47,16 @@ func (d *daemonSet) ScaleDown(_ int32) error {
 	d.Spec.Template.Spec.NodeSelector[labelMatchNone] = "true"
 
 	return nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (d *daemonSet) Reget(clientsets *Clientsets, ctx context.Context) (Workload, error) {
+	singleDaemonSet, err := clientsets.Kubernetes.AppsV1().DaemonSets(d.Namespace).Get(ctx, d.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cronjob: %w", err)
+	}
+
+	return &daemonSet{singleDaemonSet}, nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
