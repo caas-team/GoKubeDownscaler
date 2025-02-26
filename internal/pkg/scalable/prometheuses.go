@@ -46,13 +46,15 @@ func (p *prometheus) getReplicas() (int32, error) {
 }
 
 // Reget regets the resource from the Kubernetes API.
-func (p *prometheus) Reget(clientsets *Clientsets, ctx context.Context) (Workload, error) {
+func (p *prometheus) Reget(clientsets *Clientsets, ctx context.Context) error {
 	singlePrometheus, err := clientsets.Monitoring.MonitoringV1().Prometheuses(p.Namespace).Get(ctx, p.Name, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get prometheus: %w", err)
+		return fmt.Errorf("failed to get prometheus: %w", err)
 	}
 
-	return &replicaScaledWorkload{&prometheus{singlePrometheus}}, nil
+	p.Prometheus = singlePrometheus
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

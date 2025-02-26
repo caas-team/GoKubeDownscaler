@@ -67,13 +67,15 @@ func (s *scaledObject) getReplicas() (int32, error) {
 }
 
 // Reget regets the resource from the Kubernetes API.
-func (s *scaledObject) Reget(clientsets *Clientsets, ctx context.Context) (Workload, error) {
+func (s *scaledObject) Reget(clientsets *Clientsets, ctx context.Context) error {
 	singleScaledObject, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get scaledObject: %w", err)
+		return fmt.Errorf("failed to get scaledObject: %w", err)
 	}
 
-	return &replicaScaledWorkload{&scaledObject{singleScaledObject}}, nil
+	s.ScaledObject = singleScaledObject
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

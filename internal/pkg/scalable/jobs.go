@@ -34,13 +34,15 @@ func (j *job) setSuspend(suspend bool) {
 }
 
 // Reget regets the resource from the Kubernetes API.
-func (j *job) Reget(clientsets *Clientsets, ctx context.Context) (Workload, error) {
+func (j *job) Reget(clientsets *Clientsets, ctx context.Context) error {
 	singleJob, err := clientsets.Kubernetes.BatchV1().Jobs(j.Namespace).Get(ctx, j.Name, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get job: %w", err)
+		return fmt.Errorf("failed to get job: %w", err)
 	}
 
-	return &suspendScaledWorkload{&job{singleJob}}, nil
+	j.Job = singleJob
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

@@ -16,7 +16,7 @@ type replicaScaledResource interface {
 	// getReplicas gets the replicas of the workload
 	getReplicas() (int32, error)
 	// Reget regets the workload to ensure the latest state
-	Reget(clientsets *Clientsets, ctx context.Context) (Workload, error)
+	Reget(clientsets *Clientsets, ctx context.Context) error
 }
 
 // replicaScaledWorkload is a wrapper for all resources which are scaled by setting the replica count.

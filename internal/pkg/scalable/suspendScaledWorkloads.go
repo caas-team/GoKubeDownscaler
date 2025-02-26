@@ -12,7 +12,7 @@ type suspendScaledResource interface {
 	// setSuspend sets the value of the suspend field on the workload
 	setSuspend(suspend bool)
 	// Reget regets the workload to ensure the latest state
-	Reget(clientsets *Clientsets, ctx context.Context) (Workload, error)
+	Reget(clientsets *Clientsets, ctx context.Context) error
 }
 
 // suspendScaledWorkload is a wrapper for all resources which are scaled by setting a suspend field.

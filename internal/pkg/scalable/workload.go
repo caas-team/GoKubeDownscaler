@@ -82,7 +82,7 @@ type Workload interface {
 	// ScaleDown scales down the workload
 	ScaleDown(downscaleReplicas int32) error
 	// Reget regets the workload to ensure the latest state
-	Reget(clientsets *Clientsets, ctx context.Context) (Workload, error)
+	Reget(clientsets *Clientsets, ctx context.Context) error
 }
 
 type Clientsets struct {

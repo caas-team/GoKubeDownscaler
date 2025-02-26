@@ -138,13 +138,15 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int32) error {
 }
 
 // Reget regets the resource from the Kubernetes API.
-func (p *podDisruptionBudget) Reget(clientsets *Clientsets, ctx context.Context) (Workload, error) {
+func (p *podDisruptionBudget) Reget(clientsets *Clientsets, ctx context.Context) error {
 	singlePdb, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(p.Namespace).Get(ctx, p.Name, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get poddisruptionbudget: %w", err)
+		return fmt.Errorf("failed to get poddisruptionbudget: %w", err)
 	}
 
-	return &podDisruptionBudget{singlePdb}, nil
+	p.PodDisruptionBudget = singlePdb
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

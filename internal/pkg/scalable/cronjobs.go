@@ -29,13 +29,15 @@ type cronJob struct {
 }
 
 // Reget regets the resource from the Kubernetes API.
-func (c *cronJob) Reget(clientsets *Clientsets, ctx context.Context) (Workload, error) {
+func (c *cronJob) Reget(clientsets *Clientsets, ctx context.Context) error {
 	singleCronJob, err := clientsets.Kubernetes.BatchV1().CronJobs(c.Namespace).Get(ctx, c.Name, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cronjob: %w", err)
+		return fmt.Errorf("failed to get cronjob: %w", err)
 	}
 
-	return &suspendScaledWorkload{&cronJob{singleCronJob}}, nil
+	c.CronJob = singleCronJob
+
+	return nil
 }
 
 // setSuspend sets the value of the suspend field on the cronJob.

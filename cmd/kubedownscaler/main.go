@@ -203,13 +203,11 @@ func attemptScan(
 
 			slog.Warn("workload modified, retrying", "attempt", retry+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-			updatedWorkload, err := client.RegetWorkload(workload, ctx)
+			err := client.RegetWorkload(workload, ctx)
 			if err != nil {
 				slog.Error("failed to fetch updated workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 				return
 			}
-
-			workload = updatedWorkload
 
 			continue
 		}
