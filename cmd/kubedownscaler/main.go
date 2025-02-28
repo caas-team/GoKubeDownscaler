@@ -161,7 +161,13 @@ func startScanning(
 		for _, workload := range workloads {
 			waitGroup.Add(1)
 
-			go attemptScan(client, ctx, layerCli, layerEnv, config, waitGroup.Done, workload)
+			go func() {
+				err = attemptScan(client, ctx, layerCli, layerEnv, config, waitGroup.Done, workload)
+				if err != nil {
+					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+					return
+				}
+			}()
 		}
 
 		waitGroup.Wait()
@@ -186,7 +192,7 @@ func attemptScan(
 	config *util.RuntimeConfiguration,
 	doneFunc func(),
 	workload scalable.Workload,
-) {
+) error {
 	slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	defer doneFunc()
@@ -195,16 +201,14 @@ func attemptScan(
 		err := scanWorkload(workload, client, ctx, layerCli, layerEnv, config)
 		if err != nil {
 			if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
-				slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-				return
+				return fmt.Errorf("failed to scan workload: %w", err)
 			}
 
 			slog.Warn("workload modified, retrying", "attempt", retry+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 			err := client.RegetWorkload(workload, ctx)
 			if err != nil {
-				slog.Error("failed to fetch updated workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
-				return
+				return fmt.Errorf("failed to fetch updated workload: %w", err)
 			}
 
 			continue
@@ -212,10 +216,12 @@ func attemptScan(
 
 		slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-		return
+		return nil
 	}
 
 	slog.Error("failed to scan workload", "attempts", config.MaxRetriesOnConflict+1)
+
+	return nil
 }
 
 // scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload.
