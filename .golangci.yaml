@@ -169,7 +169,7 @@ linters:
     - stylecheck
     - tagalign
     - tagliatelle
-    - tenv
+    - usetesting
     - testableexamples
     - testifylint
     #- testpackage # we might also want to test unexported functions

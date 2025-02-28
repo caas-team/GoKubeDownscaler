@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"regexp"
 	"sync"
 	"syscall"
 	"time"
@@ -21,32 +20,11 @@ import (
 )
 
 const (
-	// value defaults.
-	defaultGracePeriod       = 15 * time.Minute
-	defaultDownscaleReplicas = 0
-
 	leaseName = "downscaler-lease"
-
-	// runtime config defaults.
-	defaultInterval = 30 * time.Second
 )
 
 func main() {
-	// set defaults for runtime configuration
-	config := &util.RuntimeConfiguration{
-		DryRun:            false,
-		Debug:             false,
-		Once:              false,
-		Interval:          defaultInterval,
-		IncludeNamespaces: nil,
-		IncludeResources:  []string{"deployments"},
-		ExcludeNamespaces: util.RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
-		ExcludeWorkloads:  nil,
-		IncludeLabels:     nil,
-		TimeAnnotation:    "",
-		Kubeconfig:        "",
-	}
-
+	config := util.GetDefaultConfig()
 	config.ParseConfigFlags()
 
 	err := config.ParseConfigEnvVars()
@@ -55,6 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	layerDefault := values.GetDefaultLayer()
 	layerCli := values.NewLayer()
 	layerEnv := values.NewLayer()
 
@@ -64,9 +43,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// set defaults for layers
-	layerCli.GracePeriod = defaultGracePeriod
-	layerCli.DownscaleReplicas = defaultDownscaleReplicas
 	layerCli.ParseLayerFlags()
 
 	flag.Parse()
@@ -93,18 +69,18 @@ func main() {
 	defer cancel()
 
 	if !config.LeaderElection {
-		runWithoutLeaderElection(client, ctx, &layerCli, &layerEnv, config)
+		runWithoutLeaderElection(client, ctx, layerDefault, &layerCli, &layerEnv, config)
 		return
 	}
 
-	runWithLeaderElection(client, cancel, ctx, &layerCli, &layerEnv, config)
+	runWithLeaderElection(client, cancel, ctx, layerDefault, &layerCli, &layerEnv, config)
 }
 
 func runWithLeaderElection(
 	client kubernetes.Client,
 	cancel context.CancelFunc,
 	ctx context.Context,
-	layerCli, layerEnv *values.Layer,
+	layerDefault, layerCli, layerEnv *values.Layer,
 	config *util.RuntimeConfiguration,
 ) {
 	lease, err := client.CreateLease(leaseName)
@@ -130,7 +106,7 @@ func runWithLeaderElection(
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				slog.Info("started leading")
-				err = startScanning(client, ctx, layerCli, layerEnv, config)
+				err = startScanning(client, ctx, layerDefault, layerCli, layerEnv, config)
 				if err != nil {
 					slog.Error("an error occurred while scanning workloads", "error", err)
 					cancel()
@@ -150,12 +126,12 @@ func runWithLeaderElection(
 func runWithoutLeaderElection(
 	client kubernetes.Client,
 	ctx context.Context,
-	layerCli, layerEnv *values.Layer,
+	layerDefault, layerCli, layerEnv *values.Layer,
 	config *util.RuntimeConfiguration,
 ) {
 	slog.Warn("proceeding without leader election; this could cause errors when running with multiple replicas")
 
-	err := startScanning(client, ctx, layerCli, layerEnv, config)
+	err := startScanning(client, ctx, layerDefault, layerCli, layerEnv, config)
 	if err != nil {
 		slog.Error("an error occurred while scanning workloads, exiting", "error", err)
 		os.Exit(1)
@@ -165,7 +141,7 @@ func runWithoutLeaderElection(
 func startScanning(
 	client kubernetes.Client,
 	ctx context.Context,
-	layerCli, layerEnv *values.Layer,
+	layerDefault, layerCli, layerEnv *values.Layer,
 	config *util.RuntimeConfiguration,
 ) error {
 	slog.Info("started downscaler")
@@ -190,7 +166,7 @@ func startScanning(
 
 				defer waitGroup.Done()
 
-				err := scanWorkload(workload, client, ctx, layerCli, layerEnv, config)
+				err := scanWorkload(workload, client, ctx, layerDefault, layerCli, layerEnv, config)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
@@ -220,7 +196,7 @@ func scanWorkload(
 	workload scalable.Workload,
 	client kubernetes.Client,
 	ctx context.Context,
-	layerCli, layerEnv *values.Layer,
+	layerDefault, layerCli, layerEnv *values.Layer,
 	config *util.RuntimeConfiguration,
 ) error {
 	resourceLogger := kubernetes.NewResourceLogger(client, workload)
@@ -254,7 +230,7 @@ func scanWorkload(
 		return fmt.Errorf("failed to parse namespace layer from annotations: %w", err)
 	}
 
-	layers := values.Layers{&layerWorkload, &layerNamespace, layerCli, layerEnv}
+	layers := values.Layers{&layerWorkload, &layerNamespace, layerCli, layerEnv, layerDefault}
 
 	slog.Debug("finished parsing all layers", "layers", layers, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 

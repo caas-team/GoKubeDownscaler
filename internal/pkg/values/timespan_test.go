@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var zeroTime = time.Date(0, time.January, 1, 0, 0, 0, 0, time.UTC)
-
 func TestParseRelativeTimeSpan(t *testing.T) {
 	t.Parallel()
 
@@ -27,8 +25,8 @@ func TestParseRelativeTimeSpan(t *testing.T) {
 				timezone:    time.UTC,
 				weekdayFrom: time.Monday,
 				weekdayTo:   time.Friday,
-				timeFrom:    zeroTime.Add(7 * time.Hour),
-				timeTo:      zeroTime.Add(16 * time.Hour),
+				timeFrom:    7 * Hour,
+				timeTo:      16 * Hour,
 			},
 			wantErr: false,
 		},
@@ -39,8 +37,8 @@ func TestParseRelativeTimeSpan(t *testing.T) {
 				timezone:    time.UTC,
 				weekdayFrom: time.Saturday,
 				weekdayTo:   time.Sunday,
-				timeFrom:    zeroTime.Add(20 * time.Hour),
-				timeTo:      zeroTime.Add(6 * time.Hour),
+				timeFrom:    20 * Hour,
+				timeTo:      6 * Hour,
 			},
 			wantErr: false,
 		},
@@ -75,8 +73,8 @@ func TestParseRelativeTimeSpan(t *testing.T) {
 				timezone:    time.UTC,
 				weekdayFrom: time.Monday,
 				weekdayTo:   time.Friday,
-				timeFrom:    zeroTime,
-				timeTo:      zeroTime.Add(24 * time.Hour),
+				timeFrom:    0 * Hour,
+				timeTo:      24 * Hour,
 			},
 			wantErr: false,
 		},
@@ -161,85 +159,85 @@ func TestRelativeTimeSpan_isTimeOfDayInRange(t *testing.T) {
 	tests := []struct {
 		name       string
 		timespan   relativeTimeSpan
-		timeOfDay  time.Time
+		timeOfDay  dayTime
 		wantResult bool
 	}{
 		{
 			name:       "in range",
-			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(6 * time.Hour), timeTo: zeroTime.Add(20 * time.Hour)},
-			timeOfDay:  zeroTime.Add(16 * time.Hour),
+			timespan:   relativeTimeSpan{timeFrom: 6 * Hour, timeTo: 20 * Hour},
+			timeOfDay:  16 * Hour,
 			wantResult: true,
 		},
 		{
 			name:       "to out of range",
-			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(6 * time.Hour), timeTo: zeroTime.Add(20 * time.Hour)},
-			timeOfDay:  zeroTime.Add(20 * time.Hour),
+			timespan:   relativeTimeSpan{timeFrom: 6 * Hour, timeTo: 20 * Hour},
+			timeOfDay:  20 * Hour,
 			wantResult: false,
 		},
 		{
 			name:       "reverse in range",
-			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(18 * time.Hour), timeTo: zeroTime.Add(4 * time.Hour)},
-			timeOfDay:  zeroTime.Add(3 * time.Hour),
+			timespan:   relativeTimeSpan{timeFrom: 18 * Hour, timeTo: 4 * Hour},
+			timeOfDay:  3 * Hour,
 			wantResult: true,
 		},
 		{
 			name:       "reverse to out of range",
-			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(18 * time.Hour), timeTo: zeroTime.Add(4 * time.Hour)},
-			timeOfDay:  zeroTime.Add(4 * time.Hour),
+			timespan:   relativeTimeSpan{timeFrom: 18 * Hour, timeTo: 4 * Hour},
+			timeOfDay:  4 * Hour,
 			wantResult: false,
 		},
 		{
 			name:       "from in range",
-			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(6 * time.Hour), timeTo: zeroTime.Add(20 * time.Hour)},
-			timeOfDay:  zeroTime.Add(6 * time.Hour),
+			timespan:   relativeTimeSpan{timeFrom: 6 * Hour, timeTo: 20 * Hour},
+			timeOfDay:  6 * Hour,
 			wantResult: true,
 		},
 		{
 			name:       "reverse from in range",
-			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(18 * time.Hour), timeTo: zeroTime.Add(4 * time.Hour)},
-			timeOfDay:  zeroTime.Add(18 * time.Hour),
+			timespan:   relativeTimeSpan{timeFrom: 18 * Hour, timeTo: 4 * Hour},
+			timeOfDay:  18 * Hour,
 			wantResult: true,
 		},
 		{
 			name:       "all day",
-			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime.Add(24 * time.Hour)},
-			timeOfDay:  zeroTime.Add(18 * time.Hour),
+			timespan:   relativeTimeSpan{timeFrom: 0 * Hour, timeTo: 24 * Hour},
+			timeOfDay:  18 * Hour,
 			wantResult: true,
 		},
 		{
 			name:       "all day overlap to next day",
-			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime.Add(24 * time.Hour)},
-			timeOfDay:  zeroTime.Add(24*time.Hour - time.Nanosecond),
+			timespan:   relativeTimeSpan{timeFrom: 0 * Hour, timeTo: 24 * Hour},
+			timeOfDay:  24*Hour - Minute,
 			wantResult: true,
 		},
 		{
 			name:       "all day start of day",
-			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime.Add(24 * time.Hour)},
-			timeOfDay:  zeroTime,
+			timespan:   relativeTimeSpan{timeFrom: 0 * Hour, timeTo: 24 * Hour},
+			timeOfDay:  0 * Hour,
 			wantResult: true,
 		},
 		{
 			name:       "24 never",
-			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(24 * time.Hour), timeTo: zeroTime},
-			timeOfDay:  zeroTime.Add(18 * time.Hour),
+			timespan:   relativeTimeSpan{timeFrom: 24 * Hour, timeTo: 0 * Hour},
+			timeOfDay:  18 * Hour,
 			wantResult: false,
 		},
 		{
 			name:       "24 never overlap to next day",
-			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(24 * time.Hour), timeTo: zeroTime},
-			timeOfDay:  zeroTime.Add(24*time.Hour - time.Nanosecond),
+			timespan:   relativeTimeSpan{timeFrom: 24 * Hour, timeTo: 0 * Hour},
+			timeOfDay:  24*Hour - Minute,
 			wantResult: false,
 		},
 		{
 			name:       "24 never start of day",
-			timespan:   relativeTimeSpan{timeFrom: zeroTime.Add(24 * time.Hour), timeTo: zeroTime},
-			timeOfDay:  zeroTime,
+			timespan:   relativeTimeSpan{timeFrom: 24 * Hour, timeTo: 0 * Hour},
+			timeOfDay:  0 * Hour,
 			wantResult: false,
 		},
 		{
 			name:       "0 never",
-			timespan:   relativeTimeSpan{timeFrom: zeroTime, timeTo: zeroTime},
-			timeOfDay:  zeroTime,
+			timespan:   relativeTimeSpan{timeFrom: 0 * Hour, timeTo: 0 * Hour},
+			timeOfDay:  0 * Hour,
 			wantResult: false,
 		},
 	}
@@ -260,17 +258,17 @@ func TestGetTimeOfDay(t *testing.T) {
 	tests := []struct {
 		name       string
 		time       time.Time
-		wantResult time.Time
+		wantResult dayTime
 	}{
 		{
 			name:       "utc",
-			time:       time.Date(2024, time.April, 12, 10, 20, 0, 0, time.UTC),
-			wantResult: time.Date(0, time.January, 1, 10, 20, 0, 0, time.UTC),
+			time:       time.Date(2024, time.April, 12, 10, 20, 59, 999, time.UTC),
+			wantResult: 10*Hour + 20*Minute,
 		},
 		{
 			name:       "not utc",
 			time:       time.Date(2024, time.April, 12, 10, 20, 0, 0, time.FixedZone("UTC+2", 2*int(time.Hour/time.Second))),
-			wantResult: time.Date(0, time.January, 1, 10, 20, 0, 0, time.FixedZone("UTC+2", 2*int(time.Hour/time.Second))),
+			wantResult: 10*Hour + 20*Minute,
 		},
 	}
 
@@ -278,7 +276,7 @@ func TestGetTimeOfDay(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			gotResult := getTimeOfDay(test.time)
+			gotResult := extractDayTime(test.time)
 			assert.Equal(t, test.wantResult, gotResult)
 		})
 	}
