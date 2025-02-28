@@ -1,21 +1,17 @@
-# syntax=docker/dockerfile:experimental
-# ---
 FROM golang:1.24.0 AS build
 
-ENV GOOS=linux
-ENV GOARCH=amd64
-ENV CGO_ENABLED=0
-
 WORKDIR /tmp/kubedownscaler
+
+COPY ../../go.mod /tmp/kubedownscaler/go.mod
+
+RUN go mod download
+
 COPY ../.. /tmp/kubedownscaler
 
-# Build admission-webhook
-RUN --mount=type=cache,target=/root/.cache/go-build,sharing=private \
-  go build -o bin/admission-webhook ./cmd/admissioncontroller
+RUN CGO_ENABLED=0 go build -o bin/admissioncontroller ./cmd/admissioncontroller
 
-# ---
-FROM scratch AS run
+FROM scratch
 
-COPY --from=build /tmp/kubedownscaler/bin/admission-webhook /usr/local/bin/
+COPY --from=build /tmp/kubedownscaler/bin/admissioncontroller /app/admissioncontroller
 
-CMD ["/usr/local/bin/admission-webhook"]
+ENTRYPOINT ["/app/admissioncontroller"]
