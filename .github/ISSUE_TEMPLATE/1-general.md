@@ -1,6 +1,6 @@
 ---
-name: Issue Template
-about: Use this issue template for pointing out a general issue.
+name: General Issue
+about: Use this issue template for pointing out a general issue (be it a bug, a new feature, etc.).
 title: ""
 labels: ""
 assignees: ""
@@ -41,4 +41,4 @@ Briefly describe the issue.
 
 ### Other links/references
 
-<!-- E.g. related Github issues/MRs -->
+<!-- E.g. related Github issues/MRs or external references -->
