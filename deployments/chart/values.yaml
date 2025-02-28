@@ -79,5 +79,39 @@ configMap:
   #   DOWNSCALE_PERIOD: "Mon-Sun 19:00-20:00 Europe/Berlin"
   extraConfig: ""
 
+admissionController:
+
+  image:
+    repository: ghcr.io/caas-team/gokubedownscaler-admission
+    tag: "" # Dynamically set from CI
+
+  tlsCrt: ""
+  tlsKey: ""
+  caBundle: ""
+
+  enabled: false
+
+  replicaCount: 1
+
+  serviceAccount:
+    create: true
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  resources:
+    limits:
+      cpu: 150m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+  nodeSelector: { }
+
+  tolerations: [ ]
+
+  affinity: { }
+
 # Force pod restart when the configuration changes
 forceRestartOnConfigChange: true
