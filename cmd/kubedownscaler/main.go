@@ -191,8 +191,6 @@ func attemptScan(
 
 	defer doneFunc()
 
-	var scanSucceded bool
-
 	for retry := range config.MaxRetriesOnConflict + 1 {
 		err := scanWorkload(workload, client, ctx, layerCli, layerEnv, config)
 		if err != nil {
@@ -214,28 +212,10 @@ func attemptScan(
 
 		slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-		scanSucceded = true
-
-		break
-	}
-
-	if !scanSucceded && config.MaxRetriesOnConflict > 0 {
-		slog.Warn("max retries reached, will try again in the next scan", "workload",
-			workload.GetName(),
-			"namespace",
-			workload.GetNamespace())
-
 		return
 	}
 
-	if !scanSucceded && config.MaxRetriesOnConflict == 0 {
-		slog.Error("failed to scan workload and no retries allowed, will try again in the next scan", "workload",
-			workload.GetName(),
-			"namespace",
-			workload.GetNamespace())
-
-		return
-	}
+	slog.Error("failed to scan workload", "attempts", config.MaxRetriesOnConflict+1)
 }
 
 // scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload.

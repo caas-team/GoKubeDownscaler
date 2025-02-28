@@ -46,12 +46,12 @@ func (r *rollout) getReplicas() (int32, error) {
 
 // Reget regets the resource from the Kubernetes API.
 func (r *rollout) Reget(clientsets *Clientsets, ctx context.Context) error {
-	singleRollout, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(r.Namespace).Get(ctx, r.Name, metav1.GetOptions{})
+	var err error
+
+	r.Rollout, err = clientsets.Argo.ArgoprojV1alpha1().Rollouts(r.Namespace).Get(ctx, r.Name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get rollout: %w", err)
 	}
-
-	r.Rollout = singleRollout
 
 	return nil
 }

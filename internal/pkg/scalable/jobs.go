@@ -35,12 +35,12 @@ func (j *job) setSuspend(suspend bool) {
 
 // Reget regets the resource from the Kubernetes API.
 func (j *job) Reget(clientsets *Clientsets, ctx context.Context) error {
-	singleJob, err := clientsets.Kubernetes.BatchV1().Jobs(j.Namespace).Get(ctx, j.Name, metav1.GetOptions{})
+	var err error
+
+	j.Job, err = clientsets.Kubernetes.BatchV1().Jobs(j.Namespace).Get(ctx, j.Name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get job: %w", err)
 	}
-
-	j.Job = singleJob
 
 	return nil
 }

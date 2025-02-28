@@ -51,12 +51,12 @@ func (d *daemonSet) ScaleDown(_ int32) error {
 
 // Reget regets the resource from the Kubernetes API.
 func (d *daemonSet) Reget(clientsets *Clientsets, ctx context.Context) error {
-	singleDaemonSet, err := clientsets.Kubernetes.AppsV1().DaemonSets(d.Namespace).Get(ctx, d.Name, metav1.GetOptions{})
+	var err error
+
+	d.DaemonSet, err = clientsets.Kubernetes.AppsV1().DaemonSets(d.Namespace).Get(ctx, d.Name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get cronjob: %w", err)
 	}
-
-	d.DaemonSet = singleDaemonSet
 
 	return nil
 }

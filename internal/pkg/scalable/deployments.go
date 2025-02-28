@@ -47,12 +47,12 @@ func (d *deployment) getReplicas() (int32, error) {
 
 // Reget regets the resource from the Kubernetes API.
 func (d *deployment) Reget(clientsets *Clientsets, ctx context.Context) error {
-	singleDeployment, err := clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Get(ctx, d.Name, metav1.GetOptions{})
+	var err error
+
+	d.Deployment, err = clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Get(ctx, d.Name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get cronjob: %w", err)
 	}
-
-	d.Deployment = singleDeployment
 
 	return nil
 }

@@ -139,12 +139,12 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int32) error {
 
 // Reget regets the resource from the Kubernetes API.
 func (p *podDisruptionBudget) Reget(clientsets *Clientsets, ctx context.Context) error {
-	singlePdb, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(p.Namespace).Get(ctx, p.Name, metav1.GetOptions{})
+	var err error
+
+	p.PodDisruptionBudget, err = clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(p.Namespace).Get(ctx, p.Name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get poddisruptionbudget: %w", err)
 	}
-
-	p.PodDisruptionBudget = singlePdb
 
 	return nil
 }

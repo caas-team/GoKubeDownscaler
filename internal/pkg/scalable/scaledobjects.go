@@ -68,12 +68,12 @@ func (s *scaledObject) getReplicas() (int32, error) {
 
 // Reget regets the resource from the Kubernetes API.
 func (s *scaledObject) Reget(clientsets *Clientsets, ctx context.Context) error {
-	singleScaledObject, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
+	var err error
+
+	s.ScaledObject, err = clientsets.Keda.KedaV1alpha1().ScaledObjects(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get scaledObject: %w", err)
 	}
-
-	s.ScaledObject = singleScaledObject
 
 	return nil
 }

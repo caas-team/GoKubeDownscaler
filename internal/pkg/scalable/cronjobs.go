@@ -30,12 +30,12 @@ type cronJob struct {
 
 // Reget regets the resource from the Kubernetes API.
 func (c *cronJob) Reget(clientsets *Clientsets, ctx context.Context) error {
-	singleCronJob, err := clientsets.Kubernetes.BatchV1().CronJobs(c.Namespace).Get(ctx, c.Name, metav1.GetOptions{})
+	var err error
+
+	c.CronJob, err = clientsets.Kubernetes.BatchV1().CronJobs(c.Namespace).Get(ctx, c.Name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get cronjob: %w", err)
 	}
-
-	c.CronJob = singleCronJob
 
 	return nil
 }

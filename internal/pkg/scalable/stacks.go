@@ -47,12 +47,12 @@ func (s *stack) getReplicas() (int32, error) {
 
 // Reget regets the resource from the Kubernetes API.
 func (s *stack) Reget(clientsets *Clientsets, ctx context.Context) error {
-	singleStack, err := clientsets.Zalando.ZalandoV1().Stacks(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
+	var err error
+
+	s.Stack, err = clientsets.Zalando.ZalandoV1().Stacks(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get stack: %w", err)
 	}
-
-	s.Stack = singleStack
 
 	return nil
 }

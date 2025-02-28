@@ -46,12 +46,12 @@ func (s *statefulSet) getReplicas() (int32, error) {
 
 // Reget regets the resource from the Kubernetes API.
 func (s *statefulSet) Reget(clientsets *Clientsets, ctx context.Context) error {
-	singleStatefulSet, err := clientsets.Kubernetes.AppsV1().StatefulSets(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
+	var err error
+
+	s.StatefulSet, err = clientsets.Kubernetes.AppsV1().StatefulSets(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get statefulset: %w", err)
 	}
-
-	s.StatefulSet = singleStatefulSet
 
 	return nil
 }
