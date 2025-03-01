@@ -99,9 +99,12 @@ func main() {
 }
 
 // ServeHealth returns 200 when things are good
-func (s *serverConfig)  serveHealth(w http.ResponseWriter, r *http.Request) {
+func (s *serverConfig) serveHealth(w http.ResponseWriter, r *http.Request) {
 	slog.Info("healthy")
-	fmt.Fprint(w, "OK")
+	_, err := fmt.Fprint(w, "OK")
+	if err != nil {
+		return
+	}
 }
 
 // ServeValidateWorkloads validates an admission request
@@ -111,5 +114,5 @@ func (s *serverConfig) serveValidateWorkloads(w http.ResponseWriter, r *http.Req
 	a := admission.NewWorkloadAdmissionHandler(s.client, s.layerCli, s.layerEnv, s.config, s.ctx)
 	a.HandleValidation(w, r)
 
-	slog.Error("validation request processed", "requestURI", r.RequestURI)
+	slog.Info("validation request was processed", "requestURI", r.RequestURI)
 }
