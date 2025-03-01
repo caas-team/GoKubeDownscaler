@@ -39,6 +39,14 @@ spec:
             - name: tls
               mountPath: "/etc/admission-webhook/tls"
               readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            timeoutSeconds: 2
       volumes:
         - name: tls
           secret:
