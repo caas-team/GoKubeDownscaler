@@ -13,6 +13,7 @@ import (
 	"os"
 	"regexp"
 	"time"
+	_ "time/tzdata"
 )
 
 const (
@@ -88,9 +89,17 @@ func main() {
 	}
 
 	http.HandleFunc("/validate-workloads", s.serveValidateWorkloads)
-	http.HandleFunc("/health", s.serveHealth)
+	http.HandleFunc("/healthz", s.serveHealth)
 
-	// Start the server
+	// Start the http server
+	go func() {
+		slog.Info("Listening on port 8080...")
+		if err := http.ListenAndServe(":8080", nil); err != nil {
+			slog.Error("failed to start HTTP server", "error", err)
+		}
+	}()
+
+	// Start the https server
 	cert := "/etc/admission-webhook/tls/tls.crt"
 	key := "/etc/admission-webhook/tls/tls.key"
 	slog.Info("Listening on port 443...")
@@ -100,7 +109,7 @@ func main() {
 
 // ServeHealth returns 200 when things are good
 func (s *serverConfig) serveHealth(w http.ResponseWriter, r *http.Request) {
-	slog.Info("healthy")
+	slog.Debug("healthy")
 	_, err := fmt.Fprint(w, "OK")
 	if err != nil {
 		return
