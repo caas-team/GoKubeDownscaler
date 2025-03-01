@@ -10,6 +10,9 @@ spec:
     {{- include "go-kube-downscaler.selectorLabels" . | nindent 6 }}-admission-webhook
   type: ClusterIP
   ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
     - port: 443
       protocol: TCP
       targetPort: 443

@@ -53,7 +53,7 @@ func (v WorkloadAdmissionHandler) HandleValidation(w http.ResponseWriter, r *htt
 
 	out, err := v.validateWorkload(workload, in)
 	if err != nil {
-		e := fmt.Sprintf("could not generate admission response: %s", err)
+		e := fmt.Sprintf("could not generate admission response", err)
 		slog.Error(e)
 		http.Error(w, e, http.StatusInternalServerError)
 		return
@@ -72,6 +72,13 @@ func (v WorkloadAdmissionHandler) validateWorkload(workload scalable.Workload, r
 	workloadArray := []scalable.Workload{workload}
 
 	workloads := scalable.FilterExcluded(workloadArray, v.config.IncludeLabels, v.config.ExcludeNamespaces, v.config.ExcludeWorkloads)
+
+	if len(workloads) == 0 {
+		slog.Debug("workload is not included in the list of workloads to be scanned", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "workload is excluded from downscaling, allowing it"), nil
+	}
+
+	slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 	slog.Debug("scanning over workloads matching filters", "amount", len(workloads))
 
 	namespaceAnnotations, err := v.client.GetNamespaceAnnotations(workload.GetNamespace(), v.ctx)

@@ -16,5 +16,6 @@ webhooks:
       caBundle: {{ .Values.admissionController.caBundle }}
     admissionReviewVersions: ["v1"]
     sideEffects: None
-    timeoutSeconds: 2
+    failurePolicy: Ignore
+    timeoutSeconds: 8
 {{- end }}
