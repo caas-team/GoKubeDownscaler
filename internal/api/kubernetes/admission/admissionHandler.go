@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-type admissionHandler interface{
+type admissionHandler interface {
 	// HandleValidation validates the admission request and returns an AdmissionResponse
 	HandleValidation() *admissionv1.AdmissionResponse
 }
@@ -70,12 +70,16 @@ func sendAdmissionReviewResponse(w http.ResponseWriter, err error, out *admissio
 	w.Header().Set("Content-Type", "application/json")
 	jout, err := json.Marshal(out)
 	if err != nil {
-		e := fmt.Sprintf("could not parse admission response: %s", err)
+		e := fmt.Sprintf("could not parse admission response", "error", err)
 		slog.Error(e)
 		http.Error(w, e, http.StatusInternalServerError)
 		return
 	}
 
-	slog.Debug("sending response")
-	slog.Debug("%s", jout)
+	slog.Debug("sending response", "response", string(jout))
+
+	_, writeErr := w.Write(jout)
+	if writeErr != nil {
+		slog.Error("failed to write response", "error", writeErr)
+	}
 }
