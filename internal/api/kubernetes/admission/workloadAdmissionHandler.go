@@ -64,13 +64,15 @@ func (v WorkloadAdmissionHandler) HandleValidation(w http.ResponseWriter, r *htt
 }
 
 // validateWorkload validates the workload and returns an AdmissionReview
-func (v WorkloadAdmissionHandler) validateWorkload(workload scalable.Workload, review *admissionv1.AdmissionReview) (*admissionv1.AdmissionReview, error)  {
+func (v WorkloadAdmissionHandler) validateWorkload(workload scalable.Workload, review *admissionv1.AdmissionReview) (*admissionv1.AdmissionReview, error) {
 	resourceLogger := kubernetes.NewResourceLogger(v.client, workload)
+
+	slog.Debug("validating workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	workloadArray := []scalable.Workload{workload}
 
 	workloads := scalable.FilterExcluded(workloadArray, v.config.IncludeLabels, v.config.ExcludeNamespaces, v.config.ExcludeWorkloads)
-	slog.Info("scanning over workloads matching filters", "amount", len(workloads))
+	slog.Debug("scanning over workloads matching filters", "amount", len(workloads))
 
 	namespaceAnnotations, err := v.client.GetNamespaceAnnotations(workload.GetNamespace(), v.ctx)
 	if err != nil {
@@ -79,7 +81,7 @@ func (v WorkloadAdmissionHandler) validateWorkload(workload scalable.Workload, r
 
 	slog.Debug(
 		"parsing workload layer from annotations",
-		"annotations", workload.GetAnnotations(),
+		"workload annotations", workload.GetAnnotations(),
 		"name", workload.GetName(),
 		"namespace", workload.GetNamespace(),
 	)
@@ -91,7 +93,7 @@ func (v WorkloadAdmissionHandler) validateWorkload(workload scalable.Workload, r
 
 	slog.Debug(
 		"parsing namespace layer from annotations",
-		"annotations", namespaceAnnotations,
+		"namespace annotations", namespaceAnnotations,
 		"name", workload.GetName(),
 		"namespace", workload.GetNamespace(),
 	)
@@ -107,8 +109,8 @@ func (v WorkloadAdmissionHandler) validateWorkload(workload scalable.Workload, r
 
 	if layers.GetExcluded() {
 		slog.Debug("workload is excluded", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "workload is allow because it is excluded from downscaling"), nil
+		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "workload is excluded from downscaling, allowing it"), nil
 	}
 
-	return reviewResponse(review.Request.UID, true, http.StatusAccepted, "workload is allowed"), nil
+	return reviewResponse(review.Request.UID, false, http.StatusBadRequest, "workload is not allowed during downscale time"), nil
 }
