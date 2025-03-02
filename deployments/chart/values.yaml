@@ -102,8 +102,8 @@ admissionController:
       cpu: 50m
       memory: 64Mi
 
-  nodeSelector: { }
+  nodeSelector: {}
 
-  tolerations: [ ]
+  tolerations: []
 
-  affinity: { }
+  affinity: {}
