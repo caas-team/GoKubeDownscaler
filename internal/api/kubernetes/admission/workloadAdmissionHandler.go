@@ -69,14 +69,17 @@ func (v WorkloadAdmissionHandler) validateWorkload(workload scalable.Workload, r
 
 	slog.Debug("validating workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
+	// check if workload is excluded
 	workloadArray := []scalable.Workload{workload}
 
 	workloads := scalable.FilterExcluded(workloadArray, v.config.IncludeLabels, v.config.ExcludeNamespaces, v.config.ExcludeWorkloads)
 
 	if len(workloads) == 0 {
-		slog.Debug("workload is not included in the list of workloads to be scanned", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Debug("workload is excluded from downscaling", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "workload is excluded from downscaling, allowing it"), nil
 	}
+
+	workload = workloads[0]
 
 	slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 	slog.Debug("scanning over workloads matching filters", "amount", len(workloads))
