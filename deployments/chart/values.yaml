@@ -107,11 +107,11 @@ admissionController:
       cpu: 50m
       memory: 64Mi
 
-  nodeSelector: { }
+  nodeSelector: {}
 
-  tolerations: [ ]
+  tolerations: []
 
-  affinity: { }
+  affinity: {}
 
 # Force pod restart when the configuration changes
 forceRestartOnConfigChange: true
