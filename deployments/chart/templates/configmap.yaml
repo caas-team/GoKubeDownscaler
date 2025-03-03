@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.configMapName }}
+  name: {{ .Values.configMap.name }}
   namespace: {{ .Release.Namespace }}
 data:
   # downscale for non-work hours
