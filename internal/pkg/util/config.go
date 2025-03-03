@@ -55,7 +55,7 @@ func (c *RuntimeConfiguration) ParseConfigFlags() {
 		"run scan only once (default: false)",
 	)
 	flag.BoolVar(
-		&c.Once,
+		&c.LeaderElection,
 		"leader-election",
 		false,
 		"enables leader election (default: false)",

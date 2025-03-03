@@ -25,6 +25,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: {{ include "go-kube-downscaler.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
   name: {{ include "go-kube-downscaler.fullname" . }}-lease-role
