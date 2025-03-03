@@ -37,6 +37,7 @@ const (
 	LayerNamespace                  // identifies the layer present in the namespace
 	LayerCli                        // identifies the layer defined in the CLI
 	LayerEnvironment                // identifies the layer defined in the environment variables
+	LayerDefault                    // identifier for the layer which holds all default values
 )
 
 // String gets the string representation of the LayerID.
@@ -46,6 +47,7 @@ func (l LayerID) String() string {
 		LayerNamespace:   "LayerNamespace",
 		LayerCli:         "LayerCli",
 		LayerEnvironment: "LayerEnvironment",
+		LayerDefault:     "LayerDefault",
 	}[l]
 }
 
