@@ -161,13 +161,15 @@ func startScanning(
 		for _, workload := range workloads {
 			waitGroup.Add(1)
 
-			go func() {
-				err = attemptScan(client, ctx, layerCli, layerEnv, config, waitGroup.Done, workload)
+			go func(workload scalable.Workload) {
+				defer waitGroup.Done()
+
+				err = attemptScan(client, ctx, layerCli, layerEnv, config, workload)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
 				}
-			}()
+			}(workload)
 		}
 
 		waitGroup.Wait()
@@ -190,12 +192,9 @@ func attemptScan(
 	ctx context.Context,
 	layerCli, layerEnv *values.Layer,
 	config *util.RuntimeConfiguration,
-	doneFunc func(),
 	workload scalable.Workload,
 ) error {
 	slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-
-	defer doneFunc()
 
 	for retry := range config.MaxRetriesOnConflict + 1 {
 		err := scanWorkload(workload, client, ctx, layerCli, layerEnv, config)
