@@ -312,3 +312,158 @@ func TestLayers_GetCurrentScaling(t *testing.T) {
 		})
 	}
 }
+
+func TestLayers_GetExcluded(t *testing.T) {
+	t.Parallel()
+
+	timeUntilTrue := time.Now().AddDate(1, 0, 0)
+	timeUntilFalse := time.Now().AddDate(-1, 0, 0)
+
+	tests := []struct {
+		name   string
+		layers Layers
+		want   bool
+	}{
+		{
+			name: "none set",
+			layers: Layers{
+				&Layer{},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+			},
+			want: false,
+		},
+		{
+			name: "explicit include",
+			layers: Layers{
+				&Layer{},
+				&Layer{},
+				&Layer{Exclude: timeSpans{booleanTimeSpan(true)}},
+				&Layer{},
+				&Layer{Exclude: timeSpans{booleanTimeSpan(false)}},
+			},
+			want: true,
+		},
+		{
+			name: "explicit include",
+			layers: Layers{
+				&Layer{Exclude: timeSpans{booleanTimeSpan(false)}},
+				&Layer{},
+				&Layer{Exclude: timeSpans{booleanTimeSpan(true)}},
+				&Layer{},
+				&Layer{Exclude: timeSpans{booleanTimeSpan(false)}},
+			},
+			want: false,
+		},
+		{
+			name: "exclude until true",
+			layers: Layers{
+				&Layer{ExcludeUntil: &timeUntilTrue},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+			},
+			want: true,
+		},
+		{
+			name: "exclude until false",
+			layers: Layers{
+				&Layer{ExcludeUntil: &timeUntilFalse},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+			},
+			want: false,
+		},
+		{
+			name: "exclude until and exclude same layer false",
+			layers: Layers{
+				&Layer{ExcludeUntil: &timeUntilFalse, Exclude: timeSpans{booleanTimeSpan(false)}},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+			},
+			want: false,
+		},
+		{
+			name: "exclude until and exclude true same layer",
+			layers: Layers{
+				&Layer{ExcludeUntil: &timeUntilFalse, Exclude: timeSpans{booleanTimeSpan(true)}},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+			},
+			want: true,
+		},
+		{
+			name: "exclude until true and exclude same layer",
+			layers: Layers{
+				&Layer{ExcludeUntil: &timeUntilTrue, Exclude: timeSpans{booleanTimeSpan(false)}},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+			},
+			want: true,
+		},
+		{
+			name: "exclude until and exclude true different layers",
+			layers: Layers{
+				&Layer{ExcludeUntil: &timeUntilFalse},
+				&Layer{},
+				&Layer{Exclude: timeSpans{booleanTimeSpan(true)}},
+				&Layer{},
+				&Layer{},
+			},
+			want: true,
+		},
+		{
+			name: "exclude until true and exclude different layers",
+			layers: Layers{
+				&Layer{ExcludeUntil: &timeUntilTrue},
+				&Layer{},
+				&Layer{Exclude: timeSpans{booleanTimeSpan(false)}},
+				&Layer{},
+				&Layer{},
+			},
+			want: true,
+		},
+		{
+			name: "exclude and exclude until different layers",
+			layers: Layers{
+				&Layer{},
+				&Layer{},
+				&Layer{Exclude: timeSpans{booleanTimeSpan(true)}},
+				&Layer{ExcludeUntil: &timeUntilFalse},
+				&Layer{},
+			},
+			want: true,
+		},
+		{
+			name: "exclude and exclude until different layers",
+			layers: Layers{
+				&Layer{},
+				&Layer{Exclude: timeSpans{booleanTimeSpan(false)}},
+				&Layer{},
+				&Layer{ExcludeUntil: &timeUntilTrue},
+				&Layer{},
+			},
+			want: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := test.layers.GetExcluded()
+			assert.Equal(t, test.want, got)
+		})
+	}
+}
