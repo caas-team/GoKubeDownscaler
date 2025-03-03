@@ -55,9 +55,16 @@ func (t *timeSpans) Set(value string) error {
 	timespans := make([]TimeSpan, 0, len(spans))
 
 	for _, timespanText := range spans {
+		var timespan TimeSpan
 		timespanText = strings.TrimSpace(timespanText)
 
-		if isAbsoluteTimestamp(timespanText) {
+		timespan, ok := parseBooleanTimeSpan(timespanText)
+		if ok {
+			timespans = append(timespans, timespan)
+			continue
+		}
+
+		if isAbsoluteTimespan(timespanText) {
 			// parse as absolute timestamp
 			timespan, err := parseAbsoluteTimeSpan(timespanText)
 			if err != nil {
@@ -222,8 +229,8 @@ func (t absoluteTimeSpan) String() string {
 	)
 }
 
-// isAbsoluteTimestamp checks if timestamp string is absolute.
-func isAbsoluteTimestamp(timestamp string) bool {
+// isAbsoluteTimespan checks if the timespan string is of an absolute Timespan.
+func isAbsoluteTimespan(timestamp string) bool {
 	return absoluteTimeSpanRegex.MatchString(timestamp)
 }
 
@@ -244,4 +251,21 @@ func getWeekday(weekday string) (time.Weekday, error) {
 	}
 
 	return 0, errInvalidWeekday
+}
+
+// booleanTimeSpan is a TimeSpan which statically is either always active or never active.
+type booleanTimeSpan bool
+
+func (b booleanTimeSpan) isTimeInSpan(_ time.Time) bool { return bool(b) }
+
+// parseBooleanTimeSpan tries to parse the given timespan string to a booleanTimespan.
+func parseBooleanTimeSpan(timespanString string) (booleanTimeSpan, bool) {
+	switch strings.ToLower(timespanString) {
+	case "always", "true":
+		return true, true
+	case "never", "false":
+		return false, true
+	}
+
+	return false, false
 }

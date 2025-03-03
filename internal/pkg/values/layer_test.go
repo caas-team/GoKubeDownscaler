@@ -27,10 +27,26 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 		{
 			name: "forced up and downtime",
 			layer: Layer{
-				ForceUptime:   triStateBool{isSet: true, value: true},
-				ForceDowntime: triStateBool{isSet: true, value: true},
+				ForceUptime:   timeSpans{booleanTimeSpan(true)},
+				ForceDowntime: timeSpans{booleanTimeSpan(true)},
 			},
 			wantErr: true,
+		},
+		{
+			name: "forced up and downtime one false",
+			layer: Layer{
+				ForceUptime:   timeSpans{booleanTimeSpan(false)},
+				ForceDowntime: timeSpans{booleanTimeSpan(true)},
+			},
+			wantErr: true, // this might be changed in the future
+		},
+		{
+			name: "forced up and downtime false",
+			layer: Layer{
+				ForceUptime:   timeSpans{booleanTimeSpan(false)},
+				ForceDowntime: timeSpans{booleanTimeSpan(false)},
+			},
+			wantErr: true, // this might be changed in the future
 		},
 		{
 			name: "downscale replicas invalid",
@@ -189,6 +205,109 @@ func TestLayer_getCurrentScaling(t *testing.T) {
 			t.Parallel()
 
 			scaling := test.layer.getCurrentScaling()
+			assert.Equal(t, test.wantScaling, scaling)
+		})
+	}
+}
+
+func TestLayer_getForcedScaling(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		layer       Layer
+		wantScaling Scaling
+	}{
+		{
+			name: "forceDowntime",
+			layer: Layer{
+				ForceDowntime: timeSpans{booleanTimeSpan(true)},
+			},
+			wantScaling: ScalingDown,
+		},
+		{
+			name: "forceUptime",
+			layer: Layer{
+				ForceUptime: timeSpans{booleanTimeSpan(true)},
+			},
+			wantScaling: ScalingUp,
+		},
+		{
+			name:        "none set",
+			layer:       Layer{},
+			wantScaling: ScalingNone,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			scaling := test.layer.getForcedScaling()
+			assert.Equal(t, test.wantScaling, scaling)
+		})
+	}
+}
+
+func TestLayers_GetCurrentScaling(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		layers      Layers
+		wantScaling Scaling
+	}{
+		{
+			name: "ignore false forcing *time",
+			layers: Layers{
+				&Layer{},
+				&Layer{ForceDowntime: timeSpans{booleanTimeSpan(false)}, UpTime: timeSpans{booleanTimeSpan(true)}},
+				&Layer{},
+				&Layer{DownTime: timeSpans{booleanTimeSpan(true)}},
+				&Layer{},
+			},
+			wantScaling: ScalingUp,
+		},
+		{
+			name: "never stops fallthrough",
+			layers: Layers{
+				&Layer{},
+				&Layer{DownTime: timeSpans{booleanTimeSpan(false)}},
+				&Layer{},
+				&Layer{DownTime: timeSpans{booleanTimeSpan(true)}},
+				&Layer{},
+			},
+			wantScaling: ScalingUp,
+		},
+		{
+			name: "force *time never doesn't stop fallthrough",
+			layers: Layers{
+				&Layer{},
+				&Layer{ForceDowntime: timeSpans{booleanTimeSpan(false)}},
+				&Layer{},
+				&Layer{DownTime: timeSpans{booleanTimeSpan(true)}},
+				&Layer{},
+			},
+			wantScaling: ScalingDown,
+		},
+		{
+			name: "none set",
+			layers: Layers{
+				&Layer{},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+				&Layer{},
+			},
+			wantScaling: ScalingNone,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			scaling := test.layers.GetCurrentScaling()
 			assert.Equal(t, test.wantScaling, scaling)
 		})
 	}

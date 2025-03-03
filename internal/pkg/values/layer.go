@@ -67,8 +67,8 @@ type Layer struct {
 	UpTime            timeSpans     // within these timespans workloads will be scaled up, outside of them they will be scaled down
 	Exclude           triStateBool  // if workload should be excluded
 	ExcludeUntil      time.Time     // until when the workload should be excluded
-	ForceUptime       triStateBool  // force workload into a uptime state
-	ForceDowntime     triStateBool  // force workload into a downtime state
+	ForceUptime       timeSpans     // force workload into a uptime state when in one of the timespans
+	ForceDowntime     timeSpans     // force workload into a downtime state when in one of the timespans
 	DownscaleReplicas int32         // the replicas to scale down to
 	GracePeriod       time.Duration // grace period until new workloads will be scaled down
 }
@@ -81,8 +81,8 @@ func GetDefaultLayer() *Layer {
 		UpTime:            nil,
 		Exclude:           triStateBool{isSet: true, value: false},
 		ExcludeUntil:      time.Time{},
-		ForceUptime:       triStateBool{isSet: true, value: false},
-		ForceDowntime:     triStateBool{isSet: true, value: false},
+		ForceUptime:       nil,
+		ForceDowntime:     nil,
 		DownscaleReplicas: 0,
 		GracePeriod:       15 * time.Minute,
 	}
@@ -104,10 +104,7 @@ func (l *Layer) isScalingExcluded() *bool {
 // CheckForIncompatibleFields checks if there are incompatible fields.
 func (l *Layer) CheckForIncompatibleFields() error { //nolint: cyclop // this is still fine to read, we could defnitly consider refactoring this in the future
 	// force down and uptime
-	if l.ForceDowntime.isSet &&
-		l.ForceDowntime.value &&
-		l.ForceUptime.isSet &&
-		l.ForceUptime.value {
+	if l.ForceDowntime != nil && l.ForceUptime != nil {
 		return errForceUpAndDownTime
 	}
 	// downscale replicas invalid
@@ -166,11 +163,11 @@ func (l *Layer) getCurrentScaling() Scaling {
 func (l *Layer) getForcedScaling() Scaling {
 	var forcedScaling Scaling
 
-	if l.ForceDowntime.isSet && l.ForceDowntime.value {
+	if l.ForceDowntime.inTimeSpans() {
 		forcedScaling = ScalingDown
 	}
 
-	if l.ForceUptime.isSet && l.ForceUptime.value {
+	if l.ForceUptime.inTimeSpans() {
 		forcedScaling = ScalingUp
 	}
 

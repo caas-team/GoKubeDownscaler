@@ -431,7 +431,7 @@ func TestIsAbsoluteTimestamp(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			gotResult := isAbsoluteTimestamp(test.timespanString)
+			gotResult := isAbsoluteTimespan(test.timespanString)
 			assert.Equal(t, test.wantResult, gotResult)
 		})
 	}
