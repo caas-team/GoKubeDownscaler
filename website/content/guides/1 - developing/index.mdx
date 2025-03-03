@@ -1,0 +1,107 @@
+---
+title: Developing
+id: developing
+globalReference: guides-developing
+---
+
+import DocCardList from "@theme/DocCardList";
+
+# Developing
+
+Guides on how to start developing on the GoKubeDownscaler.
+
+Before you contribute to the project we would advise you to read the [Contribution Manifest](repo:CONTRIBUTING.md).
+
+## Forking the Repository
+
+To contribute you have to fork [the repository](https://github.com/caas-team/GoKubeDownscaler) first.
+
+To do this you have to click [`Fork`](https://github.com/caas-team/GoKubeDownscaler/fork) in the top right of [the repository](https://github.com/caas-team/GoKubeDownscaler).
+After that you can just follow the instructions on the page and click `Create fork`.
+
+## Cloning the Repository
+
+To work on the downscaler effectively you should clone the repository onto your system.
+You can find instructions on how to install git [on their website](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
+
+```bash
+git clone https://github.com/your-username/GoKubeDownscaler.git
+cd GoKubeDownscaler
+```
+
+## Setting up Pre-Commit
+
+[Pre-Commit](https://pre-commit.com) is a framework for running checks before committing,
+this ensures that formatting stays consistent,
+stops you from committing to protected branches (locally)
+and stops you from committing broken code or new functionality without updating the tests.
+
+### Recommended Installation
+
+The recommended way to install pre-commit and the needed dependencies is via `brew`.
+If you don't have brew installed on your system you can find how to install it by following the instructions on [their website](https://brew.sh).
+
+```bash
+brew install pre-commit
+```
+
+The Pre-Commit checks for the Downscaler have some dependencies which need to be installed manually.
+
+```bash
+brew install golangci-lint
+brew install gofumpt
+```
+
+### Alternative Installation
+
+Alternatively you can install pre-commit and the dependencies manually.
+Installation instructions for pre-commit can be found [on their website](https://pre-commit.com/#install).
+Additionally you will need to install [golangci-lint](https://golangci-lint.run/welcome/install/#local-installation)
+and [gofumpt](https://github.com/mvdan/gofumpt) as dependencies for the pre-commit checks of the downscaler.
+
+### Enabling Pre-Commit
+
+Next we will have to enabling pre-commit for the repository.
+Make sure you are in the GoKubeDownscaler git repository.
+
+```bash
+pre-commit install
+```
+
+### Running Pre-Commit Manually
+
+Sometimes it can be useful to run pre-commit without also committing
+or just letting it run on all files instead of just the changed ones.
+
+This command lets you start a pre-commit run on all files manually:
+
+```bash
+pre-commit run --all-files
+```
+
+#### Skipping Pre-Commit Checks Temporarily
+
+Pre-Commit normally shouldn't be ignored, but in some cases you might need to skip some or all pre-commit checks temporarily.
+All checks will run in the pre-commit workflow once you push your changes and haven't resolved the issues.
+
+To disable one or multiple checks:
+
+```bash
+SKIP=prevent-todo-comments,another-check-id-here pre-commit run --all-files
+```
+
+or
+
+```bash
+SKIP=prevent-todo-comments,another-check-id-here git commit
+```
+
+If you need to disable all checks you can run this to skip all git hooks:
+
+```bash
+git commit --no-verify
+```
+
+## Overview
+
+<DocCardList />

@@ -1,0 +1,53 @@
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@custom-variant dark (&:is([data-theme="dark"] *));
+
+@theme {
+  --color-magenta: #e20074;
+  --color-magenta-hover: #c00063;
+  --color-magenta-active: #9e0051;
+}
+
+@utility container {
+  margin-inline: auto;
+}
+
+:root {
+  --ifm-color-primary: #e20074;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  --ifm-color-primary: #e20074;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+.navbar-icon {
+  content: "";
+  margin-inline: 0.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.icon-github {
+  background-image: url("/img/Github.svg");
+}
+
+html[data-theme="dark"] .icon-github {
+  background-image: url("/img/Github-white.svg");
+}
+
+.icon-slack {
+  background-image: url("/img/Slack-black.svg");
+}
+
+html[data-theme="dark"] .icon-slack {
+  background-image: url("/img/Slack-white.svg");
+}

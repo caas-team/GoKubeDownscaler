@@ -24,7 +24,7 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 	return results, nil
 }
 
-// stack is a wrapper for zalando.org/v1.Stack to implement the replicaScaledResource interface.
+// stack is a wrapper for stack.v1.zalando.org to implement the replicaScaledResource interface.
 type stack struct {
 	*zalandov1.Stack
 }

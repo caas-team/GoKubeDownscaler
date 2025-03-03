@@ -24,7 +24,7 @@ spec:
           {{- with .Values.arguments }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- if include "go-kube-downscaler.leaderElection" . }}
+          {{- if eq (include "go-kube-downscaler.leaderElection" .) "true" }}
           - --leader-election
           {{- end }}
           {{- if .Values.constrainedDownscaler }}

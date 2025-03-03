@@ -47,7 +47,7 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "uptime an downscaleperiod",
+			name: "uptime and downscaleperiod",
 			layer: Layer{
 				UpTime:          timeSpans{relativeTimeSpan{}},
 				DownscalePeriod: timeSpans{relativeTimeSpan{}},
@@ -55,7 +55,7 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "downtime an upscaleperiod",
+			name: "downtime and upscaleperiod",
 			layer: Layer{
 				DownTime:      timeSpans{relativeTimeSpan{}},
 				UpscalePeriod: timeSpans{relativeTimeSpan{}},
@@ -63,7 +63,7 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "downtime an downscaleperiod",
+			name: "downtime and downscaleperiod",
 			layer: Layer{
 				DownTime:        timeSpans{relativeTimeSpan{}},
 				DownscalePeriod: timeSpans{relativeTimeSpan{}},

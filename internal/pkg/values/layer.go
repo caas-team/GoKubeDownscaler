@@ -65,7 +65,7 @@ type Layer struct {
 	UpTime            timeSpans     // within these timespans workloads will be scaled up, outside of them they will be scaled down
 	Exclude           triStateBool  // if workload should be excluded
 	ExcludeUntil      time.Time     // until when the workload should be excluded
-	ForceUptime       triStateBool  // force workload into a uptime state
+	ForceUptime       triStateBool  // force workload into an uptime state
 	ForceDowntime     triStateBool  // force workload into a downtime state
 	DownscaleReplicas int32         // the replicas to scale down to
 	GracePeriod       time.Duration // grace period until new workloads will be scaled down

@@ -24,7 +24,7 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 	return results, nil
 }
 
-// job is a wrapper for batch/v1.Job to implement the suspendScaledResource interface.
+// job is a wrapper for job.v1.batch to implement the suspendScaledResource interface.
 type job struct {
 	*batch.Job
 }

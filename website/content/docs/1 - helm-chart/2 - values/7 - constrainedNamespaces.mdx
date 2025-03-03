@@ -1,0 +1,28 @@
+---
+title: constrainedNamespaces
+id: constrainedNamespaces
+globalReference: docs-helm-constrained-namespaces
+---
+
+# constrainedNamespaces
+
+The `constrainedNamespaces` value is a comma separated list of namespaces the GoKubeDownscaler is going to operate on when constrained.
+
+:::info
+The default value for `constrainedNamespaces` is:
+
+```yaml
+constrainedNamespaces: []
+```
+
+:::
+
+The [`constrainedDownscaler`](ref:docs-helm-constrained-downscaler) parameter has to be set to true for this field to be effective.
+
+If you want to constrain the GoKubeDownscaler to a set of namespaces you can configure it like this:
+
+```yaml
+constrainedNamespaces: [namespace1, namespace2, namespace3]
+```
+
+This ensures that theGoKubeDownscaler only has access to actions on the namespaces namespace1, namespace2 and namespace3.

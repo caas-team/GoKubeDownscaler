@@ -1,0 +1,240 @@
+---
+title: Website
+id: website
+globalReference: guides-developing-website
+---
+
+# Website
+
+This section covers how to start developing on the website of the downscaler.
+
+If you haven't already, read and follow the instructions for [setting up the repository locally](ref:guides-developing).
+
+## Installing Prerequisite
+
+Before being able to develop on the website you need to install some prerequisites.
+
+### Installing Npm
+
+NPM is required to be able to install the required packages to start the website.
+
+You can either use brew to install npm:
+
+```bash
+brew install node
+```
+
+Or you can install it [another way](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm#using-a-node-installer-to-install-nodejs-and-npm).
+
+To check if the installation was successful you can run:
+
+```bash
+node -v
+```
+
+and
+
+```bash
+npm -v
+```
+
+The output should be something like:
+
+```text
+v22.6.0
+```
+
+for node and
+
+```text
+10.8.2
+```
+
+for npm.
+
+### Installing Dependencies
+
+After npm is installed you can install the websites dependencies.
+
+```bash
+npm install --prefix website
+```
+
+### Updating Dependencies
+
+After pulling new commits that changed `package.json` you should update your node packages.
+
+To update the dependencies you can use:
+
+```bash
+npm update --prefix website
+```
+
+## Running the Website Locally
+
+Now that the prerequisites are installed you can start the website.
+
+```bash
+npm run --prefix website start
+```
+
+If you want to test features which are only available on the built site (e.g. search) use:
+
+```bash
+npm run --prefix website build && npm run --prefix website serve
+```
+
+This will disable hot reloads, so you will have to rerun the command every time you changed something to see it on the site.
+
+## Starting Development
+
+The following section covers the basics of how to make changes to the website.
+You can find more information on configuring this site in the [official docusaurus documentation](https://docusaurus.io/docs).
+
+All files for the website can be found in `./website`.
+
+### Adding/Changing Pages and Categories
+
+The website is built using [Docusaurus](https://docusaurus.io) which allows for documentation/guides pages to be markdown or mdx files.
+The markdown files are located in `./website/content/guides` and `./website/content/docs`.
+
+#### Pages
+
+You can edit a page just by editing its mdx file.
+You can find information on markdown and MDX syntax [on the docusaurus website](https://docusaurus.io/docs/markdown-features).
+
+To add a new page you can just add a `.mdx` file into any of the existing folders.
+Docusaurus will automatically build the changes and add the file as an entry into the sidebar.
+
+#### Categories
+
+You can add categories by adding folders in the `guides` or `docs` folders.
+Categories don't have an index by default, so you will need to create one.
+
+You can do this by creating an index.mdx file within the folder of the category.
+You could either just put a category description in them or fill them up with content themselves.
+Either way you should present the user with the items in the category with a DocCardList:
+
+```mdx title="index.mdx" showLineNumbers
+---
+title: Some Category Title
+id: some-category
+---
+
+import DocCardList from "@theme/DocCardList";
+
+# Some Category Title
+
+Some category description
+
+{/* Optional Main content for the category */}
+
+## Overview
+
+<DocCardList />
+```
+
+#### Sidebar Structure and Order
+
+The structure of the guides and docs is basically the same as on the built website.
+Folders are categories, mdx files are pages.
+Category indexes are the `index.mdx` files located in the folders of their respective categories.
+
+The order in the sidebar is defined by number prefixes:
+
+- 0 - First Document (you could also start with 1)
+- 1 - Second Document
+- 2 - Third Document
+- n - nᵗʰ Document
+
+### Markdown Links
+
+#### External Sites
+
+Links to external sites are just normal markdown syntax: `[some text](https://example.com)`
+
+#### Heading
+
+The same counts for links to a heading on the same page: `[some text](#heading-id)`
+
+#### Github GoKubeDownscaler Repository
+
+To link to a file in the repository you can use the `repo:` directive:
+
+- `[some text](repo:path/to/file)`
+- `[some text](repo:/path/to/file)`
+- `[some text](repo:./path/to/file)`
+
+-> `https://github.com/caas-team/GoKubeDownscaler/tree/main/path/to/file`
+
+#### Another Guide or Documentation
+
+To link to another doc or guide, you first have to define a `globalReference` for that document.
+To do that you just have to add the `globalReference` attribute to the frontmatter of the document:
+
+```mdx
+---
+title: Example
+id: example
+# highlight-next-line
+globalReference: docs-example
+---
+```
+
+after which you can use the reference to link to the document from any other:
+
+```mdx
+Some [example](ref:docs-example) text.
+```
+
+:::info
+
+If you added the link reference in the mdx file
+before adding the `globalReference` parameter to the frontmatter
+docusaurus might not rebuild your page until you either
+re-save your file to initiate a rebuild or
+[clear the docusaurus cache](#clear-docusaurus-cache).
+
+:::
+
+### Best Practices
+
+These are a collection of best practices you should be aware of:
+
+- [avoid click here links](https://heyoka.medium.com/dont-use-click-here-f32f445d1021)
+- try to reduce the use of inline-html elements to a minimum
+- avoid too small headings (keep it under h5 and try to avoid h4)
+- don't nest sidebar categories (no categories in a category in a category)
+- use [title case](https://en.wikipedia.org/wiki/Capitalization#Title_case) for headings
+
+## Troubleshooting
+
+Sometimes the website looks broken/not how you expected, has errors or won't start/open.
+In these cases you have probably tried loads of things to get it working again.
+These are some of the most common fixes for such issues.
+
+### Clear Docusaurus Cache
+
+Docusaurus caches most files and doesn't rebuild them until they themselves change
+(e.g. rendered markdown files, [SVGO](https://svgo.dev/)/[SVGR](https://react-svgr.com/) optimized SVGs, etc.).
+This can lead to problems when there are custom external dependencies which don't trigger a rebuild.
+
+This command forces docusaurus to clear its cache and rebuild all files on the next start.
+
+```bash
+npm run --prefix website docusaurus clear
+```
+
+### (Re-)Install Packages
+
+There are multiple reasons why reinstalling NPMs packages might fix some issues.
+Some of the most common reasons could be:
+
+- corrupted modules
+- outdated packages ([`npm update`](#updating-dependencies) could also resolve this)
+- ...
+
+```bash
+rm -rf ./website/node_modules
+npm install --prefix website
+```

@@ -80,6 +80,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	slog.Debug("finished getting startup config",
+		"envLayer", layerEnv,
+		"cliLayer", layerCli,
+		"config", config,
+	)
+
 	slog.Debug("getting client for kubernetes")
 
 	client, err := kubernetes.NewClient(config.Kubeconfig, config.DryRun)

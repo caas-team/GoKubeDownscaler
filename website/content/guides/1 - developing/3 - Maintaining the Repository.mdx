@@ -1,0 +1,33 @@
+---
+title: Maintaining the Repository
+id: maintaining-the-repository
+globalReference: guides-developing-repo
+---
+
+import { GithubLabel } from "/src/components/GithubLabel.tsx";
+
+# Maintaining the Repository
+
+This section covers how to do some maintainer tasks on the repository.
+
+For documentation on the workflows see [this documentation page](ref:docs-workflows).
+
+## Releasing a New Version
+
+The process to releasing a new version is almost completely automated.
+There are multiple workflows that handle the release process.
+All you need to do is to bump the [semver](https://semver.org) of either
+the Helm chart version(`.version`) or the app version(`.appVersion`)
+within the [Chart.yaml](repo:deployments/chart/Chart.yaml)(`./deployments/chart/Chart.yaml`).
+Once merged into main the [workflows](ref:docs-workflows) will automatically start releasing the new version.
+
+:::info
+
+To merge a pull request which would result in a new version once merged into main
+there is an additional approval step to stop you from accidentally merging it without realizing.
+
+To allow the pull request to make a new release after being merged you need to add the <GithubLabel label="new release"/> label to it.
+This will in turn retrigger [the workflow](ref:docs-workflows#check-for-release) run
+which then automatically removes the <GithubLabel label="needs approval"/> label and allows the pull request to be merged.
+
+:::

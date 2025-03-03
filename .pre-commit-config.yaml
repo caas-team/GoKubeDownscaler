@@ -1,7 +1,7 @@
 fail_fast: true
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v5.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -18,30 +18,36 @@ repos:
         args: [-l, -w]
       - id: golangci-lint-repo-mod
         args: [--config, .golangci.yaml, --, --fix]
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.0.1
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.5.2
     hooks:
       - id: prettier
-        files: \.md$
+        files: \.(md|mdx)$
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.17.2
+    hooks:
+      - id: markdownlint-cli2
+        args: [--fix]
+        additional_dependencies:
+          - sentences-per-line
+          - "@jonathan-mayer/markdownlint-rule-titlecase"
+        files: \.(md|mdx)$
+        types_or: [markdown, mdx]
+        types: []
   - repo: local
     hooks:
       - id: prevent-todo-comments
         name: prevent todo comments
-        entry: '\/\/ *(TODO|FIXME)\b' # matches a golang comment beginning with "TODO" or "FIXME"
+        entry: '( |^)(//|#|<!--|/\*)\s*(TODO|FIXME)\b' # matches a comment beginning with "TODO" or "FIXME"
         language: pygrep
-        files: \.go$
+        files: \.(go|md|mdx|yaml|json|js|ts|jsx|tsx)$
       - id: prevent-too-small-headings
         name: prevent too small headings
-        entry: "^#{5,} " # matches a h5 or smaller markdown heading
+        entry: "^#{5,} " # matches an h5 or smaller markdown heading
         language: pygrep
-        files: \.md$
-      - id: prevent-overly-nested-hierarchy
-        name: prevent overly nested hierarchy
-        entry: "^(  ){2,}- " # matches a markdown list with 2 or more indentations
-        language: pygrep
-        files: \.md$
-      - id: prevent-invalid-alert-types
-        name: prevent invalid alert types
-        entry: '(?i)^> \[!(?!\b(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\b).+\]' # matches a github markdown callout/alert that doesn't use one of the supported keywords
-        language: pygrep
-        files: \.md$
+        files: \.(md|mdx)$
+      - id: eslint
+        name: Run ESLint
+        entry: npx eslint --fix --config=website/eslint.config.mjs "website/**/*.{js,jsx,ts,tsx,cts,cjs,mdx}"
+        language: node
+        files: website/.*\.(js|jsx|ts|tsx|cts|cjs|mdx)$
