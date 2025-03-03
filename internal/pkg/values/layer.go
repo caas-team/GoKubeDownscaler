@@ -132,57 +132,78 @@ func (l *Layer) getCurrentScaling() Scaling {
 
 	// check periods
 	if l.DownscalePeriod != nil || l.UpscalePeriod != nil {
-		if l.DownscalePeriod.inTimeSpans() {
-			return ScalingDown
-		}
-
-		if l.UpscalePeriod.inTimeSpans() {
-			return ScalingUp
-		}
-
-		return ScalingIgnore
+		return l.getScalingFromPeriods()
 	}
 
 	return ScalingNone
 }
 
-// getForcedScaling checks if the layer has forced scaling enabled and returns the matching scaling.
-func (l *Layer) getForcedScaling() Scaling {
-	var forcedScaling Scaling
+func (l *Layer) getScalingFromPeriods() Scaling {
+	inDowntime := l.DownscalePeriod.inTimeSpans()
+	inUptime := l.UpscalePeriod.inTimeSpans()
 
+	if inUptime && inDowntime {
+		return ScalingIgnore // this prevents unintended behavior; in the future this should be handled while checking for conflicts
+	}
+
+	if inDowntime {
+		return ScalingDown
+	}
+
+	if inUptime {
+		return ScalingUp
+	}
+
+	return ScalingIgnore
+}
+
+func (l *Layer) getForceScaling() Scaling {
+	// check forced scaling
 	if l.ForceDowntime.inTimeSpans() {
-		forcedScaling = ScalingDown
+		return ScalingDown
 	}
 
 	if l.ForceUptime.inTimeSpans() {
-		forcedScaling = ScalingUp
+		return ScalingUp
 	}
 
-	return forcedScaling
+	if l.ForceDowntime != nil || l.ForceUptime != nil {
+		return ScalingIgnore // default result to non-unset value to avoid falling through
+	}
+
+	return ScalingNone
 }
 
 type Layers [5]*Layer
 
 // GetCurrentScaling gets the current scaling of the first layer that implements scaling.
 func (l Layers) GetCurrentScaling() Scaling {
-	// check for forced scaling
+	var result Scaling
+
 	for _, layer := range l {
-		forcedScaling := layer.getForcedScaling()
-		if forcedScaling != ScalingNone {
-			return forcedScaling
+		forcedScaling := layer.getForceScaling()
+		if forcedScaling == ScalingNone {
+			continue // layer doesnt implement forced scaling; falling through
 		}
+
+		if forcedScaling == ScalingIgnore {
+			result = ScalingIgnore // default to ScalingIgnore instead of ScalingNone for correct log message
+			break                  // break out since forced scaling is set, but just inactive
+		}
+
+		return forcedScaling
 	}
-	// check for time-based scaling
+
 	for _, layer := range l {
 		layerScaling := layer.getCurrentScaling()
 		if layerScaling == ScalingNone {
-			continue
+			continue // layer doesnt implement scaling; falling through
 		}
 
 		return layerScaling
 	}
 
-	return ScalingNone
+	return result
 }
 
 // GetDownscaleReplicas gets the downscale replicas of the first layer that implements downscale replicas.

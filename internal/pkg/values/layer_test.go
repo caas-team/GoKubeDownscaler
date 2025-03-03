@@ -121,16 +121,6 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 
 func TestLayer_getCurrentScaling(t *testing.T) {
 	t.Parallel()
-	var (
-		inTimeSpan = timeSpans{absoluteTimeSpan{
-			from: time.Now().Add(-time.Hour),
-			to:   time.Now().Add(time.Hour),
-		}}
-		outOfTimeSpan = timeSpans{absoluteTimeSpan{
-			from: time.Now().Add(-2 * time.Hour),
-			to:   time.Now().Add(-time.Hour),
-		}}
-	)
 
 	tests := []struct {
 		name        string
@@ -140,56 +130,56 @@ func TestLayer_getCurrentScaling(t *testing.T) {
 		{
 			name: "in downtime",
 			layer: Layer{
-				DownTime: inTimeSpan,
+				DownTime: timeSpans{booleanTimeSpan(true)},
 			},
 			wantScaling: ScalingDown,
 		},
 		{
 			name: "out of downtime",
 			layer: Layer{
-				DownTime: outOfTimeSpan,
+				DownTime: timeSpans{booleanTimeSpan(false)},
 			},
 			wantScaling: ScalingUp,
 		},
 		{
 			name: "in uptime",
 			layer: Layer{
-				UpTime: inTimeSpan,
+				UpTime: timeSpans{booleanTimeSpan(true)},
 			},
 			wantScaling: ScalingUp,
 		},
 		{
 			name: "out of uptime",
 			layer: Layer{
-				UpTime: outOfTimeSpan,
+				UpTime: timeSpans{booleanTimeSpan(false)},
 			},
 			wantScaling: ScalingDown,
 		},
 		{
 			name: "in downscaleperiod",
 			layer: Layer{
-				DownscalePeriod: inTimeSpan,
+				DownscalePeriod: timeSpans{booleanTimeSpan(true)},
 			},
 			wantScaling: ScalingDown,
 		},
 		{
 			name: "out of downscaleperiod",
 			layer: Layer{
-				DownscalePeriod: outOfTimeSpan,
+				DownscalePeriod: timeSpans{booleanTimeSpan(false)},
 			},
 			wantScaling: ScalingIgnore,
 		},
 		{
 			name: "in upscaleperiod",
 			layer: Layer{
-				UpscalePeriod: inTimeSpan,
+				UpscalePeriod: timeSpans{booleanTimeSpan(true)},
 			},
 			wantScaling: ScalingUp,
 		},
 		{
 			name: "out of upscaleperiod",
 			layer: Layer{
-				UpscalePeriod: outOfTimeSpan,
+				UpscalePeriod: timeSpans{booleanTimeSpan(false)},
 			},
 			wantScaling: ScalingIgnore,
 		},
@@ -210,7 +200,7 @@ func TestLayer_getCurrentScaling(t *testing.T) {
 	}
 }
 
-func TestLayer_getForcedScaling(t *testing.T) {
+func TestLayer_getForcScaling(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -243,7 +233,7 @@ func TestLayer_getForcedScaling(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			scaling := test.layer.getForcedScaling()
+			scaling := test.layer.getForceScaling()
 			assert.Equal(t, test.wantScaling, scaling)
 		})
 	}
