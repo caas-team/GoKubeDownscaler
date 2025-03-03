@@ -158,14 +158,18 @@ func (l *Layer) GetLayerFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 		}
 	}
 
-	if excludeUntil, ok := annotations[annotationExcludeUntil]; ok {
-		l.ExcludeUntil, err = time.Parse(time.RFC3339, excludeUntil)
+	if excludeUntilString, ok := annotations[annotationExcludeUntil]; ok {
+		var excludeUntil time.Time
+
+		excludeUntil, err = time.Parse(time.RFC3339, excludeUntilString)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationExcludeUntil, err)
 			logEvent.ErrorInvalidAnnotation(annotationExcludeUntil, err.Error(), ctx)
 
 			return err
 		}
+
+		l.ExcludeUntil = &excludeUntil
 	}
 
 	if forceUptime, ok := annotations[annotationForceUptime]; ok {

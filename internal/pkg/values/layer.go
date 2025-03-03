@@ -65,8 +65,8 @@ type Layer struct {
 	DownTime          timeSpans     // within these timespans workloads will be scaled down, outside of them they will be scaled up
 	UpscalePeriod     timeSpans     // periods to upscale in
 	UpTime            timeSpans     // within these timespans workloads will be scaled up, outside of them they will be scaled down
-	Exclude           triStateBool  // if workload should be excluded
-	ExcludeUntil      time.Time     // until when the workload should be excluded
+	Exclude           timeSpans     // if workload should be excluded
+	ExcludeUntil      *time.Time    // until when the workload should be excluded
 	ForceUptime       timeSpans     // force workload into a uptime state when in one of the timespans
 	ForceDowntime     timeSpans     // force workload into a downtime state when in one of the timespans
 	DownscaleReplicas int32         // the replicas to scale down to
@@ -79,26 +79,13 @@ func GetDefaultLayer() *Layer {
 		DownTime:          nil,
 		UpscalePeriod:     nil,
 		UpTime:            nil,
-		Exclude:           triStateBool{isSet: true, value: false},
-		ExcludeUntil:      time.Time{},
+		Exclude:           nil,
+		ExcludeUntil:      nil,
 		ForceUptime:       nil,
 		ForceDowntime:     nil,
 		DownscaleReplicas: 0,
 		GracePeriod:       15 * time.Minute,
 	}
-}
-
-// isScalingExcluded checks if scaling is excluded, nil represents a not set state.
-func (l *Layer) isScalingExcluded() *bool {
-	if l.Exclude.isSet && l.Exclude.value {
-		return &l.Exclude.value
-	}
-
-	if ok := l.ExcludeUntil.After(time.Now()); ok {
-		return &ok
-	}
-
-	return nil
 }
 
 // CheckForIncompatibleFields checks if there are incompatible fields.
@@ -212,18 +199,26 @@ func (l Layers) GetDownscaleReplicas() (int32, error) {
 	return 0, errValueNotSet
 }
 
-// GetExcluded checks if any layer excludes scaling.
+// GetExcluded checks if the layers exclude scaling.
 func (l Layers) GetExcluded() bool {
-	for _, layer := range l {
-		excluded := layer.isScalingExcluded()
-		if excluded == nil {
-			continue
-		}
+	var exclude timeSpans
+	var excludeUntil time.Time
 
-		return *excluded
+	for _, layer := range l {
+		if layer.Exclude != nil {
+			exclude = layer.Exclude
+			break
+		}
 	}
 
-	return false
+	for _, layer := range l {
+		if layer.ExcludeUntil != nil {
+			excludeUntil = *layer.ExcludeUntil
+			break
+		}
+	}
+
+	return exclude.inTimeSpans() || excludeUntil.After(time.Now())
 }
 
 // IsInGracePeriod gets the grace period of the uppermost layer that has it set.
