@@ -12,7 +12,7 @@ import (
 func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	prometheuses, err := clientsets.Monitoring.MonitoringV1().Prometheuses(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get prometheuses: %w", err)
+		return nil, NewPrometheusError("GetPrometheuses", fmt.Sprintf("failed to list prometheuses: %w", err))
 	}
 
 	results := make([]Workload, 0, len(prometheuses.Items))
@@ -38,7 +38,7 @@ func (p *prometheus) setReplicas(replicas int32) error {
 func (p *prometheus) getReplicas() (int32, error) {
 	replicas := p.Spec.Replicas
 	if replicas == nil {
-		return 0, errNoReplicasSpecified
+		return 0, NewNoReplicasSpecified("GetReplicas", "no replicas specified")
 	}
 
 	return *p.Spec.Replicas, nil
@@ -48,7 +48,7 @@ func (p *prometheus) getReplicas() (int32, error) {
 func (p *prometheus) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Monitoring.MonitoringV1().Prometheuses(p.Namespace).Update(ctx, p.Prometheus, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update prometheus: %w", err)
+		return NewPrometheusError("UpdatePrometheus", fmt.Sprintf("failed to update prometheus: %w", err))
 	}
 
 	return nil

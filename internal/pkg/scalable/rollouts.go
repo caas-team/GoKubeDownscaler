@@ -13,7 +13,7 @@ import (
 func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	rollouts, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get rollouts: %w", err)
+		return nil, NewRolloutError("GetRollouts", fmt.Sprintf("failed to list rollouts: %w", err))
 	}
 
 	results := make([]Workload, 0, len(rollouts.Items))
@@ -39,7 +39,7 @@ func (r *rollout) setReplicas(replicas int32) error {
 func (r *rollout) getReplicas() (int32, error) {
 	replicas := r.Spec.Replicas
 	if replicas == nil {
-		return 0, errNoReplicasSpecified
+		return 0, NewNoReplicasSpecified("GetReplicas", "no replicas specified")
 	}
 
 	return *r.Spec.Replicas, nil
@@ -49,7 +49,7 @@ func (r *rollout) getReplicas() (int32, error) {
 func (r *rollout) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(r.Namespace).Update(ctx, r.Rollout, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update rollout: %w", err)
+		return NewRolloutError("UpdateRollout", fmt.Sprintf("failed to update rollout: %w", err))
 	}
 
 	return nil

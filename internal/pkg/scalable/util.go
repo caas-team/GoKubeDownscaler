@@ -197,7 +197,7 @@ func getOriginalReplicas(workload Workload) (*int32, error) {
 
 	originalReplicas, err := strconv.ParseInt(originalReplicasString, 10, 32)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse original replicas annotation on workload: %w", err)
+		return nil, NewNoReplicasSpecified("GetOriginalReplicas", fmt.Sprintf("failed to parse originalReplicas annotation: %w", err))
 	}
 
 	// #nosec G115

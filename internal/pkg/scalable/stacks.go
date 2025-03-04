@@ -13,7 +13,7 @@ import (
 func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	stacks, err := clientsets.Zalando.ZalandoV1().Stacks(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get stacks: %w", err)
+		return nil, NewStacksError("GetStacks", fmt.Sprintf("failed to list stacks: %w", err))
 	}
 
 	results := make([]Workload, 0, len(stacks.Items))
@@ -39,7 +39,7 @@ func (s *stack) setReplicas(replicas int32) error {
 func (s *stack) getReplicas() (int32, error) {
 	replicas := s.Spec.Replicas
 	if replicas == nil {
-		return 0, errNoReplicasSpecified
+		return 0, NewNoReplicasSpecified("GetReplicas", "no replicas specified")
 	}
 
 	return *s.Spec.Replicas, nil
@@ -49,7 +49,7 @@ func (s *stack) getReplicas() (int32, error) {
 func (s *stack) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Zalando.ZalandoV1().Stacks(s.Namespace).Update(ctx, s.Stack, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update stack: %w", err)
+		return NewStacksError("UpdateStack", fmt.Sprintf("failed to update stack: %w", err))
 	}
 
 	return nil

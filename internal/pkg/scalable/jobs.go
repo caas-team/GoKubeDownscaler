@@ -13,7 +13,7 @@ import (
 func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	jobs, err := clientsets.Kubernetes.BatchV1().Jobs(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get jobs: %w", err)
+		return nil, NewFailedToGetJobsError("GetJobs", fmt.Sprintf("failed to list jobs: %w", err))
 	}
 
 	results := make([]Workload, 0, len(jobs.Items))
@@ -38,7 +38,7 @@ func (j *job) setSuspend(suspend bool) {
 func (j *job) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Kubernetes.BatchV1().Jobs(j.Namespace).Update(ctx, j.Job, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update job: %w", err)
+		return NewFailedToGetJobsError("UpdateJob", fmt.Sprintf("failed to update job: %w", err))
 	}
 
 	return nil

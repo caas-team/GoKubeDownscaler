@@ -13,7 +13,7 @@ import (
 func getDeployments(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	deployments, err := clientsets.Kubernetes.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get deployments: %w", err)
+		return nil, NewDeploymentError("GetDeployments", fmt.Sprintf("failed to list deployments: %w", err))
 	}
 
 	results := make([]Workload, 0, len(deployments.Items))
@@ -39,7 +39,7 @@ func (d *deployment) setReplicas(replicas int32) error {
 func (d *deployment) getReplicas() (int32, error) {
 	replicas := d.Spec.Replicas
 	if replicas == nil {
-		return 0, errNoReplicasSpecified
+		return 0, NewNoReplicasSpecified("GetReplicas", "no replicas specified")
 	}
 
 	return *d.Spec.Replicas, nil
@@ -49,8 +49,7 @@ func (d *deployment) getReplicas() (int32, error) {
 func (d *deployment) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Update(ctx, d.Deployment, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update deployment: %w", err)
+		return NewDeploymentError("UpdateDeployment", fmt.Sprintf("failed to update deployment: %w", err))
 	}
-
 	return nil
 }

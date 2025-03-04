@@ -16,7 +16,7 @@ const (
 func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	daemonsets, err := clientsets.Kubernetes.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get daemonsets: %w", err)
+		return nil, NewDaemonSetError("GetDaemonSets", fmt.Sprintf("failed to list daemonsets: %w", err))
 	}
 
 	results := make([]Workload, 0, len(daemonsets.Items))
@@ -53,7 +53,7 @@ func (d *daemonSet) ScaleDown(_ int32) error {
 func (d *daemonSet) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Kubernetes.AppsV1().DaemonSets(d.Namespace).Update(ctx, d.DaemonSet, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update daemonset: %w", err)
+		return NewDaemonSetError("UpdateDaemonSet", fmt.Sprintf("failed to update daemonset: %w", err))
 	}
 
 	return nil

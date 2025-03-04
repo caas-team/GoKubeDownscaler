@@ -13,7 +13,7 @@ import (
 func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	statefulsets, err := clientsets.Kubernetes.AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get statefulsets: %w", err)
+		return nil, NewStatefulSetError("GetStatefulSets", fmt.Sprintf("failed to list statefulsets: %w", err))
 	}
 
 	results := make([]Workload, 0, len(statefulsets.Items))
@@ -39,7 +39,7 @@ func (s *statefulSet) setReplicas(replicas int32) error {
 func (s *statefulSet) getReplicas() (int32, error) {
 	replicas := s.Spec.Replicas
 	if replicas == nil {
-		return 0, errNoReplicasSpecified
+		return 0, NewNoReplicasSpecified("GetReplicas", "no replicas specified")
 	}
 
 	return *s.Spec.Replicas, nil
@@ -49,7 +49,7 @@ func (s *statefulSet) getReplicas() (int32, error) {
 func (s *statefulSet) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Kubernetes.AppsV1().StatefulSets(s.Namespace).Update(ctx, s.StatefulSet, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update statefulset: %w", err)
+		return NewStatefulSetError("UpdateStatefulSet", fmt.Sprintf("failed to update statefulset: %w", err))
 	}
 
 	return nil

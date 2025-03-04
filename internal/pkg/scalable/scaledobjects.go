@@ -18,7 +18,7 @@ const (
 func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	scaledobjects, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get scaledobjects: %w", err)
+		return nil, NewScaledObjectError("GetScaledObjects", fmt.Sprintf("failed to list scaledobjects: %w", err))
 	}
 
 	results := make([]Workload, 0, len(scaledobjects.Items))
@@ -59,7 +59,7 @@ func (s *scaledObject) getReplicas() (int32, error) {
 
 	pausedReplicas, err := strconv.ParseInt(pausedReplicasAnnotation, 10, 32)
 	if err != nil {
-		return 0, fmt.Errorf("invalid value for annotation %q: %w", annotationKedaPausedReplicas, err)
+		return 0, NewNoReplicasSpecified("GetReplicas", fmt.Sprintf("failed to parse pausedReplicas annotation: %w", err))
 	}
 
 	// #nosec G115
@@ -70,7 +70,7 @@ func (s *scaledObject) getReplicas() (int32, error) {
 func (s *scaledObject) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(s.Namespace).Update(ctx, s.ScaledObject, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update scaledObject: %w", err)
+		return NewScaledObjectError("UpdateScaledObject", fmt.Sprintf("failed to update scaledobject: %w", err))
 	}
 
 	return nil

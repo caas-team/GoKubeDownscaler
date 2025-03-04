@@ -26,7 +26,7 @@ type replicaScaledWorkload struct {
 func (r *replicaScaledWorkload) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(r)
 	if err != nil {
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+		return NewNoReplicasSpecified("ScaleUp", fmt.Sprintf("failed to get original replicas for workload: %w", err))
 	}
 
 	if originalReplicas == nil {
@@ -36,7 +36,7 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 
 	err = r.setReplicas(*originalReplicas)
 	if err != nil {
-		return fmt.Errorf("failed to set original replicas for workload: %w", err)
+		return NewNoReplicasSpecified("ScaleUp", fmt.Sprintf("failed to set replicas for workload: %w", err))
 	}
 
 	removeOriginalReplicas(r)
@@ -48,7 +48,7 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas int32) error {
 	originalReplicas, err := r.getReplicas()
 	if err != nil {
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+		return NewNoReplicasSpecified("ScaleDown", fmt.Sprintf("failed to get replicas for workload: %w", err))
 	}
 
 	if originalReplicas == downscaleReplicas {
@@ -58,7 +58,7 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas int32) error {
 
 	err = r.setReplicas(downscaleReplicas)
 	if err != nil {
-		return fmt.Errorf("failed to set replicas for workload: %w", err)
+		return NewNoReplicasSpecified("ScaleDown", fmt.Sprintf("failed to set replicas for workload: %w", err))
 	}
 
 	setOriginalReplicas(originalReplicas, r)

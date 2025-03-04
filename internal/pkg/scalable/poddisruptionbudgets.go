@@ -15,7 +15,7 @@ import (
 func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	poddisruptionbudgets, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get poddisruptionbudgets: %w", err)
+		return nil, NewPodDistributionError("GetPodDisruptionBudgets", fmt.Sprintf("failed to list poddisruptionbudgets: %w", err))
 	}
 
 	results := make([]Workload, 0, len(poddisruptionbudgets.Items))
@@ -75,7 +75,7 @@ func (p *podDisruptionBudget) setMaxUnavailable(targetMaxUnavailable int32) {
 func (p *podDisruptionBudget) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(p)
 	if err != nil {
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+		return NewNoReplicasSpecified("ScaleUp", fmt.Sprintf("failed to get original replicas: %w", err))
 	}
 
 	if originalReplicas == nil {
@@ -141,7 +141,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int32) error {
 func (p *podDisruptionBudget) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(p.Namespace).Update(ctx, p.PodDisruptionBudget, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update poddisruptionbudget: %w", err)
+		return NewPodDistributionError("UpdatePodDisruptionBudget", fmt.Sprintf("failed to update poddisruptionbudget: %w", err))
 	}
 
 	return nil

@@ -13,7 +13,7 @@ import (
 func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	cronjobs, err := clientsets.Kubernetes.BatchV1().CronJobs(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cronjobs: %w", err)
+		return nil, NewCronJobError("GetCronJobs", fmt.Sprintf("failed to list cronjobs: %w", err))
 	}
 
 	results := make([]Workload, 0, len(cronjobs.Items))
@@ -38,7 +38,7 @@ func (c *cronJob) setSuspend(suspend bool) {
 func (c *cronJob) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Kubernetes.BatchV1().CronJobs(c.Namespace).Update(ctx, c.CronJob, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update cronjob: %w", err)
+		return NewCronJobError("UpdateCronJob", fmt.Sprintf("failed to update cronjob: %w", err))
 	}
 
 	return nil

@@ -15,7 +15,7 @@ var errMinReplicasBoundsExceeded = errors.New("error: a HPAs minReplicas can onl
 func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	hpas, err := clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get horizontalpodautoscalers: %w", err)
+		return nil, NewHorizontalPodAutscalerError("GetHorizontalPodAutoscalers", fmt.Sprintf("failed to list horizontalpodautoscalers: %w", err))
 	}
 
 	results := make([]Workload, 0, len(hpas.Items))
@@ -34,7 +34,7 @@ type horizontalPodAutoscaler struct {
 // setReplicas sets the amount of replicas on the resource. Changes won't be made on Kubernetes until update() is called.
 func (h *horizontalPodAutoscaler) setReplicas(replicas int32) error {
 	if replicas < 1 {
-		return errMinReplicasBoundsExceeded
+		return NewMinReplicasBoundsExceeded("SetReplicas", "min replicas can't be less than 1")
 	}
 
 	h.Spec.MinReplicas = &replicas
@@ -46,7 +46,7 @@ func (h *horizontalPodAutoscaler) setReplicas(replicas int32) error {
 func (h *horizontalPodAutoscaler) getReplicas() (int32, error) {
 	replicas := h.Spec.MinReplicas
 	if replicas == nil {
-		return 0, errNoReplicasSpecified
+		return 0, NewNoReplicasSpecified("GetReplicas", "no replicas specified")
 	}
 
 	return *h.Spec.MinReplicas, nil
@@ -59,7 +59,7 @@ func (h *horizontalPodAutoscaler) Update(clientsets *Clientsets, ctx context.Con
 		metav1.UpdateOptions{},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to update horizontalpodautoscaler: %w", err)
+		return NewHorizontalPodAutscalerError("UpdateHorizontalPodAutoscaler", fmt.Sprintf("failed to update horizontalpodautoscaler: %w", err))
 	}
 
 	return nil
