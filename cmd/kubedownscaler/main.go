@@ -111,7 +111,7 @@ func scanWorkloads(
 
 		workloads, err := client.GetWorkloads(config.IncludeNamespaces, config.IncludeResources, ctx)
 		if err != nil {
-			return fmt.Errorf("failed to get workloads: %w", err)
+			return kubernetes.NewWorkloadError("GetWorkloads", fmt.Sprintf("failed to get workloads: %w", err))
 		}
 
 		workloads = scalable.FilterExcluded(workloads, config.IncludeLabels, config.ExcludeNamespaces, config.ExcludeWorkloads)
@@ -163,7 +163,7 @@ func scanWorkload(
 
 	namespaceAnnotations, err := client.GetNamespaceAnnotations(workload.GetNamespace(), ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get namespace annotations: %w", err)
+		return kubernetes.NewNamespaceError("GetNamespaceAnnotations", fmt.Sprintf("failed to get namespace: %w", err))
 	}
 
 	slog.Debug(
@@ -175,7 +175,7 @@ func scanWorkload(
 
 	layerWorkload := values.NewLayer()
 	if err = layerWorkload.GetLayerFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
-		return fmt.Errorf("failed to parse workload layer from annotations: %w", err)
+		return kubernetes.NewWorkloadError("GetLayerFromAnnotations", fmt.Sprintf("failed to parse workload layer from annotations: %w", err))
 	}
 
 	slog.Debug(
@@ -187,7 +187,7 @@ func scanWorkload(
 
 	layerNamespace := values.NewLayer()
 	if err = layerNamespace.GetLayerFromAnnotations(namespaceAnnotations, resourceLogger, ctx); err != nil {
-		return fmt.Errorf("failed to parse namespace layer from annotations: %w", err)
+		return kubernetes.NewNamespaceError("GetLayerFromAnnotations", fmt.Sprintf("failed to parse namespace layer from annotations: %w", err))
 	}
 
 	layers := values.Layers{&layerWorkload, &layerNamespace, layerCli, layerEnv}
@@ -202,7 +202,7 @@ func scanWorkload(
 		ctx,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to get if workload is on grace period: %w", err)
+		return kubernetes.NewWorkloadError("IsInGracePeriod", fmt.Sprintf("failed to check if workload is in grace period: %w", err))
 	}
 
 	if isInGracePeriod {
@@ -223,7 +223,7 @@ func scanWorkload(
 
 	err = scaleWorkload(scaling, workload, layers, client, ctx)
 	if err != nil {
-		return fmt.Errorf("failed to scale workload: %w", err)
+		return kubernetes.NewWorkloadError("scaleWorkload", fmt.Sprintf("failed to scale workload: %w", err))
 	}
 
 	return nil
@@ -247,12 +247,12 @@ func scaleWorkload(
 
 		downscaleReplicas, err := layers.GetDownscaleReplicas()
 		if err != nil {
-			return fmt.Errorf("failed to get downscale replicas: %w", err)
+			return kubernetes.NewWorkloadError("GetDownscaleReplicas", fmt.Sprintf("failed to get downscale replicas: %w", err))
 		}
 
 		err = client.DownscaleWorkload(downscaleReplicas, workload, ctx)
 		if err != nil {
-			return fmt.Errorf("failed to downscale workload: %w", err)
+			return kubernetes.NewWorkloadError("DownscaleWorkload", fmt.Sprintf("failed to downscale workload: %w", err))
 		}
 	}
 
@@ -261,7 +261,7 @@ func scaleWorkload(
 
 		err := client.UpscaleWorkload(workload, ctx)
 		if err != nil {
-			return fmt.Errorf("failed to upscale workload: %w", err)
+			return kubernetes.NewWorkloadError("UpscaleWorkload", fmt.Sprintf("failed to upscale workload: %w", err))
 		}
 	}
 
