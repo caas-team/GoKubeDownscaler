@@ -10,7 +10,7 @@ type Int32Value int32
 func (i *Int32Value) Set(s string) error {
 	v, err := strconv.ParseInt(s, 0, 32)
 	if err != nil {
-		return fmt.Errorf("failed to parse as int32: %w", err)
+		return NewInvalidInt32Error("InvalidInt32Error", fmt.Sprintf("failed to parse int32: %w", err))
 	}
 	// #nosec G115
 	*i = Int32Value(v)

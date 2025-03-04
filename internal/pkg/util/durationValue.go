@@ -21,7 +21,7 @@ func (d *DurationValue) Set(value string) error {
 	// try parsing as duration string
 	duration, err := time.ParseDuration(value)
 	if err != nil {
-		return fmt.Errorf("failed parsing duration: %w", err)
+		return NewInvalidDurationError("InvalidDurationError", fmt.Sprintf("failed to parse duration: %w", err))
 	}
 
 	*d = DurationValue(duration)

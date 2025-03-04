@@ -100,12 +100,12 @@ func (c *RuntimeConfiguration) ParseConfigFlags() {
 func (c *RuntimeConfiguration) ParseConfigEnvVars() error {
 	err := GetEnvValue("EXCLUDE_NAMESPACES", &c.ExcludeNamespaces)
 	if err != nil {
-		return fmt.Errorf("error while getting EXCLUDE_NAMESPACES environment variable: %w", err)
+		return NewEnvValueError("EXCLUDE_NAMESPACES", fmt.Sprintf("%s", err))
 	}
 
 	err = GetEnvValue("EXCLUDE_DEPLOYMENTS", &c.ExcludeWorkloads)
 	if err != nil {
-		return fmt.Errorf("error while getting EXCLUDE_DEPLOYMENTS environment variable: %w", err)
+		return NewEnvValueError("EXCLUDE_DEPLOYMENTS", fmt.Sprintf("%s", err))
 	}
 
 	return nil

@@ -17,7 +17,7 @@ func (r *RegexList) Set(text string) error {
 
 		re, err := regexp.Compile(entry)
 		if err != nil {
-			return fmt.Errorf("failed to compile stringlist entry as a regex: %w", err)
+			return NewInvalidRegexError("InvalidRegexError", fmt.Sprintf("failed to compile regex: %w", err))
 		}
 
 		*r = append(*r, re)
