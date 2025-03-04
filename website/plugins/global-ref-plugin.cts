@@ -3,7 +3,10 @@ import { visit } from "unist-util-visit";
 import { Node, Literal } from "unist";
 import { ParseFrontMatter } from "@docusaurus/types";
 
-const references: Map<string, { urlPath: string; title: string }> = new Map();
+const references: Map<
+  string,
+  { urlPath: string; title: string; file: string }
+> = new Map();
 
 export const globalRefParseFrontMatter: ParseFrontMatter = async ({
   defaultParseFrontMatter,
@@ -51,6 +54,7 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
   references.set(referenceId, {
     urlPath,
     title: result.frontMatter.title as string,
+    file: filePath,
   });
 
   return result;
@@ -64,6 +68,17 @@ export const docRefRemarkPlugin: Plugin = () => {
         refPattern,
         (match, referenceId, headerId) => {
           const reference = references.get(referenceId);
+
+          if (file.path === reference.file) {
+            console.error(
+              `"%s:%d:%d": Reference '%s' called in own file`,
+              file.path,
+              node.position.start.line,
+              node.position.start.column,
+              referenceId
+            );
+            return match;
+          }
 
           // If the reference doesn't exist, log an error.
           if (!reference) {
