@@ -8,7 +8,7 @@ import (
 func TestNewForceUpAndDownTimeError(t *testing.T) {
 	t.Parallel()
 
-	err := NewForceUpAndDownTimeError(nil)
+	err := NewIncompatibleValuesError(ForceUpAndDowntimeError, "both forceUptime and forceDowntime are defined")
 	if err == nil {
 		t.Error("NewForceUpAndDownTimeError()-method should have thrown an error")
 	}
@@ -18,7 +18,7 @@ func TestNewForceUpAndDownTimeError(t *testing.T) {
 func TestNewUpAndDowntimeError(t *testing.T) {
 	t.Parallel()
 
-	err := NewUpAndDownTimeError(nil)
+	err := NewIncompatibleValuesError(UpAndDowntime, "both uptime and downtime are defined")
 	if err == nil {
 		t.Error("NewUpAndDownTimeError()-method should have thrown an error")
 	}
@@ -28,7 +28,7 @@ func TestNewUpAndDowntimeError(t *testing.T) {
 func TestNewTimeAndPeriodError(t *testing.T) {
 	t.Parallel()
 
-	err := NewTimeAndPeriodError(nil)
+	err := NewIncompatibleValuesError(TimeAndPeriod, "")
 	if err == nil {
 		t.Error("NewTimeAndPeriodError()-method should have thrown an error")
 	}
@@ -38,7 +38,7 @@ func TestNewTimeAndPeriodError(t *testing.T) {
 func TestNewInvalidDownscaleReplicasError(t *testing.T) {
 	t.Parallel()
 
-	err := NewInvalidDownscaleReplicasError(nil)
+	err := NewIncompatibleValuesError(InvalidDownscaleReplicas, "")
 	if err == nil {
 		t.Error("NewInvalidDownscaleReplicasError()-method should have thrown an error")
 	}
@@ -48,7 +48,7 @@ func TestNewInvalidDownscaleReplicasError(t *testing.T) {
 func TestNewValueNotSetError(t *testing.T) {
 	t.Parallel()
 
-	err := NewValueNotSetError(nil)
+	err := NewIncompatibleValuesError(ValueNotSet, "")
 	if err == nil {
 		t.Error("NewValueNotSetError()-method should have thrown an error")
 	}
@@ -58,7 +58,7 @@ func TestNewValueNotSetError(t *testing.T) {
 func TestNewAnnotationsNotSetError(t *testing.T) {
 	t.Parallel()
 
-	err := NewAnnotationsNotSetError(nil)
+	err := NewIncompatibleValuesError(AnnotationNotSet, "")
 	if err == nil {
 		t.Error("NewAnnotationsNotSetError()-method should have thrown an error")
 	}
@@ -68,7 +68,7 @@ func TestNewAnnotationsNotSetError(t *testing.T) {
 func TestNewInvalidWeekdayError(t *testing.T) {
 	t.Parallel()
 
-	err := NewInvalidWeekdayError(nil)
+	err := NewIncompatibleValuesError(TimeAndPeriod, "")
 	if err == nil {
 		t.Error("NewInvalidWeekdayError()-method should have thrown an error")
 	}
@@ -78,7 +78,7 @@ func TestNewInvalidWeekdayError(t *testing.T) {
 func TestNewInvalidRelativeTimespanError(t *testing.T) {
 	t.Parallel()
 
-	err := NewInvalidRelativeTimespanError(nil)
+	err := NewIncompatibleValuesError(TimeAndPeriod, "")
 	if err == nil {
 		t.Error("NewInvalidRelativeTimespanError()-method should have thrown an error")
 	}
@@ -88,7 +88,7 @@ func TestNewInvalidRelativeTimespanError(t *testing.T) {
 func TestNewTimeOfDateOutOfRangeError(t *testing.T) {
 	t.Parallel()
 
-	err := NewTimeOfDateOutOfRangeError(nil)
+	err := NewIncompatibleValuesError(TimeAndPeriod, "")
 	if err == nil {
 		t.Error("NewTimeOfDateOutOfRangeError()-method should have thrown an error")
 	}

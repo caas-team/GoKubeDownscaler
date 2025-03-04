@@ -2,21 +2,11 @@ package values
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
-)
-
-var (
-	errForceUpAndDownTime       = errors.New("error: both forceUptime and forceDowntime are defined")
-	errUpAndDownTime            = errors.New("error: both uptime and downtime are defined")
-	errTimeAndPeriod            = errors.New("error: both a time and a period is defined")
-	errInvalidDownscaleReplicas = errors.New("error: downscale replicas value is invalid")
-	errValueNotSet              = errors.New("error: no layer implements this value")
-	errAnnotationNotSet         = errors.New("error: annotation isn't set on workload")
 )
 
 // Scaling is an enum that describes the current Scaling.
@@ -91,20 +81,20 @@ func (l *Layer) CheckForIncompatibleFields() error { //nolint: cyclop // this is
 		l.ForceDowntime.value &&
 		l.ForceUptime.isSet &&
 		l.ForceUptime.value {
-		return NewForceUpAndDownTimeError(l)
+		return NewIncompatibleValuesError(ForceUpAndDowntimeError, "both forceUptime and forceDowntime are defined")
 	}
 	// downscale replicas invalid
 	if l.DownscaleReplicas != util.Undefined && l.DownscaleReplicas < 0 {
-		return NewInvalidDownscaleReplicasError(l)
+		return NewIncompatibleValuesError(InvalidDownscaleReplicas, "downscale replicas' value is invalid")
 	}
 	// up- and downtime
 	if l.UpTime != nil && l.DownTime != nil {
-		return NewUpAndDownTimeError(l)
+		return NewIncompatibleValuesError(TimeAndPeriod, "both uptime and downtime are defined")
 	}
 	// *time and *period
 	if (l.UpTime != nil || l.DownTime != nil) &&
 		(l.UpscalePeriod != nil || l.DownscalePeriod != nil) {
-		return NewTimeAndPeriodError(l)
+		return NewIncompatibleValuesError(TimeAndPeriod, "both uptime and downtime are defined")
 	}
 
 	return nil
@@ -195,7 +185,7 @@ func (l Layers) GetDownscaleReplicas() (int32, error) {
 		return downscaleReplicas, nil
 	}
 
-	return 0, errValueNotSet
+	return 0, NewIncompatibleValuesError(ValueNotSet, "no layer implements this value")
 }
 
 // GetExcluded checks if any layer excludes scaling.
@@ -241,7 +231,7 @@ func (l Layers) IsInGracePeriod(
 		timeString, ok := workloadAnnotations[timeAnnotation]
 		if !ok {
 			logEvent.ErrorInvalidAnnotation(timeAnnotation, fmt.Sprintf("annotation %q not present on this workload", timeAnnotation), ctx)
-			return false, errAnnotationNotSet
+			return false, NewMissingConfigurationError(AnnotationNotSet, "annotation is not set on workload")
 		}
 
 		creationTime, err = time.Parse(time.RFC3339, timeString)

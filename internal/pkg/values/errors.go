@@ -13,57 +13,41 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("%s: %v", e.Message, e.Value)
 }
 
-//
-// Error messaged based on the layer values.
-//
-
-// NewForceUpAndDownTimeError returns an error when both forceUptime and forceDowntime are defined.
-func NewForceUpAndDownTimeError(value any) error {
-	return &Error{
-		Message: "both forceUptime and forceDowntime are defined",
-		Value:   value,
-	}
+type IncompatibleValuesError struct {
+	ErrorType string
+	Message   string
 }
 
-// NewUpAndDownTimeError returns an error when both uptime and downtime are defined.
-func NewUpAndDownTimeError(value any) error {
-	return &Error{
-		Message: "both uptime and downtime are defined",
-		Value:   value,
-	}
+func (i *IncompatibleValuesError) Error() string {
+	return fmt.Sprintf("%s: %s", i.ErrorType, i.Message)
 }
 
-// NewTimeAndPeriodError returns an error when both a time and a period is defined.
-func NewTimeAndPeriodError(value any) error {
-	return &Error{
-		Message: "both a time and a period is defined",
-		Value:   value,
-	}
+func NewIncompatibleValuesError(errorType string, msg string) error {
+	return &IncompatibleValuesError{errorType, msg}
 }
 
-// NewInvalidDownscaleReplicasError returns an error when the downscale replicas value is invalid.
-func NewInvalidDownscaleReplicasError(value any) error {
-	return &Error{
-		Message: "downscale replicas value is invalid",
-		Value:   value,
-	}
+type MissingConfigurationError struct {
+	ErrorType string
+	Message   string
 }
 
-// NewValueNotSetError returns an error when no layer implements this value.
-func NewValueNotSetError(value any) error {
-	return &Error{
-		Message: "no layer implements this value",
-		Value:   value,
-	}
+func (m *MissingConfigurationError) Error() string {
+	return fmt.Sprintf("%s: %s", m.ErrorType, m.Message)
 }
 
-// NewAnnotationsNotSetError returns an error when the annotation isn't set on workload.
-func NewAnnotationsNotSetError(value any) error {
-	return &Error{
-		Message: "annotation isn't set on workload",
-		Value:   value,
-	}
+func NewMissingConfigurationError(errorType string, msg string) error {
+	return &IncompatibleValuesError{errorType, msg}
 }
+
+// Defined error types with recognizable error code --> evaluate error codes for documentation
+var (
+	ForceUpAndDowntimeError  = "ForceUpAndDowntime #Errorcode 1"
+	UpAndDowntime            = "UpAndDowntimeError #Errorcode 2"
+	TimeAndPeriod            = "TimeAndPeriodError #Errorcode 3"
+	InvalidDownscaleReplicas = "InvalidDownscaleReplicasError #Error 4"
+	ValueNotSet              = "ValueNotSet #Errorcode 4"
+	AnnotationNotSet         = "AnnotationNotSet #Errorcode 5"
+)
 
 //
 //
@@ -89,13 +73,6 @@ func NewInvalidRelativeTimespanError(value any) error {
 func NewTimeOfDateOutOfRangeError(value any) error {
 	return &Error{
 		Message: "the time of day has fields that are out of range",
+		Value:   value,
 	}
 }
-
-//
-//
-//
-
-///
-///
-///
