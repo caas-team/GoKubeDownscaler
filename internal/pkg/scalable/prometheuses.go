@@ -1,4 +1,3 @@
-//nolint:dupl // this code is very similar for every resource, but its not really abstractable to avoid more duplication
 package scalable
 
 import (

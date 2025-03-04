@@ -1,3 +1,4 @@
+// nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (

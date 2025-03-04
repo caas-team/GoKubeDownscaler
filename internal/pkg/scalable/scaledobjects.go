@@ -1,3 +1,4 @@
+// nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -14,7 +15,7 @@ const (
 	annotationKedaPausedReplicas = "autoscaling.keda.sh/paused-replicas"
 )
 
-// getScaledObjects is the getResourceFunc for Keda ScaledObjects.
+// getScaledObjects is the getResourceFunc for Keda ScaledObjects. //nolint:dupl.
 func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	scaledobjects, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
