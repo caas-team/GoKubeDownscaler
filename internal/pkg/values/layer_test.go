@@ -200,7 +200,7 @@ func TestLayer_getCurrentScaling(t *testing.T) {
 	}
 }
 
-func TestLayer_getForcScaling(t *testing.T) {
+func TestLayer_getForceScaling(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
