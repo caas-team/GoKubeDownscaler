@@ -46,7 +46,7 @@ func NewClient(kubeconfig string, dryRun bool) (client, error) {
 
 	config, err := getConfig(kubeconfig)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get config for Kubernetes: %w", err)
+		return kubeclient, NewKubernetesError("NewClient", fmt.Sprintf("failed to get Kubernetes config: %w", err))
 	}
 
 	// set qps and burst rate limiting options. See https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1/
@@ -55,27 +55,27 @@ func NewClient(kubeconfig string, dryRun bool) (client, error) {
 
 	clientsets.Kubernetes, err = kubernetes.NewForConfig(config)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get clientset for Kubernetes resources: %w", err)
+		return kubeclient, NewKubernetesError("NewClient", fmt.Sprintf("failed to get clientset for Kubernetes resources: %w", err))
 	}
 
 	clientsets.Keda, err = keda.NewForConfig(config)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get clientset for keda resources: %w", err)
+		return kubeclient, NewKubernetesError("NewClient", fmt.Sprintf("failed to get clientset for keda resources: %w", err))
 	}
 
 	clientsets.Argo, err = argo.NewForConfig(config)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get clientset for argo resources: %w", err)
+		return kubeclient, NewKubernetesError("NewClient", fmt.Sprintf("failed to get clientset for argo resources: %w", err))
 	}
 
 	clientsets.Zalando, err = zalando.NewForConfig(config)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get clientset for zalando resources: %w", err)
+		return kubeclient, NewKubernetesError("NewClient", fmt.Sprintf("failed to get clientset for zalando resources: %w", err))
 	}
 
 	clientsets.Monitoring, err = monitoring.NewForConfig(config)
 	if err != nil {
-		return kubeclient, fmt.Errorf("failed to get clientset for monitoring resources: %w", err)
+		return kubeclient, NewKubernetesError("NewClient", fmt.Sprintf("failed to get clientset for monitoring resources: %w", err))
 	}
 
 	kubeclient.clientsets = &clientsets
@@ -93,7 +93,7 @@ type client struct {
 func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
 	ns, err := c.clientsets.Kubernetes.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get namespace: %w", err)
+		return nil, NewNamespaceError("GetNamespaceAnnotations", fmt.Sprintf("failed to get namespace: %w", err))
 	}
 
 	return ns.Annotations, nil
@@ -116,7 +116,7 @@ func (c client) GetWorkloads(namespaces, resourceTypes []string, ctx context.Con
 
 			workloads, err := scalable.GetWorkloads(strings.ToLower(resourceType), namespace, c.clientsets, ctx)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get workloads: %w", err)
+				return nil, NewWorkloadError("GetWorkloads", fmt.Sprintf("failed to get workloads: %w", err))
 			}
 
 			results = append(results, workloads...)
@@ -130,7 +130,7 @@ func (c client) GetWorkloads(namespaces, resourceTypes []string, ctx context.Con
 func (c client) DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error {
 	err := workload.ScaleDown(replicas)
 	if err != nil {
-		return fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
+		return NewWorkloadError("DownscaleWorkload", fmt.Sprintf("failed to set the workload into a scaled down state: %w", err))
 	}
 
 	if c.dryRun {
@@ -145,7 +145,7 @@ func (c client) DownscaleWorkload(replicas int32, workload scalable.Workload, ct
 
 	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
-		return fmt.Errorf("failed to update the workload: %w", err)
+		return NewWorkloadError("DownscaleWorkload", fmt.Sprintf("failed to update the workload: %w", err))
 	}
 
 	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
@@ -157,7 +157,7 @@ func (c client) DownscaleWorkload(replicas int32, workload scalable.Workload, ct
 func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
 	err := workload.ScaleUp()
 	if err != nil {
-		return fmt.Errorf("failed to set the workload into a scaled up state: %w", err)
+		return NewWorkloadError("UpscaleWorkload", fmt.Sprintf("failed to set the workload into a scaled up state: %w", err))
 	}
 
 	if c.dryRun {
@@ -172,7 +172,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 
 	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
-		return fmt.Errorf("failed to update the workload: %w", err)
+		return NewWorkloadError("UpscaleWorkload", fmt.Sprintf("failed to update the workload: %w", err))
 	}
 
 	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
@@ -207,7 +207,7 @@ func (c client) addWorkloadEvent(eventType, reason, identifier, message string, 
 
 		_, err := eventsClient.Update(ctx, event, metav1.UpdateOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to update event: %w", err)
+			return NewEventError("addWorkloadEvent", fmt.Sprintf("failed to update event: %w", err))
 		}
 
 		return nil
@@ -235,7 +235,7 @@ func (c client) addWorkloadEvent(eventType, reason, identifier, message string, 
 		Count:          1,
 	}, metav1.CreateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to create event: %w", err)
+		return NewEventError("addWorkloadEvent", fmt.Sprintf("failed to create event: %w", err))
 	}
 
 	return nil
