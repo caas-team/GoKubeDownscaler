@@ -1,3 +1,4 @@
+//nolint:dupl // this code is very similar for every resource, but its not really abstractable to avoid more duplication
 package scalable
 
 import (
@@ -17,7 +18,7 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 
 	results := make([]Workload, 0, len(prometheuses.Items))
 	for i := range prometheuses.Items {
-		results = append(results, &replicaScaledWorkload{&prometheus{prometheuses.Items[i]}})
+		results = append(results, &replicaScaledWorkload{&prometheus{&prometheuses.Items[i]}})
 	}
 
 	return results, nil
