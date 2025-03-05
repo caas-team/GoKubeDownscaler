@@ -56,9 +56,9 @@ This means that you will not have to juggle with multiple timestamp formats.
 
 See the [breaking changes entry](#rfc3339-timestamps) for more information.
 
-### Layers
+### Scopes
 
-The scaling [values](ref:docs-values) are now ordered into [layers](ref:docs-layers).
+The scaling [values](ref:docs-values) are now ordered into [scopes](ref:docs-scopes).
 This makes it easier to understand where the values are taken from.
 
 See the [breaking changes entry](#changed-value-hierarchy) for more information.
@@ -120,12 +120,12 @@ See the [features entry](#uniform-timestamps) for more information.
 
 ### Changed Value Hierarchy
 
-The scaling [values](ref:docs-values) are now ordered into [layers](ref:docs-layers).
+The scaling [values](ref:docs-values) are now ordered into [scopes](ref:docs-scopes).
 
 This should not break anything.
 This only causes a problem if there was a weird quirk in the way the py-kube-downscaler got its scaling attributes from you relied on.
 
-See the [features entry](#layers) for more information.
+See the [features entry](#scopes) for more information.
 
 ### Stricter Exclusion
 
