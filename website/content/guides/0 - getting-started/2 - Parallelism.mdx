@@ -14,9 +14,9 @@ the same time.
 
 To enable parallelism the Downscaler should be allowed to expand its CPU usage dynamically.
 This can be achieved by setting the CPU limit to a multiple of available cores.
-For example `2000m` enables using up to 2 VCPUs, `3000m` up to 3 VCPUs, `4000m` up to 4 VCPUs and so forth.
 
-The number of workloads that can be processed in parallel increases as the number of vCPUs that can be used increases.
+For example `2000m` enables using up to 2 VCPUs, `3000m` up to 3 VCPUs, `4000m` up to 4 VCPUs and so forth; the number
+of workloads that can be processed in parallel increases as the number of vCPUs that can be used increases.
 
 The default configuration on the Helm Chart allows the Downscaler to use up to 2 full vCPUs:
 
