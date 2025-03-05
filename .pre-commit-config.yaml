@@ -4,6 +4,7 @@ repos:
     rev: v5.0.0
     hooks:
       - id: end-of-file-fixer
+        exclude: '\.json$'
       - id: trailing-whitespace
       - id: no-commit-to-branch
         args: [--branch, main]
