@@ -28,8 +28,8 @@ const (
 	envDowntime        = "DEFAULT_DOWNTIME"
 )
 
-// ParseLayerFlags sets all flags corresponding to layer values to fill into l.
-func (l *Layer) ParseLayerFlags() {
+// ParseScopeFlags sets all flags corresponding to scope values to fill into l.
+func (l *Scope) ParseScopeFlags() {
 	flag.Var(
 		&l.DownscalePeriod,
 		"downscale-period",
@@ -57,7 +57,7 @@ func (l *Layer) ParseLayerFlags() {
 	flag.Var(
 		&l.Exclude,
 		"explicit-include",
-		"sets exclude on cli layer to true, makes it so namespaces or deployments have to specify downscaler/exclude=false (default: false)",
+		"sets exclude on cli scope to true, makes it so namespaces or deployments have to specify downscaler/exclude=false (default: false)",
 	)
 	flag.Var(
 		(*util.Int32Value)(&l.DownscaleReplicas),
@@ -71,8 +71,8 @@ func (l *Layer) ParseLayerFlags() {
 	)
 }
 
-// GetLayerFromEnv fills l with all values from environment variables and checks for compatibility.
-func (l *Layer) GetLayerFromEnv() error {
+// GetScopeFromEnv fills l with all values from environment variables and checks for compatibility.
+func (l *Scope) GetScopeFromEnv() error {
 	err := util.GetEnvValue(envUpscalePeriod, &l.UpscalePeriod)
 	if err != nil {
 		return fmt.Errorf("error while getting %q environment variable: %w", envUpscalePeriod, err)
@@ -100,8 +100,8 @@ func (l *Layer) GetLayerFromEnv() error {
 	return nil
 }
 
-// GetLayerFromAnnotations fills l with all values from the annotations and checks for compatibility.
-func (l *Layer) GetLayerFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclop // it is a big function and we can refactor it a bit but it should be fine for now
+// GetScopeFromAnnotations fills l with all values from the annotations and checks for compatibility.
+func (l *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclop // it is a big function and we can refactor it a bit but it should be fine for now
 	annotations map[string]string,
 	logEvent util.ResourceLogger,
 	ctx context.Context,
