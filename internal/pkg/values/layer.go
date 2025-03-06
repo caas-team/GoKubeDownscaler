@@ -65,7 +65,7 @@ type Layer struct {
 	DownTime          timeSpans     // within these timespans workloads will be scaled down, outside of them they will be scaled up
 	UpscalePeriod     timeSpans     // periods to upscale in
 	UpTime            timeSpans     // within these timespans workloads will be scaled up, outside of them they will be scaled down
-	Exclude           timeSpans     // if workload should be excluded
+	Exclude           timeSpans     // defines when the workload should be excluded
 	ExcludeUntil      *time.Time    // until when the workload should be excluded
 	ForceUptime       timeSpans     // force workload into an uptime state when in one of the timespans
 	ForceDowntime     timeSpans     // force workload into a downtime state when in one of the timespans
@@ -222,24 +222,31 @@ func (l Layers) GetDownscaleReplicas() (int32, error) {
 
 // GetExcluded checks if the layers exclude scaling.
 func (l Layers) GetExcluded() bool {
-	var exclude timeSpans
-	var excludeUntil time.Time
-
 	for _, layer := range l {
-		if layer.Exclude != nil {
-			exclude = layer.Exclude
-			break
+		if layer.Exclude == nil {
+			continue
 		}
+
+		if layer.Exclude.inTimeSpans() {
+			return true
+		}
+
+		break
 	}
 
 	for _, layer := range l {
-		if layer.ExcludeUntil != nil {
-			excludeUntil = *layer.ExcludeUntil
-			break
+		if layer.ExcludeUntil == nil {
+			continue
 		}
+
+		if layer.ExcludeUntil.After(time.Now()) {
+			return true
+		}
+
+		break
 	}
 
-	return exclude.inTimeSpans() || excludeUntil.After(time.Now())
+	return false
 }
 
 // IsInGracePeriod gets the grace period of the uppermost layer that has it set.
