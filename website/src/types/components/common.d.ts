@@ -4,4 +4,5 @@ interface GithubLabelProps {
 
 interface ExcalidrawWrapperProps {
   data: unknown;
+  className: string;
 }

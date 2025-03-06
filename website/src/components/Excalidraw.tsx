@@ -5,6 +5,7 @@ import { useColorMode } from "@docusaurus/theme-common";
 
 export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
   data,
+  className,
 }) => {
   const svg = useRef<HTMLDivElement>(null);
   const { colorMode } = useColorMode();
@@ -35,5 +36,5 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
     };
   }, [data, colorMode, svg]);
 
-  return <div className="select-none" ref={svg} />;
+  return <div className={`select-none ${className}`} ref={svg} />;
 };

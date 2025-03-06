@@ -4,6 +4,10 @@ id: website
 globalReference: guides-developing-website
 ---
 
+import { GithubLabel } from "/src/components/GithubLabel.tsx";
+import { ExcalidrawWrapper } from "/src/components/Excalidraw.tsx";
+import exampleDiagram from "./assets/example.excalidraw";
+
 # Website
 
 This section covers how to start developing on the website of the downscaler.
@@ -187,7 +191,7 @@ after which you can use the reference to link to the document from any other:
 Some [example](ref:docs-example) text.
 ```
 
-:::info
+:::note
 
 If you added the link reference in the mdx file
 before adding the `globalReference` parameter to the frontmatter
@@ -196,6 +200,88 @@ re-save your file to initiate a rebuild or
 [clear the docusaurus cache](#clear-docusaurus-cache).
 
 :::
+
+### Assets
+
+Assets like PNGs, SVGs, [Excalidraw](#excalidraw-wrapper) or other files can be useful to have in documentation.
+
+Assets should be placed in a `assets` folder in the folder in which the asset is being used.
+
+#### Images
+
+```mdx
+![Alt Text](./assets/example.png)
+```
+
+#### SVGs
+
+```mdx
+{/* imports should be at the top of the file */}
+import ExampleSvg from "./assets/example.svg";
+
+<ExampleSvg />;
+```
+
+#### Files
+
+```mdx
+[Click to Download](./assets/example.txt)
+```
+
+This will create a hyperlink with the given text and when clicked this will download or open the file (depending on filetype).
+
+#### Excalidraw
+
+For embedding `.excalidraw` files you need to use [our custom Excalidraw wrapper component](#excalidraw-wrapper).
+
+### Additional Components
+
+We use mdx to be able to spice up the plain markdown a bit.
+For this purpose we have some custom additional components.
+
+#### Github Label
+
+The Github label component is very useful when talking about the Github Labels for the GoKubeDownscaler project.
+
+They can be any of [the GoKubeDownscalers Labels](https://github.com/caas-team/GoKubeDownscaler/labels)
+and look just like the labels on Github.
+When clicked on they send the user to a view
+where they can see all issues and pull requests with that label.
+
+Usage:
+
+```mdx
+{/* imports should be at the top of the file */}
+import { GithubLabel } from "/src/components/GithubLabel.tsx";
+
+The <GithubLabel label="question" /> label.
+```
+
+Examples:
+
+<GithubLabel label="enhancement" /> <GithubLabel label="bug" />
+<GithubLabel label="help wanted" /> <GithubLabel label="question" />
+
+#### Excalidraw Wrapper
+
+The Excalidraw wrapper component is useful when you need to explain something more complex with a diagram.
+
+The Excalidraw wrapper can render any excalidraw file.
+You can create and edit these either using [their website](https://excalidraw.com/) or an extension for your IDE.
+
+Usage:
+
+```mdx
+{/* imports should be at the top of the file */}
+import { ExcalidrawWrapper } from "/src/components/Excalidraw.tsx";
+import exampleDiagram from "./assets/example.excalidraw";
+
+<ExcalidrawWrapper data={exampleDiagram} className="w-1/3" />
+```
+
+Example:
+
+<ExcalidrawWrapper data={exampleDiagram} className="w-1/3" />
 
 ### Best Practices
 
@@ -206,6 +292,20 @@ These are a collection of best practices you should be aware of:
 - avoid too small headings (keep it under h5 and try to avoid h4)
 - don't nest sidebar categories (no categories in a category in a category)
 - use [title case](https://en.wikipedia.org/wiki/Capitalization#Title_case) for headings
+- only put one sentence per line (a sentence can stretch across multiple lines)
+- try to split sentences so that when read in plain text it's easy to follow
+- the parts of split sentences should also all roughly be the same length
+
+:::info
+
+Some of these best practices and even more not listed here are enforced by some linters.
+It is best if you have [pre commit installed](ref:guides-developing#setting-up-pre-commit)
+so that it will tell you or fix the problems automatically.
+
+It might also be worth looking into a markdown lint extension that supports MDX for your IDE.
+It will tell you what you can improve right in the editor itself.
+
+:::
 
 ## Troubleshooting
 
