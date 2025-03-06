@@ -1,13 +1,13 @@
-import React, { useEffect, useRef } from "react";
-import { exportToSvg } from "@excalidraw/excalidraw";
+import React, { useEffect, useState } from "react";
 import { ImportedDataState } from "@excalidraw/excalidraw/types/data/types";
 import { useColorMode } from "@docusaurus/theme-common";
+import { exportToSvg } from "@excalidraw/excalidraw";
 
-export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
+export const ExcalidrawRenderer: React.FC<ExcalidrawRendererProps> = ({
   data,
   className,
 }) => {
-  const svg = useRef<HTMLDivElement>(null);
+  const [svgElement, setSvgElement] = useState<SVGSVGElement | null>(null);
   const { colorMode } = useColorMode();
 
   useEffect(() => {
@@ -15,7 +15,7 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
       const result = await exportToSvg({
         ...(data as Required<ImportedDataState>),
         appState: {
-          exportWithDarkMode: colorMode == "dark",
+          exportWithDarkMode: colorMode === "dark",
           exportBackground: false,
         },
         exportPadding: 30,
@@ -24,17 +24,16 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
       result.removeAttribute("height");
       result.removeAttribute("width");
 
-      if (!svg.current) return;
-      svg.current.appendChild(result);
+      setSvgElement(result);
     };
     generateStaticSvg();
+  }, [data, colorMode]);
 
-    return () => {
-      if (svg.current) {
-        svg.current.removeChild(svg.current.firstChild);
-      }
-    };
-  }, [data, colorMode, svg]);
-
-  return <div className={`select-none ${className}`} ref={svg} />;
+  if (!svgElement) return <>Loading...</>;
+  return (
+    <div
+      className={`select-none ${className}`}
+      dangerouslySetInnerHTML={{ __html: svgElement.outerHTML }}
+    />
+  );
 };

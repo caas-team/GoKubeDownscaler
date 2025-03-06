@@ -2,7 +2,7 @@ interface GithubLabelProps {
   label: string;
 }
 
-interface ExcalidrawWrapperProps {
+interface ExcalidrawRendererProps {
   data: unknown;
   className: string;
 }
