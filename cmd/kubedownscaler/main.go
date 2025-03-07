@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/client-go/tools/leaderelection"
 )
 
@@ -164,7 +166,7 @@ func startScanning(
 			go func(workload scalable.Workload) {
 				defer waitGroup.Done()
 
-				err = attemptScan(client, ctx, layerCli, layerEnv, config, workload)
+				err = attemptScan(client, ctx, layerDefault, layerCli, layerEnv, config, workload)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
@@ -190,14 +192,14 @@ func startScanning(
 func attemptScan(
 	client kubernetes.Client,
 	ctx context.Context,
-	layerCli, layerEnv *values.Layer,
+	layerDefault, layerCli, layerEnv *values.Layer,
 	config *util.RuntimeConfiguration,
 	workload scalable.Workload,
 ) error {
 	slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	for retry := range config.MaxRetriesOnConflict + 1 {
-		err := scanWorkload(workload, client, ctx, layerCli, layerEnv, config)
+		err := scanWorkload(workload, client, ctx, layerDefault, layerCli, layerEnv, config)
 		if err != nil {
 			if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
 				return fmt.Errorf("failed to scan workload: %w", err)
