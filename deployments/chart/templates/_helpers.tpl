@@ -77,10 +77,7 @@ Create defined permissions for roles
   verbs:
     - get
     - create
-    - watch
-    - list
     - update
-    - patch
 {{- range $resource := .Values.includedResources }}
 {{- if eq $resource "deployments" }}
 - apiGroups:
