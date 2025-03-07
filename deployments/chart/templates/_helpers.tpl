@@ -70,7 +70,6 @@ Create defined permissions for roles
     - namespaces
   verbs:
     - get
-    - list
 - apiGroups:
     - ""
   resources:
