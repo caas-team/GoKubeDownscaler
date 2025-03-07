@@ -19,12 +19,14 @@
     "@docusaurus/preset-classic": "3.7.0",
     "@easyops-cn/docusaurus-search-local": "^0.48.5",
     "@eslint/compat": "^1.2.4",
+    "@excalidraw/excalidraw": "^0.17.6",
     "@mdx-js/react": "^3.0.0",
     "@tailwindcss/postcss": "^4.0.6",
     "clsx": "^2.0.0",
     "prism-react-renderer": "^2.3.0",
-    "react": "19.0.0",
-    "react-dom": "19.0.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "roughjs": "^4.6.6"
   },
   "devDependencies": {
     "@docusaurus/eslint-plugin": "3.7.0",
@@ -35,6 +37,7 @@
     "@typescript-eslint/parser": "^8.18.0",
     "eslint": "^9.17.0",
     "eslint-plugin-markdown": "^5.1.0",
+    "json-loader": "^0.5.7",
     "postcss": "^8.5.2",
     "tailwindcss": "^4.0.6",
     "typescript": "~5.7.3"
