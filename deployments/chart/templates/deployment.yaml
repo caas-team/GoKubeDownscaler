@@ -27,7 +27,7 @@ spec:
           {{- if eq (include "go-kube-downscaler.leaderElection" .) "true" }}
           - --leader-election
           {{- end }}
-          {{- if .Values.constrainedDownscaler }}
+          {{- if .Values.constrainedNamespaces }}
           - --namespace={{ join "," .Values.constrainedNamespaces }}
           {{- end }}
           envFrom:

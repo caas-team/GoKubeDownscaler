@@ -1,7 +1,4 @@
-{{- if .Values.constrainedDownscaler }}
-{{- if not .Values.constrainedNamespaces }}
-{{- fail "Error: 'constrainedNamespaces' must not be empty or null when 'constrainedDownscaler' is true." }}
-{{- end }}
+{{- if .Values.constrainedNamespaces }}
 
 {{- range $namespace := .Values.constrainedNamespaces }}
 apiVersion: rbac.authorization.k8s.io/v1

@@ -24,7 +24,6 @@ includedResources:
 fullnameOverride: ""
 nameOverride: ""
 
-constrainedDownscaler: false
 constrainedNamespaces: []
 
 serviceAccount:
