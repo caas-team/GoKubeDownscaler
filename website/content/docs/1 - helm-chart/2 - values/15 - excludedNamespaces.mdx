@@ -6,7 +6,7 @@ globalReference: docs-helm-excluded-namespaces
 
 # excludedNamespaces
 
-The `excludedNamespaces` value is a list of namespaces that are supposed to be excluded from the downscaling process of the GoKubeDownscaler.
+The `excludedNamespaces` value is a list of namespaces that will be excluded from being downscaled by the GoKubeDownscaler.
 
 :::info
 
@@ -20,7 +20,9 @@ excludedNamespaces:
 
 :::
 
-All workloads in any namespace listed in this field will not be scaled even if there is a fitting annotation present.
+All workloads in any of the given namespaces will not be scaled.
+
+:::tip Example
 
 So adding a namespace like this:
 
@@ -31,4 +33,8 @@ excludedNamespaces:
   - namespace1
 ```
 
-will result in all workloads in the namespaces kube-downscaler, kube-system and namespace1 not being scaled down under any circumstance.
+Will result in all workloads in the namespaces `kube-downscaler`, `kube-system` and `namespace1` not being scaled down under any circumstance.
+
+:::
+
+For more information please see [the documentation on the configuration](ref:docs-runtime-configuration#exclude-namespaces).
