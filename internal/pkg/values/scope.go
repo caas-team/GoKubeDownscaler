@@ -15,7 +15,7 @@ var (
 	errUpAndDownTime            = errors.New("error: both uptime and downtime are defined")
 	errTimeAndPeriod            = errors.New("error: both a time and a period is defined")
 	errInvalidDownscaleReplicas = errors.New("error: downscale replicas value is invalid")
-	errValueNotSet              = errors.New("error: no layer implements this value")
+	errValueNotSet              = errors.New("error: no scope implements this value")
 	errAnnotationNotSet         = errors.New("error: annotation isn't set on workload")
 )
 
@@ -23,42 +23,42 @@ var (
 type Scaling int
 
 const (
-	ScalingNone   Scaling = iota // no scaling set in this layer, go to next layer
+	ScalingNone   Scaling = iota // no scaling set in this scope, go to next scope
 	ScalingIgnore                // not scaling
 	ScalingDown                  // scaling down
 	ScalingUp                    // scaling up
 )
 
-// LayerID is an enum that describes the current Layer.
-type LayerID int
+// ScopeID is an enum that describes the current Scope.
+type ScopeID int
 
 const (
-	LayerWorkload    LayerID = iota // identifies the layer present in the workload
-	LayerNamespace                  // identifies the layer present in the namespace
-	LayerCli                        // identifies the layer defined in the CLI
-	LayerEnvironment                // identifies the layer defined in the environment variables
+	ScopeWorkload    ScopeID = iota // identifies the scope present in the workload
+	ScopeNamespace                  // identifies the scope present in the namespace
+	ScopeCli                        // identifies the scope defined in the CLI
+	ScopeEnvironment                // identifies the scope defined in the environment variables
 )
 
-// String gets the string representation of the LayerID.
-func (l LayerID) String() string {
-	return map[LayerID]string{
-		LayerWorkload:    "LayerWorkload",
-		LayerNamespace:   "LayerNamespace",
-		LayerCli:         "LayerCli",
-		LayerEnvironment: "LayerEnvironment",
-	}[l]
+// String gets the string representation of the ScopeID.
+func (s ScopeID) String() string {
+	return map[ScopeID]string{
+		ScopeWorkload:    "ScopeWorkload",
+		ScopeNamespace:   "ScopeNamespace",
+		ScopeCli:         "ScopeCli",
+		ScopeEnvironment: "ScopeEnvironment",
+	}[s]
 }
 
-// NewLayer gets a new layer with the default values.
-func NewLayer() Layer {
-	return Layer{
+// NewScope gets a new scope with the default values.
+func NewScope() Scope {
+	return Scope{
 		DownscaleReplicas: util.Undefined,
 		GracePeriod:       util.Undefined,
 	}
 }
 
-// Layer represents a value Layer.
-type Layer struct {
+// Scope represents a value Scope.
+type Scope struct {
 	DownscalePeriod   timeSpans     // periods to downscale in
 	DownTime          timeSpans     // within these timespans workloads will be scaled down, outside of them they will be scaled up
 	UpscalePeriod     timeSpans     // periods to upscale in
@@ -72,12 +72,12 @@ type Layer struct {
 }
 
 // isScalingExcluded checks if scaling is excluded, nil represents a not set state.
-func (l *Layer) isScalingExcluded() *bool {
-	if l.Exclude.isSet {
-		return &l.Exclude.value
+func (s *Scope) isScalingExcluded() *bool {
+	if s.Exclude.isSet {
+		return &s.Exclude.value
 	}
 
-	if ok := l.ExcludeUntil.After(time.Now()); ok {
+	if ok := s.ExcludeUntil.After(time.Now()); ok {
 		return &ok
 	}
 
@@ -85,25 +85,25 @@ func (l *Layer) isScalingExcluded() *bool {
 }
 
 // CheckForIncompatibleFields checks if there are incompatible fields.
-func (l *Layer) CheckForIncompatibleFields() error { //nolint: cyclop // this is still fine to read, we could defnitly consider refactoring this in the future
+func (s *Scope) CheckForIncompatibleFields() error { //nolint: cyclop // this is still fine to read, we could defnitly consider refactoring this in the future
 	// force down and uptime
-	if l.ForceDowntime.isSet &&
-		l.ForceDowntime.value &&
-		l.ForceUptime.isSet &&
-		l.ForceUptime.value {
+	if s.ForceDowntime.isSet &&
+		s.ForceDowntime.value &&
+		s.ForceUptime.isSet &&
+		s.ForceUptime.value {
 		return errForceUpAndDownTime
 	}
 	// downscale replicas invalid
-	if l.DownscaleReplicas != util.Undefined && l.DownscaleReplicas < 0 {
+	if s.DownscaleReplicas != util.Undefined && s.DownscaleReplicas < 0 {
 		return errInvalidDownscaleReplicas
 	}
 	// up- and downtime
-	if l.UpTime != nil && l.DownTime != nil {
+	if s.UpTime != nil && s.DownTime != nil {
 		return errUpAndDownTime
 	}
 	// *time and *period
-	if (l.UpTime != nil || l.DownTime != nil) &&
-		(l.UpscalePeriod != nil || l.DownscalePeriod != nil) {
+	if (s.UpTime != nil || s.DownTime != nil) &&
+		(s.UpscalePeriod != nil || s.DownscalePeriod != nil) {
 		return errTimeAndPeriod
 	}
 
@@ -111,18 +111,18 @@ func (l *Layer) CheckForIncompatibleFields() error { //nolint: cyclop // this is
 }
 
 // getCurrentScaling gets the current scaling, not checking for incompatibility.
-func (l *Layer) getCurrentScaling() Scaling {
+func (s *Scope) getCurrentScaling() Scaling {
 	// check times
-	if l.DownTime != nil {
-		if l.DownTime.inTimeSpans() {
+	if s.DownTime != nil {
+		if s.DownTime.inTimeSpans() {
 			return ScalingDown
 		}
 
 		return ScalingUp
 	}
 
-	if l.UpTime != nil {
-		if l.UpTime.inTimeSpans() {
+	if s.UpTime != nil {
+		if s.UpTime.inTimeSpans() {
 			return ScalingUp
 		}
 
@@ -130,12 +130,12 @@ func (l *Layer) getCurrentScaling() Scaling {
 	}
 
 	// check periods
-	if l.DownscalePeriod != nil || l.UpscalePeriod != nil {
-		if l.DownscalePeriod.inTimeSpans() {
+	if s.DownscalePeriod != nil || s.UpscalePeriod != nil {
+		if s.DownscalePeriod.inTimeSpans() {
 			return ScalingDown
 		}
 
-		if l.UpscalePeriod.inTimeSpans() {
+		if s.UpscalePeriod.inTimeSpans() {
 			return ScalingUp
 		}
 
@@ -145,49 +145,49 @@ func (l *Layer) getCurrentScaling() Scaling {
 	return ScalingNone
 }
 
-// getForcedScaling checks if the layer has forced scaling enabled and returns the matching scaling.
-func (l *Layer) getForcedScaling() Scaling {
+// getForcedScaling checks if the scope has forced scaling enabled and returns the matching scaling.
+func (s *Scope) getForcedScaling() Scaling {
 	var forcedScaling Scaling
 
-	if l.ForceDowntime.isSet && l.ForceDowntime.value {
+	if s.ForceDowntime.isSet && s.ForceDowntime.value {
 		forcedScaling = ScalingDown
 	}
 
-	if l.ForceUptime.isSet && l.ForceUptime.value {
+	if s.ForceUptime.isSet && s.ForceUptime.value {
 		forcedScaling = ScalingUp
 	}
 
 	return forcedScaling
 }
 
-type Layers [4]*Layer
+type Scopes [4]*Scope
 
-// GetCurrentScaling gets the current scaling of the first layer that implements scaling.
-func (l Layers) GetCurrentScaling() Scaling {
+// GetCurrentScaling gets the current scaling of the first scope that implements scaling.
+func (s Scopes) GetCurrentScaling() Scaling {
 	// check for forced scaling
-	for _, layer := range l {
-		forcedScaling := layer.getForcedScaling()
+	for _, scope := range s {
+		forcedScaling := scope.getForcedScaling()
 		if forcedScaling != ScalingNone {
 			return forcedScaling
 		}
 	}
 	// check for time-based scaling
-	for _, layer := range l {
-		layerScaling := layer.getCurrentScaling()
-		if layerScaling == ScalingNone {
+	for _, scope := range s {
+		scopeScaling := scope.getCurrentScaling()
+		if scopeScaling == ScalingNone {
 			continue
 		}
 
-		return layerScaling
+		return scopeScaling
 	}
 
 	return ScalingNone
 }
 
-// GetDownscaleReplicas gets the downscale replicas of the first layer that implements downscale replicas.
-func (l Layers) GetDownscaleReplicas() (int32, error) {
-	for _, layer := range l {
-		downscaleReplicas := layer.DownscaleReplicas
+// GetDownscaleReplicas gets the downscale replicas of the first scope that implements downscale replicas.
+func (s Scopes) GetDownscaleReplicas() (int32, error) {
+	for _, scope := range s {
+		downscaleReplicas := scope.DownscaleReplicas
 		if downscaleReplicas == util.Undefined {
 			continue
 		}
@@ -198,10 +198,10 @@ func (l Layers) GetDownscaleReplicas() (int32, error) {
 	return 0, errValueNotSet
 }
 
-// GetExcluded checks if any layer excludes scaling.
-func (l Layers) GetExcluded() bool {
-	for _, layer := range l {
-		excluded := layer.isScalingExcluded()
+// GetExcluded checks if any scope excludes scaling.
+func (s Scopes) GetExcluded() bool {
+	for _, scope := range s {
+		excluded := scope.isScalingExcluded()
 		if excluded == nil {
 			continue
 		}
@@ -212,8 +212,8 @@ func (l Layers) GetExcluded() bool {
 	return false
 }
 
-// IsInGracePeriod gets the grace period of the uppermost layer that has it set.
-func (l Layers) IsInGracePeriod(
+// IsInGracePeriod gets the grace period of the uppermost scope that has it set.
+func (s Scopes) IsInGracePeriod(
 	timeAnnotation string,
 	workloadAnnotations map[string]string,
 	creationTime time.Time,
@@ -223,12 +223,12 @@ func (l Layers) IsInGracePeriod(
 	var err error
 	var gracePeriod time.Duration = util.Undefined
 
-	for _, layer := range l {
-		if layer.GracePeriod == util.Undefined {
+	for _, scope := range s {
+		if scope.GracePeriod == util.Undefined {
 			continue
 		}
 
-		gracePeriod = layer.GracePeriod
+		gracePeriod = scope.GracePeriod
 
 		break
 	}
@@ -258,18 +258,18 @@ func (l Layers) IsInGracePeriod(
 	return time.Now().Before(gracePeriodUntil), nil
 }
 
-// String gets the string representation of the layers.
-func (l Layers) String() string {
+// String gets the string representation of the scopes.
+func (s Scopes) String() string {
 	var builder strings.Builder
 
 	builder.WriteString("[")
 
-	for i, layer := range l {
+	for i, scope := range s {
 		if i > 0 {
 			builder.WriteString(" ")
 		}
 
-		fmt.Fprintf(&builder, "%s:%+v", LayerID(i), layer)
+		fmt.Fprintf(&builder, "%s:%+v", ScopeID(i), scope)
 	}
 
 	builder.WriteString("]")

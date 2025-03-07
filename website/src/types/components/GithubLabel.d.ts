@@ -1,3 +1,0 @@
-interface GithubLabelProps {
-  label: string;
-}

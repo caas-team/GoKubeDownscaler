@@ -34,8 +34,14 @@ jobs:
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
       - name: Autoupdate hooks
         run: pre-commit autoupdate
+      - name: Make temp pre-commit config
+        run: |
+          cp .pre-commit-config.yaml /tmp/pre-commit-config.yaml
+          yq -i '.fail_fast = false' /tmp/pre-commit-config.yaml
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: "--all-files --config /tmp/pre-commit-config.yaml"
         env:
           SKIP: "no-commit-to-branch" # if not skipped, will always fail on main
       - name: Push changes

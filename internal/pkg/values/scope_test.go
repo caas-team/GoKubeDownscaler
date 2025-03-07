@@ -7,17 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLayer_checkForIncompatibleFields(t *testing.T) {
+func TestScope_checkForIncompatibleFields(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name    string
-		layer   Layer
+		scope   Scope
 		wantErr bool
 	}{
 		{
 			name: "forced up and downtime",
-			layer: Layer{
+			scope: Scope{
 				ForceUptime:   triStateBool{isSet: true, value: true},
 				ForceDowntime: triStateBool{isSet: true, value: true},
 			},
@@ -25,14 +25,14 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 		},
 		{
 			name: "downscale replicas invalid",
-			layer: Layer{
+			scope: Scope{
 				DownscaleReplicas: -12,
 			},
 			wantErr: true,
 		},
 		{
 			name: "up- and downtime",
-			layer: Layer{
+			scope: Scope{
 				UpTime:   timeSpans{relativeTimeSpan{}},
 				DownTime: timeSpans{relativeTimeSpan{}},
 			},
@@ -40,7 +40,7 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 		},
 		{
 			name: "uptime an upscaleperiod",
-			layer: Layer{
+			scope: Scope{
 				UpTime:        timeSpans{relativeTimeSpan{}},
 				UpscalePeriod: timeSpans{relativeTimeSpan{}},
 			},
@@ -48,7 +48,7 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 		},
 		{
 			name: "uptime and downscaleperiod",
-			layer: Layer{
+			scope: Scope{
 				UpTime:          timeSpans{relativeTimeSpan{}},
 				DownscalePeriod: timeSpans{relativeTimeSpan{}},
 			},
@@ -56,7 +56,7 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 		},
 		{
 			name: "downtime and upscaleperiod",
-			layer: Layer{
+			scope: Scope{
 				DownTime:      timeSpans{relativeTimeSpan{}},
 				UpscalePeriod: timeSpans{relativeTimeSpan{}},
 			},
@@ -64,7 +64,7 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 		},
 		{
 			name: "downtime and downscaleperiod",
-			layer: Layer{
+			scope: Scope{
 				DownTime:        timeSpans{relativeTimeSpan{}},
 				DownscalePeriod: timeSpans{relativeTimeSpan{}},
 			},
@@ -72,7 +72,7 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 		},
 		{
 			name: "valid",
-			layer: Layer{
+			scope: Scope{
 				DownTime:        timeSpans{relativeTimeSpan{}},
 				DownscalePeriod: timeSpans{relativeTimeSpan{}},
 			},
@@ -84,7 +84,7 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := test.layer.CheckForIncompatibleFields()
+			err := test.scope.CheckForIncompatibleFields()
 			if test.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -94,7 +94,7 @@ func TestLayer_checkForIncompatibleFields(t *testing.T) {
 	}
 }
 
-func TestLayer_getCurrentScaling(t *testing.T) {
+func TestScope_getCurrentScaling(t *testing.T) {
 	t.Parallel()
 	var (
 		inTimeSpan = timeSpans{absoluteTimeSpan{
@@ -109,68 +109,68 @@ func TestLayer_getCurrentScaling(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		layer       Layer
+		scope       Scope
 		wantScaling Scaling
 	}{
 		{
 			name: "in downtime",
-			layer: Layer{
+			scope: Scope{
 				DownTime: inTimeSpan,
 			},
 			wantScaling: ScalingDown,
 		},
 		{
 			name: "out of downtime",
-			layer: Layer{
+			scope: Scope{
 				DownTime: outOfTimeSpan,
 			},
 			wantScaling: ScalingUp,
 		},
 		{
 			name: "in uptime",
-			layer: Layer{
+			scope: Scope{
 				UpTime: inTimeSpan,
 			},
 			wantScaling: ScalingUp,
 		},
 		{
 			name: "out of uptime",
-			layer: Layer{
+			scope: Scope{
 				UpTime: outOfTimeSpan,
 			},
 			wantScaling: ScalingDown,
 		},
 		{
 			name: "in downscaleperiod",
-			layer: Layer{
+			scope: Scope{
 				DownscalePeriod: inTimeSpan,
 			},
 			wantScaling: ScalingDown,
 		},
 		{
 			name: "out of downscaleperiod",
-			layer: Layer{
+			scope: Scope{
 				DownscalePeriod: outOfTimeSpan,
 			},
 			wantScaling: ScalingIgnore,
 		},
 		{
 			name: "in upscaleperiod",
-			layer: Layer{
+			scope: Scope{
 				UpscalePeriod: inTimeSpan,
 			},
 			wantScaling: ScalingUp,
 		},
 		{
 			name: "out of upscaleperiod",
-			layer: Layer{
+			scope: Scope{
 				UpscalePeriod: outOfTimeSpan,
 			},
 			wantScaling: ScalingIgnore,
 		},
 		{
 			name:        "none set",
-			layer:       Layer{},
+			scope:       Scope{},
 			wantScaling: ScalingNone,
 		},
 	}
@@ -179,7 +179,7 @@ func TestLayer_getCurrentScaling(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			scaling := test.layer.getCurrentScaling()
+			scaling := test.scope.getCurrentScaling()
 			assert.Equal(t, test.wantScaling, scaling)
 		})
 	}

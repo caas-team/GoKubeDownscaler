@@ -1,0 +1,71 @@
+---
+title: Scopes
+id: scopes
+globalReference: docs-scopes
+---
+
+import Excalidraw from "/src/components/Excalidraw/Excalidraw.tsx";
+import scopeDiagram from "./assets/scope-diagram.excalidraw";
+
+# Scopes
+
+Scopes hold configuration [values](ref:docs-values) which influence scaling.
+They define a uniform way of how to select which of the values gets used.
+
+## How It Works
+
+The resulting value is always the one set by the most specific scope that has set that value.
+
+This means [Workload Scope](#workload-scope) > [Namespace Scope](#namespace-scope) >
+[CLI Scope](#cli-scope) > [ENV Scope](#environment-scope) > [Default Scope](#default-scope).
+
+<Excalidraw data={scopeDiagram} />
+
+### Value Groups
+
+Some [values](ref:docs-values) within in a scope set/define very similar properties (e.g. [Force Downtime](ref:docs-values#force-downtime)
+and [Force Uptime](ref:docs-values#force-uptime); [Downscale Period](ref:docs-values#downscale-period),
+[Downtime](ref:docs-values#downtime), [Upscale Period](ref:docs-values#upscale-period) and [Uptime](ref:docs-values#uptime))
+
+These values are not all handled separately when choosing which scope to take the values from.
+Instead if one of them is set in a scope, the other values will be taken from the same scope.
+
+Incompatibilities between values normally only occur between values in the same value group and therefore the values on that same scope.
+
+## Workload Scope
+
+Defined by the [annotations](ref:docs-values) on the [workload](ref:docs-workload-types) every scan.
+
+The most specific scope.
+If a value gets set here it will be used for scaling.
+
+## Namespace Scope
+
+Defined by the [annotations](ref:docs-values) on the namespace every scan.
+
+Values set here can be overwritten by the [workload scope](#workload-scope)
+
+## CLI Scope
+
+Defined by the [cli arguments](ref:docs-arguments) at startup.
+
+Values set here can be overwritten by the [namespace](#namespace-scope) and [workload scope](#workload-scope)
+
+## Environment Scope
+
+Defined by the [environment variables](ref:docs-environment-variables) at startup.
+
+Values set here can be overwritten by the [cli](#cli-scope), the [namespace](#namespace-scope) and [workload scope](#workload-scope).
+
+:::info
+
+With the current setup it is not possible to update these values every scan,
+as the value of config maps is only passed in at creation of the deployment.
+
+:::
+
+## Default Scope
+
+Holds the defaults for all [values](ref:docs-values).
+
+Values set here can be overwritten by all other scopes.

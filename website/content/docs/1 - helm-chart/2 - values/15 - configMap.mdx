@@ -1,0 +1,47 @@
+---
+title: configMap
+id: configMap
+globalReference: docs-helm-config-map
+---
+
+# configMap
+
+The `configMap` value contains the two fields `name` and `extraConfig`:
+
+- `name` defines the name of the configmap for the GoKubeDownscaler.
+- `extraConfig` adds additional specified [environment variables](ref:docs-environment-variables) to the ConfigMap.
+
+:::info
+
+The default values for `configMap` are:
+
+```yaml
+configMap:
+  name: go-kube-downscaler
+  extraConfig: ""
+```
+
+:::
+
+By default the `extraConfig` field is empty.
+Appending a line will add the corresponding [environment variable](ref:docs-environment-variables) to the configMap.
+
+This then changes how the GoKubeDownscaler behaves.
+
+:::tip Example
+
+```yaml
+configMap:
+  name: go-kube-downscaler
+  extraConfig: |
+    EXCLUDE_DEPLOYMENTS: deployment1, deployment2
+```
+
+This will add the `EXCLUDE_DEPLOYMENTS` environment variable to the configMap.
+
+The given configuration will exclude the deployments with the name `deployment1` and `deployment2`
+from the scaling process of the GoKubeDownscaler even if they have a fitting annotation and are in a not excluded namespace.
+
+:::
+
+You can find a list of all possible environment variables on [our documentation page](ref:docs-environment-variables).

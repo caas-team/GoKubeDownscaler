@@ -1,0 +1,40 @@
+---
+title: excludedNamespaces
+id: excludedNamespaces
+globalReference: docs-helm-excluded-namespaces
+---
+
+# excludedNamespaces
+
+The `excludedNamespaces` value is a list of namespaces that will be excluded from being downscaled by the GoKubeDownscaler.
+
+:::info
+
+The default value for `excludedNamespaces` is:
+
+```yaml
+excludedNamespaces:
+  - kube-downscaler
+  - kube-system
+```
+
+:::
+
+All workloads in any of the given namespaces will not be scaled.
+
+:::tip Example
+
+So adding a namespace like this:
+
+```yaml
+excludedNamespaces:
+  - kube-downscaler
+  - kube-system
+  - namespace1
+```
+
+Will result in all workloads in the namespaces `kube-downscaler`, `kube-system` and `namespace1` not being scaled down under any circumstance.
+
+:::
+
+For more information please see [the documentation on the configuration](ref:docs-runtime-configuration#exclude-namespaces).

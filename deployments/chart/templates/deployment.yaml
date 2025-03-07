@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "go-kube-downscaler.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "go-kube-downscaler.labels" . | nindent 4 }}
 spec:
@@ -23,10 +24,10 @@ spec:
           {{- with .Values.arguments }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- if include "go-kube-downscaler.leaderElection" . }}
+          {{- if eq (include "go-kube-downscaler.leaderElection" .) "true" }}
           - --leader-election
           {{- end }}
-          {{- if .Values.constrainedDownscaler }}
+          {{- if .Values.constrainedNamespaces }}
           - --namespace={{ join "," .Values.constrainedNamespaces }}
           {{- end }}
           envFrom:

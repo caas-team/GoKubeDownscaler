@@ -10,6 +10,7 @@ import { repoRefRemarkPlugin } from "./plugins/repo-ref-plugin.cts";
 import { PluginOptions } from "@easyops-cn/docusaurus-search-local";
 import { PluginConfig } from "svgo/lib/svgo";
 import path from "path";
+import { confWebpack } from "./plugins/conf-webpack.cts";
 
 const config: Config = {
   title: "GoKubeDownscaler",
@@ -160,7 +161,7 @@ const config: Config = {
       } as Partial<PluginOptions>,
     ],
   ],
-  plugins: [tailwindPlugin],
+  plugins: [tailwindPlugin, confWebpack],
   markdown: {
     parseFrontMatter: globalRefParseFrontMatter,
   },
