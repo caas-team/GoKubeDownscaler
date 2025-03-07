@@ -100,6 +100,16 @@ now support [timespans](ref:docs-timespans) to dynamically do things.
 
 ## Breaking Changes
 
+### New Structure of values.yaml
+
+Some fields of the [values.yaml](repo:deployments/chart/values.yaml) file have been restructured.
+
+The following fields would have to be adjusted in an old values.yaml file from the py-kube-downscaler:
+
+- `constrainedDownscaler` is now not needed anymore
+- `configMapName` is now under `configMap.name`
+- `extraConfig` is now under `configMap.extraConfig`
+
 ### Incompatible Fields
 
 Some [values](ref:docs-values) are now incompatible with each other.
