@@ -17,12 +17,12 @@ https://inviter.co/kube-downscaler
 Briefly describe your question or issue.
 -->
 
-### Further details
+### Further Details
 
 <!--
 Provide any additional information, logs, or configurations that might help.
 -->
 
-### Other links/references
+### Other Links/references
 
 <!-- E.g. related Github issues/MRs or external references -->
