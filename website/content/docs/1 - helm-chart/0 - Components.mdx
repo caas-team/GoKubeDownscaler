@@ -26,11 +26,10 @@ It is used to store environment variables like `EXCLUDE_NAMESPACES`.
 ## Clusterrole
 
 The [clusterrole.yaml](repo:deployments/chart/templates/clusterrole.yaml) file creates a ClusterRole and a ClusterRoleBinding
-for the desired cluster if [`constrainedDownscaler`](ref:docs-helm-constrained-downscaler) is set to false.
+for the desired cluster if there are no namespaces defined in [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces).
 These allow the actions the GoKubeDownscaler needs to scale down workloads in a clusterwide context.
 
 ## Role
 
 The [role.yaml](repo:deployments/chart/templates/role.yaml) file creates a Role and a RoleBinding
-for every namespace listed in [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces)
-if [`constrainedDownscaler`](ref:docs-helm-constrained-downscaler) is set to true.
+for every namespace listed in [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces).

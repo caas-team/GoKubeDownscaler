@@ -8,8 +8,8 @@ globalReference: docs-helm-permissions
 
 The GoKubeDownscaler needs certain permissions to scale workloads.
 
-If [`constrainedDownscaler`](ref:docs-helm-constrained-downscaler) is set to true
-the Helm Chart will create roles for each namespace defined in [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces).
+If there are namespaces defined in [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces)
+the Helm Chart will create roles for each listed namespace.
 
 Otherwise it will always create a cluster role with the needed permissions.
 
