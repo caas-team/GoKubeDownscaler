@@ -9,6 +9,7 @@ globalReference: docs-helm-node-selector
 The `nodeSelector` value defines labels of nodes that you want the deployment to be scheduled on.
 
 :::info
+
 The default value for `nodeSelector` is:
 
 ```yaml
@@ -19,7 +20,7 @@ nodeSelector: {}
 
 If you want the GoKubeDownscaler to be scheduled on a specific type of node you can specify the determining labels of the node here.
 
-:::tip For example:
+:::tip Example
 
 If you set:
 
@@ -29,6 +30,6 @@ nodeSelector:
   env: production
 ```
 
-the GoKubeDownscaler will only be scheduled on a Node that also has the labels `disktype: ssd` and `env: production`.
+The GoKubeDownscaler will only be scheduled on a Node that has both the `disktype` label set to `ssd` and the `env` label to `production`.
 
 :::

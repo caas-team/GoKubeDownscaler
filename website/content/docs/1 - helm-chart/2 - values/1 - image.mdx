@@ -8,10 +8,11 @@ globalReference: docs-helm-image
 
 The `image` value contains the two fields `repository` and `tag`:
 
-- `repository` is the repository URL where the image versions of the GoKubeDownscaler are located.
-- `tag` is the version tag of the image.
+- `repository` is the repository URL where the image versions of the GoKubeDownscaler are located
+- `tag` is the version tag of the image
 
 :::info
+
 The default values for `image` are:
 
 ```yaml
@@ -29,4 +30,4 @@ Changing the value of `tag` will deploy a different version of the GoKubeDownsca
 If left empty like it is by default the GoKubeDownscaler will use the
 [appVersion](repo:deployments/chart/Chart.yaml#L10) of the currently used Helm Chart.
 
-You can find all versions of the GoKubeDownscaler [on the github releases page](repo/releases).
+You can find all versions of the GoKubeDownscaler [on the github releases page](https://github.com/caas-team/gokubedownscaler/releases).

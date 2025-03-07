@@ -8,8 +8,8 @@ globalReference: docs-helm-permissions
 
 The GoKubeDownscaler needs certain permissions to scale workloads.
 
-If [`constrainedDownscaler`](ref:docs-helm-constrained-downscaler) is set to true
-the Helm Chart will create roles for each namespace defined in [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces).
+If there are namespaces defined in [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces)
+the Helm Chart will create roles for each listed namespace.
 
 Otherwise it will always create a cluster role with the needed permissions.
 
@@ -21,12 +21,9 @@ By default the GoKubeDownscaler will always have the following permissions if it
 - apiGroups:
     - ""
   resources:
-    - pods
     - namespaces
   verbs:
     - get
-    - watch
-    - list
 - apiGroups:
     - ""
   resources:
@@ -34,81 +31,14 @@ By default the GoKubeDownscaler will always have the following permissions if it
   verbs:
     - get
     - create
-    - watch
-    - list
     - update
-    - patch
 ```
 
 These are necessary for the GoKubeDownscaler to work properly.
 
-## Admission Controller Permissions
-
-:::note
-If you are using a clusterwide installation of the GoKubeDownscaler it will also have:
-:::
-
-```yaml
-- apiGroups:
-    - constraints.gatekeeper.sh
-  resources:
-    - kubedownscalerjobsconstraint
-  verbs:
-    - get
-    - create
-    - watch
-    - list
-    - update
-    - patch
-    - delete
-- apiGroups:
-    - kyverno.io
-  resources:
-    - policies
-  resourceNames:
-    - kube-downscaler-jobs-policy
-  verbs:
-    - get
-    - create
-    - watch
-    - list
-    - update
-    - patch
-    - delete
-- apiGroups:
-    - kyverno.io
-  resources:
-    - policies
-  verbs:
-    - get
-    - create
-    - watch
-    - list
-- apiGroups:
-    - templates.gatekeeper.sh
-  resources:
-    - constrainttemplate
-  verbs:
-    - create
-    - get
-    - list
-    - watch
-- apiGroups:
-    - apiextensions.k8s.io
-  resources:
-    - customresourcedefinitions
-  verbs:
-    - create
-    - get
-    - list
-    - watch
-```
-
-{/* TODO Explain why these are added. */}
-
 ## Workload Permissions
 
-The Helm Chart assigns get, watch, list, update and patch permissions for the workloads defined in [`includedResources`](ref:docs-helm-included-resources).
+The Helm Chart assigns `get`, `list` and `update` permissions for the workloads defined in [`includedResources`](ref:docs-helm-included-resources).
 
 These resources can be:
 
