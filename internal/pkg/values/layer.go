@@ -37,6 +37,7 @@ const (
 	LayerNamespace                  // identifies the layer present in the namespace
 	LayerCli                        // identifies the layer defined in the CLI
 	LayerEnvironment                // identifies the layer defined in the environment variables
+	LayerDefault                    // identifier for the layer which holds all default values
 )
 
 // String gets the string representation of the LayerID.
@@ -46,6 +47,7 @@ func (l LayerID) String() string {
 		LayerNamespace:   "LayerNamespace",
 		LayerCli:         "LayerCli",
 		LayerEnvironment: "LayerEnvironment",
+		LayerDefault:     "LayerDefault",
 	}[l]
 }
 
@@ -71,9 +73,24 @@ type Layer struct {
 	GracePeriod       time.Duration // grace period until new workloads will be scaled down
 }
 
+func GetDefaultLayer() *Layer {
+	return &Layer{
+		DownscalePeriod:   nil,
+		DownTime:          nil,
+		UpscalePeriod:     nil,
+		UpTime:            nil,
+		Exclude:           triStateBool{isSet: true, value: false},
+		ExcludeUntil:      time.Time{},
+		ForceUptime:       triStateBool{isSet: true, value: false},
+		ForceDowntime:     triStateBool{isSet: true, value: false},
+		DownscaleReplicas: 0,
+		GracePeriod:       15 * time.Minute,
+	}
+}
+
 // isScalingExcluded checks if scaling is excluded, nil represents a not set state.
 func (l *Layer) isScalingExcluded() *bool {
-	if l.Exclude.isSet {
+	if l.Exclude.isSet && l.Exclude.value {
 		return &l.Exclude.value
 	}
 
@@ -160,7 +177,7 @@ func (l *Layer) getForcedScaling() Scaling {
 	return forcedScaling
 }
 
-type Layers [4]*Layer
+type Layers [5]*Layer
 
 // GetCurrentScaling gets the current scaling of the first layer that implements scaling.
 func (l Layers) GetCurrentScaling() Scaling {

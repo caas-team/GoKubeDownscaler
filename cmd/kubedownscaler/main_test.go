@@ -65,7 +65,7 @@ func TestScanWorkload(t *testing.T) {
 
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 
-	ctx := context.TODO()
+	ctx := t.Context()
 
 	layerCli := values.NewLayer()
 	layerEnv := values.NewLayer()
@@ -87,7 +87,7 @@ func TestScanWorkload(t *testing.T) {
 	mockClient.On("GetNamespaceAnnotations", "test-namespace", ctx).Return(map[string]string{}, nil)
 	mockClient.On("DownscaleWorkload", int32(0), mockWorkload, ctx).Return(nil)
 
-	err := scanWorkload(mockWorkload, mockClient, ctx, &layerCli, &layerEnv, config)
+	err := scanWorkload(mockWorkload, mockClient, ctx, values.GetDefaultLayer(), &layerCli, &layerEnv, config)
 
 	require.NoError(t, err)
 
