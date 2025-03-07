@@ -1,4 +1,3 @@
-//nolint:dupl // this code is very similar for every resource, but its not really abstractable to avoid more duplication
 package scalable
 
 import (
@@ -43,6 +42,18 @@ func (p *prometheus) getReplicas() (int32, error) {
 	}
 
 	return *p.Spec.Replicas, nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (p *prometheus) Reget(clientsets *Clientsets, ctx context.Context) error {
+	singlePrometheus, err := clientsets.Monitoring.MonitoringV1().Prometheuses(p.Namespace).Get(ctx, p.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get prometheus: %w", err)
+	}
+
+	p.Prometheus = singlePrometheus
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

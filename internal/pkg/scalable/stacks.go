@@ -9,7 +9,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getStacks is the getResourceFunc for Zalando Stacks.
+// getStacks is the getResourceFunc for Zalando Stacks. //nolint:dupl.
+//
+//nolint:dupl // necessary to handle different workload types separately
 func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	stacks, err := clientsets.Zalando.ZalandoV1().Stacks(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -43,6 +45,18 @@ func (s *stack) getReplicas() (int32, error) {
 	}
 
 	return *s.Spec.Replicas, nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (s *stack) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	s.Stack, err = clientsets.Zalando.ZalandoV1().Stacks(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get stack: %w", err)
+	}
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

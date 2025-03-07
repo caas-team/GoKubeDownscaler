@@ -1,3 +1,4 @@
+// nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -14,7 +15,7 @@ const (
 	annotationKedaPausedReplicas = "autoscaling.keda.sh/paused-replicas"
 )
 
-// getScaledObjects is the getResourceFunc for Keda ScaledObjects.
+// getScaledObjects is the getResourceFunc for Keda ScaledObjects. //nolint:dupl.
 func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	scaledobjects, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -64,6 +65,18 @@ func (s *scaledObject) getReplicas() (int32, error) {
 
 	// #nosec G115
 	return int32(pausedReplicas), nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (s *scaledObject) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	s.ScaledObject, err = clientsets.Keda.KedaV1alpha1().ScaledObjects(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get scaledObject: %w", err)
+	}
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

@@ -45,6 +45,18 @@ func (d *deployment) getReplicas() (int32, error) {
 	return *d.Spec.Replicas, nil
 }
 
+// Reget regets the resource from the Kubernetes API.
+func (d *deployment) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	d.Deployment, err = clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Get(ctx, d.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get cronjob: %w", err)
+	}
+
+	return nil
+}
+
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
 func (d *deployment) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Update(ctx, d.Deployment, metav1.UpdateOptions{})

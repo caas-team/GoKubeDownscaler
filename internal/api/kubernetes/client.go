@@ -31,6 +31,8 @@ type Client interface {
 	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
 	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
+	// RegetWorkload gets the workload again to ensure the latest state
+	RegetWorkload(workload scalable.Workload, ctx context.Context) error
 	// DownscaleWorkload downscales the workload to the specified replicas
 	DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error
 	// UpscaleWorkload upscales the workload to the original replicas
@@ -128,6 +130,16 @@ func (c client) GetWorkloads(namespaces, resourceTypes []string, ctx context.Con
 	}
 
 	return results, nil
+}
+
+// RegetWorkload gets the workload again to ensure the latest state.
+func (c client) RegetWorkload(workload scalable.Workload, ctx context.Context) error {
+	err := workload.Reget(c.clientsets, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get workload: %w", err)
+	}
+
+	return nil
 }
 
 // DownscaleWorkload downscales the workload to the specified replicas.

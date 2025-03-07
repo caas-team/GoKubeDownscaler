@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/client-go/tools/leaderelection"
 )
 
@@ -161,19 +163,15 @@ func startScanning(
 		for _, workload := range workloads {
 			waitGroup.Add(1)
 
-			go func() {
-				slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-
+			go func(workload scalable.Workload) {
 				defer waitGroup.Done()
 
-				err := scanWorkload(workload, client, ctx, layerDefault, layerCli, layerEnv, config)
+				err = attemptScan(client, ctx, layerDefault, layerCli, layerEnv, config, workload)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
 				}
-
-				slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-			}()
+			}(workload)
 		}
 
 		waitGroup.Wait()
@@ -187,6 +185,42 @@ func startScanning(
 		slog.Debug("waiting until next scan", "interval", config.Interval.String())
 		time.Sleep(config.Interval)
 	}
+
+	return nil
+}
+
+func attemptScan(
+	client kubernetes.Client,
+	ctx context.Context,
+	layerDefault, layerCli, layerEnv *values.Layer,
+	config *util.RuntimeConfiguration,
+	workload scalable.Workload,
+) error {
+	slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
+	for retry := range config.MaxRetriesOnConflict + 1 {
+		err := scanWorkload(workload, client, ctx, layerDefault, layerCli, layerEnv, config)
+		if err != nil {
+			if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
+				return fmt.Errorf("failed to scan workload: %w", err)
+			}
+
+			slog.Warn("workload modified, retrying", "attempt", retry+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
+			err := client.RegetWorkload(workload, ctx)
+			if err != nil {
+				return fmt.Errorf("failed to fetch updated workload: %w", err)
+			}
+
+			continue
+		}
+
+		slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
+		return nil
+	}
+
+	slog.Error("failed to scan workload", "attempts", config.MaxRetriesOnConflict+1)
 
 	return nil
 }

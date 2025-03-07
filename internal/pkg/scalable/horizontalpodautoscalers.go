@@ -1,3 +1,4 @@
+// nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -50,6 +51,19 @@ func (h *horizontalPodAutoscaler) getReplicas() (int32, error) {
 	}
 
 	return *h.Spec.MinReplicas, nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (h *horizontalPodAutoscaler) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	h.HorizontalPodAutoscaler, err = clientsets.
+		Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(h.Namespace).Get(ctx, h.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get horizontalpodautoscaler: %w", err)
+	}
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
