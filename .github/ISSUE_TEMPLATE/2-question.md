@@ -23,6 +23,6 @@ Briefly describe your question or issue.
 Provide any additional information, logs, or configurations that might help.
 -->
 
-### Other Links/references
+### Other Links/References
 
 <!-- E.g. related Github issues/MRs or external references -->

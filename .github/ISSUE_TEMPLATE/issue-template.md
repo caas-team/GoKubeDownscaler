@@ -34,6 +34,6 @@ Briefly describe the issue.
 
 <!-- What if any special expertise is required to resolve this issue? -->
 
-### Other Links/references
+### Other Links/References
 
 <!-- E.g. related Github issues/MRs -->
