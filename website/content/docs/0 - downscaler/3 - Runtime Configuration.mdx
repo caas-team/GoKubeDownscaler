@@ -78,6 +78,13 @@ Runtime Configurations change how the Downscaler operates.
   instead of the creation time of the workload.
 - Default: none (the downscaler will use the creation time of the workload)
 
+## Leader Election
+
+- Type: boolean
+- Description: Enforces leader election by creating [lease objects](https://kubernetes.io/docs/concepts/architecture/leases/)
+  to ensure only one instance of the GoKubeDownscaler is active at any given time to avoid conflicts.
+- Default: false
+
 ## Kubeconfig
 
 - Type: string (path to a kubeconfig file)
