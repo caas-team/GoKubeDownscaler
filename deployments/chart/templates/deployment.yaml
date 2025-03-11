@@ -14,6 +14,10 @@ spec:
     metadata:
       labels:
         {{- include "go-kube-downscaler.selectorLabels" . | nindent 8 }}
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
     spec:
       serviceAccountName: {{ include "go-kube-downscaler.serviceAccountName" . }}
       containers:
@@ -38,6 +42,13 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+      {{- with .Values.image.pullPolicy }}
+      imagePullPolicy: {{ toYaml . }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
     {{- with .Values.nodeSelector }}

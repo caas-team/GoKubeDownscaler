@@ -3,7 +3,10 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/caas-team/gokubedownscaler
+  pullPolicy: IfNotPresent
   tag: "" # Defaults to appVersion
+
+imagePullSecrets: []
 
 arguments:
 #  - --interval=60
@@ -28,6 +31,7 @@ constrainedNamespaces: []
 
 serviceAccount:
   create: true
+  annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
@@ -54,6 +58,8 @@ resources:
   requests:
     cpu: 200m
     memory: 300Mi
+
+podAnnotations: {}
 
 nodeSelector: {}
 
