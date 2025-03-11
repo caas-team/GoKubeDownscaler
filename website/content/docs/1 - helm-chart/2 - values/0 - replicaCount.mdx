@@ -20,8 +20,9 @@ replicaCount: 1
 
 Changing this to a different integer value will result in the deployment of the provided number of pods.
 
-:::warning
+If this value is greater than one the `--leader-election` argument will automatically be set on all created pods.
+This will in turn create [lease objects](https://kubernetes.io/docs/concepts/architecture/leases/)
+to ensure only one instance of the GoKubeDownscaler is running at any given time.
 
-This value should not be changed because running multiple instances of the GoKubeDownscaler on the same workloads is currently not supported.
-
-:::
+You can find more information on how leases enable leader election on
+[the official Kubernetes documentation](https://kubernetes.io/docs/concepts/architecture/leases/#leader-election).
