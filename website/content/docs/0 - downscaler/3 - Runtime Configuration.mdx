@@ -85,6 +85,13 @@ Runtime Configurations change how the Downscaler operates.
   to ensure only one instance of the GoKubeDownscaler is active at any given time to avoid conflicts.
 - Default: false
 
+## Max Retries on Conflict
+
+- Type: integer
+- Description: Sets the maximum number of retries for handling HTTP 409 conflict errors,
+  which occur when another entity modifies a resource that the downscaler is currently processing.
+- Default: 0
+
 ## Kubeconfig
 
 - Type: string (path to a kubeconfig file)
