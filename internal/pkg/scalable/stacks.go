@@ -9,8 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getStacks is the getResourceFunc for Zalando Stacks. //nolint:dupl.
-//
+// getStacks is the getResourceFunc for Zalando Stacks.
 //nolint:dupl // necessary to handle different workload types separately
 func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	stacks, err := clientsets.Zalando.ZalandoV1().Stacks(namespace).List(ctx, metav1.ListOptions{})
