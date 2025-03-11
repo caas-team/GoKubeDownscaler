@@ -6,7 +6,7 @@ globalReference: guides-migrating
 
 # Migrating From Py-Kube-Downscaler
 
-In most cases it's very simple to migrate and step 2 and 3 can be skipped.
+In most cases it's very simple to migrate and step 3 and 4 can be skipped.
 
 Step 1:
 
@@ -18,11 +18,15 @@ helm uninstall py-kube-downscaler
 
 Step 2:
 
+Adjust any old values.yaml files to the [new structure](#new-structure-of-valuesyaml).
+
+Step 3:
+
 Make sure all non-official automations support the [breaking changes](#breaking-changes).
 
 You can skip this if you didn't have external automations for the downscaler.
 
-Step 3:
+Step 4:
 
 Make sure all timestamps are [RFC3339](#rfc3339-timestamps).
 To make this easier you could also just run the downscaler and see if it gives an error.
@@ -30,7 +34,7 @@ To make this easier you could also just run the downscaler and see if it gives a
 Since only some edge cases of the ISO 8601 timestamp format are not compatible you can likely skip this step.
 Should the downscaler error because of this you can still change them afterwards.
 
-Step 4:
+Step 5:
 
 Now you're ready to install the Downscaler.
 For that you can follow our [Installation Guide](ref:guides-installation).
