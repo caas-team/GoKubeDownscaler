@@ -74,6 +74,12 @@ func TestScanWorkload(t *testing.T) {
 	layerCli.DownscaleReplicas = 0
 	layerCli.GracePeriod = 15 * time.Minute
 
+	annotationsToNamespaces := map[string]map[string]string{
+		"test-namespace": {
+			"downscaler/force-downtime": "true",
+		},
+	}
+
 	mockClient := new(MockClient)
 	mockWorkload := new(MockWorkload)
 
@@ -83,11 +89,9 @@ func TestScanWorkload(t *testing.T) {
 	mockWorkload.On("GetAnnotations").Return(map[string]string{
 		"downscaler/force-downtime": "true",
 	})
-
-	mockClient.On("GetNamespaceAnnotations", "test-namespace", ctx).Return(map[string]string{}, nil)
 	mockClient.On("DownscaleWorkload", int32(0), mockWorkload, ctx).Return(nil)
 
-	err := scanWorkload(mockWorkload, mockClient, ctx, values.GetDefaultLayer(), &layerCli, &layerEnv, config)
+	err := scanWorkload(mockWorkload, mockClient, ctx, values.GetDefaultLayer(), &layerCli, &layerEnv, config, annotationsToNamespaces)
 
 	require.NoError(t, err)
 

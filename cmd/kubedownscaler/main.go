@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -22,6 +23,8 @@ import (
 const (
 	leaseName = "downscaler-lease"
 )
+
+var ErrNamespaceAnnotationsFailed = errors.New("failed to get namespace annotations")
 
 func main() {
 	config := util.GetDefaultConfig()
@@ -157,6 +160,8 @@ func startScanning(
 		workloads = scalable.FilterExcluded(workloads, config.IncludeLabels, config.ExcludeNamespaces, config.ExcludeWorkloads)
 		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 
+		annotationsToNamespaces := GetAnnotationsFromNamespace(workloads, client, ctx)
+
 		var waitGroup sync.WaitGroup
 		for _, workload := range workloads {
 			waitGroup.Add(1)
@@ -166,7 +171,7 @@ func startScanning(
 
 				defer waitGroup.Done()
 
-				err := scanWorkload(workload, client, ctx, layerDefault, layerCli, layerEnv, config)
+				err := scanWorkload(workload, client, ctx, layerDefault, layerCli, layerEnv, config, annotationsToNamespaces)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
@@ -191,6 +196,65 @@ func startScanning(
 	return nil
 }
 
+func GetAnnotationsFromNamespace(
+	workloads []scalable.Workload,
+	client kubernetes.Client,
+	ctx context.Context,
+) map[string]map[string]string {
+	var waitGroup sync.WaitGroup
+	var mutex sync.Mutex
+	namespaceSet := make(map[string]struct{})
+	namespaceToAnnotations := make(map[string]map[string]string)
+
+	for _, workload := range workloads {
+		waitGroup.Add(1)
+
+		go func(workload scalable.Workload) {
+			defer waitGroup.Done()
+
+			namespace := workload.GetNamespace()
+
+			mutex.Lock()
+			if _, exists := namespaceSet[namespace]; !exists {
+				namespaceSet[namespace] = struct{}{}
+
+				slog.Debug("visited namespace", "namespace", namespace)
+			}
+
+			namespaceToAnnotations[namespace] = make(map[string]string)
+			mutex.Unlock()
+		}(workload)
+	}
+
+	waitGroup.Wait()
+
+	for namespace := range namespaceSet {
+		waitGroup.Add(1)
+
+		go func(namespace string) {
+			defer waitGroup.Done()
+
+			slog.Debug("fetching namespace annotations", "namespace", namespace)
+
+			annotations, err := client.GetNamespaceAnnotations(namespace, ctx)
+			if err != nil {
+				slog.Error("failed to get namespace annotations", "namespace", namespace, "error", err)
+				return
+			}
+
+			mutex.Lock()
+			namespaceToAnnotations[namespace] = annotations
+			mutex.Unlock()
+
+			slog.Debug("correctly retrieved namespace annotations", "namespace", namespace, "annotations", annotations)
+		}(namespace)
+	}
+
+	waitGroup.Wait()
+
+	return namespaceToAnnotations
+}
+
 // scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload.
 func scanWorkload(
 	workload scalable.Workload,
@@ -198,12 +262,13 @@ func scanWorkload(
 	ctx context.Context,
 	layerDefault, layerCli, layerEnv *values.Layer,
 	config *util.RuntimeConfiguration,
+	annotationsToNamespaces map[string]map[string]string,
 ) error {
 	resourceLogger := kubernetes.NewResourceLogger(client, workload)
 
-	namespaceAnnotations, err := client.GetNamespaceAnnotations(workload.GetNamespace(), ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get namespace annotations: %w", err)
+	namespaceAnnotations, exists := annotationsToNamespaces[workload.GetNamespace()]
+	if !exists {
+		return fmt.Errorf("%w: namespace %q", ErrNamespaceAnnotationsFailed, workload.GetNamespace())
 	}
 
 	slog.Debug(
@@ -214,7 +279,7 @@ func scanWorkload(
 	)
 
 	layerWorkload := values.NewLayer()
-	if err = layerWorkload.GetLayerFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
+	if err := layerWorkload.GetLayerFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
 		return fmt.Errorf("failed to parse workload layer from annotations: %w", err)
 	}
 
@@ -226,7 +291,7 @@ func scanWorkload(
 	)
 
 	layerNamespace := values.NewLayer()
-	if err = layerNamespace.GetLayerFromAnnotations(namespaceAnnotations, resourceLogger, ctx); err != nil {
+	if err := layerNamespace.GetLayerFromAnnotations(namespaceAnnotations, resourceLogger, ctx); err != nil {
 		return fmt.Errorf("failed to parse namespace layer from annotations: %w", err)
 	}
 
