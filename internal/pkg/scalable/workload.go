@@ -70,6 +70,8 @@ type scalableResource interface {
 	SetAnnotations(annotations map[string]string)
 	// GroupVersionKind gets the group version kind of the workload
 	GroupVersionKind() schema.GroupVersionKind
+	// Reget regets the workload to ensure the latest state
+	Reget(clientsets *Clientsets, ctx context.Context) error
 }
 
 // Workload provides all functions needed to scale the workload.

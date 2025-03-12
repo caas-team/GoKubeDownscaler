@@ -31,6 +31,8 @@ type RuntimeConfiguration struct {
 	IncludeLabels RegexList
 	// TimeAnnotation sets the annotation used for grace-period instead of creation time.
 	TimeAnnotation string
+	// MaxRetriesOnError sets the maximum number of retries when encountering Kubernetes HTTP 409 conflict error.
+	MaxRetriesOnConflict int
 	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
 	Kubeconfig string
 }
@@ -117,6 +119,12 @@ func (c *RuntimeConfiguration) ParseConfigFlags() {
 		&c.TimeAnnotation,
 		"deployment-time-annotation",
 		"",
+		"the annotation to use instead of creation time for grace period (optional)",
+	)
+	flag.IntVar(
+		&c.MaxRetriesOnConflict,
+		"max-retries-on-conflict",
+		0,
 		"the annotation to use instead of creation time for grace period (optional)",
 	)
 }
