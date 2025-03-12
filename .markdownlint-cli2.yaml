@@ -4,6 +4,8 @@ config:
       - DocCardList
       - GithubLabel
       - Excalidraw
+      - Tabs
+      - TabItem
   line-length:
     line_length: 140 # set max length of lines to 140, which is a bit more reasonable than the 80 (default)
   single-title:

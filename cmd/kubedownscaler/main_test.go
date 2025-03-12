@@ -65,7 +65,7 @@ func TestScanWorkload(t *testing.T) {
 
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 
-	ctx := context.TODO()
+	ctx := t.Context()
 
 	scopeCli := values.NewScope()
 	scopeEnv := values.NewScope()
