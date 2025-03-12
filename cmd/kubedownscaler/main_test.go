@@ -80,6 +80,12 @@ func TestScanWorkload(t *testing.T) {
 		},
 	}
 
+	annotationsToNamespaces := map[string]map[string]string{
+		"test-namespace": {
+			"downscaler/force-downtime": "true",
+		},
+	}
+
 	mockClient := new(MockClient)
 	mockWorkload := new(MockWorkload)
 

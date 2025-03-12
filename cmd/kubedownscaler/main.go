@@ -179,7 +179,7 @@ func startScanning(
 
 				defer waitGroup.Done()
 
-				err = attemptScan(client, ctx, scopeDefault, scopeCli, scopeEnv, config, workload, annotationsToNamespaces)
+				err := attemptScan(client, ctx, scopeDefault, scopeCli, scopeEnv, config, workload, annotationsToNamespaces)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
