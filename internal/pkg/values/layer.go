@@ -59,6 +59,14 @@ func NewLayer() Layer {
 	}
 }
 
+// NewLayerPtr gets a new layer with the default values and returns a pointer to it.
+func NewLayerPtr() *Layer {
+	return &Layer{
+		DownscaleReplicas: util.Undefined,
+		GracePeriod:       util.Undefined,
+	}
+}
+
 // Layer represents a value Layer.
 type Layer struct {
 	DownscalePeriod   timeSpans     // periods to downscale in
