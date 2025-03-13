@@ -1,0 +1,18 @@
+config:
+  no-inline-html:
+    allowed_elements: # allow the use of some specific custom elements we need/don't discourage
+      - DocCardList
+      - GithubLabel
+      - Excalidraw
+      - Tabs
+      - TabItem
+  line-length:
+    line_length: 140 # set max length of lines to 140, which is a bit more reasonable than the 80 (default)
+  single-title:
+    front_matter_title: "" # to ignore the title field in frontmatter, since we put the title in again anyways
+  first-line-heading: false # disable because of frontmatter
+  no-space-in-emphasis: false # disabled, since it messes up mdx' jsx comments
+  code-block-style: false # disabled because it doesn't work with indented html tags
+customRules:
+  - sentences-per-line
+  - "@jonathan-mayer/markdownlint-rule-titlecase"

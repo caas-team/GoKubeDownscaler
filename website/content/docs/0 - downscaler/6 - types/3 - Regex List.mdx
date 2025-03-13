@@ -1,0 +1,43 @@
+---
+title: Regex List
+id: regex-list
+globalReference: docs-regex-list
+---
+
+# Regex List
+
+A regex list is a list of [regular expressions](https://en.wikipedia.org/wiki/Regular_expression).
+
+The regex flavor used is [Golang](https://pkg.go.dev/regexp/syntax#hdr-Syntax).
+
+## Syntax
+
+```text
+<regex>,<regex>,<regex>,<regex>
+```
+
+or
+
+```text
+<regex>, <regex>, <regex>, <regex>
+```
+
+## Regex Evaluation
+
+The regular expressions do have to match the whole string.
+For example if you want to match `my-namespace` and `namespace1`
+you can't just do a regex like `namespace` which then looks for the part `namespace` in the string.
+What you would have to do is use the regex `.*namespace.*` to do so.
+
+You can think of this like always having a start of string (`^`) and an end of string (`$`) anchor around your expression.
+This means that the example expression would look like `^.*namespace.*$`.
+
+If you want you can also put the start of string and end of string anchors around your expression yourself.
+This doesn't change how the expression is evaluated.
+
+## Spaces at Ends of Expression
+
+You can't just have spaces at the start and end of your expression, since they will get trimmed.
+
+If you still need to do so I would suggest to wrap your expression in a start of string (`^`) and end of string (`$`) anchor.
+This stops the spaces from getting trimmed.

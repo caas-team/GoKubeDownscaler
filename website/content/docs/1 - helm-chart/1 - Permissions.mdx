@@ -1,0 +1,55 @@
+---
+title: Permissions
+id: permissions
+globalReference: docs-helm-permissions
+---
+
+# Permissions
+
+The GoKubeDownscaler needs certain permissions to scale workloads.
+
+If there are namespaces defined in [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces)
+the Helm Chart will create roles for each listed namespace.
+
+Otherwise it will always create a cluster role with the needed permissions.
+
+## Default Permissions
+
+By default the GoKubeDownscaler will always have the following permissions if it is installed via our Helm Chart:
+
+```yaml
+- apiGroups:
+    - ""
+  resources:
+    - namespaces
+  verbs:
+    - get
+- apiGroups:
+    - ""
+  resources:
+    - events
+  verbs:
+    - get
+    - create
+    - update
+```
+
+These are necessary for the GoKubeDownscaler to work properly.
+
+## Workload Permissions
+
+The Helm Chart assigns `get`, `list` and `update` permissions for the workloads defined in [`includedResources`](ref:docs-helm-included-resources).
+
+These resources can be:
+
+- Deployments
+- Statefulsets
+- Daemonsets
+- Rollouts
+- HorizontalPodAutoscalers
+- Jobs
+- Cronjobs
+- ScaledObjects
+- Stacks
+- PodDisruptionBudgets
+- Prometheuses

@@ -1,2 +1,5 @@
 .env
 .vscode
+website/node_modules
+website/build
+website/.docusaurus

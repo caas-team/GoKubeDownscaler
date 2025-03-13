@@ -3,6 +3,8 @@ name: Check for new release
 on:
   pull_request_target:
     types: [opened, synchronize, labeled, unlabeled]
+    branches:
+      - main
 
 jobs:
   check_for_release:

@@ -1,0 +1,29 @@
+---
+title: replicaCount
+id: replicaCount
+globalReference: docs-helm-replica-count
+---
+
+# replicaCount
+
+The `replicaCount` value adjusts the number of replicas that the GoKubeDownscaler deployment will have.
+
+:::info
+
+The default value of `replicaCount` is:
+
+```yaml
+replicaCount: 1
+```
+
+:::
+
+Changing this to a different integer value will result in the deployment of the provided number of pods.
+
+If this value is greater than one the [`--leader-election`](ref:docs-runtime-configuration#leader-election)
+argument will automatically be set on all created pods.
+This will in turn create [lease objects](https://kubernetes.io/docs/concepts/architecture/leases/)
+to ensure only one instance of the GoKubeDownscaler is active at any given time to avoid conflicts.
+
+You can find more information on how leases enable leader election on
+[the official Kubernetes documentation](https://kubernetes.io/docs/concepts/architecture/leases/#leader-election).

@@ -1,0 +1,89 @@
+---
+title: Workload Types
+id: workload-types
+globalReference: docs-workload-types
+---
+
+# Workload Types
+
+Valid values for the workload type are the case-insensitive kubernetes resource names of the workloads.
+
+## Cronjobs
+
+- id: cronjobs
+- resource: cronjob.v1.batch
+
+Scales by setting the cronjobs suspend property to true, which halts further scheduled runs of the Cronjob.
+
+## Daemonsets
+
+- id: daemonsets
+- resource: daemonset.v1.apps
+
+Scales by setting the node selector to match none of the nodes, which stops pods from running on any node.
+
+## Deployments
+
+- id: deployments
+- resource: deployment.v1.apps
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+## HPAs
+
+- id: horizontalpodautoscalers
+- resource: horizontalpodautoscaler.v2.autoscaling
+
+Scales by setting the minReplicas to the [downscale replicas](ref:docs-values#downscale-replicas).
+If the [downscale replicas](ref:docs-values#downscale-replicas) are less than 1 it will throw an error.
+
+## Jobs
+
+- id: jobs
+- resource: job.v1.batch
+
+Scales by setting the suspend property to true, which stops the execution of the job until it is upscaled again.
+
+## PodDisruptionBudgets
+
+- id: poddisruptionbudgets
+- resource: poddisruptionbudget.v1.policy
+
+Scales by setting the maxUnavailable or minAvailable properties (depending on which one is used) to the [downscale replicas](ref:docs-values#downscale-replicas).
+If minAvailable or maxUnavailable are percentiles instead of replica counts, scaling will be skipped.
+
+## ScaledObjects
+
+- id: scaledobjects
+- resource: scaledobject.v1alpha1.keda.sh
+
+Scales by setting the paused replicas annotation to the [downscale replicas](ref:docs-values#downscale-replicas),
+which scales the workloads managed by the scaled object to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+## Statefulsets
+
+- id: statefulsets
+- resource: statefulset.v1.apps
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+## Rollouts
+
+- id: Rollouts
+- resource: rollout.v1alpha1.argoproj.io
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+## Stacks
+
+- id: stacks
+- resource: stack.v1.zalando.org
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+## Prometheuses
+
+- id: prometheuses
+- resource: prometheus.v1.monitoring.coreos.com
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
