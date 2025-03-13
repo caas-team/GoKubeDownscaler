@@ -179,7 +179,7 @@ func startScanning(
 
 				defer waitGroup.Done()
 
-				err = attemptScan(client, ctx, scopeDefault, scopeCli, scopeEnv, config, workload)
+				err = attemptScan(client, ctx, scopeDefault, scopeCli, scopeEnv, config, workload, annotationsToNamespaces)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
@@ -210,11 +210,12 @@ func attemptScan(
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *util.RuntimeConfiguration,
 	workload scalable.Workload,
+	annotationsToNamespaces map[string]map[string]string,
 ) error {
 	slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	for retry := range config.MaxRetriesOnConflict + 1 {
-		err := scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, config)
+		err := scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, config, annotationsToNamespaces)
 		if err != nil {
 			if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
 				return fmt.Errorf("failed to scan workload: %w", err)
