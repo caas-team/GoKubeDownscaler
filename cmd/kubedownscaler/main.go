@@ -26,7 +26,7 @@ const (
 	leaseName = "downscaler-lease"
 )
 
-var ErrNamespaceAnnotationsFailed = errors.New("failed to get namespace annotations")
+var errNamespaceLayersRetrieveFailed = errors.New("failed to get namespace layer")
 
 func main() {
 	config := util.GetDefaultConfig()
@@ -168,7 +168,10 @@ func startScanning(
 		workloads = scalable.FilterExcluded(workloads, config.IncludeLabels, config.ExcludeNamespaces, config.ExcludeWorkloads)
 		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 
-		annotationsToNamespaces := GetAnnotationsFromNamespace(workloads, client, ctx)
+		namespaceLayers, err := client.GetNamespaceLayers(workloads, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get namespace annotations: %w", err)
+		}
 
 		var waitGroup sync.WaitGroup
 		for _, workload := range workloads {
@@ -179,7 +182,7 @@ func startScanning(
 
 				defer waitGroup.Done()
 
-				err := attemptScan(client, ctx, scopeDefault, scopeCli, scopeEnv, config, workload, annotationsToNamespaces)
+				err := attemptScan(client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceLayers, config, workload)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
@@ -208,14 +211,14 @@ func attemptScan(
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
+	namespaceLayers map[string]*values.Layer,
 	config *util.RuntimeConfiguration,
 	workload scalable.Workload,
-	annotationsToNamespaces map[string]map[string]string,
 ) error {
 	slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	for retry := range config.MaxRetriesOnConflict + 1 {
-		err := scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, config, annotationsToNamespaces)
+		err := scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceLayers, config)
 		if err != nil {
 			if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
 				return fmt.Errorf("failed to scan workload: %w", err)
@@ -241,80 +244,16 @@ func attemptScan(
 	return nil
 }
 
-func GetAnnotationsFromNamespace(
-	workloads []scalable.Workload,
-	client kubernetes.Client,
-	ctx context.Context,
-) map[string]map[string]string {
-	var waitGroup sync.WaitGroup
-	var mutex sync.Mutex
-	namespaceSet := make(map[string]struct{})
-	namespaceToAnnotations := make(map[string]map[string]string)
-
-	for _, workload := range workloads {
-		waitGroup.Add(1)
-
-		go func(workload scalable.Workload) {
-			defer waitGroup.Done()
-
-			namespace := workload.GetNamespace()
-
-			mutex.Lock()
-			if _, exists := namespaceSet[namespace]; !exists {
-				namespaceSet[namespace] = struct{}{}
-
-				slog.Debug("visited namespace", "namespace", namespace)
-			}
-
-			namespaceToAnnotations[namespace] = make(map[string]string)
-			mutex.Unlock()
-		}(workload)
-	}
-
-	waitGroup.Wait()
-
-	for namespace := range namespaceSet {
-		waitGroup.Add(1)
-
-		go func(namespace string) {
-			defer waitGroup.Done()
-
-			slog.Debug("fetching namespace annotations", "namespace", namespace)
-
-			annotations, err := client.GetNamespaceAnnotations(namespace, ctx)
-			if err != nil {
-				slog.Error("failed to get namespace annotations", "namespace", namespace, "error", err)
-				return
-			}
-
-			mutex.Lock()
-			namespaceToAnnotations[namespace] = annotations
-			mutex.Unlock()
-
-			slog.Debug("correctly retrieved namespace annotations", "namespace", namespace, "annotations", annotations)
-		}(namespace)
-	}
-
-	waitGroup.Wait()
-
-	return namespaceToAnnotations
-}
-
 // scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload.
 func scanWorkload(
 	workload scalable.Workload,
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
+	namespaceLayers map[string]*values.Layer,
 	config *util.RuntimeConfiguration,
-	annotationsToNamespaces map[string]map[string]string,
 ) error {
 	resourceLogger := kubernetes.NewResourceLogger(client, workload)
-
-	namespaceAnnotations, exists := annotationsToNamespaces[workload.GetNamespace()]
-	if !exists {
-		return fmt.Errorf("%w: namespace %q", ErrNamespaceAnnotationsFailed, workload.GetNamespace())
-	}
 
 	slog.Debug(
 		"parsing workload scope from annotations",
@@ -328,16 +267,9 @@ func scanWorkload(
 		return fmt.Errorf("failed to parse workload scope from annotations: %w", err)
 	}
 
-	slog.Debug(
-		"parsing namespace scope from annotations",
-		"annotations", namespaceAnnotations,
-		"name", workload.GetName(),
-		"namespace", workload.GetNamespace(),
-	)
-
-	scopeNamespace := values.NewScope()
-	if err := scopeNamespace.GetScopeFromAnnotations(namespaceAnnotations, resourceLogger, ctx); err != nil {
-		return fmt.Errorf("failed to parse namespace scope from annotations: %w", err)
+	layerNamespace, exists := namespaceLayers[workload.GetNamespace()]
+	if !exists {
+		return fmt.Errorf("%w: %s", errNamespaceLayersRetrieveFailed, workload.GetNamespace())
 	}
 
 	scopes := values.Scopes{&scopeWorkload, &scopeNamespace, scopeCli, scopeEnv, scopeDefault}

@@ -7,10 +7,12 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
@@ -29,6 +31,8 @@ const (
 type Client interface {
 	// GetNamespaceAnnotations gets the annotations of the workload's namespace
 	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
+	// GetNamespaceLayers gets the namespace layer from the namespace annotations
+	GetNamespaceLayers(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Layer, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
 	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
 	// RegetWorkload gets the workload again to ensure the latest state
@@ -41,6 +45,8 @@ type Client interface {
 	CreateLease(leaseName string) (*resourcelock.LeaseLock, error)
 	// addWorkloadEvent creates a new event on the workload
 	addWorkloadEvent(eventType string, reason string, id string, message string, workload scalable.Workload, ctx context.Context) error
+	// addNamespaceEvent creates a new event on the namespace
+	addNamespaceEvent(eventType, reason, identifier, message, namespace string, ctx context.Context) error
 }
 
 // NewClient makes a new Client.
@@ -257,6 +263,66 @@ func (c client) addWorkloadEvent(eventType, reason, identifier, message string, 
 	return nil
 }
 
+// addNamespaceEvent creates or updates a new event on the namespace.
+func (c client) addNamespaceEvent(eventType, reason, identifier, message, namespace string, ctx context.Context) error {
+	if c.dryRun {
+		slog.Info("running in dry run mode, would have added an event on namespace",
+			"namespace", namespace,
+			"eventType", eventType,
+			"reason", reason,
+			"id", identifier,
+			"message", message,
+		)
+
+		return nil
+	}
+
+	hash := sha256.Sum256([]byte(fmt.Sprintf("%s.%s", identifier, message)))
+	name := fmt.Sprintf("%s.%s.%x", namespace, reason, hash)
+	eventsClient := c.clientsets.Kubernetes.CoreV1().Events(namespace)
+
+	// check if event already exists
+	if event, err := eventsClient.Get(ctx, name, metav1.GetOptions{}); err == nil && event != nil {
+		// update event
+		event.Count++
+		event.LastTimestamp = metav1.Now()
+
+		_, err := eventsClient.Update(ctx, event, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to update event: %w", err)
+		}
+
+		return nil
+	}
+
+	// create event
+	_, err := eventsClient.Create(ctx, &corev1.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		InvolvedObject: corev1.ObjectReference{
+			Kind:       "Namespace",
+			Namespace:  namespace,
+			Name:       namespace,
+			UID:        "", // Namespace UID is not always needed
+			APIVersion: "v1",
+		},
+		Reason:         reason,
+		Message:        message,
+		Type:           eventType,
+		Source:         corev1.EventSource{Component: componentName},
+		FirstTimestamp: metav1.Now(),
+		LastTimestamp:  metav1.Now(),
+		Count:          1,
+	}, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to create event: %w", err)
+	}
+
+	return nil
+}
+
 func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -280,4 +346,67 @@ func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
 	}
 
 	return lease, nil
+}
+
+// GetNamespaceLayers gets the namespace layers from the namespace annotations.
+func (c client) GetNamespaceLayers(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Layer, error) {
+	var waitGroup sync.WaitGroup
+	namespaceSet := make(map[string]struct{})
+
+	for _, workload := range workloads {
+		namespace := workload.GetNamespace()
+
+		if _, exists := namespaceSet[namespace]; !exists {
+			namespaceSet[namespace] = struct{}{}
+
+			slog.Debug("visited namespace", "namespace", namespace)
+		}
+	}
+
+	namespaceLayers := make(map[string]*values.Layer, len(namespaceSet))
+	errChan := make(chan error, len(namespaceSet))
+
+	waitGroup.Wait()
+
+	for namespace := range namespaceSet {
+		waitGroup.Add(1)
+
+		namespaceLayers[namespace] = values.NewLayerPtr()
+
+		go func(namespace string) {
+			defer waitGroup.Done()
+
+			nsLogger := NewNamespaceLogger(c, namespace)
+
+			slog.Debug("fetching namespace annotations", "namespace", namespace)
+
+			annotations, err := c.GetNamespaceAnnotations(namespace, ctx)
+			if err != nil {
+				slog.Error("failed to get namespace annotations", "namespace", namespace, "error", err)
+				return
+			}
+
+			slog.Debug("parsing workload layer from annotations", "annotations", annotations, "namespace", namespace)
+
+			err = namespaceLayers[namespace].GetLayerFromAnnotations(annotations, nsLogger, ctx)
+			if err != nil {
+				errChan <- fmt.Errorf("failed to parse layer from annotations for namespace %s: %w", namespace, err)
+				return
+			}
+
+			slog.Debug("correctly retrieved namespace annotations", "namespace", namespace, "annotations", annotations)
+		}(namespace)
+	}
+
+	waitGroup.Wait()
+
+	close(errChan)
+
+	for err := range errChan {
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return namespaceLayers, nil
 }
