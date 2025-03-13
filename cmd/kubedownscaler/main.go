@@ -171,7 +171,7 @@ func startScanning(
 			go func(workload scalable.Workload) {
 				defer waitGroup.Done()
 
-				err = attemptScan(client, ctx, layerDefault, layerCli, layerEnv, config, workload)
+				err = attemptScan(client, ctx, layerDefault, layerCli, layerEnv, config, workload, annotationsToNamespaces)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
@@ -200,11 +200,12 @@ func attemptScan(
 	layerDefault, layerCli, layerEnv *values.Layer,
 	config *util.RuntimeConfiguration,
 	workload scalable.Workload,
+	annotationsToNamespaces map[string]map[string]string,
 ) error {
 	slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	for retry := range config.MaxRetriesOnConflict + 1 {
-		err := scanWorkload(workload, client, ctx, layerDefault, layerCli, layerEnv, config)
+		err := scanWorkload(workload, client, ctx, layerDefault, layerCli, layerEnv, config, annotationsToNamespaces)
 		if err != nil {
 			if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
 				return fmt.Errorf("failed to scan workload: %w", err)
