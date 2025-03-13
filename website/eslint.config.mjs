@@ -1,4 +1,5 @@
 import tsParser from "@typescript-eslint/parser";
+import markdown from "eslint-plugin-markdown";
 import path from "node:path";
 import { includeIgnoreFile } from "@eslint/compat";
 import { fileURLToPath } from "node:url";
@@ -16,6 +17,11 @@ const compat = new FlatCompat({
 const gitignorePath = path.resolve(__dirname, "../.gitignore");
 
 export default [
+  {
+    plugins: {
+      markdown,
+    },
+  },
   ...compat.extends(
     "eslint:recommended",
     "plugin:@docusaurus/recommended",
@@ -26,5 +32,9 @@ export default [
     languageOptions: {
       parser: tsParser,
     },
+  },
+  {
+    files: ["**/*.mdx"],
+    processor: "markdown/markdown",
   },
 ];

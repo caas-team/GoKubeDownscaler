@@ -1,0 +1,28 @@
+---
+title: podSecurityContext
+id: podSecurityContext
+globalReference: docs-helm-pod-security-context
+---
+
+# podSecurityContext
+
+The `podSecurityContext` value defines the SecurityContext on pod level.
+
+:::info
+
+The default values for `podSecurityContext` are:
+
+```yaml
+podSecurityContext:
+  runAsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  supplementalGroups: [1000]
+```
+
+:::
+
+In this field you can customize privilege and access control settings for the GoKubeDownscaler Pod.
+
+For more information on possible configuration you can reference [the official Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/security-context).

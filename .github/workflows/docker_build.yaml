@@ -62,3 +62,11 @@ jobs:
           cosign sign --key env://COSIGN_KEY --tlog-upload=false mtr.devops.telekom.de/caas/go-kube-downscaler@${{ steps.build-push.outputs.digest }}
         env:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+
+      - name: Tag untagged versions
+        uses: jtaeuber/tag-multiarch-images@v0.1.0
+        with:
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          gh_user: caas-team
+          package_name: go-kube-downscaler
+          tag: ${{ github.event.client_payload.appVersion }}

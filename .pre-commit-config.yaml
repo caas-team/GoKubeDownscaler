@@ -4,6 +4,7 @@ repos:
     rev: v5.0.0
     hooks:
       - id: end-of-file-fixer
+        exclude: '\.(json|excalidraw)$'
       - id: trailing-whitespace
       - id: no-commit-to-branch
         args: [--branch, main]
@@ -19,10 +20,21 @@ repos:
       - id: golangci-lint-repo-mod
         args: [--config, .golangci.yaml, --, --fix]
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.5.2
+    rev: v3.5.3
     hooks:
       - id: prettier
         files: \.(md|mdx)$
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.17.2
+    hooks:
+      - id: markdownlint-cli2
+        args: [--fix]
+        additional_dependencies:
+          - sentences-per-line
+          - "@jonathan-mayer/markdownlint-rule-titlecase"
+        files: \.(md|mdx)$
+        types_or: [markdown, mdx]
+        types: []
   - repo: local
     hooks:
       - id: prevent-todo-comments
@@ -37,6 +49,6 @@ repos:
         files: \.(md|mdx)$
       - id: eslint
         name: Run ESLint
-        entry: npx eslint --fix --config=website/eslint.config.mjs "website/**/*.{js,jsx,ts,tsx,cts,cjs}"
+        entry: npx eslint --fix --config=website/eslint.config.mjs "website/**/*.{js,jsx,ts,tsx,cts,cjs,mdx}"
         language: node
-        files: website/.*\.(js|jsx|ts|tsx|cts|cjs)$
+        files: website/.*\.(js|jsx|ts|tsx|cts|cjs|mdx)$

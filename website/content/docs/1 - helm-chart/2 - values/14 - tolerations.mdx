@@ -1,0 +1,33 @@
+---
+title: tolerations
+id: tolerations
+globalReference: docs-helm-tolerations
+---
+
+# Tolerations
+
+The `tolerations` value adds tolerations to the pods of the deployment to be able to be scheduled on nodes with matching taints.
+
+:::info
+
+The default value for `tolerations` is:
+
+```yaml
+tolerations: []
+```
+
+:::
+
+This field allows the GoKubeDownscaler pods to be scheduled on Nodes with certain taints.
+
+If you want to allow the GoKubeDownscaler pods to schedule on a Node with a taint `key1=value1:NoSchedule` you can set:
+
+```yaml
+tolerations:
+  - key: "key1"
+    operator: "Equal"
+    value: "value1"
+    effect: "NoSchedule"
+```
+
+For more information on taints and tolerations you can reference [the official Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration).

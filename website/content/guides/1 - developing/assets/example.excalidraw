@@ -1,0 +1,172 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://marketplace.visualstudio.com/items?itemName=pomdtr.excalidraw-editor",
+  "elements": [
+    {
+      "id": "N2ZjbqdZXGV21oy0wkLtR",
+      "type": "rectangle",
+      "x": 510,
+      "y": 274,
+      "width": 162,
+      "height": 74,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": {
+        "type": 3
+      },
+      "seed": 133199338,
+      "version": 51,
+      "versionNonce": 280110326,
+      "isDeleted": false,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "zAQtT67MY57-j4XFRUtE3"
+        },
+        {
+          "id": "vsxtQIi36-9Vg4WsdkGO0",
+          "type": "arrow"
+        }
+      ],
+      "updated": 1741247819570,
+      "link": null,
+      "locked": false
+    },
+    {
+      "id": "zAQtT67MY57-j4XFRUtE3",
+      "type": "text",
+      "x": 552.6100311279297,
+      "y": 298.5,
+      "width": 76.77993774414062,
+      "height": 25,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": null,
+      "seed": 1153566326,
+      "version": 48,
+      "versionNonce": 1494575990,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1741247741380,
+      "link": null,
+      "locked": false,
+      "text": "Example",
+      "fontSize": 20,
+      "fontFamily": 1,
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "baseline": 18,
+      "containerId": "N2ZjbqdZXGV21oy0wkLtR",
+      "originalText": "Example",
+      "lineHeight": 1.25
+    },
+    {
+      "id": "vsxtQIi36-9Vg4WsdkGO0",
+      "type": "arrow",
+      "x": 676,
+      "y": 312,
+      "width": 54.30111949651291,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": {
+        "type": 2
+      },
+      "seed": 2002466858,
+      "version": 63,
+      "versionNonce": 1758535274,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1741247851722,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          54.30111949651291,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "N2ZjbqdZXGV21oy0wkLtR",
+        "focus": 0.02702702702702703,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "O8AvDVQ5AvKRwlTlaXB_R",
+        "focus": -0.014925373134328358,
+        "gap": 6.717514421272202
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow"
+    },
+    {
+      "id": "O8AvDVQ5AvKRwlTlaXB_R",
+      "type": "diamond",
+      "x": 737,
+      "y": 278,
+      "width": 67,
+      "height": 67,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": {
+        "type": 2
+      },
+      "seed": 512538090,
+      "version": 102,
+      "versionNonce": 2023018730,
+      "isDeleted": false,
+      "boundElements": [
+        {
+          "id": "vsxtQIi36-9Vg4WsdkGO0",
+          "type": "arrow"
+        }
+      ],
+      "updated": 1741247851722,
+      "link": null,
+      "locked": false
+    }
+  ],
+  "appState": {
+    "gridSize": null,
+    "viewBackgroundColor": "#ffffff"
+  },
+  "files": {}
+}

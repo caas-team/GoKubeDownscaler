@@ -14,7 +14,7 @@ List the changes made to the code base. Per default, all commits are listed here
 Please keep this description updated as you add new changes to the PR.
 -->
 
-## Tests done
+## Tests Done
 
 <!--
 List the tests that were done to verify the changes.
