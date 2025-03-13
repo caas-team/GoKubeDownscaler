@@ -11,7 +11,7 @@ import TabItem from "@theme/TabItem";
 
 One of the easiest ways and most common use cases for the Downscaler is using it for night time saving.
 
-A good time to start saving resources at night could be from 6:00 PM to 8:00 AM during weekdays.
+A good time to start saving resources at night could be from 6:00 PM to 8:00 AM during weekdays and on the weekends.
 
 Depending on your use case you can apply the night time saving clusterwide or on either namespace or workload level.
 
@@ -23,78 +23,39 @@ This can be done by either using an [environment variable](ref:docs-environment-
 
 ### Environment Variable
 
-Adding a clusterwide downtime with environment variables can be done by
-using bare variables or adding them inside the [values.yaml](repo:deployments/chart/values.yaml) file.
+If you want to add a clusterwide downtime with environment variables
+you can add them inside the [values.yaml](repo:deployments/chart/values.yaml) file.
 
-<Tabs>
-  <TabItem value="bare" label="Bare Variable" default>
+There you have to add it to the `configMap.extraConfig` field:
 
-    For bare variables you just have to make sure the variable is set in the environment of your node.
-    This could be achieved with a .env file for example:
+```yaml title="values.yaml"
+# ...
 
-    ```text title=".env"
-    DEFAULT_DOWNTIME: "Mon-Fri 18:00-08:00 UTC"
-    ```
+configMap:
+  name: go-kube-downscaler
+  extraConfig: |
+    DEFAULT_DOWNTIME: "Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
 
-  </TabItem>
-  <TabItem value="env-values" label="values.yaml">
-
-    If you want to add the environment variable via the values.yaml file you have to add it to the `configMap.extraConfig` field:
-
-    ```yaml title="values.yaml"
-    # ...
-
-    configMap:
-      name: go-kube-downscaler
-      extraConfig: |
-        DEFAULT_DOWNTIME: "Mon-Fri 18:00-08:00 UTC"
-
-    # ...
-    ```
-
-  </TabItem>
-</Tabs>
+# ...
+```
 
 ### Cli Argument
 
-Adding a clusterwide downtime with cli arguments can be done when installing the GoKubeDownscaler
-or inside the [values.yaml](repo:deployments/chart/values.yaml) file.
+If you want to instead use a cli argument for the clusterwide downtime
+you can also add them inside the [values.yaml](repo:deployments/chart/values.yaml) file.
 
-<Tabs>
-  <TabItem value="cli-install" label="While installing" default>
+There you have to add it to the `arguments` field:
 
-    When installing or running the GoKubeDownscaler you can give it a cli argument to set a global downtime:
+```yaml title="values.yaml"
+# ...
 
-    ```bash title="binary"
-    # go build cmd/kubedownscaler -o kubedownscaler
-    kubedownscaler --default-downtime="Mon-Fri 18:00-08:00 UTC"
-    ```
-
-    **or**
-
-    ```bash title="go run"
-    go run cmd/kubedownscaler --default-downtime="Mon-Fri 18:00-08:00 UTC"
-    ```
-
-  </TabItem>
-  <TabItem value="cli-values" label="values.yaml">
-
-    If you want to set a global downtime for your cluster via a cli argument inside the values.yaml
-    you have to add it to the `arguments` field:
-
-    ```yaml title="values.yaml"
-    # ...
-
-    arguments:
-      - --default-downtime="Mon-Fri 18:00-08:00 UTC"
-    # ...
-    ```
-
-  </TabItem>
-</Tabs>
+arguments:
+  - --default-downtime="Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
+# ...
+```
 
 After setting the variable in one of the two ways
-all workloads in your cluster will be scaled down on every weekday from 6:00 PM to 8:00 AM.
+all workloads in your cluster will be scaled down on every weekday from 6:00 PM to 8:00 AM and on weekends.
 
 ## Namespace Level
 
@@ -107,7 +68,7 @@ This can be done using a `kubectl` command or by editing the namespace's yaml ma
     Adding the downtime with kubectl is a single command:
 
     ```bash
-    kubectl annotate ns my-namespace downscaler/downtime="Mon-Fri 18:00-08:00 UTC"
+    kubectl annotate ns my-namespace downscaler/downtime="Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
     ```
 
   </TabItem>
@@ -122,15 +83,15 @@ This can be done using a `kubectl` command or by editing the namespace's yaml ma
       name: my-namespace
       # highlight-start
       annotations:
-        downscaler/downtime: "Mon-Fri 18:00-08:00 UTC"
+        downscaler/downtime: "Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
       # highlight-end
     ```
 
   </TabItem>
 </Tabs>
 
-Now all workloads in my-namespace will be scaled down on every weekday from 6:00 PM to 8:00 AM.
-On the weekends the workloads in the namespace will not be scaled.
+Now all workloads in `my-namespace` will be scaled down on every weekday from 6:00 PM to 8:00 AM
+and on weekends.
 
 ## Workload Level
 
@@ -145,7 +106,7 @@ For demo purposes we will showcase this with a deployment.
     Adding the downtime with kubectl is a single command:
 
     ```bash
-    kubectl annotate deployment my-deployment downscaler/downtime="Mon-Fri 18:00-08:00 UTC"
+    kubectl annotate deployment my-deployment downscaler/downtime="Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
     ```
 
   </TabItem>
@@ -160,7 +121,7 @@ For demo purposes we will showcase this with a deployment.
       name: my-deployment
       # highlight-start
       annotations:
-        downscaler/downtime: "Mon-Fri 18:00-08:00 UTC"
+        downscaler/downtime: "Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
       # highlight-end
     spec:
       replicas: 3
@@ -182,5 +143,4 @@ For demo purposes we will showcase this with a deployment.
   </TabItem>
 </Tabs>
 
-Now our deployment my-deployment will be scaled down on every weekday from 6:00 PM to 8:00 AM.
-On the weekends it will not be scaled.
+Now your deployment my-deployment will be scaled down on every weekday from 6:00 PM to 8:00 AM and on weekends.

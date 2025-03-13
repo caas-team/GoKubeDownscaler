@@ -12,6 +12,7 @@ config:
     front_matter_title: "" # to ignore the title field in frontmatter, since we put the title in again anyways
   first-line-heading: false # disable because of frontmatter
   no-space-in-emphasis: false # disabled, since it messes up mdx' jsx comments
+  code-block-style: false # disabled because it doesn't work with indented html tags
 customRules:
   - sentences-per-line
   - "@jonathan-mayer/markdownlint-rule-titlecase"
