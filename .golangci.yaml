@@ -76,6 +76,9 @@ linters-settings:
       - name: unexported-return
         disabled: true
       - name: unused-parameter
+  gomoddirectives:
+    replace-allow-list:
+      - sigs.k8s.io/controller-runtime # remove this once keda supports v0.20.x
 
 linters:
   disable-all: true

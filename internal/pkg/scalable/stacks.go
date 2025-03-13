@@ -24,7 +24,7 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 	return results, nil
 }
 
-// stack is a wrapper for stack.v1.zalando.org to implement the replicaScaledResource interface.
+// stack is a wrapper for zalando.org/v1.Stack to implement the replicaScaledResource interface.
 type stack struct {
 	*zalandov1.Stack
 }
@@ -43,6 +43,18 @@ func (s *stack) getReplicas() (int32, error) {
 	}
 
 	return *s.Spec.Replicas, nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (s *stack) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	s.Stack, err = clientsets.Zalando.ZalandoV1().Stacks(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get stack: %w", err)
+	}
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

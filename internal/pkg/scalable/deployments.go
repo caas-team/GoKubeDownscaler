@@ -24,7 +24,7 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 	return results, nil
 }
 
-// deployment is a wrapper for deployment.v1.apps to implement the replicaScaledResource interface.
+// deployment is a wrapper for apps/v1.Deployment to implement the replicaScaledResource interface.
 type deployment struct {
 	*appsv1.Deployment
 }
@@ -43,6 +43,18 @@ func (d *deployment) getReplicas() (int32, error) {
 	}
 
 	return *d.Spec.Replicas, nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (d *deployment) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	d.Deployment, err = clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Get(ctx, d.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get cronjob: %w", err)
+	}
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

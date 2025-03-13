@@ -191,7 +191,7 @@ func startScanning(
 		for _, workload := range workloads {
 			waitGroup.Add(1)
 
-			go func() {
+			go func(workload scalable.Workload) {
 				slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 				defer waitGroup.Done()
@@ -203,7 +203,7 @@ func startScanning(
 				}
 
 				slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-			}()
+			}(workload)
 		}
 
 		waitGroup.Wait()

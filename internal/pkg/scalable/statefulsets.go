@@ -1,4 +1,4 @@
-//nolint:dupl // this code is very similar for every resource, but its not really abstractable to avoid more duplication
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -24,7 +24,7 @@ func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Conte
 	return results, nil
 }
 
-// statefulset is a wrapper for statefulset.v1.apps to implement the replicaScaledResource interface.
+// statefulset is a wrapper for apps/v1.StatefulSet to implement the replicaScaledResource interface.
 type statefulSet struct {
 	*appsv1.StatefulSet
 }
@@ -43,6 +43,18 @@ func (s *statefulSet) getReplicas() (int32, error) {
 	}
 
 	return *s.Spec.Replicas, nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (s *statefulSet) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	s.StatefulSet, err = clientsets.Kubernetes.AppsV1().StatefulSets(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get statefulset: %w", err)
+	}
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

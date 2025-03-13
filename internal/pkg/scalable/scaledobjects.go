@@ -1,3 +1,4 @@
+// nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -29,7 +30,7 @@ func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Cont
 	return results, nil
 }
 
-// scaledObject is a wrapper for scaledobject.v1alpha1.keda.sh to implement the replicaScaledResource interface.
+// scaledObject is a wrapper for keda.sh/v1alpha1.ScaledObject to implement the replicaScaledResource interface.
 type scaledObject struct {
 	*kedav1alpha1.ScaledObject
 }
@@ -64,6 +65,18 @@ func (s *scaledObject) getReplicas() (int32, error) {
 
 	// #nosec G115
 	return int32(pausedReplicas), nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (s *scaledObject) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	s.ScaledObject, err = clientsets.Keda.KedaV1alpha1().ScaledObjects(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get scaledObject: %w", err)
+	}
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

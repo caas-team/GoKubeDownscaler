@@ -1,3 +1,4 @@
+// nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -26,7 +27,7 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 	return results, nil
 }
 
-// podDisruptionBudget is a wrapper for poddisruptionbudget.v1.policy to implement the Workload interface.
+// podDisruptionBudget is a wrapper for policy/v1.PodDisruptionBudget to implement the Workload interface.
 type podDisruptionBudget struct {
 	*policy.PodDisruptionBudget
 }
@@ -133,6 +134,18 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int32) error {
 	}
 
 	slog.Debug("can't scale PodDisruptionBudgets with percent availability", "workload", p.GetName(), "namespace", p.GetNamespace())
+
+	return nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (p *podDisruptionBudget) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	p.PodDisruptionBudget, err = clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(p.Namespace).Get(ctx, p.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get poddisruptionbudget: %w", err)
+	}
 
 	return nil
 }

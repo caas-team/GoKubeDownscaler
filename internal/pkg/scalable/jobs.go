@@ -1,4 +1,4 @@
-//nolint:dupl // this code is very similar for every resource, but its not really abstractable to avoid more duplication
+// nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -24,7 +24,7 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 	return results, nil
 }
 
-// job is a wrapper for job.v1.batch to implement the suspendScaledResource interface.
+// job is a wrapper for batch/v1.Job to implement the suspendScaledResource interface.
 type job struct {
 	*batch.Job
 }
@@ -32,6 +32,18 @@ type job struct {
 // setSuspend sets the value of the suspend field on the job.
 func (j *job) setSuspend(suspend bool) {
 	j.Spec.Suspend = &suspend
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (j *job) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	j.Job, err = clientsets.Kubernetes.BatchV1().Jobs(j.Namespace).Get(ctx, j.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get job: %w", err)
+	}
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

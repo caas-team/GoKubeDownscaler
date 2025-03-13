@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 var (
 	errInvalidWeekday          = errors.New("error: specified weekday is invalid")
 	errRelativeTimespanInvalid = errors.New("error: specified relative timespan is invalid")
-	errTimeOfDayOutOfRange     = errors.New("error: the time of day has fields that are out of rane")
 )
 
 // rfc339Regex is a regex that matches an rfc339 timestamp.
@@ -57,9 +55,16 @@ func (t *timeSpans) Set(value string) error {
 	timespans := make([]TimeSpan, 0, len(spans))
 
 	for _, timespanText := range spans {
+		var timespan TimeSpan
 		timespanText = strings.TrimSpace(timespanText)
 
-		if isAbsoluteTimestamp(timespanText) {
+		timespan, ok := parseBooleanTimeSpan(timespanText)
+		if ok {
+			timespans = append(timespans, timespan)
+			continue
+		}
+
+		if isAbsoluteTimespan(timespanText) {
 			// parse as absolute timestamp
 			timespan, err := parseAbsoluteTimeSpan(timespanText)
 			if err != nil {
@@ -131,15 +136,19 @@ func parseRelativeTimeSpan(timespanString string) (*relativeTimeSpan, error) {
 		return nil, fmt.Errorf("failed to parse timezone: %w", err)
 	}
 
-	timespan.timeFrom, err = parseDayTime(timeSpan[0], timespan.timezone)
+	timeFrom, err := parseDayTime(timeSpan[0])
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse time of day from: %w", err)
 	}
 
-	timespan.timeTo, err = parseDayTime(timeSpan[1], timespan.timezone)
+	timespan.timeFrom = *timeFrom
+
+	timeTo, err := parseDayTime(timeSpan[1])
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse time of day to: %w", err)
 	}
+
+	timespan.timeTo = *timeTo
 
 	timespan.weekdayFrom, err = getWeekday(weekdaySpan[0])
 	if err != nil {
@@ -158,8 +167,8 @@ type relativeTimeSpan struct {
 	timezone    *time.Location
 	weekdayFrom time.Weekday
 	weekdayTo   time.Weekday
-	timeFrom    time.Time
-	timeTo      time.Time
+	timeFrom    dayTime
+	timeTo      dayTime
 }
 
 // isWeekdayInRange checks if the weekday falls into the weekday range.
@@ -172,18 +181,18 @@ func (t relativeTimeSpan) isWeekdayInRange(weekday time.Weekday) bool {
 }
 
 // isTimeOfDayInRange checks if the time falls into the time of day range.
-func (t relativeTimeSpan) isTimeOfDayInRange(timeOfDay time.Time) bool {
-	if t.timeFrom.After(t.timeTo) { // check if range wraps across days
-		return timeOfDay.After(t.timeFrom) || timeOfDay.Equal(t.timeFrom) || timeOfDay.Before(t.timeTo)
+func (t relativeTimeSpan) isTimeOfDayInRange(timeOfDay dayTime) bool {
+	if t.timeFrom > t.timeTo { // check if range wraps across days
+		return timeOfDay >= t.timeFrom || timeOfDay < t.timeTo
 	}
 
-	return (t.timeFrom.Before(timeOfDay) || t.timeFrom.Equal(timeOfDay)) && t.timeTo.After(timeOfDay)
+	return t.timeFrom <= timeOfDay && t.timeTo > timeOfDay
 }
 
 // isTimeInSpan check if the time is in the span.
 func (t relativeTimeSpan) isTimeInSpan(targetTime time.Time) bool {
 	targetTime = targetTime.In(t.timezone)
-	timeOfDay := getTimeOfDay(targetTime)
+	timeOfDay := extractDayTime(targetTime)
 	weekday := targetTime.Weekday()
 
 	return t.isTimeOfDayInRange(timeOfDay) && t.isWeekdayInRange(weekday)
@@ -195,8 +204,8 @@ func (t relativeTimeSpan) String() string {
 		"relativeTimeSpan(%.3s-%.3s %s-%s %s)",
 		t.weekdayFrom,
 		t.weekdayTo,
-		t.timeFrom.Format("15:04"),
-		t.timeTo.Format("15:04"),
+		t.timeFrom,
+		t.timeTo,
 		t.timezone,
 	)
 }
@@ -220,8 +229,8 @@ func (t absoluteTimeSpan) String() string {
 	)
 }
 
-// isAbsoluteTimestamp checks if timestamp string is absolute.
-func isAbsoluteTimestamp(timestamp string) bool {
+// isAbsoluteTimespan checks if the timespan string is of an absolute Timespan.
+func isAbsoluteTimespan(timestamp string) bool {
 	return absoluteTimeSpanRegex.MatchString(timestamp)
 }
 
@@ -244,38 +253,19 @@ func getWeekday(weekday string) (time.Weekday, error) {
 	return 0, errInvalidWeekday
 }
 
-// parseDayTime parses the given time of day string to a zero date time.
-func parseDayTime(daytime string, timezone *time.Location) (time.Time, error) {
-	parts := strings.Split(daytime, ":")
+// booleanTimeSpan is a TimeSpan which statically is either always active or never active.
+type booleanTimeSpan bool
 
-	hour, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return time.Time{}, fmt.Errorf("failed to parse hour of daytime: %w", err)
+func (b booleanTimeSpan) isTimeInSpan(_ time.Time) bool { return bool(b) }
+
+// parseBooleanTimeSpan tries to parse the given timespan string to a booleanTimespan.
+func parseBooleanTimeSpan(timespanString string) (booleanTimeSpan, bool) {
+	switch strings.ToLower(timespanString) {
+	case "always", "true":
+		return true, true
+	case "never", "false":
+		return false, true
 	}
 
-	if hour < 0 || hour > 24 {
-		return time.Time{}, errTimeOfDayOutOfRange
-	}
-
-	minute, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return time.Time{}, fmt.Errorf("failed to parse minute of daytime: %w", err)
-	}
-
-	if minute < 0 || minute >= 60 {
-		return time.Time{}, errTimeOfDayOutOfRange
-	}
-
-	return time.Date(0, time.January, 1, hour, minute, 0, 0, timezone), nil
-}
-
-// getTimeOfDay gets the time of day of the given time.
-func getTimeOfDay(targetTime time.Time) time.Time {
-	return time.Date(0, time.January, 1,
-		targetTime.Hour(),
-		targetTime.Minute(),
-		targetTime.Second(),
-		targetTime.Nanosecond(),
-		targetTime.Location(),
-	)
+	return false, false
 }
