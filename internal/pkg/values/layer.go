@@ -16,7 +16,6 @@ var (
 	errTimeAndPeriod            = errors.New("error: both a time and a period is defined")
 	errInvalidDownscaleReplicas = errors.New("error: downscale replicas value is invalid")
 	errValueNotSet              = errors.New("error: no layer implements this value")
-	errAnnotationNotSet         = errors.New("error: annotation isn't set on workload")
 )
 
 // Scaling is an enum that describes the current Scaling.
@@ -274,25 +273,37 @@ func (l Layers) IsInGracePeriod(
 		return false, nil
 	}
 
-	if timeAnnotation != "" {
-		timeString, ok := workloadAnnotations[timeAnnotation]
-		if !ok {
-			logEvent.ErrorInvalidAnnotation(timeAnnotation, fmt.Sprintf("annotation %q not present on this workload", timeAnnotation), ctx)
-			return false, errAnnotationNotSet
-		}
-
-		creationTime, err = time.Parse(time.RFC3339, timeString)
-		if err != nil {
-			err = fmt.Errorf("failed to parse %q annotation as RFC3339 timestamp: %w", timeAnnotation, err)
-			logEvent.ErrorInvalidAnnotation(timeAnnotation, err.Error(), ctx)
-
-			return false, err
-		}
+	creationTime, err = getWorkloadCreationTime(timeAnnotation, workloadAnnotations, creationTime, logEvent, ctx)
+	if err != nil {
+		return false, err
 	}
 
 	gracePeriodUntil := creationTime.Add(gracePeriod)
 
 	return time.Now().Before(gracePeriodUntil), nil
+}
+
+func getWorkloadCreationTime(
+	annotation string,
+	annotations map[string]string,
+	creationTime time.Time,
+	logEvent util.ResourceLogger,
+	ctx context.Context,
+) (time.Time, error) {
+	timeString, ok := annotations[annotation]
+	if !ok {
+		return creationTime, nil
+	}
+
+	creationTime, err := time.Parse(time.RFC3339, timeString)
+	if err != nil {
+		err = fmt.Errorf("failed to parse %q annotation as RFC3339 timestamp: %w", annotation, err)
+		logEvent.ErrorInvalidAnnotation(annotation, err.Error(), ctx)
+
+		return time.Time{}, err
+	}
+
+	return creationTime, nil
 }
 
 // String gets the string representation of the layers.
