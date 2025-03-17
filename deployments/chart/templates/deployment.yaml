@@ -42,9 +42,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-      {{- with .Values.image.pullPolicy }}
-      imagePullPolicy: {{ toYaml . }}
-      {{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
