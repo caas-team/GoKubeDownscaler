@@ -1,3 +1,4 @@
+// nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -45,6 +46,18 @@ func (d *daemonSet) ScaleDown(_ int32) error {
 	}
 
 	d.Spec.Template.Spec.NodeSelector[labelMatchNone] = "true"
+
+	return nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (d *daemonSet) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	d.DaemonSet, err = clientsets.Kubernetes.AppsV1().DaemonSets(d.Namespace).Get(ctx, d.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get cronjob: %w", err)
+	}
 
 	return nil
 }

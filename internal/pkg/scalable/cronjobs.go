@@ -1,4 +1,4 @@
-//nolint:dupl // this code is very similar for every resource, but its not really abstractable to avoid more duplication
+// nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -27,6 +27,18 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 // cronJob is a wrapper for cronjob.v1.batch to implement the suspendScaledResource interface.
 type cronJob struct {
 	*batch.CronJob
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (c *cronJob) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	c.CronJob, err = clientsets.Kubernetes.BatchV1().CronJobs(c.Namespace).Get(ctx, c.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get cronjob: %w", err)
+	}
+
+	return nil
 }
 
 // setSuspend sets the value of the suspend field on the cronJob.

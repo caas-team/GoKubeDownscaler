@@ -87,7 +87,7 @@ func TestScanWorkload(t *testing.T) {
 	mockClient.On("GetNamespaceAnnotations", "test-namespace", ctx).Return(map[string]string{}, nil)
 	mockClient.On("DownscaleWorkload", int32(0), mockWorkload, ctx).Return(nil)
 
-	err := scanWorkload(mockWorkload, mockClient, ctx, &scopeCli, &scopeEnv, config)
+	err := scanWorkload(mockWorkload, mockClient, ctx, values.GetDefaultScope(), &scopeCli, &scopeEnv, config)
 
 	require.NoError(t, err)
 

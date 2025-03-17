@@ -1,4 +1,4 @@
-//nolint:dupl // this code is very similar for every resource, but its not really abstractable to avoid more duplication
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -43,6 +43,18 @@ func (r *rollout) getReplicas() (int32, error) {
 	}
 
 	return *r.Spec.Replicas, nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (r *rollout) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	r.Rollout, err = clientsets.Argo.ArgoprojV1alpha1().Rollouts(r.Namespace).Get(ctx, r.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get rollout: %w", err)
+	}
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

@@ -37,16 +37,18 @@ const (
 	ScopeNamespace                  // identifies the scope present in the namespace
 	ScopeCli                        // identifies the scope defined in the CLI
 	ScopeEnvironment                // identifies the scope defined in the environment variables
+	ScopeDefault                    // identifier for the scope which holds all default values
 )
 
 // String gets the string representation of the ScopeID.
-func (s ScopeID) String() string {
+func (l ScopeID) String() string {
 	return map[ScopeID]string{
 		ScopeWorkload:    "ScopeWorkload",
 		ScopeNamespace:   "ScopeNamespace",
 		ScopeCli:         "ScopeCli",
 		ScopeEnvironment: "ScopeEnvironment",
-	}[s]
+		ScopeDefault:     "ScopeDefault",
+	}[l]
 }
 
 // NewScope gets a new scope with the default values.
@@ -63,47 +65,46 @@ type Scope struct {
 	DownTime          timeSpans     // within these timespans workloads will be scaled down, outside of them they will be scaled up
 	UpscalePeriod     timeSpans     // periods to upscale in
 	UpTime            timeSpans     // within these timespans workloads will be scaled up, outside of them they will be scaled down
-	Exclude           triStateBool  // if workload should be excluded
-	ExcludeUntil      time.Time     // until when the workload should be excluded
-	ForceUptime       triStateBool  // force workload into an uptime state
-	ForceDowntime     triStateBool  // force workload into a downtime state
+	Exclude           timeSpans     // defines when the workload should be excluded
+	ExcludeUntil      *time.Time    // until when the workload should be excluded
+	ForceUptime       timeSpans     // force workload into an uptime state when in one of the timespans
+	ForceDowntime     timeSpans     // force workload into a downtime state when in one of the timespans
 	DownscaleReplicas int32         // the replicas to scale down to
 	GracePeriod       time.Duration // grace period until new workloads will be scaled down
 }
 
-// isScalingExcluded checks if scaling is excluded, nil represents a not set state.
-func (s *Scope) isScalingExcluded() *bool {
-	if s.Exclude.isSet {
-		return &s.Exclude.value
+func GetDefaultScope() *Scope {
+	return &Scope{
+		DownscalePeriod:   nil,
+		DownTime:          nil,
+		UpscalePeriod:     nil,
+		UpTime:            nil,
+		Exclude:           nil,
+		ExcludeUntil:      nil,
+		ForceUptime:       nil,
+		ForceDowntime:     nil,
+		DownscaleReplicas: 0,
+		GracePeriod:       15 * time.Minute,
 	}
-
-	if ok := s.ExcludeUntil.After(time.Now()); ok {
-		return &ok
-	}
-
-	return nil
 }
 
 // CheckForIncompatibleFields checks if there are incompatible fields.
-func (s *Scope) CheckForIncompatibleFields() error { //nolint: cyclop // this is still fine to read, we could defnitly consider refactoring this in the future
+func (l *Scope) CheckForIncompatibleFields() error { //nolint: cyclop // this is still fine to read, we could defnitly consider refactoring this in the future
 	// force down and uptime
-	if s.ForceDowntime.isSet &&
-		s.ForceDowntime.value &&
-		s.ForceUptime.isSet &&
-		s.ForceUptime.value {
+	if l.ForceDowntime != nil && l.ForceUptime != nil {
 		return errForceUpAndDownTime
 	}
 	// downscale replicas invalid
-	if s.DownscaleReplicas != util.Undefined && s.DownscaleReplicas < 0 {
+	if l.DownscaleReplicas != util.Undefined && l.DownscaleReplicas < 0 {
 		return errInvalidDownscaleReplicas
 	}
 	// up- and downtime
-	if s.UpTime != nil && s.DownTime != nil {
+	if l.UpTime != nil && l.DownTime != nil {
 		return errUpAndDownTime
 	}
 	// *time and *period
-	if (s.UpTime != nil || s.DownTime != nil) &&
-		(s.UpscalePeriod != nil || s.DownscalePeriod != nil) {
+	if (l.UpTime != nil || l.DownTime != nil) &&
+		(l.UpscalePeriod != nil || l.DownscalePeriod != nil) {
 		return errTimeAndPeriod
 	}
 
@@ -111,18 +112,18 @@ func (s *Scope) CheckForIncompatibleFields() error { //nolint: cyclop // this is
 }
 
 // getCurrentScaling gets the current scaling, not checking for incompatibility.
-func (s *Scope) getCurrentScaling() Scaling {
+func (l *Scope) getCurrentScaling() Scaling {
 	// check times
-	if s.DownTime != nil {
-		if s.DownTime.inTimeSpans() {
+	if l.DownTime != nil {
+		if l.DownTime.inTimeSpans() {
 			return ScalingDown
 		}
 
 		return ScalingUp
 	}
 
-	if s.UpTime != nil {
-		if s.UpTime.inTimeSpans() {
+	if l.UpTime != nil {
+		if l.UpTime.inTimeSpans() {
 			return ScalingUp
 		}
 
@@ -130,63 +131,84 @@ func (s *Scope) getCurrentScaling() Scaling {
 	}
 
 	// check periods
-	if s.DownscalePeriod != nil || s.UpscalePeriod != nil {
-		if s.DownscalePeriod.inTimeSpans() {
-			return ScalingDown
-		}
-
-		if s.UpscalePeriod.inTimeSpans() {
-			return ScalingUp
-		}
-
-		return ScalingIgnore
+	if l.DownscalePeriod != nil || l.UpscalePeriod != nil {
+		return l.getScalingFromPeriods()
 	}
 
 	return ScalingNone
 }
 
-// getForcedScaling checks if the scope has forced scaling enabled and returns the matching scaling.
-func (s *Scope) getForcedScaling() Scaling {
-	var forcedScaling Scaling
+func (l *Scope) getScalingFromPeriods() Scaling {
+	inDowntime := l.DownscalePeriod.inTimeSpans()
+	inUptime := l.UpscalePeriod.inTimeSpans()
 
-	if s.ForceDowntime.isSet && s.ForceDowntime.value {
-		forcedScaling = ScalingDown
+	if inUptime && inDowntime {
+		return ScalingIgnore // this prevents unintended behavior; in the future this should be handled while checking for conflicts
 	}
 
-	if s.ForceUptime.isSet && s.ForceUptime.value {
-		forcedScaling = ScalingUp
+	if inDowntime {
+		return ScalingDown
 	}
 
-	return forcedScaling
+	if inUptime {
+		return ScalingUp
+	}
+
+	return ScalingIgnore
 }
 
-type Scopes [4]*Scope
+func (l *Scope) getForceScaling() Scaling {
+	// check forced scaling
+	if l.ForceDowntime.inTimeSpans() {
+		return ScalingDown
+	}
+
+	if l.ForceUptime.inTimeSpans() {
+		return ScalingUp
+	}
+
+	if l.ForceDowntime != nil || l.ForceUptime != nil {
+		return ScalingIgnore // default result to non-unset value to avoid falling through
+	}
+
+	return ScalingNone
+}
+
+type Scopes [5]*Scope
 
 // GetCurrentScaling gets the current scaling of the first scope that implements scaling.
-func (s Scopes) GetCurrentScaling() Scaling {
-	// check for forced scaling
-	for _, scope := range s {
-		forcedScaling := scope.getForcedScaling()
-		if forcedScaling != ScalingNone {
-			return forcedScaling
+func (l Scopes) GetCurrentScaling() Scaling {
+	var result Scaling
+
+	for _, scope := range l {
+		forcedScaling := scope.getForceScaling()
+		if forcedScaling == ScalingNone {
+			continue // scope doesnt implement forced scaling; falling through
 		}
+
+		if forcedScaling == ScalingIgnore {
+			result = ScalingIgnore // default to ScalingIgnore instead of ScalingNone for correct log message
+			break                  // break out since forced scaling is set, but just inactive
+		}
+
+		return forcedScaling
 	}
-	// check for time-based scaling
-	for _, scope := range s {
+
+	for _, scope := range l {
 		scopeScaling := scope.getCurrentScaling()
 		if scopeScaling == ScalingNone {
-			continue
+			continue // scope doesnt implement scaling; falling through
 		}
 
 		return scopeScaling
 	}
 
-	return ScalingNone
+	return result
 }
 
 // GetDownscaleReplicas gets the downscale replicas of the first scope that implements downscale replicas.
-func (s Scopes) GetDownscaleReplicas() (int32, error) {
-	for _, scope := range s {
+func (l Scopes) GetDownscaleReplicas() (int32, error) {
+	for _, scope := range l {
 		downscaleReplicas := scope.DownscaleReplicas
 		if downscaleReplicas == util.Undefined {
 			continue
@@ -198,22 +220,37 @@ func (s Scopes) GetDownscaleReplicas() (int32, error) {
 	return 0, errValueNotSet
 }
 
-// GetExcluded checks if any scope excludes scaling.
-func (s Scopes) GetExcluded() bool {
-	for _, scope := range s {
-		excluded := scope.isScalingExcluded()
-		if excluded == nil {
+// GetExcluded checks if the scopes exclude scaling.
+func (l Scopes) GetExcluded() bool {
+	for _, scope := range l {
+		if scope.Exclude == nil {
 			continue
 		}
 
-		return *excluded
+		if scope.Exclude.inTimeSpans() {
+			return true
+		}
+
+		break
+	}
+
+	for _, scope := range l {
+		if scope.ExcludeUntil == nil {
+			continue
+		}
+
+		if scope.ExcludeUntil.After(time.Now()) {
+			return true
+		}
+
+		break
 	}
 
 	return false
 }
 
 // IsInGracePeriod gets the grace period of the uppermost scope that has it set.
-func (s Scopes) IsInGracePeriod(
+func (l Scopes) IsInGracePeriod(
 	timeAnnotation string,
 	workloadAnnotations map[string]string,
 	creationTime time.Time,
@@ -223,7 +260,7 @@ func (s Scopes) IsInGracePeriod(
 	var err error
 	var gracePeriod time.Duration = util.Undefined
 
-	for _, scope := range s {
+	for _, scope := range l {
 		if scope.GracePeriod == util.Undefined {
 			continue
 		}
@@ -259,12 +296,12 @@ func (s Scopes) IsInGracePeriod(
 }
 
 // String gets the string representation of the scopes.
-func (s Scopes) String() string {
+func (l Scopes) String() string {
 	var builder strings.Builder
 
 	builder.WriteString("[")
 
-	for i, scope := range s {
+	for i, scope := range l {
 		if i > 0 {
 			builder.WriteString(" ")
 		}

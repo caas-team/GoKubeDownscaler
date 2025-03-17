@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"regexp"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -17,36 +17,16 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/client-go/tools/leaderelection"
 )
 
 const (
-	// value defaults.
-	defaultGracePeriod       = 15 * time.Minute
-	defaultDownscaleReplicas = 0
-
 	leaseName = "downscaler-lease"
-
-	// runtime config defaults.
-	defaultInterval = 30 * time.Second
 )
 
 func main() {
-	// set defaults for runtime configuration
-	config := &util.RuntimeConfiguration{
-		DryRun:            false,
-		Debug:             false,
-		Once:              false,
-		Interval:          defaultInterval,
-		IncludeNamespaces: nil,
-		IncludeResources:  []string{"deployments"},
-		ExcludeNamespaces: util.RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
-		ExcludeWorkloads:  nil,
-		IncludeLabels:     nil,
-		TimeAnnotation:    "",
-		Kubeconfig:        "",
-	}
-
+	config := util.GetDefaultConfig()
 	config.ParseConfigFlags()
 
 	err := config.ParseConfigEnvVars()
@@ -55,6 +35,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	scopeDefault := values.GetDefaultScope()
 	scopeCli := values.NewScope()
 	scopeEnv := values.NewScope()
 
@@ -64,9 +45,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// set defaults for scopes
-	scopeCli.GracePeriod = defaultGracePeriod
-	scopeCli.DownscaleReplicas = defaultDownscaleReplicas
 	scopeCli.ParseScopeFlags()
 
 	flag.Parse()
@@ -99,18 +77,18 @@ func main() {
 	defer cancel()
 
 	if !config.LeaderElection {
-		runWithoutLeaderElection(client, ctx, &scopeCli, &scopeEnv, config)
+		runWithoutLeaderElection(client, ctx, scopeDefault, &scopeCli, &scopeEnv, config)
 		return
 	}
 
-	runWithLeaderElection(client, cancel, ctx, &scopeCli, &scopeEnv, config)
+	runWithLeaderElection(client, cancel, ctx, scopeDefault, &scopeCli, &scopeEnv, config)
 }
 
 func runWithLeaderElection(
 	client kubernetes.Client,
 	cancel context.CancelFunc,
 	ctx context.Context,
-	scopeCli, scopeEnv *values.Scope,
+	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *util.RuntimeConfiguration,
 ) {
 	lease, err := client.CreateLease(leaseName)
@@ -136,7 +114,7 @@ func runWithLeaderElection(
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				slog.Info("started leading")
-				err = startScanning(client, ctx, scopeCli, scopeEnv, config)
+				err = startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
 				if err != nil {
 					slog.Error("an error occurred while scanning workloads", "error", err)
 					cancel()
@@ -156,12 +134,12 @@ func runWithLeaderElection(
 func runWithoutLeaderElection(
 	client kubernetes.Client,
 	ctx context.Context,
-	scopeCli, scopeEnv *values.Scope,
+	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *util.RuntimeConfiguration,
 ) {
 	slog.Warn("proceeding without leader election; this could cause errors when running with multiple replicas")
 
-	err := startScanning(client, ctx, scopeCli, scopeEnv, config)
+	err := startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
 	if err != nil {
 		slog.Error("an error occurred while scanning workloads, exiting", "error", err)
 		os.Exit(1)
@@ -171,7 +149,7 @@ func runWithoutLeaderElection(
 func startScanning(
 	client kubernetes.Client,
 	ctx context.Context,
-	scopeCli, scopeEnv *values.Scope,
+	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *util.RuntimeConfiguration,
 ) error {
 	slog.Info("started downscaler")
@@ -191,19 +169,19 @@ func startScanning(
 		for _, workload := range workloads {
 			waitGroup.Add(1)
 
-			go func() {
+			go func(workload scalable.Workload) {
 				slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 				defer waitGroup.Done()
 
-				err := scanWorkload(workload, client, ctx, scopeCli, scopeEnv, config)
+				err = attemptScan(client, ctx, scopeDefault, scopeCli, scopeEnv, config, workload)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
 				}
 
 				slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-			}()
+			}(workload)
 		}
 
 		waitGroup.Wait()
@@ -221,12 +199,48 @@ func startScanning(
 	return nil
 }
 
+func attemptScan(
+	client kubernetes.Client,
+	ctx context.Context,
+	scopeDefault, scopeCli, scopeEnv *values.Scope,
+	config *util.RuntimeConfiguration,
+	workload scalable.Workload,
+) error {
+	slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
+	for retry := range config.MaxRetriesOnConflict + 1 {
+		err := scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, config)
+		if err != nil {
+			if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
+				return fmt.Errorf("failed to scan workload: %w", err)
+			}
+
+			slog.Warn("workload modified, retrying", "attempt", retry+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
+			err := client.RegetWorkload(workload, ctx)
+			if err != nil {
+				return fmt.Errorf("failed to fetch updated workload: %w", err)
+			}
+
+			continue
+		}
+
+		slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
+		return nil
+	}
+
+	slog.Error("failed to scan workload", "attempts", config.MaxRetriesOnConflict+1)
+
+	return nil
+}
+
 // scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload.
 func scanWorkload(
 	workload scalable.Workload,
 	client kubernetes.Client,
 	ctx context.Context,
-	scopeCli, scopeEnv *values.Scope,
+	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *util.RuntimeConfiguration,
 ) error {
 	resourceLogger := kubernetes.NewResourceLogger(client, workload)
@@ -260,7 +274,7 @@ func scanWorkload(
 		return fmt.Errorf("failed to parse namespace scope from annotations: %w", err)
 	}
 
-	scopes := values.Scopes{&scopeWorkload, &scopeNamespace, scopeCli, scopeEnv}
+	scopes := values.Scopes{&scopeWorkload, &scopeNamespace, scopeCli, scopeEnv, scopeDefault}
 
 	slog.Debug("finished parsing all scopes", "scopes", scopes, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 

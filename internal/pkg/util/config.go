@@ -3,6 +3,7 @@ package util
 import (
 	"flag"
 	"fmt"
+	"regexp"
 	"time"
 )
 
@@ -30,8 +31,26 @@ type RuntimeConfiguration struct {
 	IncludeLabels RegexList
 	// TimeAnnotation sets the annotation used for grace-period instead of creation time.
 	TimeAnnotation string
+	// MaxRetriesOnError sets the maximum number of retries when encountering Kubernetes HTTP 409 conflict error.
+	MaxRetriesOnConflict int
 	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
 	Kubeconfig string
+}
+
+func GetDefaultConfig() *RuntimeConfiguration {
+	return &RuntimeConfiguration{
+		DryRun:            false,
+		Debug:             false,
+		Once:              false,
+		Interval:          30 * time.Second,
+		IncludeNamespaces: nil,
+		IncludeResources:  []string{"deployments"},
+		ExcludeNamespaces: RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
+		ExcludeWorkloads:  nil,
+		IncludeLabels:     nil,
+		TimeAnnotation:    "",
+		Kubeconfig:        "",
+	}
 }
 
 // ParseConfigFlags sets all cli flags required for the runtime configuration.
@@ -100,6 +119,12 @@ func (c *RuntimeConfiguration) ParseConfigFlags() {
 		&c.TimeAnnotation,
 		"deployment-time-annotation",
 		"",
+		"the annotation to use instead of creation time for grace period (optional)",
+	)
+	flag.IntVar(
+		&c.MaxRetriesOnConflict,
+		"max-retries-on-conflict",
+		0,
 		"the annotation to use instead of creation time for grace period (optional)",
 	)
 }

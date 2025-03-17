@@ -1,4 +1,4 @@
-//nolint:dupl // this code is very similar for every resource, but its not really abstractable to avoid more duplication
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -43,6 +43,18 @@ func (d *deployment) getReplicas() (int32, error) {
 	}
 
 	return *d.Spec.Replicas, nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (d *deployment) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	d.Deployment, err = clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Get(ctx, d.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get cronjob: %w", err)
+	}
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

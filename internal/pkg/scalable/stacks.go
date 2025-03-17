@@ -45,6 +45,18 @@ func (s *stack) getReplicas() (int32, error) {
 	return *s.Spec.Replicas, nil
 }
 
+// Reget regets the resource from the Kubernetes API.
+func (s *stack) Reget(clientsets *Clientsets, ctx context.Context) error {
+	var err error
+
+	s.Stack, err = clientsets.Zalando.ZalandoV1().Stacks(s.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get stack: %w", err)
+	}
+
+	return nil
+}
+
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
 func (s *stack) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Zalando.ZalandoV1().Stacks(s.Namespace).Update(ctx, s.Stack, metav1.UpdateOptions{})

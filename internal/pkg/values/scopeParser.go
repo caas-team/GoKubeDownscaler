@@ -29,71 +29,71 @@ const (
 )
 
 // ParseScopeFlags sets all flags corresponding to scope values to fill into l.
-func (s *Scope) ParseScopeFlags() {
+func (l *Scope) ParseScopeFlags() {
 	flag.Var(
-		&s.DownscalePeriod,
+		&l.DownscalePeriod,
 		"downscale-period",
 		"period to scale down in (default: never, incompatible: UpscaleTime, DownscaleTime)",
 	)
 	flag.Var(
-		&s.DownTime,
+		&l.DownTime,
 		"default-downtime",
 		`timespans where workloads will be scaled down.
 		outside of them they will be scaled up.
 		(default: never, incompatible: UpscalePeriod, DownscalePeriod)`,
 	)
 	flag.Var(
-		&s.UpscalePeriod,
+		&l.UpscalePeriod,
 		"upscale-period",
 		"periods to scale up in (default: never, incompatible: UpscaleTime, DownscaleTime)",
 	)
 	flag.Var(
-		&s.UpTime,
+		&l.UpTime,
 		"default-uptime",
 		`timespans where workloads will be scaled up.
 		outside of them they will be scaled down.
 		(default: never, incompatible: UpscalePeriod, DownscalePeriod)`,
 	)
 	flag.Var(
-		&s.Exclude,
+		&l.Exclude,
 		"explicit-include",
 		"sets exclude on cli scope to true, makes it so namespaces or deployments have to specify downscaler/exclude=false (default: false)",
 	)
 	flag.Var(
-		(*util.Int32Value)(&s.DownscaleReplicas),
+		(*util.Int32Value)(&l.DownscaleReplicas),
 		"downtime-replicas",
 		"the replicas to scale down to (default: 0)",
 	)
 	flag.Var(
-		(*util.DurationValue)(&s.GracePeriod),
+		(*util.DurationValue)(&l.GracePeriod),
 		"grace-period",
 		"the grace period between creation of workload until first downscale (default: 15min)",
 	)
 }
 
 // GetScopeFromEnv fills l with all values from environment variables and checks for compatibility.
-func (s *Scope) GetScopeFromEnv() error {
-	err := util.GetEnvValue(envUpscalePeriod, &s.UpscalePeriod)
+func (l *Scope) GetScopeFromEnv() error {
+	err := util.GetEnvValue(envUpscalePeriod, &l.UpscalePeriod)
 	if err != nil {
 		return fmt.Errorf("error while getting %q environment variable: %w", envUpscalePeriod, err)
 	}
 
-	err = util.GetEnvValue(envUptime, &s.UpTime)
+	err = util.GetEnvValue(envUptime, &l.UpTime)
 	if err != nil {
 		return fmt.Errorf("error while getting %q environment variable: %w", envUptime, err)
 	}
 
-	err = util.GetEnvValue(envDownscalePeriod, &s.DownscalePeriod)
+	err = util.GetEnvValue(envDownscalePeriod, &l.DownscalePeriod)
 	if err != nil {
 		return fmt.Errorf("error while getting %q environment variable: %w", envDownscalePeriod, err)
 	}
 
-	err = util.GetEnvValue(envDowntime, &s.DownTime)
+	err = util.GetEnvValue(envDowntime, &l.DownTime)
 	if err != nil {
 		return fmt.Errorf("error while getting %q environment variable: %w", envDowntime, err)
 	}
 
-	if err = s.CheckForIncompatibleFields(); err != nil {
+	if err = l.CheckForIncompatibleFields(); err != nil {
 		return fmt.Errorf("error: found incompatible fields: %w", err)
 	}
 
@@ -101,7 +101,7 @@ func (s *Scope) GetScopeFromEnv() error {
 }
 
 // GetScopeFromAnnotations fills l with all values from the annotations and checks for compatibility.
-func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclop // it is a big function and we can refactor it a bit but it should be fine for now
+func (l *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclop // it is a big function and we can refactor it a bit but it should be fine for now
 	annotations map[string]string,
 	logEvent util.ResourceLogger,
 	ctx context.Context,
@@ -109,7 +109,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 	var err error
 
 	if downscalePeriod, ok := annotations[annotationDownscalePeriod]; ok {
-		err = s.DownscalePeriod.Set(downscalePeriod)
+		err = l.DownscalePeriod.Set(downscalePeriod)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationDownscalePeriod, err)
 			logEvent.ErrorInvalidAnnotation(annotationDownscalePeriod, err.Error(), ctx)
@@ -119,7 +119,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 	}
 
 	if downtime, ok := annotations[annotationDowntime]; ok {
-		err = s.DownTime.Set(downtime)
+		err = l.DownTime.Set(downtime)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationDowntime, err)
 			logEvent.ErrorInvalidAnnotation(annotationDowntime, err.Error(), ctx)
@@ -129,7 +129,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 	}
 
 	if upscalePeriod, ok := annotations[annotationUpscalePeriod]; ok {
-		err = s.UpscalePeriod.Set(upscalePeriod)
+		err = l.UpscalePeriod.Set(upscalePeriod)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationUpscalePeriod, err)
 			logEvent.ErrorInvalidAnnotation(annotationUpscalePeriod, err.Error(), ctx)
@@ -139,7 +139,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 	}
 
 	if uptime, ok := annotations[annotationUptime]; ok {
-		err = s.UpTime.Set(uptime)
+		err = l.UpTime.Set(uptime)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationUptime, err)
 			logEvent.ErrorInvalidAnnotation(annotationUptime, err.Error(), ctx)
@@ -149,7 +149,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 	}
 
 	if exclude, ok := annotations[annotationExclude]; ok {
-		err = s.Exclude.Set(exclude)
+		err = l.Exclude.Set(exclude)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationExclude, err)
 			logEvent.ErrorInvalidAnnotation(annotationExclude, err.Error(), ctx)
@@ -158,18 +158,22 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 		}
 	}
 
-	if excludeUntil, ok := annotations[annotationExcludeUntil]; ok {
-		s.ExcludeUntil, err = time.Parse(time.RFC3339, excludeUntil)
+	if excludeUntilString, ok := annotations[annotationExcludeUntil]; ok {
+		var excludeUntil time.Time
+
+		excludeUntil, err = time.Parse(time.RFC3339, excludeUntilString)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationExcludeUntil, err)
 			logEvent.ErrorInvalidAnnotation(annotationExcludeUntil, err.Error(), ctx)
 
 			return err
 		}
+
+		l.ExcludeUntil = &excludeUntil
 	}
 
 	if forceUptime, ok := annotations[annotationForceUptime]; ok {
-		err = s.ForceUptime.Set(forceUptime)
+		err = l.ForceUptime.Set(forceUptime)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationForceUptime, err)
 			logEvent.ErrorInvalidAnnotation(annotationForceUptime, err.Error(), ctx)
@@ -179,7 +183,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 	}
 
 	if forceDowntime, ok := annotations[annotationForceDowntime]; ok {
-		err = s.ForceDowntime.Set(forceDowntime)
+		err = l.ForceDowntime.Set(forceDowntime)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationForceDowntime, err)
 			logEvent.ErrorInvalidAnnotation(annotationForceDowntime, err.Error(), ctx)
@@ -200,11 +204,11 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 		}
 
 		// #nosec G115 // downscaleReplicas gets parsed as a 32 bit integer, so any errors that could be thrown here are already handled above
-		s.DownscaleReplicas = int32(downscaleReplicas)
+		l.DownscaleReplicas = int32(downscaleReplicas)
 	}
 
 	if gracePeriod, ok := annotations[annotationGracePeriod]; ok {
-		err = (*util.DurationValue)(&s.GracePeriod).Set(gracePeriod)
+		err = (*util.DurationValue)(&l.GracePeriod).Set(gracePeriod)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationGracePeriod, err)
 			logEvent.ErrorInvalidAnnotation(annotationGracePeriod, err.Error(), ctx)
@@ -213,7 +217,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 		}
 	}
 
-	if err = s.CheckForIncompatibleFields(); err != nil {
+	if err = l.CheckForIncompatibleFields(); err != nil {
 		err = fmt.Errorf("error: found incompatible fields: %w", err)
 		logEvent.ErrorIncompatibleFields(err.Error(), ctx)
 

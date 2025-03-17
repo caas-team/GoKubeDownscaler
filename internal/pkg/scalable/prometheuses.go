@@ -17,7 +17,7 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 
 	results := make([]Workload, 0, len(prometheuses.Items))
 	for i := range prometheuses.Items {
-		results = append(results, &replicaScaledWorkload{&prometheus{prometheuses.Items[i]}})
+		results = append(results, &replicaScaledWorkload{&prometheus{&prometheuses.Items[i]}})
 	}
 
 	return results, nil
@@ -42,6 +42,18 @@ func (p *prometheus) getReplicas() (int32, error) {
 	}
 
 	return *p.Spec.Replicas, nil
+}
+
+// Reget regets the resource from the Kubernetes API.
+func (p *prometheus) Reget(clientsets *Clientsets, ctx context.Context) error {
+	singlePrometheus, err := clientsets.Monitoring.MonitoringV1().Prometheuses(p.Namespace).Get(ctx, p.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get prometheus: %w", err)
+	}
+
+	p.Prometheus = singlePrometheus
+
+	return nil
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
