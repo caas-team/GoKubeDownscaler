@@ -41,14 +41,14 @@ const (
 )
 
 // String gets the string representation of the ScopeID.
-func (l ScopeID) String() string {
+func (s ScopeID) String() string {
 	return map[ScopeID]string{
 		ScopeWorkload:    "ScopeWorkload",
 		ScopeNamespace:   "ScopeNamespace",
 		ScopeCli:         "ScopeCli",
 		ScopeEnvironment: "ScopeEnvironment",
 		ScopeDefault:     "ScopeDefault",
-	}[l]
+	}[s]
 }
 
 // NewScope gets a new scope with the default values.
@@ -89,22 +89,22 @@ func GetDefaultScope() *Scope {
 }
 
 // CheckForIncompatibleFields checks if there are incompatible fields.
-func (l *Scope) CheckForIncompatibleFields() error { //nolint: cyclop // this is still fine to read, we could defnitly consider refactoring this in the future
+func (s *Scope) CheckForIncompatibleFields() error { //nolint: cyclop // this is still fine to read, we could defnitly consider refactoring this in the future
 	// force down and uptime
-	if l.ForceDowntime != nil && l.ForceUptime != nil {
+	if s.ForceDowntime != nil && s.ForceUptime != nil {
 		return errForceUpAndDownTime
 	}
 	// downscale replicas invalid
-	if l.DownscaleReplicas != util.Undefined && l.DownscaleReplicas < 0 {
+	if s.DownscaleReplicas != util.Undefined && s.DownscaleReplicas < 0 {
 		return errInvalidDownscaleReplicas
 	}
 	// up- and downtime
-	if l.UpTime != nil && l.DownTime != nil {
+	if s.UpTime != nil && s.DownTime != nil {
 		return errUpAndDownTime
 	}
 	// *time and *period
-	if (l.UpTime != nil || l.DownTime != nil) &&
-		(l.UpscalePeriod != nil || l.DownscalePeriod != nil) {
+	if (s.UpTime != nil || s.DownTime != nil) &&
+		(s.UpscalePeriod != nil || s.DownscalePeriod != nil) {
 		return errTimeAndPeriod
 	}
 
@@ -112,18 +112,18 @@ func (l *Scope) CheckForIncompatibleFields() error { //nolint: cyclop // this is
 }
 
 // getCurrentScaling gets the current scaling, not checking for incompatibility.
-func (l *Scope) getCurrentScaling() Scaling {
+func (s *Scope) getCurrentScaling() Scaling {
 	// check times
-	if l.DownTime != nil {
-		if l.DownTime.inTimeSpans() {
+	if s.DownTime != nil {
+		if s.DownTime.inTimeSpans() {
 			return ScalingDown
 		}
 
 		return ScalingUp
 	}
 
-	if l.UpTime != nil {
-		if l.UpTime.inTimeSpans() {
+	if s.UpTime != nil {
+		if s.UpTime.inTimeSpans() {
 			return ScalingUp
 		}
 
@@ -131,16 +131,16 @@ func (l *Scope) getCurrentScaling() Scaling {
 	}
 
 	// check periods
-	if l.DownscalePeriod != nil || l.UpscalePeriod != nil {
-		return l.getScalingFromPeriods()
+	if s.DownscalePeriod != nil || s.UpscalePeriod != nil {
+		return s.getScalingFromPeriods()
 	}
 
 	return ScalingNone
 }
 
-func (l *Scope) getScalingFromPeriods() Scaling {
-	inDowntime := l.DownscalePeriod.inTimeSpans()
-	inUptime := l.UpscalePeriod.inTimeSpans()
+func (s *Scope) getScalingFromPeriods() Scaling {
+	inDowntime := s.DownscalePeriod.inTimeSpans()
+	inUptime := s.UpscalePeriod.inTimeSpans()
 
 	if inUptime && inDowntime {
 		return ScalingIgnore // this prevents unintended behavior; in the future this should be handled while checking for conflicts
@@ -157,17 +157,17 @@ func (l *Scope) getScalingFromPeriods() Scaling {
 	return ScalingIgnore
 }
 
-func (l *Scope) getForceScaling() Scaling {
+func (s *Scope) getForceScaling() Scaling {
 	// check forced scaling
-	if l.ForceDowntime.inTimeSpans() {
+	if s.ForceDowntime.inTimeSpans() {
 		return ScalingDown
 	}
 
-	if l.ForceUptime.inTimeSpans() {
+	if s.ForceUptime.inTimeSpans() {
 		return ScalingUp
 	}
 
-	if l.ForceDowntime != nil || l.ForceUptime != nil {
+	if s.ForceDowntime != nil || s.ForceUptime != nil {
 		return ScalingIgnore // default result to non-unset value to avoid falling through
 	}
 
@@ -177,10 +177,10 @@ func (l *Scope) getForceScaling() Scaling {
 type Scopes [5]*Scope
 
 // GetCurrentScaling gets the current scaling of the first scope that implements scaling.
-func (l Scopes) GetCurrentScaling() Scaling {
+func (s Scopes) GetCurrentScaling() Scaling {
 	var result Scaling
 
-	for _, scope := range l {
+	for _, scope := range s {
 		forcedScaling := scope.getForceScaling()
 		if forcedScaling == ScalingNone {
 			continue // scope doesnt implement forced scaling; falling through
@@ -194,7 +194,7 @@ func (l Scopes) GetCurrentScaling() Scaling {
 		return forcedScaling
 	}
 
-	for _, scope := range l {
+	for _, scope := range s {
 		scopeScaling := scope.getCurrentScaling()
 		if scopeScaling == ScalingNone {
 			continue // scope doesnt implement scaling; falling through
@@ -207,8 +207,8 @@ func (l Scopes) GetCurrentScaling() Scaling {
 }
 
 // GetDownscaleReplicas gets the downscale replicas of the first scope that implements downscale replicas.
-func (l Scopes) GetDownscaleReplicas() (int32, error) {
-	for _, scope := range l {
+func (s Scopes) GetDownscaleReplicas() (int32, error) {
+	for _, scope := range s {
 		downscaleReplicas := scope.DownscaleReplicas
 		if downscaleReplicas == util.Undefined {
 			continue
@@ -221,8 +221,8 @@ func (l Scopes) GetDownscaleReplicas() (int32, error) {
 }
 
 // GetExcluded checks if the scopes exclude scaling.
-func (l Scopes) GetExcluded() bool {
-	for _, scope := range l {
+func (s Scopes) GetExcluded() bool {
+	for _, scope := range s {
 		if scope.Exclude == nil {
 			continue
 		}
@@ -234,7 +234,7 @@ func (l Scopes) GetExcluded() bool {
 		break
 	}
 
-	for _, scope := range l {
+	for _, scope := range s {
 		if scope.ExcludeUntil == nil {
 			continue
 		}
@@ -250,7 +250,7 @@ func (l Scopes) GetExcluded() bool {
 }
 
 // IsInGracePeriod gets the grace period of the uppermost scope that has it set.
-func (l Scopes) IsInGracePeriod(
+func (s Scopes) IsInGracePeriod(
 	timeAnnotation string,
 	workloadAnnotations map[string]string,
 	creationTime time.Time,
@@ -260,7 +260,7 @@ func (l Scopes) IsInGracePeriod(
 	var err error
 	var gracePeriod time.Duration = util.Undefined
 
-	for _, scope := range l {
+	for _, scope := range s {
 		if scope.GracePeriod == util.Undefined {
 			continue
 		}
@@ -296,12 +296,12 @@ func (l Scopes) IsInGracePeriod(
 }
 
 // String gets the string representation of the scopes.
-func (l Scopes) String() string {
+func (s Scopes) String() string {
 	var builder strings.Builder
 
 	builder.WriteString("[")
 
-	for i, scope := range l {
+	for i, scope := range s {
 		if i > 0 {
 			builder.WriteString(" ")
 		}
