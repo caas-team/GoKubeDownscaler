@@ -105,6 +105,7 @@ linters:
     - errorlint
     - exhaustive
     #- exhaustruct # structs, esp. option structs are not always supposed to be exhausted on initialization
+    - exptostd
     - fatcontext
     - forbidigo
     - forcetypeassert
@@ -133,6 +134,7 @@ linters:
     - gosmopolitan
     - govet
     - grouper
+    - iface
     - importas
     - inamedparam
     - ineffassign
@@ -150,6 +152,7 @@ linters:
     - nakedret
     - nestif
     - nilerr
+    - nilnesserr
     - nilnil
     #- nlreturn # wsl has a better implementation of the same principle, where you only have to put whitespaces if the block is longer
     - noctx
@@ -163,6 +166,7 @@ linters:
     - promlinter
     - protogetter
     - reassign
+    - recvcheck
     - revive
     - rowserrcheck
     - sloglint
