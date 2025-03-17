@@ -4,7 +4,6 @@ metadata:
   name: {{ .Values.configMap.name }}
   namespace: {{ .Release.Namespace }}
 data:
-  # downscale for non-work hours
   EXCLUDE_NAMESPACES: '{{- join "," .Values.excludedNamespaces }}'
   {{- if .Values.configMap.extraConfig }}
   {{- tpl .Values.configMap.extraConfig . | nindent 2 }}
