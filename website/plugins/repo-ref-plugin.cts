@@ -11,12 +11,11 @@ export const repoRefRemarkPlugin: Plugin = () => {
       node.url = node.url.replace(refPattern, (match, repoPath) => {
         // if no path was provided, throw an error
         if (!repoPath) {
-          console.error(
-            `"%s:%d:%d": No repository path specified`,
-            file.path,
-            node.position.start.line,
-            node.position.start.column
-          );
+          const errorMessage = `${file.path}:${node.position?.start.line}:${node.position?.start.column}: No repository path specified`;
+          if (process.env.NODE_ENV === "production") {
+            throw new Error(errorMessage);
+          }
+          console.error(`[ERROR] ${errorMessage}`);
           return match;
         }
         return `${repoURL}/tree/main/${repoPath}`;

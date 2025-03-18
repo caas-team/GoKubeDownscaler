@@ -29,7 +29,7 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
     .join("/");
 
   if (!result.frontMatter.globalReference) {
-    console.warn("the file '%s' does not have a globalReference set", urlPath);
+    throw new Error(`the file '${urlPath}' does not have a globalReference set`);
     return result;
   }
 
@@ -37,13 +37,16 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
   if (
     references.get(referenceId) &&
     references.get(referenceId).urlPath != urlPath
-  )
-    console.warn(
-      "the globalReference '%s' is set in '%s' and '%s'. if you moved/renamed this file you can ignore this warning.",
-      referenceId,
-      references.get(referenceId).urlPath,
-      urlPath
+  ) {
+    const errorMessage = `the globalReference '${referenceId}' is set in '${references.get(referenceId).urlPath}' and '${urlPath}'`;
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(errorMessage);
+    }
+    console.error(
+      `[ERROR] ${errorMessage}; if you moved/renamed this file you can ignore this warning`
     );
+    return result;
+  }
 
   // delete old reference for url path
   references.forEach((value, key) => {
@@ -69,26 +72,22 @@ export const docRefRemarkPlugin: Plugin = () => {
         (match, referenceId, headerId) => {
           const reference = references.get(referenceId);
 
-          if (file.path === reference.file) {
-            console.error(
-              `"%s:%d:%d": Reference '%s' called in own file`,
-              file.path,
-              node.position.start.line,
-              node.position.start.column,
-              referenceId
-            );
+          // If the reference doesn't exist, log an error.
+          if (!reference) {
+            const errorMessage = `${file.path}:${node.position?.start.line}:${node.position?.start.column}: No reference found for '${referenceId}'`;
+            if (process.env.NODE_ENV === "production") {
+              throw new Error(errorMessage);
+            }
+            console.error(`[ERROR] ${errorMessage}`);
             return match;
           }
 
-          // If the reference doesn't exist, log an error.
-          if (!reference) {
-            console.error(
-              `"%s:%d:%d": No reference found for '%s'`,
-              file.path,
-              node.position.start.line,
-              node.position.start.column,
-              referenceId
-            );
+          if (file.path === reference.file) {
+            const errorMessage = `${file.path}:${node.position?.start.line}:${node.position?.start.column}: Reference '${referenceId}' called in own file`;
+            if (process.env.NODE_ENV === "production") {
+              throw new Error(errorMessage);
+            }
+            console.error(`[ERROR] ${errorMessage}`);
             return match;
           }
 
