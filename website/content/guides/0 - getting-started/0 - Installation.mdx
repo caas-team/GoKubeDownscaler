@@ -1,0 +1,47 @@
+---
+title: Installation
+id: installation
+globalReference: guides-installation
+---
+
+# Installation
+
+We provide a Helm Chart for an easy installation of the GoKubeDownscaler.
+
+## Prerequisites
+
+In order to get started installing the GoKubeDownscaler using our Helm Chart you need:
+
+- [Helm installed](https://helm.sh/docs/intro) on a system
+- access to a Kubernetes cluster
+
+Also make sure your context is set to the right cluster and namespace where you want to deploy the GoKubeDownscaler.
+
+## Install the Chart
+
+In order to install the chart on your cluster you only need to run one simple command:
+
+```bash
+helm upgrade -i gokubedownscaler oci://ghcr.io/caas-team/charts/go-kube-downscaler
+```
+
+This will install the latest version of our helm chart into your Kubernetes cluster.
+
+You can also alternatively add our helm chart repo in order to install the chart.
+
+```bash
+helm repo add caas-team https://caas-team.github.io/helm-charts/
+```
+
+This will add all of our published Helm Charts to a local Helm repo named caas-team.
+
+After that you just need to run the following command:
+
+```bash
+helm install go-kube-downscaler caas-team/go-kube-downscaler
+```
+
+In order to customize your installation of the GoKubeDownscaler
+you can adjust the [values.yaml](repo:deployments/chart/values.yaml) provided with the chart.
+
+Check our [value docs page](ref:docs-helm-values) for a detailed overview of all options.

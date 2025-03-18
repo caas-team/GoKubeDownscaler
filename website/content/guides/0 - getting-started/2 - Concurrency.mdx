@@ -1,0 +1,42 @@
+---
+title: Concurrency
+id: concurrency
+globalReference: docs-concurrency
+---
+
+# Concurrency
+
+The Downscaler is natively designed to leverage parallel processing for scaling workloads.
+This capability becomes particularly valuable in large clusters with
+numerous workloads that need to be scaled down at the same time.
+
+## Optimizing CPU Limit
+
+To enable parallelism the Downscaler should be allowed to expand its CPU usage dynamically.
+This can be achieved by setting the CPU limit to a multiple of available cores.
+
+For example `2000m` enables using up to 2 VCPUs, `3000m` up to 3 VCPUs, `4000m` up to 4 VCPUs and so forth.
+The number of workloads that can be processed in parallel increases as the number of vCPUs that can be used increases.
+
+The default configuration on the Helm Chart allows the Downscaler to use up to 2 full vCPUs:
+
+```yaml
+resources:
+  limits:
+    cpu: 2000m
+    memory: 900Mi
+  requests:
+    cpu: 200m
+    memory: 300Mi
+```
+
+You should consider whether the default should be adjusted (higher or lower) based on your cluster size and workload to be scaled.
+Most use cases can be handled with a lower CPU Limit value.
+
+When choosing the correct values, the following considerations should be taken into account:
+
+1. Setting a high CPU limit can lead to usage spikes.
+2. The CPU Limit doesn't guarantee that the Downscaler will use the full amount of CPU declared; the pod can expand its
+   CPU usage as long as the resources are available on the node at any given time.
+
+If you need to guarantee a certain amount of CPU resources you should modify the CPU request instead.

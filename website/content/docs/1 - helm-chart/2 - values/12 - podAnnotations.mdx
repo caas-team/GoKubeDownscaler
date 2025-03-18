@@ -1,0 +1,35 @@
+---
+title: podAnnotations
+id: podAnnotations
+globalReference: docs-helm-pod-annotations
+---
+
+# podAnnotations
+
+The `podAnnotations` value is a map of annotations that the pods of the GoKubeDownscaler deployment will have.
+
+:::info
+
+The default value for `podAnnotations` is empty:
+
+```yaml
+podAnnotations: {}
+```
+
+:::
+
+:::tip Example:
+
+```yaml
+podAnnotations: { "annotation1": "value1", "annotation2": "value2" }
+```
+
+This will set two annotations on each pod in the following format:
+
+```yaml
+annotations:
+  annotation1: value1
+  annotation2: value2
+```
+
+:::

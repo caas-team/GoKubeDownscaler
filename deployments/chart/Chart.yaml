@@ -8,7 +8,7 @@ keywords:
   - downscaling
 version: 1.1.1
 appVersion: 1.1.1
-icon: https://raw.githubusercontent.com/caas-team/GoKubeDownscaler/refs/heads/main/deployments/chart/icon.svg
+icon: https://raw.githubusercontent.com/caas-team/GoKubeDownscaler/refs/heads/main/logo/kubedownscaler.svg
 sources:
   - https://github.com/caas-team/GoKubeDownscaler
 maintainers:

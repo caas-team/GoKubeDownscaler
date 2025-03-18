@@ -1,0 +1,149 @@
+---
+title: Migrating from Py-Kube-Downscaler
+id: migrating
+globalReference: guides-migrating
+---
+
+# Migrating From Py-Kube-Downscaler
+
+In most cases it's very simple to migrate and step 3 and 4 can be skipped.
+
+Step 1:
+
+Uninstall the py-kube-downscaler
+
+```bash
+helm uninstall py-kube-downscaler
+```
+
+Step 2:
+
+Adjust any old values.yaml files to the [new structure](#new-structure-of-valuesyaml).
+
+Step 3:
+
+Make sure all non-official automations support the [breaking changes](#breaking-changes).
+
+You can skip this if you didn't have external automations for the downscaler.
+
+Step 4:
+
+Make sure all timestamps are [RFC3339](#rfc3339-timestamps).
+To make this easier you could also just run the downscaler and see if it gives an error.
+
+Since only some edge cases of the ISO 8601 timestamp format are not compatible you can likely skip this step.
+Should the downscaler error because of this you can still change them afterwards.
+
+Step 5:
+
+Now you're ready to install the Downscaler.
+For that you can follow our [Installation Guide](ref:guides-installation).
+
+## Features
+
+### Incompatibility
+
+Some [values](ref:docs-values) are now incompatible with each other.
+This makes it easier to debug unwanted behavior from misconfiguration.
+
+See the [breaking changes entry](#incompatible-fields) for more information.
+
+### Duration Units
+
+Instead of just integer seconds you can now also use duration strings with units.
+This makes it more intuitive to configure.
+
+### Uniform Timestamps
+
+The downscaler now uses [RFC3339 timestamps](https://datatracker.ietf.org/doc/html/rfc3339) exclusively.
+This means that you will not have to juggle with multiple timestamp formats.
+
+See the [breaking changes entry](#rfc3339-timestamps) for more information.
+
+### Scopes
+
+The scaling [values](ref:docs-values) are now ordered into [scopes](ref:docs-scopes).
+This makes it easier to understand where the values are taken from.
+
+See the [breaking changes entry](#changed-value-hierarchy) for more information.
+
+### Explicit Include
+
+Added the [`--explicit-include` cli argument](ref:docs-arguments).
+
+This is a simple way to exclude all workloads by default and only add those you want to have scaled.
+
+### Comfort Spaces
+
+Lists now allow for spaces in-between the entries.
+
+This allows for lists to be more readable since the entries are separated.
+
+### Reverse Relative Timespans
+
+[Reverse Timespans](ref:docs-timespans#relative-timespans) can now overlap into the "next day" (`20:00-08:00`)
+
+This is a faster and less verbose way of matching the opposite of an up/downtime.
+
+### Actual Exclusion
+
+Excluding a workload now will ignore scaling the workload, instead of forcing it into uptime.
+This means that what happens when excluding a workload is more intuitive.
+
+See the [breaking changes entry](#stricter-exclusion) for more information.
+
+### Workload Errors
+
+Configuration errors on workloads are now shown as error events on the workload.
+This makes it so you don't have to have access to the downscalers console just to see whats wrong with your configuration.
+
+### Booleans to Timespans
+
+All boolean [values](ref:docs-values) (e.g. force up/downtime, exclude)
+now support [timespans](ref:docs-timespans) to dynamically do things.
+
+## Breaking Changes
+
+### New Structure of values.yaml
+
+Some fields of the [values.yaml](repo:deployments/chart/values.yaml) file have been restructured.
+
+The following fields would have to be adjusted in an old values.yaml file from the py-kube-downscaler:
+
+- `constrainedDownscaler` is now not needed anymore
+- `configMapName` is now under `configMap.name`
+- `extraConfig` is now under `configMap.extraConfig`
+
+### Incompatible Fields
+
+Some [values](ref:docs-values) are now incompatible with each other.
+
+This shouldn't break anything.
+And will only cause a problem if the downscaler was misconfigured.
+
+See the [features entry](#incompatibility) for more information.
+
+### RFC3339 Timestamps
+
+The downscaler now uses [RFC3339 timestamps](https://datatracker.ietf.org/doc/html/rfc3339) exclusively.
+
+This should not break anything.
+This only causes a problem in some edge cases of the previously supported ISO 8601 timestamp format (examples: `2023-08-12`, `2023-233` or `2023-W34-1`).
+
+See the [features entry](#uniform-timestamps) for more information.
+
+### Changed Value Hierarchy
+
+The scaling [values](ref:docs-values) are now ordered into [scopes](ref:docs-scopes).
+
+This should not break anything.
+This only causes a problem if there was a weird quirk in the way the py-kube-downscaler got its scaling attributes from you relied on.
+
+See the [features entry](#scopes) for more information.
+
+### Stricter Exclusion
+
+Excluding a workload now will ignore scaling the workload, instead of forcing it into uptime.
+This only causes problems if you relied on the workload being automatically scaled up when excluded.
+
+See the [features entry](#actual-exclusion) for more information.

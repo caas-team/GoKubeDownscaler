@@ -1,0 +1,96 @@
+---
+title: Arguments
+id: arguments
+globalReference: docs-arguments
+---
+
+# Arguments
+
+[Values](ref:docs-values) and [runtime configuration](ref:docs-runtime-configuration) can be set via cli arguments.
+
+## Values
+
+The [Values](ref:docs-values) will be applied to the [cli scope](ref:docs-scopes#cli-scope).
+
+### Valid Values
+
+- [--upscale-period](ref:docs-values#upscale-period)
+- [--default-uptime](ref:docs-values#uptime)
+- [--downscale-period](ref:docs-values#downscale-period)
+- [--default-downtime](ref:docs-values#downtime)
+- [--downtime-replicas](ref:docs-values#downscale-replicas)
+- [--explicit-include](ref:docs-values#exclude)
+
+:::info
+
+`--explicit-include` will set the [exclude value](ref:docs-values#exclude) to `true` on the [cli scope](ref:docs-scopes#cli-scope).
+This will exclude every workload unless [more specific scopes](ref:docs-scopes) (e.g.: [namespace scope](ref:docs-scopes#namespace-scope),
+[workload scope](ref:docs-scopes#workload-scope)) [specify](ref:docs-annotations) exclude to `false`.
+
+:::
+
+## Runtime Configuration
+
+:::info
+
+The runtime configuration set by the cli arguments
+will take precedence over [their respective environment variables](ref:docs-environment-variables#runtime-configuration) if they are both set.
+
+:::
+
+### Valid Config Flags
+
+- [--dry-run](ref:docs-runtime-configuration#dry-run)
+- [--debug](ref:docs-runtime-configuration#debug)
+- [--once](ref:docs-runtime-configuration#once)
+- [--interval](ref:docs-runtime-configuration#interval)
+- [--namespace](ref:docs-runtime-configuration#namespace)
+- [--include-resources](ref:docs-runtime-configuration#include-resources)
+- [--exclude-namespaces](ref:docs-runtime-configuration#exclude-namespaces)
+- [--exclude-deployments](ref:docs-runtime-configuration#exclude-deployments)
+- [--matching-labels](ref:docs-runtime-configuration#matching-labels)
+- [--deployment-time-annotation](ref:docs-runtime-configuration#time-annotation)
+- [--leader-election](ref:docs-runtime-configuration#leader-election)
+- [--max-retries-on-conflict](ref:docs-runtime-configuration#max-retries-on-conflict)
+- [-k](ref:docs-runtime-configuration#kubeconfig) (kubeconfig)
+
+## Usage
+
+The CLI arguments can be set in different ways, depending on your setup.
+
+:::info
+
+The value of a boolean cli flags can be omitted.
+This will set its value to true.
+
+:::
+
+### Binary or Go Run
+
+```bash
+# go build cmd/kubedownscaler -o kubedownscaler
+kubedownscaler --dry-run --namespace=my-namespace
+```
+
+```bash
+go run cmd/kubedownscaler --explicit-include=true --interval 60s --exclude-namespaces "kube-.*"
+```
+
+### Via Helm Chart values.yaml
+
+Some arguments already have fields that specify them to make configuring them easier.
+Here is a list compiled of all of the fields that configure their respective cli arguments:
+
+- [`includedResources`](ref:docs-helm-included-resources) directly sets `--include-resources`
+- [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces) directly sets `--namespace`
+
+All other arguments can be used via the `arguments` field.
+
+```yaml title="values.yaml"
+# ...
+
+arguments:
+  - --interval 2m
+  - --downscale-period "Sat-Sun 00:00-24:00 Europe/Paris"
+# ...
+```

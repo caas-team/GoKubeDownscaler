@@ -1,4 +1,4 @@
-//nolint:dupl // this code is very similar for every resource, but its not really abstractable to avoid more duplication
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -24,7 +24,7 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 	return results, nil
 }
 
-// deployment is a wrapper for apps/v1.Deployment to implement the replicaScaledResource interface.
+// deployment is a wrapper for deployment.v1.apps to implement the replicaScaledResource interface.
 type deployment struct {
 	*appsv1.Deployment
 }

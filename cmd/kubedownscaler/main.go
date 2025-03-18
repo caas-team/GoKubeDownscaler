@@ -35,17 +35,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	layerDefault := values.GetDefaultLayer()
-	layerCli := values.NewLayer()
-	layerEnv := values.NewLayer()
+	scopeDefault := values.GetDefaultScope()
+	scopeCli := values.NewScope()
+	scopeEnv := values.NewScope()
 
-	err = layerEnv.GetLayerFromEnv()
+	err = scopeEnv.GetScopeFromEnv()
 	if err != nil {
-		slog.Error("failed to get layer from env", "error", err)
+		slog.Error("failed to get scope from env", "error", err)
 		os.Exit(1)
 	}
 
-	layerCli.ParseLayerFlags()
+	scopeCli.ParseScopeFlags()
 
 	flag.Parse()
 
@@ -53,10 +53,16 @@ func main() {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
-	if err = layerCli.CheckForIncompatibleFields(); err != nil {
+	if err = scopeCli.CheckForIncompatibleFields(); err != nil {
 		slog.Error("found incompatible fields", "error", err)
 		os.Exit(1)
 	}
+
+	slog.Debug("finished getting startup config",
+		"envScope", scopeEnv,
+		"cliScope", scopeCli,
+		"config", config,
+	)
 
 	slog.Debug("getting client for kubernetes")
 
@@ -71,18 +77,18 @@ func main() {
 	defer cancel()
 
 	if !config.LeaderElection {
-		runWithoutLeaderElection(client, ctx, layerDefault, &layerCli, &layerEnv, config)
+		runWithoutLeaderElection(client, ctx, scopeDefault, &scopeCli, &scopeEnv, config)
 		return
 	}
 
-	runWithLeaderElection(client, cancel, ctx, layerDefault, &layerCli, &layerEnv, config)
+	runWithLeaderElection(client, cancel, ctx, scopeDefault, &scopeCli, &scopeEnv, config)
 }
 
 func runWithLeaderElection(
 	client kubernetes.Client,
 	cancel context.CancelFunc,
 	ctx context.Context,
-	layerDefault, layerCli, layerEnv *values.Layer,
+	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *util.RuntimeConfiguration,
 ) {
 	lease, err := client.CreateLease(leaseName)
@@ -108,7 +114,7 @@ func runWithLeaderElection(
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				slog.Info("started leading")
-				err = startScanning(client, ctx, layerDefault, layerCli, layerEnv, config)
+				err = startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
 				if err != nil {
 					slog.Error("an error occurred while scanning workloads", "error", err)
 					cancel()
@@ -128,12 +134,12 @@ func runWithLeaderElection(
 func runWithoutLeaderElection(
 	client kubernetes.Client,
 	ctx context.Context,
-	layerDefault, layerCli, layerEnv *values.Layer,
+	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *util.RuntimeConfiguration,
 ) {
 	slog.Warn("proceeding without leader election; this could cause errors when running with multiple replicas")
 
-	err := startScanning(client, ctx, layerDefault, layerCli, layerEnv, config)
+	err := startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
 	if err != nil {
 		slog.Error("an error occurred while scanning workloads, exiting", "error", err)
 		os.Exit(1)
@@ -143,7 +149,7 @@ func runWithoutLeaderElection(
 func startScanning(
 	client kubernetes.Client,
 	ctx context.Context,
-	layerDefault, layerCli, layerEnv *values.Layer,
+	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *util.RuntimeConfiguration,
 ) error {
 	slog.Info("started downscaler")
@@ -164,13 +170,17 @@ func startScanning(
 			waitGroup.Add(1)
 
 			go func(workload scalable.Workload) {
+				slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
 				defer waitGroup.Done()
 
-				err = attemptScan(client, ctx, layerDefault, layerCli, layerEnv, config, workload)
+				err = attemptScan(client, ctx, scopeDefault, scopeCli, scopeEnv, config, workload)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
 				}
+
+				slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 			}(workload)
 		}
 
@@ -192,14 +202,14 @@ func startScanning(
 func attemptScan(
 	client kubernetes.Client,
 	ctx context.Context,
-	layerDefault, layerCli, layerEnv *values.Layer,
+	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *util.RuntimeConfiguration,
 	workload scalable.Workload,
 ) error {
 	slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	for retry := range config.MaxRetriesOnConflict + 1 {
-		err := scanWorkload(workload, client, ctx, layerDefault, layerCli, layerEnv, config)
+		err := scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, config)
 		if err != nil {
 			if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
 				return fmt.Errorf("failed to scan workload: %w", err)
@@ -230,7 +240,7 @@ func scanWorkload(
 	workload scalable.Workload,
 	client kubernetes.Client,
 	ctx context.Context,
-	layerDefault, layerCli, layerEnv *values.Layer,
+	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *util.RuntimeConfiguration,
 ) error {
 	resourceLogger := kubernetes.NewResourceLogger(client, workload)
@@ -241,34 +251,34 @@ func scanWorkload(
 	}
 
 	slog.Debug(
-		"parsing workload layer from annotations",
+		"parsing workload scope from annotations",
 		"annotations", workload.GetAnnotations(),
 		"name", workload.GetName(),
 		"namespace", workload.GetNamespace(),
 	)
 
-	layerWorkload := values.NewLayer()
-	if err = layerWorkload.GetLayerFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
-		return fmt.Errorf("failed to parse workload layer from annotations: %w", err)
+	scopeWorkload := values.NewScope()
+	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
+		return fmt.Errorf("failed to parse workload scope from annotations: %w", err)
 	}
 
 	slog.Debug(
-		"parsing namespace layer from annotations",
+		"parsing namespace scope from annotations",
 		"annotations", namespaceAnnotations,
 		"name", workload.GetName(),
 		"namespace", workload.GetNamespace(),
 	)
 
-	layerNamespace := values.NewLayer()
-	if err = layerNamespace.GetLayerFromAnnotations(namespaceAnnotations, resourceLogger, ctx); err != nil {
-		return fmt.Errorf("failed to parse namespace layer from annotations: %w", err)
+	scopeNamespace := values.NewScope()
+	if err = scopeNamespace.GetScopeFromAnnotations(namespaceAnnotations, resourceLogger, ctx); err != nil {
+		return fmt.Errorf("failed to parse namespace scope from annotations: %w", err)
 	}
 
-	layers := values.Layers{&layerWorkload, &layerNamespace, layerCli, layerEnv, layerDefault}
+	scopes := values.Scopes{&scopeWorkload, &scopeNamespace, scopeCli, scopeEnv, scopeDefault}
 
-	slog.Debug("finished parsing all layers", "layers", layers, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	slog.Debug("finished parsing all scopes", "scopes", scopes, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-	isInGracePeriod, err := layers.IsInGracePeriod(
+	isInGracePeriod, err := scopes.IsInGracePeriod(
 		config.TimeAnnotation,
 		workload.GetAnnotations(),
 		workload.GetCreationTimestamp().Time,
@@ -284,18 +294,18 @@ func scanWorkload(
 		return nil
 	}
 
-	if layers.GetExcluded() {
+	if scopes.GetExcluded() {
 		slog.Debug("workload is excluded, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return nil
 	}
 
-	scaling := layers.GetCurrentScaling()
+	scaling := scopes.GetCurrentScaling()
 	if scaling == values.ScalingNone {
-		slog.Debug("scaling is not set by any layer, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Debug("scaling is not set by any scope, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return nil
 	}
 
-	err = scaleWorkload(scaling, workload, layers, client, ctx)
+	err = scaleWorkload(scaling, workload, scopes, client, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to scale workload: %w", err)
 	}
@@ -307,7 +317,7 @@ func scanWorkload(
 func scaleWorkload(
 	scaling values.Scaling,
 	workload scalable.Workload,
-	layers values.Layers,
+	scopes values.Scopes,
 	client kubernetes.Client,
 	ctx context.Context,
 ) error {
@@ -319,7 +329,7 @@ func scaleWorkload(
 	if scaling == values.ScalingDown {
 		slog.Debug("downscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-		downscaleReplicas, err := layers.GetDownscaleReplicas()
+		downscaleReplicas, err := scopes.GetDownscaleReplicas()
 		if err != nil {
 			return fmt.Errorf("failed to get downscale replicas: %w", err)
 		}

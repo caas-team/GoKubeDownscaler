@@ -27,7 +27,7 @@ Create chart name and version as used by the chart label.
 If replicaCount is greater than 1 leader election is enabled by default.
 */}}
 {{- define "go-kube-downscaler.leaderElection" -}}
-{{- if (.Values.replicaCount | int | gt 1) }}
+{{- if gt (.Values.replicaCount | int) 1 }}true{{- end }}
 {{- end }}
 
 {{/*
@@ -67,12 +67,9 @@ Create defined permissions for roles
 - apiGroups:
     - ""
   resources:
-    - pods
     - namespaces
   verbs:
     - get
-    - watch
-    - list
 - apiGroups:
     - ""
   resources:
@@ -80,65 +77,7 @@ Create defined permissions for roles
   verbs:
     - get
     - create
-    - watch
-    - list
     - update
-    - patch
-{{- if not .Values.constrainedDownscaler }}
-- apiGroups:
-  - constraints.gatekeeper.sh
-  resources:
-  - kubedownscalerjobsconstraint
-  verbs:
-  - get
-  - create
-  - watch
-  - list
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - kyverno.io
-  resources:
-  - policies
-  resourceNames:
-  - kube-downscaler-jobs-policy
-  verbs:
-  - get
-  - create
-  - watch
-  - list
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - kyverno.io
-  resources:
-  - policies
-  verbs:
-  - get
-  - create
-  - watch
-  - list
-- apiGroups:
-  - templates.gatekeeper.sh
-  resources:
-  - constrainttemplate
-  verbs:
-  - create
-  - get
-  - list
-  - watch
-- apiGroups:
-  - apiextensions.k8s.io
-  resources:
-  - customresourcedefinitions
-  verbs:
-  - create
-  - get
-  - list
-  - watch
-{{- end }}
 {{- range $resource := .Values.includedResources }}
 {{- if eq $resource "deployments" }}
 - apiGroups:
@@ -147,10 +86,8 @@ Create defined permissions for roles
     - deployments
   verbs:
     - get
-    - watch
     - list
     - update
-    - patch
 {{- end }}
 {{- if eq $resource "statefulsets" }}
 - apiGroups:
@@ -159,10 +96,8 @@ Create defined permissions for roles
     - statefulsets
   verbs:
     - get
-    - watch
     - list
     - update
-    - patch
 {{- end }}
 {{- if eq $resource "daemonsets" }}
 - apiGroups:
@@ -171,10 +106,8 @@ Create defined permissions for roles
     - daemonsets
   verbs:
     - get
-    - watch
     - list
     - update
-    - patch
 {{- end }}
 {{- if eq $resource "rollouts" }}
 - apiGroups:
@@ -183,10 +116,8 @@ Create defined permissions for roles
     - rollouts
   verbs:
     - get
-    - watch
     - list
     - update
-    - patch
 {{- end }}
 {{- if eq $resource "horizontalpodautoscalers" }}
 - apiGroups:
@@ -195,10 +126,8 @@ Create defined permissions for roles
     - horizontalpodautoscalers
   verbs:
     - get
-    - watch
     - list
     - update
-    - patch
 {{- end }}
 {{- if eq $resource "jobs" }}
 - apiGroups:
@@ -207,10 +136,8 @@ Create defined permissions for roles
     - jobs
   verbs:
     - get
-    - watch
     - list
     - update
-    - patch
 {{- end }}
 {{- if eq $resource "cronjobs" }}
 - apiGroups:
@@ -219,10 +146,8 @@ Create defined permissions for roles
     - cronjobs
   verbs:
     - get
-    - watch
     - list
     - update
-    - patch
 {{- end }}
 {{- if eq $resource "scaledobjects" }}
 - apiGroups:
@@ -231,10 +156,8 @@ Create defined permissions for roles
     - scaledobjects
   verbs:
     - get
-    - watch
     - list
     - update
-    - patch
 {{- end }}
 {{- if eq $resource "stacks" }}
 - apiGroups:
@@ -243,10 +166,8 @@ Create defined permissions for roles
     - stacks
   verbs:
     - get
-    - watch
     - list
     - update
-    - patch
 {{- end }}
 {{- if eq $resource "prometheuses" }}
 - apiGroups:
@@ -255,10 +176,8 @@ Create defined permissions for roles
     - prometheuses
   verbs:
     - get
-    - watch
     - list
     - update
-    - patch
 {{- end }}
 {{- if eq $resource "poddisruptionbudgets" }}
 - apiGroups:
@@ -267,10 +186,8 @@ Create defined permissions for roles
     - poddisruptionbudgets
   verbs:
     - get
-    - watch
     - list
     - update
-    - patch
 {{- end }}
 {{- end }}
 {{- end }}

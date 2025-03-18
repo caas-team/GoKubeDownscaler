@@ -30,8 +30,12 @@ func (r *RegexList) String() string {
 	return fmt.Sprint(*r)
 }
 
-func (r RegexList) CheckMatchesAny(text string) bool {
-	for _, entry := range r {
+func (r *RegexList) CheckMatchesAny(text string) bool {
+	if r == nil {
+		return false
+	}
+
+	for _, entry := range *r {
 		if entry.MatchString(text) {
 			return true
 		}

@@ -1,0 +1,101 @@
+---
+title: Runtime Configuration
+id: runtime-configuration
+globalReference: docs-runtime-configuration
+---
+
+# Runtime Configuration
+
+Runtime Configurations change how the Downscaler operates.
+
+## Dry Run
+
+- Type: boolean
+- Description: Makes the downscaler print the changes it would have made instead of applying them.
+  Will additionally enable [Debug](#debug).
+- Default: false
+
+## Debug
+
+- Type: boolean
+- Description: Will print additional debug information.
+- Default: false
+
+## Once
+
+- Type: boolean
+- Description: Makes the Downscaler only scan once before exiting.
+- Default: false
+
+## Interval
+
+- Type: [Duration](ref:docs-duration)
+- Description: Sets the time the Downscaler waits between scans.
+- Default: 30s
+
+## Namespace
+
+- Type: [String List](ref:docs-string-list) (list of namespace names)
+- Description: Sets the namespaces the Downscaler will scan over.
+- Default: All Namespaces
+
+## Include Resources
+
+- Type: [String List](ref:docs-string-list) (list of [workload types](ref:docs-workload-types))
+- Description: Sets the resources/workload types the downscaler will scan over.
+- Default: `deployments`
+
+## Exclude Namespaces
+
+- Type: [Regex List](ref:docs-regex-list) (list of regex patterns matching namespace names)
+- Description: Makes the downscaler exclude workloads within matching namespaces.
+- Default: `kube-system`, `kube-downscaler`
+
+## Exclude Deployments
+
+- Type: [Regex List](ref:docs-regex-list) (list of regex patterns matching workload names)
+- Description: Makes the downscaler exclude matching workloads.
+- Default: none
+
+## Matching Labels
+
+- Type: [Regex List](ref:docs-regex-list) (list of regex patterns matching labels)
+  :::info
+
+  The Pattern has to match this pattern: `LABEL_NAME=LABEL_VALUE`.
+  This means that to match the `example` label to be `"true"` you would put in `example=true`.
+  To match a workload having the label no matter the value you would use `example=.*`.
+
+  :::
+
+- Description: Makes the downscaler only scale workloads whose labels match at least one of the patterns.
+- Default: none (the workloads don't have to match any label)
+
+## Time Annotation
+
+- Type: string (annotation on workload containing an [RFC3339 formatted timestamp](https://datatracker.ietf.org/doc/html/rfc3339))
+- Description: Makes the downscaler check the [grace period](ref:docs-values#grace-period) against the value of the annotation
+  instead of the creation time of the workload.
+- Default: none (the downscaler will use the creation time of the workload)
+
+## Leader Election
+
+- Type: boolean
+- Description: Enforces leader election by creating [lease objects](https://kubernetes.io/docs/concepts/architecture/leases/)
+  to ensure only one instance of the GoKubeDownscaler is active at any given time to avoid conflicts.
+- Default: false
+
+## Max Retries on Conflict
+
+- Type: integer
+- Description: Sets the maximum number of retries for handling HTTP 409 conflict errors,
+  which occur when another entity modifies a resource that the downscaler is currently processing.
+- Default: 0
+
+## Kubeconfig
+
+- Type: string (path to a kubeconfig file)
+- Description: Makes the downscaler use the local kubeconfig instead of using the in-cluster config.
+  It will use the `current-context` specified in the kubeconfig.
+  The token/account used by the kubeconfig needs to have the [permissions necessary for scaling](ref:docs-helm-permissions).
+- Default: none (the downscaler will use the in-cluster config)

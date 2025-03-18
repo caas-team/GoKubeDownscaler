@@ -1,0 +1,46 @@
+---
+title: nameOverride
+id: nameOverride
+globalReference: docs-helm-name-override
+---
+
+# nameOverride
+
+The `nameOverride` value overrides the chart name for the created Kubernetes objects.
+
+:::info
+
+The default value for `nameOverride` is:
+
+```yaml
+nameOverride: ""
+```
+
+:::
+
+If a value for `nameOverride` is set the Helm Chart will adjust the names of the following kubernetes objects:
+
+- Deployment
+- ServiceAccount
+- ClusterRole
+- ClusterRoleBinding
+- Role
+- RoleBinding
+
+:::tip Example
+
+If you install the Helm Chart with a release name `my-release` and set:
+
+```yaml
+nameOverride: my-custom-name
+```
+
+The names of the mentioned kubernetes objects will be changed to `my-release-my-custom-name`.
+
+:::
+
+:::note
+
+The override will be cut off after 63 characters and trailing hyphens will be trimmed.
+
+:::

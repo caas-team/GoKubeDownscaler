@@ -1,0 +1,30 @@
+---
+title: fullnameOverride
+id: fullnameOverride
+globalReference: docs-helm-fullname-override
+---
+
+# fullnameOverride
+
+The `fullnameOverride` value overrides the names of the created Kubernetes objects with the provided name.
+
+:::info
+
+The default value for `fullnameOverride` is:
+
+```yaml
+fullnameOverride: ""
+```
+
+:::
+
+If a value for `fullnameOverride` is set the Helm Chart will change the names of the following kubernetes objects to the one provided:
+
+- Deployment
+- ServiceAccount
+- ClusterRole
+- ClusterRoleBinding
+- Role
+- RoleBinding
+
+Keep in mind however that the override is being cut off after 63 characters and will trim trailing hyphens.

@@ -1,0 +1,29 @@
+---
+title: securityContext
+id: securityContext
+globalReference: docs-helm-security-context
+---
+
+# securityContext
+
+The `securityContext` value defines the SecurityContext on container level.
+
+:::info
+
+The default values for `securityContext` are:
+
+```yaml
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  privileged: false
+  capabilities:
+    drop:
+      - ALL
+```
+
+:::
+
+In this field you can customize privilege and access control settings for the GoKubeDownscaler container.
+
+For more information on possible configuration you can reference [the official Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/security-context).

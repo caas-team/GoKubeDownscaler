@@ -1,0 +1,31 @@
+---
+title: resources
+id: resources
+globalReference: docs-helm-resources
+---
+
+# Resources
+
+The `resources` value defines the CPU and memory limits and requests.
+
+:::info
+
+The default values for `resources` are:
+
+```yaml
+resources:
+  limits:
+    cpu: 2000m
+    memory: 900Mi
+  requests:
+    cpu: 200m
+    memory: 300Mi
+```
+
+:::
+
+Here you can adjust the minimum and maximum amounts of cpu and memory the GoKubeDownscaler Pod is allowed to use.
+
+The `requests` value being the minimum/reserved memory for the pod and the `limits` being the maximum the pod can use.
+
+For more information on resource management you can reference [the official Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).

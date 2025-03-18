@@ -1,0 +1,105 @@
+---
+title: Timespans
+id: timespans
+globalReference: docs-timespans
+---
+
+# Timespans
+
+Timespans define periods of time.
+
+There are three types of timespans:
+
+- [Absolute timespans](#absolute-timespans): a timespan defined by two absolute points in time
+- [Relative timespans](#relative-timespans): reoccurring on a weekly schedule
+- [Boolean timespans](#alwaysnevertruefalse): statically always or never active
+
+## Absolute Timespans
+
+- Format:
+  `<RFC3339-Timestamp>-<RFC3339-Timestamp>` or
+  `<RFC3339-Timestamp> - <RFC3339-Timestamp>`
+- Example: `2024-07-29T08:30:00Z - 2024-07-29T16:00:00+02:00`
+
+See [RFC3339 Timestamps](https://datatracker.ietf.org/doc/html/rfc3339) for more information
+
+## Relative Timespans
+
+- Format: `<Weekday-From>-<Weekday-To> <Time-Of-Day-From>-<Time-Of-Day-To> <Timezone>`
+- Examples:
+
+  ```text
+  Mon-Fri 08:00-20:00 Asia/Tokyo          # From Monday to Friday: from 08:00 to 20:00
+  Sat-Sun 00:00-24:00 UTC                 # On The Weekend: the entire day
+  Mon-Fri 20:00-08:00 Australia/Sydney    # From Monday to Friday: from Midnight to 08:00 and from 20:00 until end of day
+  Mon-Sun 00:00-00:00 America/New_York    # The timespan never matches, this would not do anything
+  Mon-Tue 20:00-24:00 Africa/Johannesburg # On Monday and Tuesday: from 20:00 to midnight
+  Mon-Tue 20:00-00:00 Europe/Amsterdam    # On Monday and Tuesday: from 20:00 to midnight
+  ```
+
+You can reverse the times (example: `20:00-08:00`).
+This makes the timespan match the time from start of day until 08:00 and from 20:00 until the end of day.
+
+### Valid Values
+
+#### Weekdays
+
+Case-insensitive:
+
+- Mon
+- Tue
+- Wed
+- Thu
+- Fri
+- Sat
+- Sun
+
+#### Timezones
+
+The timezones are from the [IANA Time Zone database](https://www.iana.org/time-zones).
+
+:::note
+
+The IANA Time Zone database mainly supports regional/city timezones
+(example: `Europe/Berlin`, `America/Los_Angeles`) instead of abbreviations (example: `CEST`, `PST`, `PDT`).
+It supports some abbreviations like `CET`, `MET` and `PST8PDT`
+but these (not including `UTC`) shouldn't be used, and only exist for backwards compatibility.
+
+:::
+
+#### Time of Day
+
+Values from: 00:00 - 24:00
+
+## Always/Never/True/False
+
+Case-insensitive:
+
+- Always/True: always matches
+- Never/False: never matches, acts as a [non-unset state](ref:docs-scopes#how-it-works)
+
+:::tip
+
+Never/False and other non-unset states can be useful for disabling the value if set by less specific scopes.
+
+:::
+
+## Complex Timespans
+
+Sometimes its not enough to have just one timespan, in those cases you can define multiple.
+
+- Syntax:
+  `<TIMESPAN>,<TIMESPAN>,<TIMESPAN>` or
+  `<TIMESPAN>, <TIMESPAN>, <TIMESPAN>`
+- Example:
+  `Sat-Sun 00:00-24:00 Europe/Berlin, Mon-Fri 20:00-08:00 Europe/Berlin` -
+  This expression matches the time over the weekend and at night.
+
+You can mix any type of timespan.
+
+:::note
+
+Although you could mix [boolean timespans](#alwaysnevertruefalse) with the other ones,
+this is not a valid use case and might be changed to a compatibility conflict in the future.
+
+:::

@@ -1,0 +1,107 @@
+---
+title: Downscaler
+id: downscaler
+globalReference: guides-developing-downscaler
+---
+
+# Downscaler
+
+This section covers how to start development on the downscaler.
+
+If you haven't already, read and follow the instructions for [setting up the repository locally](ref:guides-developing).
+
+The files for the downscaler can mainly be found in `./cmd/kubedownscaler` and `./internal`.
+
+## Installing Prerequisite
+
+Before you start modifying the downscaler you should install its prerequisites.
+
+### Installing Go
+
+Installing go is necessary to be able to run the downscaler locally.
+
+You can either use brew to install and update go:
+
+```bash
+brew install go
+```
+
+To update go using brew:
+
+```bash
+brew upgrade go
+```
+
+Or you can follow [these instructions](https://go.dev/doc/install) to install go another way.
+
+After that you can check if your installation was successful.
+
+```bash
+go version
+```
+
+The output should be something like:
+
+```text
+go version go1.23.2 linux/amd64
+```
+
+### Installing Dependencies
+
+Once you have go installed you can start installing the Kubedownscalers dependencies.
+
+```bash
+go mod download
+```
+
+## Running the Downscaler Locally
+
+To run the downscaler locally you need to specify a kubeconfig for it to use.
+The downscaler will use the current-context selected in the kubeconfig.
+The user of the selected context has to have the [permissions required to scale](ref:docs-helm-permissions).
+
+```bash
+go run ./cmd/kubedownscaler -k path/to/kubeconfig
+```
+
+## Testing the Downscaler
+
+To test your code changes you should write or change existing tests to match your new functionality.
+
+You can run all tests like this:
+
+```bash
+go test ./...
+```
+
+## Compiling/Building
+
+You normally don't need to build the binary or docker image locally
+as workflows handle building those for releasing new versions.
+This is only necessary for e.g. testing the docker image.
+
+### Binary
+
+This is how you can build a binary of the kubedownscaler:
+
+```bash
+CGO_ENABLED=0 go build -o bin/gokubedownscaler ./cmd/kubedownscaler
+```
+
+Disabling CGO isn't strictly required although leaving it enabled does sometimes lead to problems.
+
+### Docker Image
+
+Building the Docker image is just like building any other Docker image:
+
+```bash
+docker build -t ghcr.io/caas-team/gokubedownscaler:someTag .
+```
+
+## Running the Docker Image Locally
+
+To run the Docker container locally you also need to specify a kubeconfig.
+
+```bash
+docker run -v path/to/kubeconfig:/app/kubeconfig ghcr.io/caas-team/gokubedownscaler:latest -k=/app/kubeconfig
+```

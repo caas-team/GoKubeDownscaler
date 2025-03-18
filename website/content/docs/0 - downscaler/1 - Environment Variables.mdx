@@ -1,0 +1,58 @@
+---
+title: Environment Variables
+id: environment-variables
+globalReference: docs-environment-variables
+---
+
+# Environment Variables
+
+[Values](ref:docs-values) and [runtime configuration](ref:docs-runtime-configuration) can be set via environment variables.
+The variables will be parsed once at startup of the downscaler.
+
+## Values
+
+The [Values](ref:docs-values) will be applied to the [environment scope](ref:docs-scopes#environment-scope).
+
+### Valid Values
+
+- [DOWNSCALE_PERIOD](ref:docs-values#downscale-period)
+- [DEFAULT_DOWNTIME](ref:docs-values#downtime)
+- [UPSCALE_PERIOD](ref:docs-values#upscale-period)
+- [DEFAULT_UPTIME](ref:docs-values#uptime)
+
+## Runtime Configuration
+
+:::info
+
+The runtime configuration set by the [cli arguments](ref:docs-arguments#runtime-configuration)
+will take precedence over their respective environment variables if they are both set.
+
+:::
+
+### Valid Config Vars
+
+- [EXCLUDE_NAMESPACES](ref:docs-runtime-configuration#exclude-namespaces)
+- [EXCLUDE_DEPLOYMENTS](ref:docs-runtime-configuration#exclude-deployments)
+
+## Usage
+
+### Bare Variables
+
+```text title=".env"
+DEFAULT_UPTIME: "Mon-Fri 08:00-20:00 Pacific/Fiji"
+EXCLUDE_DEPLOYMENTS: "my-deployment, example-.*"
+```
+
+### Via Helm Chart values.yaml
+
+```yaml title="values.yaml"
+# ...
+
+configMap:
+  name: go-kube-downscaler
+  extraConfig: |
+    DEFAULT_DOWNTIME: "Mon-Fri 20:00-08:00 Asia/Tokyo, Sat-Sun 00:00-24:00 Asia/Tokyo"
+    EXCLUDE_NAMESPACES: "my-namespace, example-.*"
+
+# ...
+```

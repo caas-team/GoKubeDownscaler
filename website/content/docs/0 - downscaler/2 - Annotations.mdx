@@ -1,0 +1,58 @@
+---
+title: Annotations
+id: annotations
+globalReference: docs-annotations
+---
+
+# Annotations
+
+[Values](ref:docs-values) can be set via annotations on the [namespace](ref:docs-scopes#namespace-scope) or [workload scope](ref:docs-scopes#workload-scope).
+
+## Valid Values
+
+- [downscaler/downscale-period](ref:docs-values#downscale-period)
+- [downscaler/downtime](ref:docs-values#downtime)
+- [downscaler/upscale-period](ref:docs-values#upscale-period)
+- [downscaler/uptime](ref:docs-values#uptime)
+- [downscaler/exclude](ref:docs-values#exclude)
+- [downscaler/exclude-until](ref:docs-values#exclude-until)
+- [downscaler/force-uptime](ref:docs-values#force-uptime)
+- [downscaler/force-downtime](ref:docs-values#force-downtime)
+- [downscaler/downscale-replicas](ref:docs-values#downscale-replicas)
+- [downscaler/grace-period](ref:docs-values#grace-period)
+
+## Usage
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: example-namespace
+  # highlight-start
+  annotations:
+    downscaler/downscale-replicas: "1"
+    downscaler/exclude: "false"
+  # highlight-end
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+  # highlight-start
+  annotations:
+    downscaler/uptime: "Mon-Fri 08:00-20:00 UTC"
+  # highlight-end
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example-app
+  template:
+    metadata:
+      labels:
+        app: example-app
+    spec:
+      containers:
+        - name: example-app-container
+          image: nginx:latest
+```

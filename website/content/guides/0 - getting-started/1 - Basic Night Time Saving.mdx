@@ -1,0 +1,146 @@
+---
+title: Basic Night Time Saving
+id: basic-night-time-saving
+globalReference: guides-basic-night-time-saving
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# Basic Night Time Saving
+
+One of the easiest ways and most common use cases for the Downscaler is using it for night time saving.
+
+A good time to start saving resources at night could be from 6:00 PM to 8:00 AM during weekdays and on weekends.
+
+Depending on your use case you can apply the night time saving clusterwide or on either namespace or workload level.
+
+## Clusterwide
+
+In order to apply the wanted downtime clusterwide the GoKubeDownscaler has to know what downtime to use.
+
+This can be done by either using an [environment variable](ref:docs-environment-variables) or a [cli argument](ref:docs-arguments) for the GoKubeDownscaler.
+
+### Environment Variable
+
+If you want to add a clusterwide downtime with environment variables
+you can add them inside the [values.yaml](repo:deployments/chart/values.yaml) file.
+
+There you have to add it to the `configMap.extraConfig` field:
+
+```yaml title="values.yaml"
+# ...
+
+configMap:
+  name: go-kube-downscaler
+  extraConfig: |
+    DEFAULT_DOWNTIME: "Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
+
+# ...
+```
+
+### Cli Argument
+
+If you want to instead use a cli argument for the clusterwide downtime
+you can also add them inside the [values.yaml](repo:deployments/chart/values.yaml) file.
+
+There you have to add it to the `arguments` field:
+
+```yaml title="values.yaml"
+# ...
+
+arguments:
+  - --default-downtime="Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
+# ...
+```
+
+After setting the variable in one of the two ways
+all workloads in your cluster will be scaled down on every weekday from 6:00 PM to 8:00 AM and on weekends.
+
+## Namespace Level
+
+To set this up for all workloads in a namespace you have to annotate the namespace with the wanted time span.
+
+This can be done using a `kubectl` command or by editing the namespace's yaml manifest.
+
+<Tabs>
+  <TabItem value="kubectl" label="kubectl" default>
+    Adding the downtime with kubectl is a single command:
+
+    ```bash
+    kubectl annotate ns my-namespace downscaler/downtime="Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
+    ```
+
+  </TabItem>
+  <TabItem value="manifest" label="Edit manifest">
+    If you want to edit the annotations manually with a yaml manifest file
+    or by running `kubectl edit ns my-namespace` you have to add the following:
+
+    ```yaml title="my-namespace.yaml"
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: my-namespace
+      # highlight-start
+      annotations:
+        downscaler/downtime: "Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
+      # highlight-end
+    ```
+
+  </TabItem>
+</Tabs>
+
+Now all workloads in `my-namespace` will be scaled down on every weekday from 6:00 PM to 8:00 AM
+and on weekends.
+
+## Workload Level
+
+To set this up for individual workloads you have to set an annotation on each workload you want to scale down.
+
+This can also be done by either using a `kubectl` command or by editing the workload's yaml manifest.
+
+For demo purposes we will showcase this with a deployment.
+
+<Tabs>
+  <TabItem value="kubectl" label="kubectl" default>
+    Adding the downtime with kubectl is a single command:
+
+    ```bash
+    kubectl annotate deployment my-deployment downscaler/downtime="Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
+    ```
+
+  </TabItem>
+  <TabItem value="manifest" label="Edit manifest">
+    If you want to edit the annotations manually with a yaml manifest file
+    or by running `kubectl edit deployment my-deployment` you have to add the following:
+
+    ```yaml title="my-deployment.yaml"
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: my-deployment
+      # highlight-start
+      annotations:
+        downscaler/downtime: "Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
+      # highlight-end
+    spec:
+      replicas: 3
+      selector:
+        matchLabels:
+          app: nginx
+      template:
+        metadata:
+          labels:
+            app: nginx
+        spec:
+          containers:
+          - name: nginx
+            image: nginx:1.14.2
+            ports:
+            - containerPort: 80
+    ```
+
+  </TabItem>
+</Tabs>
+
+Now your deployment my-deployment will be scaled down on every weekday from 6:00 PM to 8:00 AM and on weekends.
