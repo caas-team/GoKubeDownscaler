@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { ImportedDataState } from "@excalidraw/excalidraw/types/data/types";
 import { useColorMode } from "@docusaurus/theme-common";
 import { exportToSvg } from "@excalidraw/excalidraw";
+import { ImportedDataState } from "@excalidraw/excalidraw/data/types";
 
 export const ExcalidrawRenderer: React.FC<ExcalidrawRendererProps> = ({
   data,

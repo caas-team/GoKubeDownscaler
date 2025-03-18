@@ -19,6 +19,15 @@ export function confWebpack(): Plugin {
             },
           ],
         },
+        resolve: {
+          fullySpecified: false,
+          // manually resolve with extension
+          alias: {
+            "roughjs/bin/rough": "roughjs/bin/rough.js",
+            "roughjs/bin/math": "roughjs/bin/math.js",
+            "roughjs/bin/generator": "roughjs/bin/generator.js",
+          },
+        },
       };
     },
   };

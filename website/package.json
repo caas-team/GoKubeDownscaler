@@ -19,13 +19,13 @@
     "@docusaurus/preset-classic": "3.7.0",
     "@easyops-cn/docusaurus-search-local": "^0.49.1",
     "@eslint/compat": "^1.2.7",
-    "@excalidraw/excalidraw": "^0.17.6",
+    "@excalidraw/excalidraw": "^0.18.0",
     "@mdx-js/react": "^3.1.0",
     "@tailwindcss/postcss": "^4.0.13",
     "clsx": "^2.1.1",
     "prism-react-renderer": "^2.4.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "roughjs": "^4.6.6"
   },
   "devDependencies": {
