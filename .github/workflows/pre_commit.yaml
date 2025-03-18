@@ -2,8 +2,6 @@ name: Run pre-commit checks
 
 on:
   push:
-  pull_request:
-    types: [opened, synchronize, reopened]
 
 jobs:
   run-pre-commit:
