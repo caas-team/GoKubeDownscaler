@@ -1,8 +1,11 @@
 name: Create new release
 
 on:
-  repository_dispatch:
-    types: [release-new-version]
+  workflow_call:
+    inputs:
+      appVersion:
+        required: true
+        type: string
 
 jobs:
   create_release:
@@ -15,6 +18,6 @@ jobs:
         id: create_release
         uses: ncipollo/release-action@v1
         with:
-          tag: v${{ github.event.client_payload.appVersion }}
-          name: v${{ github.event.client_payload.appVersion }}
+          tag: v${{ inputs.appVersion }}
+          name: v${{ inputs.appVersion }}
           generateReleaseNotes: true

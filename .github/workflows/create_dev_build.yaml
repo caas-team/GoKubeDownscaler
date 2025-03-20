@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      version: ${{ steps.chart_version.outputs.version }}
 
     steps:
       - name: Checkout code
@@ -17,12 +19,18 @@ jobs:
         id: chart_version
         run: |
           version=$(yq e '.version' ./deployments/chart/Chart.yaml)
-          echo "version=$version" >> $GITHUB_ENV
+          echo "version=$version" >> $GITHUB_OUTPUT
 
-      - name: Dispatch event to create dev build
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: caas-team/GoKubeDownscaler
-          event-type: create-dev-build
-          client-payload: '{"version": "${{ env.version }}-dev","appVersion": "dev", "setLatest": false}'
+  docker_build:
+    needs: create_dev_build
+    uses: ./.github/workflows/docker_build.yaml
+    with:
+      appVersion: "dev"
+      setLatest: false
+
+  helm_build:
+    needs: create_dev_build
+    uses: ./.github/workflows/helm_build.yaml
+    with:
+      version: "${{ needs.create_dev_build.outputs.version }}-dev"
+      appVersion: "dev"
