@@ -33,3 +33,8 @@ These allow the actions the GoKubeDownscaler needs to scale down workloads in a 
 
 The [role.yaml](repo:deployments/chart/templates/role.yaml) file creates a Role and a RoleBinding
 for every namespace listed in [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces).
+
+## Leaserole
+
+The [leaserole.yaml](repo:deployments/chart/templates/leaserole.yaml) file creates a Role and RoleBinding
+if [`--leader-election`](ref:docs-runtime-configuration#leader-election) is enabled in order to make lease management possible.

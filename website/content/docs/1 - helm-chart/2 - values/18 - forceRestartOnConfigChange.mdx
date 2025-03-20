@@ -1,0 +1,24 @@
+---
+title: forceRestartOnConfigChange
+id: forceRestartOnConfigChange
+globalReference: docs-helm-force-restart-on-config-change
+---
+
+# forceRestartOnConfigChange
+
+The `forceRestartOnConfigChange` value defines whether the pods of the GoKubeDownscaler should be restarted when changing the config in the configMap.
+:::info
+
+The default values for `forceRestartOnConfigChange` are:
+
+```yaml
+forceRestartOnConfigChange: true
+```
+
+:::
+
+By default the `forceRestartOnConfigChange` field is set to `true`.
+
+This will append the annotation `checksum/config` to the pods of the GoKubeDownscaler which has the value of the checksum of the current configMap.
+So when you make a change in the configMap the checksum and in turn the annotation changes which will restart the pods.
+To disable this behavior you just have to set `forceRestartOnConfigChange` to `false`.
