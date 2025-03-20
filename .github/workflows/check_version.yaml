@@ -50,23 +50,27 @@ jobs:
     needs: check_versions
     if: ${{ needs.check_versions.outputs.version_change == 'version changed' }}
     permissions:
-      contents: write
+      contents: read
+      packages: write
 
     uses: ./.github/workflows/helm_build.yaml
     with:
       version: ${{ needs.check_versions.outputs.version }}
       appVersion: ${{ needs.check_versions.outputs.app_version }}
+    secrets: inherit
 
   build_new_image:
     needs: check_versions
     if: ${{ needs.check_versions.outputs.app_version_change == 'appVersion changed' }}
     permissions:
-      contents: write
+      contents: read
+      packages: write
 
     uses: ./.github/workflows/docker_build.yaml
     with:
       appVersion: ${{ needs.check_versions.outputs.app_version }}
       setLatest: true
+    secrets: inherit
 
   release_new_version:
     needs: check_versions
@@ -77,3 +81,4 @@ jobs:
     uses: ./.github/workflows/create_release.yaml
     with:
       appVersion: ${{ needs.check_versions.outputs.app_version }}
+    secrets: inherit

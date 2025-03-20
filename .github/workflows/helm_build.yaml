@@ -24,8 +24,8 @@ jobs:
 
       - name: Log in to Helm OCI Registry
         run: |
-          helm registry login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-          helm registry login ${MTR} -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+          echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+          echo ${DOCKER_PASSWORD} | helm registry login ${MTR} -u ${DOCKER_USERNAME} --password-stdin
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

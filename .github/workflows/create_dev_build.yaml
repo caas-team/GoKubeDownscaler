@@ -27,6 +27,7 @@ jobs:
     with:
       appVersion: "dev"
       setLatest: false
+    secrets: inherit
 
   helm_build:
     needs: create_dev_build
@@ -34,3 +35,4 @@ jobs:
     with:
       version: "${{ needs.create_dev_build.outputs.version }}-dev"
       appVersion: "dev"
+    secrets: inherit
