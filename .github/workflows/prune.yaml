@@ -21,3 +21,10 @@ jobs:
           organization: ${{ github.repository_owner }}
           container: gokubedownscaler
           prune-untagged: true
+
+      - name: Delete Cosign Signatures
+        uses: jtaeuber/prune-orphaned-cosign-sig@v0.2.0
+        with:
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          gh_org: ${{ github.repository_owner }}
+          package_name: gokubedownscaler
