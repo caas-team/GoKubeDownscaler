@@ -74,5 +74,5 @@ jobs:
         with:
           gh_token: ${{ secrets.GITHUB_TOKEN }}
           gh_user: caas-team
-          package_name: go-kube-downscaler
+          package_name: gokubedownscaler
           tag: ${{ inputs.appVersion }}
