@@ -21,7 +21,7 @@
     "@eslint/compat": "^1.2.7",
     "@excalidraw/excalidraw": "^0.18.0",
     "@mdx-js/react": "^3.1.0",
-    "@tailwindcss/postcss": "^4.0.14",
+    "@tailwindcss/postcss": "^4.0.15",
     "clsx": "^2.1.1",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.0.0",
