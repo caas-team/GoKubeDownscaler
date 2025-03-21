@@ -68,6 +68,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
           fetch-depth: 0
 
       - name: Extract appVersion
