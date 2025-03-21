@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   prune_images:
-    name: Prune old gokubedownscaler images
+    name: Prune old gokubedownscaler dev images
     runs-on: ubuntu-latest
 
     steps:
