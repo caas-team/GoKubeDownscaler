@@ -20,7 +20,7 @@ function HomepageHeader() {
               {siteConfig.title}
             </Heading>
           </div>
-          <p className="animate-fade-down text-2xl">{siteConfig.tagline}</p>
+          <p className="text-2xl">{siteConfig.tagline}</p>
           <div className="flex justify-center space-x-3">
             <Button name="Docs" to="/docs" className="w-32" />
             <Button name="Guides" to="/guides" className="w-32" />
