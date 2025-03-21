@@ -1,8 +1,14 @@
 name: Build and push helm chart
 
 on:
-  repository_dispatch:
-    types: [build-new-chart, create-dev-build]
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      appVersion:
+        required: true
+        type: string
 
 jobs:
   build_and_push:
@@ -18,8 +24,8 @@ jobs:
 
       - name: Log in to Helm OCI Registry
         run: |
-          helm registry login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-          helm registry login ${MTR} -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+          echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+          echo ${DOCKER_PASSWORD} | helm registry login ${MTR} -u ${DOCKER_USERNAME} --password-stdin
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -29,7 +35,7 @@ jobs:
         run: |
           cd deployments/chart
           helm lint .
-          helm package . --version ${{ github.event.client_payload.version }} --app-version ${{ github.event.client_payload.appVersion }}
+          helm package . --version ${{ inputs.version }} --app-version ${{ inputs.appVersion }}
           helm push $(ls *.tgz | head -1) oci://ghcr.io/caas-team/charts
           helm push $(ls *.tgz | head -1) oci://${MTR}/${REPO}/charts
         env:
@@ -42,4 +48,4 @@ jobs:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           repository: caas-team/helm-charts
           event-type: new-helm-chart-version
-          client-payload: '{"chart": "go-kube-downscaler", "version": "${{ github.event.client_payload.version }}"}'
+          client-payload: '{"chart": "go-kube-downscaler", "version": "${{ inputs.version }}"}'

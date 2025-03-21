@@ -1,8 +1,14 @@
 name: Build and push Image
 
 on:
-  repository_dispatch:
-    types: [release-new-version, create-dev-build]
+  workflow_call:
+    inputs:
+      appVersion:
+        required: true
+        type: string
+      setLatest:
+        required: true
+        type: boolean
 
 jobs:
   build:
@@ -19,8 +25,8 @@ jobs:
             mtr.devops.telekom.de/caas/go-kube-downscaler
             ghcr.io/caas-team/gokubedownscaler
           tags: |
-            ${{ github.event.client_payload.setLatest && 'latest' || '' }}
-            ${{ github.event.client_payload.appVersion }}
+            ${{ inputs.setLatest && 'latest' || '' }}
+            ${{ inputs.appVersion }}
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@main
@@ -69,4 +75,4 @@ jobs:
           gh_token: ${{ secrets.GITHUB_TOKEN }}
           gh_user: caas-team
           package_name: go-kube-downscaler
-          tag: ${{ github.event.client_payload.appVersion }}
+          tag: ${{ inputs.appVersion }}
