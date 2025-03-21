@@ -15,6 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
           fetch-depth: 0
 
       - name: Check for appVersion changes
@@ -61,7 +62,6 @@ jobs:
     needs: check_for_release
     if: ${{ failure() && !contains(github.event.pull_request.labels.*.name, 'needs approval') && github.event.action != 'labeled' && github.event.action != 'unlabeled' }}
     permissions:
-      contents: write
       pull-requests: write
 
     steps:

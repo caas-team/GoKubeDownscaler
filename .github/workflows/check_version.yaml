@@ -47,33 +47,38 @@ jobs:
           echo "app_version=$app_version" >> $GITHUB_OUTPUT
 
   build_new_chart:
-    runs-on: ubuntu-latest
     needs: check_versions
     if: ${{ needs.check_versions.outputs.version_change == 'version changed' }}
     permissions:
-      contents: write
+      contents: read
+      packages: write
 
-    steps:
-      - name: Dispatch Event to build new helm chart
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: caas-team/GoKubeDownscaler
-          event-type: build-new-chart
-          client-payload: '{"version": "${{ needs.check_versions.outputs.version }}", "appVersion": "${{ needs.check_versions.outputs.app_version }}"}'
+    uses: ./.github/workflows/helm_build.yaml
+    with:
+      version: ${{ needs.check_versions.outputs.version }}
+      appVersion: ${{ needs.check_versions.outputs.app_version }}
+    secrets: inherit
+
+  build_new_image:
+    needs: check_versions
+    if: ${{ needs.check_versions.outputs.app_version_change == 'appVersion changed' }}
+    permissions:
+      contents: read
+      packages: write
+
+    uses: ./.github/workflows/docker_build.yaml
+    with:
+      appVersion: ${{ needs.check_versions.outputs.app_version }}
+      setLatest: true
+    secrets: inherit
 
   release_new_version:
-    runs-on: ubuntu-latest
     needs: check_versions
     if: ${{ needs.check_versions.outputs.app_version_change == 'appVersion changed' }}
     permissions:
       contents: write
 
-    steps:
-      - name: Dispatch Event to create new release
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: caas-team/GoKubeDownscaler
-          event-type: release-new-version
-          client-payload: '{"appVersion": "${{ needs.check_versions.outputs.app_version }}", "setLatest": true}'
+    uses: ./.github/workflows/create_release.yaml
+    with:
+      appVersion: ${{ needs.check_versions.outputs.app_version }}
+    secrets: inherit

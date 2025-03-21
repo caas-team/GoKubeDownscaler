@@ -457,3 +457,53 @@ func TestScopes_GetExcluded(t *testing.T) {
 		})
 	}
 }
+
+func TestGetWorkloadCreationTime(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		annotation   string
+		annotations  map[string]string
+		creationTime time.Time
+		want         time.Time
+		wantErr      bool
+	}{
+		{
+			name:         "use annotation",
+			annotation:   "created",
+			annotations:  map[string]string{"created": "2025-02-01T00:00:00Z"},
+			creationTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			want:         time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC),
+			wantErr:      false,
+		},
+		{
+			name:         "default to creationTime",
+			annotation:   "created",
+			creationTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			want:         time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			wantErr:      false,
+		},
+		{
+			name:         "use creationTime",
+			creationTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			want:         time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			wantErr:      false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := getWorkloadCreationTime(test.annotation, test.annotations, test.creationTime, nil, t.Context())
+			assert.Equal(t, test.want, got)
+
+			if test.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
