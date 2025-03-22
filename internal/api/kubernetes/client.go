@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -19,6 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 )
 
@@ -27,10 +29,10 @@ const (
 	timeout       = 30 * time.Second
 )
 
+var errWorkloadOrNamespaceRequired = errors.New("either scalableWorkload or namespace must be provided")
+
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
 type Client interface {
-	// GetNamespaceAnnotations gets the annotations of the workload's namespace
-	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
 	// GetNamespaceLayers gets the namespace layer from the namespace annotations
 	GetNamespaceLayers(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Layer, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
@@ -43,10 +45,8 @@ type Client interface {
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
 	// CreateLease creates a new lease for the downscaler
 	CreateLease(leaseName string) (*resourcelock.LeaseLock, error)
-	// addWorkloadEvent creates a new event on the workload
-	addWorkloadEvent(eventType string, reason string, id string, message string, workload scalable.Workload, ctx context.Context) error
-	// addNamespaceEvent creates a new event on the namespace
-	addNamespaceEvent(eventType, reason, identifier, message, namespace string, ctx context.Context) error
+	// addEvent creates a new event on either a workload or a namespace
+	addEvent(eventType, reason, identifier, message string, scalableWorkload scalable.Workload, namespace string, ctx context.Context) error
 }
 
 // NewClient makes a new Client.
@@ -101,8 +101,8 @@ type client struct {
 	dryRun     bool
 }
 
-// GetNamespaceAnnotations gets the annotations of the workload's namespace.
-func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
+// getNamespaceAnnotations gets the annotations of the workload's namespace.
+func (c client) getNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
 	ns, err := c.clientsets.Kubernetes.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace: %w", err)
@@ -202,28 +202,71 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 	return nil
 }
 
-// addWorkloadEvent creates or updates a new event on the workload.
-func (c client) addWorkloadEvent(eventType, reason, identifier, message string, workload scalable.Workload, ctx context.Context) error {
+// addEvent creates or updates a new event on either a workload or a namespace.
+func (c client) addEvent(
+	eventType, reason, identifier, message string,
+	scalableWorkload scalable.Workload,
+	namespace string,
+	ctx context.Context,
+) error {
 	if c.dryRun {
-		slog.Info("running in dry run mode, would have added an event on workload",
-			"workload", workload.GetName(),
-			"namespace", workload.GetNamespace(),
-			"eventType", eventType,
-			"reason", reason,
-			"id", identifier,
-			"message", message,
-		)
+		// Dry run mode
+		if scalableWorkload != nil {
+			slog.Info("running in dry run mode, would have added an event on workload",
+				"workload", scalableWorkload.GetName(),
+				"namespace", scalableWorkload.GetNamespace(),
+				"eventType", eventType,
+				"reason", reason,
+				"id", identifier,
+				"message", message,
+			)
+		} else {
+			slog.Info("running in dry run mode, would have added an event on namespace",
+				"namespace", namespace,
+				"eventType", eventType,
+				"reason", reason,
+				"id", identifier,
+				"message", message,
+			)
+		}
 
 		return nil
 	}
 
-	hash := sha256.Sum256([]byte(fmt.Sprintf("%s.%s", identifier, message)))
-	name := fmt.Sprintf("%s.%s.%x", workload.GetName(), reason, hash)
-	eventsClient := c.clientsets.Kubernetes.CoreV1().Events(workload.GetNamespace())
+	// Determine target for event: workload or namespace
+	var name string
+	var involvedObject corev1.ObjectReference
+	var eventsClient v1.EventInterface
 
-	// check if event already exists
+	if scalableWorkload != nil {
+		// Event for workload
+		hash := sha256.Sum256([]byte(fmt.Sprintf("%s.%s", identifier, message)))
+		name = fmt.Sprintf("%s.%s.%x", scalableWorkload.GetName(), reason, hash)
+		involvedObject = corev1.ObjectReference{
+			Kind:       scalableWorkload.GroupVersionKind().Kind,
+			Namespace:  scalableWorkload.GetNamespace(),
+			Name:       scalableWorkload.GetName(),
+			UID:        scalableWorkload.GetUID(),
+			APIVersion: scalableWorkload.GroupVersionKind().GroupVersion().String(),
+		}
+		eventsClient = c.clientsets.Kubernetes.CoreV1().Events(scalableWorkload.GetNamespace())
+	} else if namespace != "" {
+		// Event for namespace
+		hash := sha256.Sum256([]byte(fmt.Sprintf("%s.%s", identifier, message)))
+		name = fmt.Sprintf("%s.%s.%x", namespace, reason, hash)
+		involvedObject = corev1.ObjectReference{
+			Kind:       "Namespace",
+			Name:       namespace,
+			APIVersion: "v1",
+		}
+		eventsClient = c.clientsets.Kubernetes.CoreV1().Events(namespace)
+	} else {
+		return errWorkloadOrNamespaceRequired
+	}
+
+	// Check if event already exists
 	if event, err := eventsClient.Get(ctx, name, metav1.GetOptions{}); err == nil && event != nil {
-		// update event
+		// Event exists, update it
 		event.Count++
 		event.LastTimestamp = metav1.Now()
 
@@ -235,79 +278,13 @@ func (c client) addWorkloadEvent(eventType, reason, identifier, message string, 
 		return nil
 	}
 
-	// create event
-	_, err := c.clientsets.Kubernetes.CoreV1().Events(workload.GetNamespace()).Create(ctx, &corev1.Event{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: workload.GetNamespace(),
-		},
-		InvolvedObject: corev1.ObjectReference{
-			Kind:       workload.GroupVersionKind().Kind,
-			Namespace:  workload.GetNamespace(),
-			Name:       workload.GetName(),
-			UID:        workload.GetUID(),
-			APIVersion: workload.GroupVersionKind().GroupVersion().String(),
-		},
-		Reason:         reason,
-		Message:        message,
-		Type:           eventType,
-		Source:         corev1.EventSource{Component: componentName},
-		FirstTimestamp: metav1.Now(),
-		LastTimestamp:  metav1.Now(),
-		Count:          1,
-	}, metav1.CreateOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to create event: %w", err)
-	}
-
-	return nil
-}
-
-// addNamespaceEvent creates or updates a new event on the namespace.
-func (c client) addNamespaceEvent(eventType, reason, identifier, message, namespace string, ctx context.Context) error {
-	if c.dryRun {
-		slog.Info("running in dry run mode, would have added an event on namespace",
-			"namespace", namespace,
-			"eventType", eventType,
-			"reason", reason,
-			"id", identifier,
-			"message", message,
-		)
-
-		return nil
-	}
-
-	hash := sha256.Sum256([]byte(fmt.Sprintf("%s.%s", identifier, message)))
-	name := fmt.Sprintf("%s.%s.%x", namespace, reason, hash)
-	eventsClient := c.clientsets.Kubernetes.CoreV1().Events(namespace)
-
-	// check if event already exists
-	if event, err := eventsClient.Get(ctx, name, metav1.GetOptions{}); err == nil && event != nil {
-		// update event
-		event.Count++
-		event.LastTimestamp = metav1.Now()
-
-		_, err := eventsClient.Update(ctx, event, metav1.UpdateOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to update event: %w", err)
-		}
-
-		return nil
-	}
-
-	// create event
+	// Create a new event if it doesn't exist
 	_, err := eventsClient.Create(ctx, &corev1.Event{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: namespace,
+			Namespace: involvedObject.Namespace,
 		},
-		InvolvedObject: corev1.ObjectReference{
-			Kind:       "Namespace",
-			Namespace:  namespace,
-			Name:       namespace,
-			UID:        "", // Namespace UID is not always needed
-			APIVersion: "v1",
-		},
+		InvolvedObject: involvedObject,
 		Reason:         reason,
 		Message:        message,
 		Type:           eventType,
@@ -354,24 +331,23 @@ func (c client) GetNamespaceLayers(workloads []scalable.Workload, ctx context.Co
 	namespaceSet := make(map[string]struct{})
 
 	for _, workload := range workloads {
-		namespace := workload.GetNamespace()
+		if _, exists := namespaceSet[workload.GetNamespace()]; !exists {
+			namespaceSet[workload.GetNamespace()] = struct{}{}
 
-		if _, exists := namespaceSet[namespace]; !exists {
-			namespaceSet[namespace] = struct{}{}
-
-			slog.Debug("visited namespace", "namespace", namespace)
+			slog.Debug("visited namespace", "namespace", workload.GetNamespace())
 		}
 	}
 
 	namespaceLayers := make(map[string]*values.Layer, len(namespaceSet))
 	errChan := make(chan error, len(namespaceSet))
 
-	waitGroup.Wait()
+	for namespace := range namespaceSet {
+		layer := values.NewLayer()
+		namespaceLayers[namespace] = layer
+	}
 
 	for namespace := range namespaceSet {
 		waitGroup.Add(1)
-
-		namespaceLayers[namespace] = values.NewLayerPtr()
 
 		go func(namespace string) {
 			defer waitGroup.Done()
@@ -380,9 +356,9 @@ func (c client) GetNamespaceLayers(workloads []scalable.Workload, ctx context.Co
 
 			slog.Debug("fetching namespace annotations", "namespace", namespace)
 
-			annotations, err := c.GetNamespaceAnnotations(namespace, ctx)
+			annotations, err := c.getNamespaceAnnotations(namespace, ctx)
 			if err != nil {
-				slog.Error("failed to get namespace annotations", "namespace", namespace, "error", err)
+				errChan <- fmt.Errorf("failed to get namespace annotations for namespace %s: %w", namespace, err)
 				return
 			}
 
@@ -394,7 +370,7 @@ func (c client) GetNamespaceLayers(workloads []scalable.Workload, ctx context.Co
 				return
 			}
 
-			slog.Debug("correctly retrieved namespace annotations", "namespace", namespace, "annotations", annotations)
+			slog.Debug("correctly parsed namespace annotations", "namespace", namespace, "annotations", annotations)
 		}(namespace)
 	}
 
