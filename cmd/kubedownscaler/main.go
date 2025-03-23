@@ -80,11 +80,11 @@ func main() {
 	defer cancel()
 
 	if !config.LeaderElection {
-		runWithoutLeaderElection(client, ctx, scopeDefault, &scopeCli, &scopeEnv, config)
+		runWithoutLeaderElection(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
 		return
 	}
 
-	runWithLeaderElection(client, cancel, ctx, scopeDefault, &scopeCli, &scopeEnv, config)
+	runWithLeaderElection(client, cancel, ctx, scopeDefault, scopeCli, scopeEnv, config)
 }
 
 func runWithLeaderElection(
@@ -211,7 +211,7 @@ func attemptScan(
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	namespaceLayers map[string]*values.Layer,
+	namespaceLayers map[string]*values.Scope,
 	config *util.RuntimeConfiguration,
 	workload scalable.Workload,
 ) error {
@@ -250,7 +250,7 @@ func scanWorkload(
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	namespaceLayers map[string]*values.Layer,
+	namespaceLayers map[string]*values.Scope,
 	config *util.RuntimeConfiguration,
 ) error {
 	resourceLogger := kubernetes.NewResourceLogger(client, workload)
@@ -267,12 +267,12 @@ func scanWorkload(
 		return fmt.Errorf("failed to parse workload scope from annotations: %w", err)
 	}
 
-	layerNamespace, exists := namespaceLayers[workload.GetNamespace()]
+	scopeNamespace, exists := namespaceLayers[workload.GetNamespace()]
 	if !exists {
 		return fmt.Errorf("%w: %s", errNamespaceLayersRetrieveFailed, workload.GetNamespace())
 	}
 
-	scopes := values.Scopes{&scopeWorkload, &scopeNamespace, scopeCli, scopeEnv, scopeDefault}
+	scopes := values.Scopes{scopeWorkload, scopeNamespace, scopeCli, scopeEnv, scopeDefault}
 
 	slog.Debug("finished parsing all scopes", "scopes", scopes, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 

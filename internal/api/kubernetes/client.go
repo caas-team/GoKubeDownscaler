@@ -34,7 +34,7 @@ var errWorkloadOrNamespaceRequired = errors.New("either scalableWorkload or name
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
 type Client interface {
 	// GetNamespaceLayers gets the namespace layer from the namespace annotations
-	GetNamespaceLayers(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Layer, error)
+	GetNamespaceLayers(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
 	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
 	// RegetWorkload gets the workload again to ensure the latest state
@@ -326,7 +326,7 @@ func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
 }
 
 // GetNamespaceLayers gets the namespace layers from the namespace annotations.
-func (c client) GetNamespaceLayers(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Layer, error) {
+func (c client) GetNamespaceLayers(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error) {
 	var waitGroup sync.WaitGroup
 	namespaceSet := make(map[string]struct{})
 
@@ -338,12 +338,12 @@ func (c client) GetNamespaceLayers(workloads []scalable.Workload, ctx context.Co
 		}
 	}
 
-	namespaceLayers := make(map[string]*values.Layer, len(namespaceSet))
+	namespaceLayers := make(map[string]*values.Scope, len(namespaceSet))
 	errChan := make(chan error, len(namespaceSet))
 
 	for namespace := range namespaceSet {
-		layer := values.NewLayer()
-		namespaceLayers[namespace] = layer
+		scope := values.NewScope()
+		namespaceLayers[namespace] = scope
 	}
 
 	for namespace := range namespaceSet {
@@ -364,7 +364,7 @@ func (c client) GetNamespaceLayers(workloads []scalable.Workload, ctx context.Co
 
 			slog.Debug("parsing workload layer from annotations", "annotations", annotations, "namespace", namespace)
 
-			err = namespaceLayers[namespace].GetLayerFromAnnotations(annotations, nsLogger, ctx)
+			err = namespaceLayers[namespace].GetScopeFromAnnotations(annotations, nsLogger, ctx)
 			if err != nil {
 				errChan <- fmt.Errorf("failed to parse layer from annotations for namespace %s: %w", namespace, err)
 				return

@@ -74,13 +74,7 @@ func TestScanWorkload(t *testing.T) {
 	scopeCli.DownscaleReplicas = 0
 	scopeCli.GracePeriod = 15 * time.Minute
 
-	annotationsToNamespaces := map[string]map[string]string{
-		"test-namespace": {
-			"downscaler/force-downtime": "true",
-		},
-	}
-
-	namespaceLayers := map[string]*values.Layer{
+	namespaceLayers := map[string]*values.Scope{
 		"test-namespace": {
 			DownscaleReplicas: 0,
 			GracePeriod:       15 * time.Minute,
@@ -98,7 +92,7 @@ func TestScanWorkload(t *testing.T) {
 	})
 	mockClient.On("DownscaleWorkload", int32(0), mockWorkload, ctx).Return(nil)
 
-	err := scanWorkload(mockWorkload, mockClient, ctx, values.GetDefaultScope(), &scopeCli, &scopeEnv, namespaceLayers, config)
+	err := scanWorkload(mockWorkload, mockClient, ctx, values.GetDefaultScope(), scopeCli, scopeEnv, namespaceLayers, config)
 
 	require.NoError(t, err)
 
