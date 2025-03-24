@@ -218,9 +218,9 @@ func attemptScaling(
 	client kubernetes.Client,
 	ctx context.Context,
 	scaling values.Scaling,
+	config *util.KubeDownscalerRuntimeConfiguration,
 	workload scalable.Workload,
 	scopes values.Scopes,
-	config *util.RuntimeConfiguration,
 ) error {
 	for retry := range config.MaxRetriesOnConflict + 1 {
 		err := scaleWorkload(scaling, workload, scopes, client, ctx)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	admissionv1 "k8s.io/api/admission/v1"
@@ -30,8 +31,9 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 func parsePrometheusFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var prom monitoringv1.Prometheus
 	if err := json.Unmarshal(review.Request.Object.Raw, &prom); err != nil {
-		return nil, fmt.Errorf("failed to decode Deployment: %v", err)
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
 	}
+
 	return &replicaScaledWorkload{&prometheus{&prom}}, nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	admissionv1 "k8s.io/api/admission/v1"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -31,8 +32,9 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 func parseDeploymentFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var dep appsv1.Deployment
 	if err := json.Unmarshal(review.Request.Object.Raw, &dep); err != nil {
-		return nil, fmt.Errorf("failed to decode deployment: %v", err)
+		return nil, fmt.Errorf("failed to decode deployment: %w", err)
 	}
+
 	return &replicaScaledWorkload{&deployment{&dep}}, nil
 }
 

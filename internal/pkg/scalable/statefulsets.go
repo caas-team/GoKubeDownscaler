@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	admissionv1 "k8s.io/api/admission/v1"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -31,8 +32,9 @@ func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Conte
 func parseStatefulSetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var sts appsv1.StatefulSet
 	if err := json.Unmarshal(review.Request.Object.Raw, &sts); err != nil {
-		return nil, fmt.Errorf("failed to decode Deployment: %v", err)
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
 	}
+
 	return &replicaScaledWorkload{&statefulSet{&sts}}, nil
 }
 

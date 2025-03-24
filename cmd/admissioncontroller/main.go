@@ -4,16 +4,17 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
-	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes/admission"
-	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
-	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"log/slog"
 	"net/http"
 	"os"
 	"regexp"
 	"time"
 	_ "time/tzdata"
+
+	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
+	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes/admission"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 )
 
 const (
@@ -23,11 +24,12 @@ const (
 )
 
 type serverConfig struct {
-	client   kubernetes.Client
-	layerCli *values.Layer
-	layerEnv *values.Layer
-	config   *util.AdmissionControllerRuntimeConfiguration
-	ctx      context.Context
+	client       kubernetes.Client
+	scopeCli     *values.Scope
+	scopeEnv     *values.Scope
+	scopeDefault *values.Scope
+	config       *util.AdmissionControllerRuntimeConfiguration
+	ctx          context.Context
 }
 
 func main() {
@@ -50,18 +52,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	layerCli := values.NewLayer()
-	layerEnv := values.NewLayer()
+	scopeDefault := values.GetDefaultScope()
+	scopeCli := values.NewScope()
+	scopeEnv := values.NewScope()
 
-	if err := layerEnv.GetLayerFromEnv(); err != nil {
-		slog.Error("failed to get layer from env", "error", err)
+	if err := scopeEnv.GetScopeFromEnv(); err != nil {
+		slog.Error("failed to get scope from env", "error", err)
 		os.Exit(1)
 	}
 
-	// Set defaults for layers
-	layerCli.GracePeriod = defaultGracePeriod
-	layerCli.DownscaleReplicas = defaultDownscaleReplicas
-	layerCli.ParseLayerFlags()
+	// Set defaults for scopes
+	scopeCli.GracePeriod = defaultGracePeriod
+	scopeCli.DownscaleReplicas = defaultDownscaleReplicas
+	scopeCli.ParseScopeFlags()
 
 	flag.Parse()
 
@@ -69,7 +72,7 @@ func main() {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
-	if err := layerCli.CheckForIncompatibleFields(); err != nil {
+	if err := scopeCli.CheckForIncompatibleFields(); err != nil {
 		slog.Error("found incompatible fields", "error", err)
 		os.Exit(1)
 	}
@@ -80,48 +83,71 @@ func main() {
 		os.Exit(1)
 	}
 
-	s := &serverConfig{
-		client:   client,
-		layerCli: &layerCli,
-		layerEnv: &layerEnv,
-		config:   config,
-		ctx:      ctx,
+	serverConfig := &serverConfig{
+		client:       client,
+		scopeCli:     &scopeCli,
+		scopeEnv:     &scopeEnv,
+		scopeDefault: scopeDefault,
+		config:       config,
+		ctx:          ctx,
 	}
 
-	http.HandleFunc("/validate-workloads", s.serveValidateWorkloads)
-	http.HandleFunc("/healthz", s.serveHealth)
+	http.HandleFunc("/validate-workloads", serverConfig.serveValidateWorkloads)
+	http.HandleFunc("/healthz", serverConfig.serveHealth)
 
 	// Start the http server
 	go func() {
-		slog.Info("Listening on port 8080...")
-		if err := http.ListenAndServe(":8080", nil); err != nil {
+		httpServer := &http.Server{
+			Addr:         ":8080",
+			Handler:      nil,              // You can set your handler here if needed
+			ReadTimeout:  10 * time.Second, // Set read timeout
+			WriteTimeout: 10 * time.Second, // Set write timeout
+			IdleTimeout:  60 * time.Second, // Set idle timeout
+		}
+
+		if err = httpServer.ListenAndServe(); err != nil {
 			slog.Error("failed to start HTTP server", "error", err)
 		}
+
+		slog.Info("Listening on port 8080...")
 	}()
 
 	// Start the https server
 	cert := "/etc/admission-webhook/tls/tls.crt"
 	key := "/etc/admission-webhook/tls/tls.key"
-	slog.Info("Listening on port 443...")
-	slog.Error("error", http.ListenAndServeTLS(":443", cert, key, nil))
 
+	httpsServer := &http.Server{
+		Addr:         ":443",
+		Handler:      nil,              // You can set your handler here if needed
+		ReadTimeout:  10 * time.Second, // Set read timeout
+		WriteTimeout: 10 * time.Second, // Set write timeout
+		IdleTimeout:  60 * time.Second, // Set idle timeout
+	}
+
+	err = httpsServer.ListenAndServeTLS(cert, key)
+	if err != nil {
+		slog.Error("failed to start HTTPS server", "error", err)
+	}
+
+	slog.Info("Listening on port 443...")
 }
 
-// ServeHealth returns 200 when things are good
-func (s *serverConfig) serveHealth(w http.ResponseWriter, r *http.Request) {
+// ServeHealth returns 200 when things are good.
+func (s *serverConfig) serveHealth(w http.ResponseWriter, _ *http.Request) {
 	slog.Debug("healthy")
+
 	_, err := fmt.Fprint(w, "OK")
 	if err != nil {
 		return
 	}
 }
 
-// ServeValidateWorkloads validates an admission request
-func (s *serverConfig) serveValidateWorkloads(w http.ResponseWriter, r *http.Request) {
-	slog.Info("received validation request from uri", "requestURI", r.RequestURI)
+// ServeValidateWorkloads validates an admission request.
+func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, request *http.Request) {
+	slog.Info("received validation request from uri", "requestURI", request.RequestURI)
 
-	a := admission.NewWorkloadAdmissionHandler(s.client, s.layerCli, s.layerEnv, s.config, s.ctx)
-	a.HandleValidation(w, r)
+	a := admission.NewWorkloadAdmissionHandler(s.client, s.scopeCli, s.scopeEnv, s.scopeDefault, s.config, s.ctx)
+	a.HandleValidation(writer, request)
 
-	slog.Info("validation request was processed", "requestURI", r.RequestURI)
+	slog.Info("validation request was processed", "requestURI", request.RequestURI)
 }

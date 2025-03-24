@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	admissionv1 "k8s.io/api/admission/v1"
 	"sync"
 
@@ -28,12 +29,13 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 	return results, nil
 }
 
-// parseCronJobFromAdmissionRequest parses the admission review and returns the cronjob.
+// parseCronJobFromAdmissionRequest parses the admission review and returns the cronjob wrapped in a Workload.
 func parseCronJobFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var cj batch.CronJob
 	if err := json.Unmarshal(review.Request.Object.Raw, &cj); err != nil {
-		return nil, fmt.Errorf("failed to decode cronjob: %v", err)
+		return nil, fmt.Errorf("failed to decode cronjob: %w", err)
 	}
+
 	return &suspendScaledWorkload{&cronJob{&cj}}, nil
 }
 

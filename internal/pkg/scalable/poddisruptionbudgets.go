@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	admissionv1 "k8s.io/api/admission/v1"
 	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	admissionv1 "k8s.io/api/admission/v1"
 	policy "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -31,8 +31,9 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 func parsePodDisruptionBudgetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var pdb policy.PodDisruptionBudget
 	if err := json.Unmarshal(review.Request.Object.Raw, &pdb); err != nil {
-		return nil, fmt.Errorf("failed to decode Deployment: %v", err)
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
 	}
+
 	return &podDisruptionBudget{&pdb}, nil
 }
 
