@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	admissionv1 "k8s.io/api/admission/v1"
 
+	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,8 +33,9 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 func parseHorizontalPodAutoscalerFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var hpa appsv1.HorizontalPodAutoscaler
 	if err := json.Unmarshal(review.Request.Object.Raw, &hpa); err != nil {
-		return nil, fmt.Errorf("failed to decode horizontalpodautoscaler: %v", err)
+		return nil, fmt.Errorf("failed to decode horizontalpodautoscaler: %w", err)
 	}
+
 	return &replicaScaledWorkload{&horizontalPodAutoscaler{&hpa}}, nil
 }
 

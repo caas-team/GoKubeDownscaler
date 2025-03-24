@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	admissionv1 "k8s.io/api/admission/v1"
 
+	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -34,8 +34,9 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 func parseDaemonSetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var ds appsv1.DaemonSet
 	if err := json.Unmarshal(review.Request.Object.Raw, &ds); err != nil {
-		return nil, fmt.Errorf("failed to decode daemonset: %v", err)
+		return nil, fmt.Errorf("failed to decode daemonset: %w", err)
 	}
+
 	return &daemonSet{&ds}, nil
 }
 
