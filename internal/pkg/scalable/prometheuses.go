@@ -31,8 +31,9 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 func parsePrometheusFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var prom monitoringv1.Prometheus
 	if err := json.Unmarshal(review.Request.Object.Raw, &prom); err != nil {
-		return nil, fmt.Errorf("failed to decode Deployment: %v", err)
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
 	}
+
 	return &replicaScaledWorkload{&prometheus{&prom}}, nil
 }
 

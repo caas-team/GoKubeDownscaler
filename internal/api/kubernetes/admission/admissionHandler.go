@@ -3,12 +3,14 @@ package admission
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log/slog"
+	"net/http"
+
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"log/slog"
-	"net/http"
 )
 
 type admissionHandler interface {
@@ -16,38 +18,40 @@ type admissionHandler interface {
 	HandleValidation() *admissionv1.AdmissionResponse
 }
 
-// parseAdmissionReviewFromRequest extracts an AdmissionReview from a http.Request if possible
-func parseAdmissionReviewFromRequest(r http.Request) (*admissionv1.AdmissionReview, error) {
-	if r.Header.Get("Content-Type") != "application/json" {
+// parseAdmissionReviewFromRequest extracts an AdmissionReview from a http.Request if possible.
+func parseAdmissionReviewFromRequest(request *http.Request) (*admissionv1.AdmissionReview, error) {
+	if request.Header.Get("Content-Type") != "application/json" {
 		return nil, fmt.Errorf("Content-Type: %q should be %q",
-			r.Header.Get("Content-Type"), "application/json")
+			request.Header.Get("Content-Type"), "application/json")
 	}
 
 	bodybuf := new(bytes.Buffer)
-	_, err := bodybuf.ReadFrom(r.Body)
+
+	_, err := bodybuf.ReadFrom(request.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read body: %w", err)
 	}
+
 	body := bodybuf.Bytes()
 
 	if len(body) == 0 {
-		return nil, fmt.Errorf("admission request body is empty")
+		return nil, errors.New("admission request body is empty")
 	}
 
-	var a admissionv1.AdmissionReview
+	var admissionReview admissionv1.AdmissionReview
 
-	if err := json.Unmarshal(body, &a); err != nil {
-		return nil, fmt.Errorf("could not parse admission review request: %v", err)
+	if err := json.Unmarshal(body, &admissionReview); err != nil {
+		return nil, fmt.Errorf("could not parse admission review request: %w", err)
 	}
 
-	if a.Request == nil {
-		return nil, fmt.Errorf("admission review can't be used: Request field is nil")
+	if admissionReview.Request == nil {
+		return nil, errors.New("admission review can't be used: Request field is nil")
 	}
 
-	return &a, nil
+	return &admissionReview, nil
 }
 
-// reviewResponse returns an AdmissionReview with the specified UID, allowed, httpCode, and reason
+// reviewResponse returns an AdmissionReview with the specified UID, allowed, httpCode, and reason.
 func reviewResponse(uid types.UID, allowed bool, httpCode int32, reason string) *admissionv1.AdmissionReview {
 	return &admissionv1.AdmissionReview{
 		TypeMeta: metav1.TypeMeta{
@@ -65,21 +69,23 @@ func reviewResponse(uid types.UID, allowed bool, httpCode int32, reason string) 
 	}
 }
 
-// sendAdmissionResponse sends the admission response to the client
-func sendAdmissionReviewResponse(w http.ResponseWriter, err error, out *admissionv1.AdmissionReview) {
-	w.Header().Set("Content-Type", "application/json")
-	jout, err := json.Marshal(out)
+// sendAdmissionResponse sends the admission response to the client.
+func sendAdmissionReviewResponse(writer http.ResponseWriter, output *admissionv1.AdmissionReview) {
+	writer.Header().Set("Content-Type", "application/json")
+
+	jout, err := json.Marshal(output)
 	if err != nil {
-		e := fmt.Sprintf("could not parse admission response", "error", err)
-		slog.Error(e)
-		http.Error(w, e, http.StatusInternalServerError)
+		e := fmt.Sprintf("could not parse admission response: %v", err)
+		slog.Error(e, slog.String("error", err.Error()))
+		http.Error(writer, e, http.StatusInternalServerError)
+
 		return
 	}
 
 	slog.Debug("sending response", "response", string(jout))
 
-	_, writeErr := w.Write(jout)
+	_, writeErr := writer.Write(jout)
 	if writeErr != nil {
-		slog.Error("failed to write response", "error", writeErr)
+		slog.Error("failed to write response", slog.String("error", writeErr.Error()))
 	}
 }

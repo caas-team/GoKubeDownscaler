@@ -39,8 +39,8 @@ type KubeDownscalerRuntimeConfiguration struct {
 	MetricsEnabled bool
 }
 
-func GetDefaultConfig() *RuntimeConfiguration {
-	return &RuntimeConfiguration{
+func GetDefaultConfig() *KubeDownscalerRuntimeConfiguration {
+	return &KubeDownscalerRuntimeConfiguration{
 		DryRun:            false,
 		Debug:             false,
 		Once:              false,

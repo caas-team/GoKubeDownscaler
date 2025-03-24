@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	admissionv1 "k8s.io/api/admission/v1"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
@@ -30,8 +31,9 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 func parseJobFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var j batch.Job
 	if err := json.Unmarshal(review.Request.Object.Raw, &j); err != nil {
-		return nil, fmt.Errorf("failed to decode job: %v", err)
+		return nil, fmt.Errorf("failed to decode job: %w", err)
 	}
+
 	return &suspendScaledWorkload{&job{&j}}, nil
 }
 

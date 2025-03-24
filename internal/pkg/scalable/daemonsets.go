@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	admissionv1 "k8s.io/api/admission/v1"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
@@ -35,8 +36,9 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 func parseDaemonSetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var ds appsv1.DaemonSet
 	if err := json.Unmarshal(review.Request.Object.Raw, &ds); err != nil {
-		return nil, fmt.Errorf("failed to decode daemonset: %v", err)
+		return nil, fmt.Errorf("failed to decode daemonset: %w", err)
 	}
+
 	return &daemonSet{&ds}, nil
 }
 
