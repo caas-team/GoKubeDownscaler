@@ -33,6 +33,8 @@ type Client interface {
 	GetNamespaceScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
 	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
+	// GetKinds gets the kinds of the specified resources
+	GetKinds(resourceTypes []string) (map[string]struct{}, error)
 	// RegetWorkload gets the workload again to ensure the latest state
 	RegetWorkload(workload scalable.Workload, ctx context.Context) error
 	// DownscaleWorkload downscales the workload to the specified replicas
@@ -132,6 +134,22 @@ func (c client) GetWorkloads(namespaces, resourceTypes []string, ctx context.Con
 	}
 
 	return results, nil
+}
+
+// GetKinds gets the kinds of the specified resources.
+func (c client) GetKinds(resourceTypes []string) (map[string]struct{}, error) {
+	kinds := make(map[string]struct{}, len(resourceTypes))
+
+	for _, resource := range resourceTypes {
+		kind, err := scalable.GetKind(resource)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get kind for resource type '%s': %w", resource, err)
+		}
+
+		kinds[kind] = struct{}{}
+	}
+
+	return kinds, nil
 }
 
 // RegetWorkload gets the workload again to ensure the latest state.

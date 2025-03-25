@@ -9,6 +9,7 @@ import (
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -46,6 +47,32 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 	return workloads, nil
 }
 
+// GetKind gets the Kind for a given resource type.
+func GetKind(resource string) (string, error) {
+	resourceKindMap := map[string]runtime.Object{
+		"deployments":              &deployment{},
+		"statefulsets":             &statefulSet{},
+		"cronjobs":                 &cronJob{},
+		"jobs":                     &job{},
+		"daemonsets":               &daemonSet{},
+		"poddisruptionbudgets":     &podDisruptionBudget{},
+		"horizontalpodautoscalers": &horizontalPodAutoscaler{},
+		"scaledobjects":            &scaledObject{},
+		"rollouts":                 &rollout{},
+		"stacks":                   &stack{},
+		"prometheuses":             &prometheus{},
+	}
+
+	obj, exists := resourceKindMap[resource]
+	if !exists {
+		return "", fmt.Errorf("failed to get kind of type %q: %w", resource, errResourceNotSupported)
+	}
+
+	kind := obj.GetObjectKind().GroupVersionKind().GroupKind().String()
+
+	return kind, nil
+}
+
 // scalableResource provides all functions needed to scale any type of resource.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource
@@ -64,6 +91,8 @@ type scalableResource interface {
 	SetAnnotations(annotations map[string]string)
 	// GroupVersionKind gets the group version kind of the workload
 	GroupVersionKind() schema.GroupVersionKind
+	// GetOwnerReferences gets the owner references of the workload
+	GetOwnerReferences() []metav1.OwnerReference
 	// Reget regets the workload to ensure the latest state
 	Reget(clientsets *Clientsets, ctx context.Context) error
 }
