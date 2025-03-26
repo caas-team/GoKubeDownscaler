@@ -103,6 +103,12 @@ const config: Config = {
           label: "Guides",
         },
         {
+          type: "docSidebar",
+          sidebarId: "ContributingSidebar",
+          position: "left",
+          label: "Contributing",
+        },
+        {
           href: "https://github.com/caas-team/GoKubeDownscaler",
           "aria-label": "GitHub",
           position: "right",
