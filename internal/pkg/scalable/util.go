@@ -107,15 +107,15 @@ func isExternallyScaled(workload Workload, externallyScaled []workloadIdentifier
 			continue
 		}
 
-		if !(wid.gvk.Group == "" || wid.gvk.Group == workload.GroupVersionKind().Group) {
+		if wid.gvk.Group != "" && wid.gvk.Group != workload.GroupVersionKind().Group {
 			continue
 		}
 
-		if !(wid.gvk.Version == "" || wid.gvk.Version == workload.GroupVersionKind().Version) {
+		if wid.gvk.Version != "" && wid.gvk.Version != workload.GroupVersionKind().Version {
 			continue
 		}
 
-		if !(wid.gvk.Kind == "" || wid.gvk.Kind == workload.GroupVersionKind().Kind) {
+		if wid.gvk.Kind != "" && wid.gvk.Kind != workload.GroupVersionKind().Kind {
 			continue
 		}
 
