@@ -185,12 +185,36 @@ func isWorkloadExcluded(
 		return false
 	}
 
-	var parentWorkload Workload
+	nonControllerResources := getNonControllerResources(workload, uidToWorkload)
+
+	var excluded bool
+	if len(nonControllerResources) > 0 {
+		excluded = true
+
+		for _, resource := range nonControllerResources {
+			if _, exists := includedResources[resource.GroupVersionKind().String()]; exists {
+				excluded = false
+				break
+			}
+		}
+	}
+
+	if excluded {
+		return true
+	}
+
+	return excludedWorkloads.CheckMatchesAny(workload.GetName())
+}
+
+func getNonControllerResources(
+	workload Workload,
+	uidToWorkload map[types.UID]Workload,
+) []Workload {
 	var nonControllerResources []Workload
 
 	for _, ownerReference := range workload.GetOwnerReferences() {
 		if *ownerReference.Controller {
-			parentWorkload = uidToWorkload[ownerReference.UID]
+			parentWorkload := uidToWorkload[ownerReference.UID]
 
 			for {
 				parentReferences := parentWorkload.GetOwnerReferences()
@@ -214,13 +238,7 @@ func isWorkloadExcluded(
 		}
 	}
 
-	for _, resource := range nonControllerResources {
-		if _, exists := includedResources[resource.GroupVersionKind().String()]; !exists {
-			return true
-		}
-	}
-
-	return excludedWorkloads.CheckMatchesAny(workload.GetName())
+	return nonControllerResources
 }
 
 // setOriginalReplicas sets the original replicas annotation on the workload.
