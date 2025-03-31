@@ -215,7 +215,7 @@ func isWorkloadExcluded(
 	}
 
 	for _, resource := range nonControllerResources {
-		if _, exists := includedResources[resource.GetName()]; !exists {
+		if _, exists := includedResources[resource.GroupVersionKind().String()]; !exists {
 			return true
 		}
 	}
