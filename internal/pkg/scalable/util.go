@@ -9,6 +9,7 @@ import (
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const annotationOriginalReplicas = "downscaler/original-replicas"
@@ -20,6 +21,7 @@ func FilterExcluded(
 	excludedNamespaces,
 	excludedWorkloads util.RegexList,
 	includedResources map[string]struct{},
+	workloadsUIDToWorkload map[types.UID]Workload,
 ) []Workload {
 	externallyScaled := getExternallyScaled(workloads)
 
@@ -46,7 +48,7 @@ func FilterExcluded(
 			continue
 		}
 
-		if isWorkloadExcluded(workload, excludedWorkloads, includedResources) {
+		if isWorkloadExcluded(workload, excludedWorkloads, includedResources, workloadsUIDToWorkload) {
 			slog.Debug(
 				"the workloads name is excluded, excluding it from being scanned",
 				"workload", workload.GetName(),
@@ -173,13 +175,47 @@ func isNamespaceExcluded(workload Workload, excludedNamespaces util.RegexList) b
 }
 
 // isWorkloadExcluded checks if the workloads name is excluded.
-func isWorkloadExcluded(workload Workload, excludedWorkloads util.RegexList, includedResources map[string]struct{}) bool {
+func isWorkloadExcluded(
+	workload Workload,
+	excludedWorkloads util.RegexList,
+	includedResources map[string]struct{},
+	uidToWorkload map[types.UID]Workload,
+) bool {
 	if excludedWorkloads == nil {
 		return false
 	}
 
+	var parentWorkload Workload
+	var nonControllerResources []Workload
+
 	for _, ownerReference := range workload.GetOwnerReferences() {
-		if _, exists := includedResources[ownerReference.Kind]; !exists {
+		if *ownerReference.Controller {
+			parentWorkload = uidToWorkload[ownerReference.UID]
+
+			for {
+				parentReferences := parentWorkload.GetOwnerReferences()
+				foundParent := false
+
+				for _, parentRef := range parentReferences {
+					if *parentRef.Controller {
+						parentWorkload = uidToWorkload[parentRef.UID]
+						foundParent = true
+
+						break
+					}
+				}
+
+				if !foundParent {
+					break
+				}
+			}
+		} else {
+			nonControllerResources = append(nonControllerResources, uidToWorkload[ownerReference.UID])
+		}
+	}
+
+	for _, resource := range nonControllerResources {
+		if _, exists := includedResources[resource.GetName()]; !exists {
 			return true
 		}
 	}
