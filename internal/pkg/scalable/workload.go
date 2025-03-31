@@ -9,7 +9,6 @@ import (
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -49,26 +48,24 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 
 // GetKind gets the Kind for a given resource type.
 func GetKind(resource string) (string, error) {
-	resourceKindMap := map[string]runtime.Object{
-		"deployments":              &deployment{},
-		"statefulsets":             &statefulSet{},
-		"cronjobs":                 &cronJob{},
-		"jobs":                     &job{},
-		"daemonsets":               &daemonSet{},
-		"poddisruptionbudgets":     &podDisruptionBudget{},
-		"horizontalpodautoscalers": &horizontalPodAutoscaler{},
-		"scaledobjects":            &scaledObject{},
-		"rollouts":                 &rollout{},
-		"stacks":                   &stack{},
-		"prometheuses":             &prometheus{},
+	resourceKindMap := map[string]string{
+		"deployments":              "Deployment",
+		"statefulsets":             "StatefulSet",
+		"cronjobs":                 "CronJob",
+		"jobs":                     "Job",
+		"daemonsets":               "DaemonSet",
+		"poddisruptionbudgets":     "PodDisruptionBudget",
+		"horizontalpodautoscalers": "HorizontalPodAutoscaler",
+		"scaledobjects":            "ScaledObject",
+		"rollouts":                 "Rollout",
+		"stacks":                   "Stack",
+		"prometheuses":             "Prometheus",
 	}
 
-	obj, exists := resourceKindMap[resource]
+	kind, exists := resourceKindMap[resource]
 	if !exists {
 		return "", fmt.Errorf("failed to get kind of type %q: %w", resource, errResourceNotSupported)
 	}
-
-	kind := obj.GetObjectKind().GroupVersionKind().GroupKind().String()
 
 	return kind, nil
 }

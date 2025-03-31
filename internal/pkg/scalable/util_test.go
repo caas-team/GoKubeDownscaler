@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestFilterExcluded(t *testing.T) {
@@ -91,6 +92,12 @@ func TestFilterExcluded(t *testing.T) {
 			},
 		}}},
 	}
+
+	workloadsUIDToWorkload := map[types.UID]Workload{
+		types.UID("uid1"): ns1.deployment1,
+		types.UID("uid2"): ns1.deployment2,
+	}
+
 	tests := []struct {
 		name               string
 		workloads          []Workload
@@ -151,7 +158,14 @@ func TestFilterExcluded(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := FilterExcluded(test.workloads, test.includeLabels, test.excludedNamespaces, test.excludedWorkloads, test.includedResources)
+			got := FilterExcluded(
+				test.workloads,
+				test.includeLabels,
+				test.excludedNamespaces,
+				test.excludedWorkloads,
+				test.includedResources,
+				workloadsUIDToWorkload)
+
 			assert.Equal(t, test.want, got)
 		})
 	}
