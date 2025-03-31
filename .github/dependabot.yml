@@ -6,7 +6,7 @@ updates:
       interval: "daily"
     labels:
       - "housekeeping"
-      - "documentation"
+      - "website"
       - "dependencies"
     commit-message:
       prefix: "chore"

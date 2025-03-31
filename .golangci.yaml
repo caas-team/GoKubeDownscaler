@@ -1,87 +1,6 @@
-linters-settings:
-  wsl:
-    allow-cuddle-declarations: true
-  depguard:
-    rules:
-      logger:
-        deny:
-          - pkg: "github.com/sirupsen/logrus"
-            desc: use the standard library's slog.Logger instead
-          - pkg: "github.com/ueber-go/zap"
-            desc: use the standard library's slog.Logger instead
-  dupl:
-    threshold: 100
-  funlen:
-    lines: -1 # the number of lines (code + empty lines) is not a right metric and leads to code without empty line or one-liner.
-    statements: 50
-  goconst:
-    min-len: 2
-    min-occurrences: 3
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport # https://github.com/go-critic/go-critic/issues/845
-      - ifElseChain
-      - octalLiteral
-      - whyNoLint
-  gocyclo:
-    min-complexity: 15
-  gofmt:
-    rewrite-rules:
-      - pattern: "interface{}"
-        replacement: "any"
-  goimports:
-    local-prefixes: github.com/golangci/golangci-lint
-  mnd:
-    # don't include the "operation" and "assign"
-    checks:
-      - argument
-      - case
-      - condition
-      - return
-    ignored-numbers:
-      - "0"
-      - "1"
-      - "2"
-      - "3"
-    ignored-functions:
-      - strings.SplitN
-
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment # disabled because it's too strict, it checks if struct fields are sorted by size
-    settings:
-      printf:
-        funcs:
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
-  lll:
-    line-length: 140
-  misspell:
-    locale: US
-  nolintlint:
-    allow-unused: false # report any unused nolint directives
-    require-explanation: true # require an explanation for nolint directives
-    require-specific: true # require nolint directives to be specific about which linter is being skipped
-  revive:
-    rules:
-      - name: unexported-return
-        disabled: true
-      - name: unused-parameter
-  gomoddirectives:
-    replace-allow-list:
-      - sigs.k8s.io/controller-runtime # remove this once keda supports v0.20.x
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
     - asasalint
     - asciicheck
@@ -110,7 +29,6 @@ linters:
     - forbidigo
     - forcetypeassert
     - funlen
-    - gci
     - ginkgolinter
     - gocheckcompilerdirectives
     - gochecknoglobals
@@ -122,15 +40,11 @@ linters:
     - gocyclo
     - godot
     - godox
-    - gofmt
-    - gofumpt
     - goheader
-    - goimports
     - gomoddirectives
     - gomodguard
     - goprintffuncname
     - gosec
-    - gosimple
     - gosmopolitan
     - govet
     - grouper
@@ -173,10 +87,8 @@ linters:
     - spancheck
     - sqlclosecheck
     - staticcheck
-    - stylecheck
     - tagalign
     - tagliatelle
-    - usetesting
     - testableexamples
     - testifylint
     #- testpackage # we might also want to test unexported functions
@@ -186,34 +98,135 @@ linters:
     - unparam
     - unused
     - usestdlibvars
+    - usetesting
     - varnamelen
     - wastedassign
     - whitespace
     - wrapcheck
     - wsl
     - zerologlint
-
-output:
-  print-linter-name: true
-
+  settings:
+    depguard:
+      rules:
+        logger:
+          deny:
+            - pkg: github.com/sirupsen/logrus
+              desc: use the standard library's slog.Logger instead
+            - pkg: github.com/ueber-go/zap
+              desc: use the standard library's slog.Logger instead
+    dupl:
+      threshold: 100
+    funlen:
+      lines: -1
+      statements: 50
+    goconst:
+      min-len: 2
+      min-occurrences: 3
+    gocritic:
+      disabled-checks:
+        - dupImport
+        - ifElseChain
+        - octalLiteral
+        - whyNoLint
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    gocyclo:
+      min-complexity: 15
+    gomoddirectives:
+      replace-allow-list:
+        - sigs.k8s.io/controller-runtime
+    govet:
+      disable:
+        - fieldalignment
+      enable-all: true
+      settings:
+        printf:
+          funcs:
+            - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
+            - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
+            - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
+            - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+    lll:
+      line-length: 140
+    misspell:
+      locale: US
+    mnd:
+      checks:
+        - argument
+        - case
+        - condition
+        - return
+      ignored-numbers:
+        - "0"
+        - "1"
+        - "2"
+        - "3"
+      ignored-functions:
+        - strings.SplitN
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+      allow-unused: false
+    revive:
+      rules:
+        - name: unexported-return
+          disabled: true
+        - name: unused-parameter
+    wsl:
+      allow-cuddle-declarations: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - forcetypeassert
+          - gochecknoglobals
+          - govet
+          - mnd
+          - revive
+          - wrapcheck
+        path: _test\.go
+      - linters:
+          - lll
+        source: "//nolint: "
+    paths:
+      - test/data
+      - test/testdata
+      - pb
+      - third_party$
+      - builtin$
+      - examples$
 issues:
   max-same-issues: 50
-  exclude-dirs:
-    - test/data # test files
-    - test/testdata # test files
-    - pb # protobuf files
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - mnd # test files can have magic numbers
-        - revive # test files can have unused parameters
-        - forcetypeassert # test files can have unchecked type assertion
-        - wrapcheck # test files can have unwrapped errors
-        - govet # test files can have global variables
-        - gochecknoglobals # test files can have global variables
-    - source: "//nolint: "
-      linters: [lll] # disable long line linter on lines with '//nolint:' directive
   fix: true
-
-run:
-  timeout: 5m
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    gofmt:
+      rewrite-rules:
+        - pattern: interface{}
+          replacement: any
+    goimports:
+      local-prefixes:
+        - github.com/golangci/golangci-lint
+  exclusions:
+    generated: lax
+    paths:
+      - test/data
+      - test/testdata
+      - pb
+      - third_party$
+      - builtin$
+      - examples$
