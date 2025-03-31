@@ -22,6 +22,7 @@ subjects:
   - kind: ServiceAccount
     name: {{ include "go-kube-downscaler.serviceAccountName" $ }}
     namespace: {{ $.Release.Namespace }}
+---
 
 {{- end }}
 {{- end }}
