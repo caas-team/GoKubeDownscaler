@@ -11,12 +11,12 @@ automatically scaling down to zero non-essential workloads outside working or se
 
 1. **Set Up Time Windows And Target Workloads:**
    Start by defining specific time windows to the workloads that should be scaled down outside working or service hours.
-You can configure these time windows at the following levels:
+   You can configure these time windows at the following levels:
 
    - **Cluster Wide:** Apply a global time window for the entire cluster, ensuring all targeted workloads are scaled down during the specified period.
-Cluster-wide configuration is applied using regex.
+     Cluster-wide configuration is applied using regex.
    - **Namespace/Workload:** Set up time windows for individual namespaces or specific workloads for more granular control over the scaling behavior.
-This configuration is applied using annotations.
+     This configuration is applied using annotations.
 
 These levels can be combined for greater flexibility.
 When time windows are defined at both the cluster and namespace/workload levels, the more granular configuration (namespace/workload) will take precedence, offering precise control over when and how workloads scale down.
