@@ -1,0 +1,43 @@
+---
+title: Env Scope
+id: env-scope
+globalReference: docs-env-scope
+---
+
+# Env Scope
+
+The Env Scope is the second type of scope available. It overrides the default scope, but it can be overridden by the CLI
+Scope, Namespace Scope, or Workload Scope. It is used to set both values and runtime configurations
+
+INSERT PYRAMID IMAGE
+
+## Values
+
+## Runtime Configurations
+
+Runtime Configurations at the Env Scope level are used to set
+
+## Usage
+
+### Bare Variables
+
+```text title=".env"
+DEFAULT_UPTIME: "Mon-Fri 08:00-20:00 Pacific/Fiji"
+EXCLUDE_DEPLOYMENTS: "my-deployment, example-.*"
+```
+
+### Via Helm Chart values.yaml
+
+```yaml title="values.yaml"
+# ...
+
+configMap:
+  name: go-kube-downscaler
+  extraConfig: |
+    DEFAULT_DOWNTIME: "Mon-Fri 20:00-08:00 Asia/Tokyo, Sat-Sun 00:00-24:00 Asia/Tokyo"
+    EXCLUDE_NAMESPACES: "my-namespace, example-.*"
+
+# ...
+```
+
+

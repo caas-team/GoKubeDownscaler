@@ -1,0 +1,57 @@
+---
+title: Scopes And Scaling
+id: scopes
+globalReference: docs-scopes
+---
+
+import Excalidraw from "/src/components/Excalidraw/Excalidraw.tsx";
+import scopeDiagram from "./assets/scope-diagram.excalidraw";
+
+# Scopes And Scaling
+
+## Scopes
+
+Scopes are levels that hold behavioral and scaling configurations. These configurations can be divided into
+two categories:
+
+- **Runtime Configurations:** define how the Downscaler itself operates, controlling aspects like which namespaces and
+workload types it should target, frequency of scans, retries, whether debugging information is enabled and more. Runtime
+Configurations do not dictate how and when individual workloads are scaled.
+- **Values:** define the scaling behavior of workloads within the selected namespaces/workloads, specifying how and when
+they should be scaled up or down.
+
+### Available Scopes
+
+The scopes are organized in a hierarchy, with each scope having its own set of configurations. The available scopes are:
+
+- [Default Scope](#ref:docs-default-scope): contains only the default values.
+- [Env Scope](#ref:docs-env-scope): contains the values and runtime configurations set by the environment variables.
+- [CLI Scope](#ref:docs-cli-scope): contains the values and runtime configurations set by the CLI arguments.
+- [Namespace Scope](#ref:docs-namespace-scope): contains only the values set by the annotations on the namespace.
+- [Workload Scope](#ref:docs-workload-scope):  contains only the values set by the annotations on the workload.
+
+The hierarchy of scopes is important because it determines which configurations take precedence when a particular
+configuration is defined in multiple scopes. It can be visualized as pyramid, with the Default Scope at the bottom
+and the Workload Scope at the top. Each scope can override the configurations of the scopes below it in the hierarchy.
+
+## Scaling Algorithm
+
+The scaling algorithm uses the values set in the scopes to determine how and when to scale workloads.
+The resulting value is always the one set by the most specific scope that has set that value.
+
+This means, as specified before, that [Workload Scope](#workload-scope) > [Namespace Scope](#namespace-scope) >
+[CLI Scope](#cli-scope) > [ENV Scope](#environment-scope) > [Default Scope](#default-scope). The following table shows
+how values are evaluated when multiple scopes are defined or when only a single scope is defined.
+
+<Excalidraw data={scopeDiagram} />
+
+### Value Groups
+
+Some [values](ref:docs-values) within in a scope set/define very similar properties (e.g. [Force Downtime](ref:docs-values#force-downtime)
+and [Force Uptime](ref:docs-values#force-uptime); [Downscale Period](ref:docs-values#downscale-period),
+[Downtime](ref:docs-values#downtime), [Upscale Period](ref:docs-values#upscale-period) and [Uptime](ref:docs-values#uptime))
+
+These values are not all handled separately when choosing which scope to take the values from.
+Instead if one of them is set in a scope, the other values will be taken from the same scope.
+
+Incompatibilities between values normally only occur between values in the same value group and therefore the values on that same scope.
