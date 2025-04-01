@@ -213,7 +213,7 @@ func checkAllReferencesExcluded(ownerReferences *[]Workload, includedResources m
 
 // getOwnerReferenceParent recursively finds the root owner of the workload by following controller owner references.
 //
-//nolint:gocritic // this function should return a pointer
+//nolint:gocritic // ptrToReference should be allowed
 func getOwnerReferenceParent(workload *Workload, uidToWorkload map[types.UID]*Workload) *Workload {
 	for _, ownerReference := range (*workload).GetOwnerReferences() {
 		if ownerReference.Controller != nil && *ownerReference.Controller {
@@ -228,7 +228,7 @@ func getOwnerReferenceParent(workload *Workload, uidToWorkload map[types.UID]*Wo
 
 // getNonControllerOwnerReferences returns non-controller owner references of the workload.
 //
-//nolint:gocritic // this function should return a pointer
+//nolint:gocritic // ptrToReference should be allowed
 func getNonControllerOwnerReferences(
 	workload *Workload,
 	uidToWorkload map[types.UID]*Workload,
