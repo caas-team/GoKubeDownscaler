@@ -93,12 +93,12 @@ func TestFilterExcluded(t *testing.T) {
 		}}},
 	}
 
-	workloadsUIDToWorkload := map[types.UID]Workload{
-		types.UID("uid1"): ns1.deployment1,
-		types.UID("uid2"): ns1.deployment2,
-		types.UID("uid3"): ns3.deployment1,
-		types.UID("uid4"): ns3.deployment2,
-		types.UID("uid5"): ns3.scaledObject,
+	workloadsUIDToWorkload := map[types.UID]*Workload{
+		types.UID("uid1"): &ns1.deployment1,
+		types.UID("uid2"): &ns1.deployment2,
+		types.UID("uid3"): &ns3.deployment1,
+		types.UID("uid4"): &ns3.deployment2,
+		types.UID("uid5"): &ns3.scaledObject,
 	}
 
 	tests := []struct {
