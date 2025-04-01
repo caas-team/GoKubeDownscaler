@@ -33,7 +33,7 @@ type Client interface {
 	// GetNamespaceAnnotations gets the annotations of the workload's namespace
 	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
-	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, map[types.UID]scalable.Workload, error)
+	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, map[types.UID]*scalable.Workload, error)
 	// GetKinds gets the kinds of the specified resources
 	GetKinds(resourceTypes []string) (map[string]struct{}, error)
 	// RegetWorkload gets the workload again to ensure the latest state
@@ -115,7 +115,7 @@ func (c client) GetWorkloads(
 	namespaces,
 	resourceTypes []string,
 	ctx context.Context,
-) ([]scalable.Workload, map[types.UID]scalable.Workload, error) {
+) ([]scalable.Workload, map[types.UID]*scalable.Workload, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -138,10 +138,10 @@ func (c client) GetWorkloads(
 		}
 	}
 
-	UIDToWorkloadMap := make(map[types.UID]scalable.Workload, len(results))
+	UIDToWorkloadMap := make(map[types.UID]*scalable.Workload, len(results))
 
-	for _, workload := range results {
-		UIDToWorkloadMap[workload.GetUID()] = workload
+	for i := range results {
+		UIDToWorkloadMap[results[i].GetUID()] = &results[i] // Store pointer to the workload
 	}
 
 	return results, UIDToWorkloadMap, nil

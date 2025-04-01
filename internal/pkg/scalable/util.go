@@ -21,7 +21,7 @@ func FilterExcluded(
 	excludedNamespaces,
 	excludedWorkloads util.RegexList,
 	includedResources map[string]struct{},
-	workloadsUIDToWorkload map[types.UID]Workload,
+	workloadsUIDToWorkload map[types.UID]*Workload,
 ) []Workload {
 	externallyScaled := getExternallyScaled(workloads)
 
@@ -179,62 +179,71 @@ func isWorkloadExcluded(
 	workload Workload,
 	excludedWorkloads util.RegexList,
 	includedResources map[string]struct{},
-	uidToWorkload map[types.UID]Workload,
+	uidToWorkload map[types.UID]*Workload,
 ) bool {
 	if excludedWorkloads == nil {
 		return false
 	}
 
-	nonControllerResources := getNonControllerResources(workload, uidToWorkload)
-
-	var excluded bool
-	if len(nonControllerResources) > 0 {
-		excluded = true
-
-		for _, resource := range nonControllerResources {
-			if _, exists := includedResources[resource.GroupVersionKind().String()]; exists {
-				excluded = false
-				break
-			}
-		}
-	}
-
-	if excluded {
+	nonControllerOwnerReferences := getNonControllerOwnerReferences(&workload, uidToWorkload)
+	if checkAllReferencesExcluded(&nonControllerOwnerReferences, includedResources) {
 		return true
 	}
 
 	return excludedWorkloads.CheckMatchesAny(workload.GetName())
 }
 
-func getNonControllerResources(
-	workload Workload,
-	uidToWorkload map[types.UID]Workload,
+// checkAllReferencesExcluded checks if all owner references of the workload are excluded.
+func checkAllReferencesExcluded(ownerReferences *[]Workload, includedResources map[string]struct{}) bool {
+	if len(*ownerReferences) == 0 {
+		return false
+	}
+
+	ownerReferencesExcluded := true
+
+	for _, ownerReference := range *ownerReferences {
+		if _, exists := includedResources[ownerReference.GroupVersionKind().String()]; exists {
+			ownerReferencesExcluded = false
+			break
+		}
+	}
+
+	return ownerReferencesExcluded
+}
+
+// getOwnerReferenceParent recursively finds the root owner of the workload by following controller owner references.
+//
+//nolint:gocritic // this function should return a pointer
+func getOwnerReferenceParent(workload *Workload, uidToWorkload map[types.UID]*Workload) *Workload {
+	for _, ownerReference := range (*workload).GetOwnerReferences() {
+		if ownerReference.Controller != nil && *ownerReference.Controller {
+			if parentWorkload, exists := uidToWorkload[ownerReference.UID]; exists {
+				return getOwnerReferenceParent(parentWorkload, uidToWorkload)
+			}
+		}
+	}
+
+	return workload
+}
+
+// getNonControllerOwnerReferences returns non-controller owner references of the workload.
+//
+//nolint:gocritic // this function should return a pointer
+func getNonControllerOwnerReferences(
+	workload *Workload,
+	uidToWorkload map[types.UID]*Workload,
 ) []Workload {
 	var nonControllerResources []Workload
 
-	for _, ownerReference := range workload.GetOwnerReferences() {
-		if *ownerReference.Controller {
-			parentWorkload := uidToWorkload[ownerReference.UID]
-
-			for {
-				parentReferences := parentWorkload.GetOwnerReferences()
-				foundParent := false
-
-				for _, parentRef := range parentReferences {
-					if *parentRef.Controller {
-						parentWorkload = uidToWorkload[parentRef.UID]
-						foundParent = true
-
-						break
-					}
-				}
-
-				if !foundParent {
-					break
-				}
+	for _, ownerReference := range (*workload).GetOwnerReferences() {
+		if ownerReference.Controller != nil && *ownerReference.Controller {
+			if rootOwner := getOwnerReferenceParent(uidToWorkload[ownerReference.UID], uidToWorkload); rootOwner == workload {
+				continue
 			}
 		} else {
-			nonControllerResources = append(nonControllerResources, uidToWorkload[ownerReference.UID])
+			if resource, exists := uidToWorkload[ownerReference.UID]; exists {
+				nonControllerResources = append(nonControllerResources, *resource)
+			}
 		}
 	}
 
