@@ -253,7 +253,7 @@ func scanWorkload(
 	namespaceLayers map[string]*values.Scope,
 	config *util.RuntimeConfiguration,
 ) error {
-	resourceLogger := kubernetes.NewResourceLogger(client, workload)
+	resourceLogger := kubernetes.NewResourceLoggerForWorkload(client, workload)
 
 	slog.Debug(
 		"parsing workload scope from annotations",

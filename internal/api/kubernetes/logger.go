@@ -11,64 +11,85 @@ import (
 const reasonInvalidConfiguration = "InvalidConfiguration"
 
 // Logger handles logging for both namespaces and workloads.
-type Logger struct {
-	client    Client
-	workload  scalable.Workload
-	namespace string
+type ResourceLogger struct {
+	logger resourceLogger
 }
 
 // NewResourceLogger creates a logger for workloads.
-func NewResourceLogger(client Client, workload scalable.Workload) Logger {
-	return Logger{
-		client:   client,
-		workload: workload,
+func NewResourceLoggerForWorkload(client Client, workload scalable.Workload) ResourceLogger {
+	return ResourceLogger{
+		logger: &workloadLogger{
+			client:   client,
+			workload: workload,
+		},
 	}
 }
 
-// NewNamespaceLogger creates a logger for namespaces.
-func NewNamespaceLogger(client Client, namespace string) Logger {
-	return Logger{
-		client:    client,
-		namespace: namespace,
+// NewResourceLoggerForNamespace creates a logger for namespaces.
+func NewResourceLoggerForNamespace(client Client, namespace string) ResourceLogger {
+	return ResourceLogger{
+		logger: &namespaceLogger{
+			client:    client,
+			namespace: namespace,
+		},
 	}
 }
 
 // ErrorInvalidAnnotation adds an annotation error on the target (workload or namespace).
-func (l Logger) ErrorInvalidAnnotation(annotation, message string, ctx context.Context) {
-	var err error
-
-	switch {
-	case l.workload != nil:
-		// Log for workload
-		err = l.client.addEvent(v1.EventTypeWarning, reasonInvalidConfiguration, annotation, message, l.workload, "", ctx)
-		if err != nil {
-			slog.Error("failed to add error event to workload", "workload", l.workload.GetName(), "error", err)
-		}
-	case l.namespace != "":
-		// Log for namespace
-		err = l.client.addEvent(v1.EventTypeWarning, reasonInvalidConfiguration, annotation, message, nil, l.namespace, ctx)
-		if err != nil {
-			slog.Error("failed to add error event to namespace", "namespace", l.namespace, "error", err)
-		}
+func (r ResourceLogger) ErrorInvalidAnnotation(annotation, message string, ctx context.Context) {
+	err := r.logger.log(v1.EventTypeWarning, reasonInvalidConfiguration, annotation, message, ctx)
+	if err != nil {
+		slog.Error("failed to add error event", "error", err)
 	}
 }
 
 // ErrorIncompatibleFields adds an incompatible fields error on the target (workload or namespace).
-func (l Logger) ErrorIncompatibleFields(message string, ctx context.Context) {
-	var err error
-
-	switch {
-	case l.workload != nil:
-		// Log for workload
-		err = l.client.addEvent(v1.EventTypeWarning, reasonInvalidConfiguration, reasonInvalidConfiguration, message, l.workload, "", ctx)
-		if err != nil {
-			slog.Error("failed to add error event to workload", "workload", l.workload.GetName(), "error", err)
-		}
-	case l.namespace != "":
-		// Log for namespace
-		err = l.client.addEvent(v1.EventTypeWarning, reasonInvalidConfiguration, reasonInvalidConfiguration, message, nil, l.namespace, ctx)
-		if err != nil {
-			slog.Error("failed to add error event to namespace", "namespace", l.namespace, "error", err)
-		}
+func (r ResourceLogger) ErrorIncompatibleFields(message string, ctx context.Context) {
+	err := r.logger.log(v1.EventTypeWarning, reasonInvalidConfiguration, reasonInvalidConfiguration, message, ctx)
+	if err != nil {
+		slog.Error("failed to add error event", "error", err)
 	}
+}
+
+// resourceLogger is the interface that all loggers (namespace and workload) implement.
+type resourceLogger interface {
+	log(eventType, reason, identifier, message string, ctx context.Context) error
+}
+
+// namespaceLogger is a concrete implementation of resourceLogger for namespaces.
+type namespaceLogger struct {
+	client    Client
+	namespace string
+}
+
+func (n *namespaceLogger) log(eventType, reason, identifier, message string, ctx context.Context) error {
+	// Create ObjectReference for Namespace
+	involvedObject := v1.ObjectReference{
+		Kind:       "Namespace",
+		Name:       n.namespace,
+		APIVersion: "v1",
+	}
+
+	// Call the client to add the event
+	return n.client.addEvent(eventType, reason, identifier, message, &involvedObject, ctx)
+}
+
+// workloadLogger is a concrete implementation of resourceLogger for workloads.
+type workloadLogger struct {
+	client   Client
+	workload scalable.Workload
+}
+
+func (w *workloadLogger) log(eventType, reason, identifier, message string, ctx context.Context) error {
+	// Create ObjectReference for Workload
+	involvedObject := v1.ObjectReference{
+		Kind:       w.workload.GroupVersionKind().Kind,
+		Namespace:  w.workload.GetNamespace(),
+		Name:       w.workload.GetName(),
+		UID:        w.workload.GetUID(),
+		APIVersion: w.workload.GroupVersionKind().GroupVersion().String(),
+	}
+
+	// Call the client to add the event
+	return w.client.addEvent(eventType, reason, identifier, message, &involvedObject, ctx)
 }
