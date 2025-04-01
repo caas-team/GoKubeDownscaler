@@ -3,6 +3,8 @@
   "extends": "@docusaurus/tsconfig",
   "compilerOptions": {
     "baseUrl": ".",
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+
+    "resolvePackageJsonExports": false
   }
 }

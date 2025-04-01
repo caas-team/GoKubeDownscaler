@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useColorMode } from "@docusaurus/theme-common";
-import { exportToSvg } from "@excalidraw/excalidraw";
-import { ImportedDataState } from "@excalidraw/excalidraw/data/types";
+import { exportToSvg } from "@excalidraw/utils";
+import type { ExcalidrawRendererProps } from "@site/src/types/components/common";
 
 export const ExcalidrawRenderer: React.FC<ExcalidrawRendererProps> = ({
   data,
@@ -13,9 +13,11 @@ export const ExcalidrawRenderer: React.FC<ExcalidrawRendererProps> = ({
   useEffect(() => {
     const generateStaticSvg = async () => {
       const result = await exportToSvg({
-        ...(data as Required<ImportedDataState>),
+        elements: data.elements,
+        files: data.files,
         appState: {
-          exportWithDarkMode: colorMode === "dark",
+          ...data.appState,
+          exportWithDarkMode: colorMode == "dark",
           exportBackground: false,
         },
         exportPadding: 30,

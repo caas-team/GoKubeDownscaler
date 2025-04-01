@@ -19,7 +19,7 @@
     "@docusaurus/preset-classic": "3.7.0",
     "@easyops-cn/docusaurus-search-local": "^0.49.2",
     "@eslint/compat": "^1.2.7",
-    "@excalidraw/excalidraw": "^0.18.0",
+    "@excalidraw/utils": "^0.1.2",
     "@mdx-js/react": "^3.1.0",
     "@tailwindcss/postcss": "^4.0.17",
     "clsx": "^2.1.1",
