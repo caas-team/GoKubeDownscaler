@@ -2,11 +2,13 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
+	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,6 +29,16 @@ func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Cont
 	}
 
 	return results, nil
+}
+
+// parseScaledObjectFromAdmissionRequest parses the admission review and returns the scaledObject.
+func parseScaledObjectFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var so kedav1alpha1.ScaledObject
+	if err := json.Unmarshal(review.Request.Object.Raw, &so); err != nil {
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
+	}
+
+	return &replicaScaledWorkload{&scaledObject{&so}}, nil
 }
 
 // scaledObject is a wrapper for scaledobject.v1alpha1.keda.sh to implement the replicaScaledResource interface.
