@@ -157,7 +157,7 @@ func startScanning(
 	for {
 		slog.Info("scanning workloads")
 
-		workloads, workloadsUIDToWorkload, err := client.GetWorkloads(config.IncludeNamespaces, config.IncludeResources, ctx)
+		workloads, err := client.GetWorkloads(config.IncludeNamespaces, config.IncludeResources, ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get workloads: %w", err)
 		}
@@ -173,7 +173,6 @@ func startScanning(
 			config.ExcludeNamespaces,
 			config.ExcludeWorkloads,
 			includedResourcesKindSet,
-			workloadsUIDToWorkload,
 		)
 		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 
