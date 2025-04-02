@@ -30,12 +30,12 @@ const (
 
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
 //
-//nolint:lll // ignore long line length for client interface
+
 type Client interface {
 	// GetNamespaceScopes gets the namespace scope from the namespace annotations
 	GetNamespaceScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
-	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, map[types.UID]*scalable.Workload, error)
+	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
 	// GetKinds gets the kinds of the specified resources
 	GetKinds(resourceTypes []string) (map[string]struct{}, error)
 	// RegetWorkload gets the workload again to ensure the latest state
@@ -117,7 +117,7 @@ func (c client) GetWorkloads(
 	namespaces,
 	resourceTypes []string,
 	ctx context.Context,
-) ([]scalable.Workload, map[types.UID]*scalable.Workload, error) {
+) ([]scalable.Workload, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -133,7 +133,7 @@ func (c client) GetWorkloads(
 
 			workloads, err := scalable.GetWorkloads(strings.ToLower(resourceType), namespace, c.clientsets, ctx)
 			if err != nil {
-				return nil, nil, fmt.Errorf("failed to get workloads: %w", err)
+				return nil, fmt.Errorf("failed to get workloads: %w", err)
 			}
 
 			results = append(results, workloads...)
@@ -146,7 +146,7 @@ func (c client) GetWorkloads(
 		UIDToWorkloadMap[results[i].GetUID()] = &results[i] // Store pointer to the workload
 	}
 
-	return results, UIDToWorkloadMap, nil
+	return results, nil
 }
 
 // GetKinds gets the kinds of the specified resources.

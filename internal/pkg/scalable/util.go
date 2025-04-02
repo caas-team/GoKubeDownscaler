@@ -9,7 +9,6 @@ import (
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 const annotationOriginalReplicas = "downscaler/original-replicas"
@@ -21,7 +20,6 @@ func FilterExcluded(
 	excludedNamespaces,
 	excludedWorkloads util.RegexList,
 	includedResources map[string]struct{},
-	workloadsUIDToWorkload map[types.UID]*Workload,
 ) []Workload {
 	externallyScaled := getExternallyScaled(workloads)
 
@@ -48,7 +46,7 @@ func FilterExcluded(
 			continue
 		}
 
-		if isWorkloadExcluded(workload, excludedWorkloads, includedResources, workloadsUIDToWorkload) {
+		if isWorkloadExcluded(workload, excludedWorkloads, includedResources) {
 			slog.Debug(
 				"the workloads name is excluded, excluding it from being scanned",
 				"workload", workload.GetName(),
@@ -179,75 +177,31 @@ func isWorkloadExcluded(
 	workload Workload,
 	excludedWorkloads util.RegexList,
 	includedResources map[string]struct{},
-	uidToWorkload map[types.UID]*Workload,
 ) bool {
 	if excludedWorkloads == nil {
 		return false
 	}
 
-	nonControllerOwnerReferences := getNonControllerOwnerReferences(&workload, uidToWorkload)
-	if checkAllReferencesExcluded(&nonControllerOwnerReferences, includedResources) {
+	if isManagedByOwnerReference(workload, includedResources) {
 		return true
 	}
 
 	return excludedWorkloads.CheckMatchesAny(workload.GetName())
 }
 
-// checkAllReferencesExcluded checks if all owner references of the workload are excluded.
-func checkAllReferencesExcluded(ownerReferences *[]Workload, includedResources map[string]struct{}) bool {
-	if len(*ownerReferences) == 0 {
-		return false
-	}
+// isManagedByOwnerReference checks if the workload is managed by an owner reference that is in the includedResources list.
+func isManagedByOwnerReference(workload Workload, includedResources map[string]struct{}) bool {
+	isExcluded := false
 
-	ownerReferencesExcluded := true
-
-	for _, ownerReference := range *ownerReferences {
-		if _, exists := includedResources[ownerReference.GroupVersionKind().String()]; exists {
-			ownerReferencesExcluded = false
-			break
-		}
-	}
-
-	return ownerReferencesExcluded
-}
-
-// getOwnerReferenceParent recursively finds the root owner of the workload by following controller owner references.
-//
-//nolint:gocritic // ptrToReference should be allowed
-func getOwnerReferenceParent(workload *Workload, uidToWorkload map[types.UID]*Workload) *Workload {
-	for _, ownerReference := range (*workload).GetOwnerReferences() {
-		if ownerReference.Controller != nil && *ownerReference.Controller {
-			if parentWorkload, exists := uidToWorkload[ownerReference.UID]; exists {
-				return getOwnerReferenceParent(parentWorkload, uidToWorkload)
+	for _, ownerReference := range workload.GetOwnerReferences() {
+		if *ownerReference.Controller {
+			if _, exists := includedResources[ownerReference.Kind]; exists {
+				isExcluded = true
 			}
 		}
 	}
 
-	return workload
-}
-
-// getNonControllerOwnerReferences returns non-controller owner references of the workload.
-//
-//nolint:gocritic // ptrToReference should be allowed
-func getNonControllerOwnerReferences(
-	workload *Workload,
-	uidToWorkload map[types.UID]*Workload,
-) []Workload {
-	var nonControllerResources []Workload
-
-	for _, ownerReference := range (*workload).GetOwnerReferences() {
-		if ownerReference.Controller != nil && *ownerReference.Controller {
-			if rootOwner := getOwnerReferenceParent(uidToWorkload[ownerReference.UID], uidToWorkload); rootOwner == workload {
-				continue
-			}
-		} else {
-			if resource, exists := uidToWorkload[ownerReference.UID]; exists {
-				nonControllerResources = append(nonControllerResources, *resource)
-			}
-		}
-	}
-
-	return nonControllerResources
+	return isExcluded
 }
 
 // setOriginalReplicas sets the original replicas annotation on the workload.
