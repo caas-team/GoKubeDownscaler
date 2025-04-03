@@ -1,7 +1,7 @@
 ---
 title: Website
 id: website
-globalReference: guides-developing-website
+globalReference: contributing-developing-website
 ---
 
 import { GithubLabel } from "/src/components/GithubLabel.tsx";
@@ -12,7 +12,7 @@ import exampleDiagram from "./assets/example.excalidraw";
 
 This section covers how to start developing on the website of the downscaler.
 
-If you haven't already, read and follow the instructions for [setting up the repository locally](ref:guides-developing).
+If you haven't already, read and follow the instructions for [setting up the repository locally](ref:contributing-developing).
 
 ## Installing Prerequisite
 
@@ -99,8 +99,9 @@ All files for the website can be found in `./website`.
 
 ### Adding/Changing Pages and Categories
 
-The website is built using [Docusaurus](https://docusaurus.io) which allows for documentation/guides pages to be markdown or mdx files.
-The markdown files are located in `./website/content/guides` and `./website/content/docs`.
+The website is built using [Docusaurus](https://docusaurus.io)
+which allows for documentation/guides/contributing pages to be markdown or mdx files.
+The markdown files are located in `./website/content/guides`, `./website/content/docs` and `./website/content/contributing`.
 
 #### Pages
 
@@ -112,7 +113,7 @@ Docusaurus will automatically build the changes and add the file as an entry int
 
 #### Categories
 
-You can add categories by adding folders in the `guides` or `docs` folders.
+You can add categories by adding folders in the `contributing`, `guides` or `docs` folders.
 Categories don't have an index by default, so you will need to create one.
 
 You can do this by creating an index.mdx file within the folder of the category.
@@ -299,7 +300,7 @@ These are a collection of best practices you should be aware of:
 :::info
 
 Some of these best practices and even more not listed here are enforced by some linters.
-It is best if you have [pre commit installed](ref:guides-developing#setting-up-pre-commit)
+It is best if you have [pre commit installed](ref:contributing-developing#setting-up-pre-commit)
 so that it will tell you or fix the problems automatically.
 
 It might also be worth looking into a markdown lint extension that supports MDX for your IDE.
