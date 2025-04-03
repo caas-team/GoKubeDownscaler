@@ -1,9 +1,270 @@
 ---
 title: Helm Chart
 id: helm-chart
-globalReference: guides-developing-helm-chart
+globalReference: contributing-developing-helm-chart
 ---
 
 # Helm Chart
 
-This section covers how to start developing on the helm chart of the downscaler.
+This section covers how to start developing on the Helm chart of the downscaler.
+
+If you haven't already, read and follow the instructions for [setting up the repository locally](ref:contributing-developing).
+
+## Installing Helm
+
+Before making changes to the Helm chart you should install Helm since it is required in order to install the chart and test any changes.
+
+You can either use brew to install Helm:
+
+```bash
+brew install helm
+```
+
+Or you can install it [another way](https://helm.sh/docs/intro/install/).
+
+To check if the installation was successful you can run:
+
+```bash
+helm version
+```
+
+The output should be something like:
+
+```text
+version.BuildInfo{Version:"v3.16.1", GitCommit:"5a5449dc42be07001fd5771d56429132984ab3ab", GitTreeState:"clean", GoVersion:"go1.22.7"}
+```
+
+## Adding a Template
+
+Manifest files, which are YAML-formatted resource descriptions that Kubernetes can understand are generated
+using Go templates when installing the Helm chart.
+
+All templates that generate manifest files when installing the Helm chart are located at `./deployments/chart/templates`.
+
+To add a template you can just create a yaml file in this folder.
+
+The basic structure of these files will generally be just the
+[Kubernetes manifest structure](https://kubernetes.io/docs/concepts/overview/working-with-objects/#describing-a-kubernetes-object)
+(`apiVersion, kind, metadata, spec`) of the object you want to deploy.
+
+:::tip Example
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-configmap
+data:
+  examplevalue: "Hello World"
+```
+
+:::
+
+## Making a Template Configurable
+
+Normally you don't want to hard code everything inside a Helm template.
+
+Since you would want to create a unique name or add a unique attribute to your installation
+it is a good idea to replace all values you want to be modifiable with a template call.
+
+:::info
+
+The Helm template language is implemented in the [strongly typed Go programming language](https://pkg.go.dev/text/template?utm_source=godoc).
+
+This means that template directives are enclosed in `{{` and `}}` blocks.
+
+:::
+
+### Built-in Objects
+
+In order to create a dynamic name for a configmap you can use a built-in object of the template engine:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configmap
+data:
+  examplevalue: "Hello World"
+```
+
+This will then dynamically set the release name of your Helm installation to the configmap's name.
+
+:::tip Example
+
+```bash title="Command"
+helm install dynamic ./deployments/chart
+```
+
+```yaml title="Resulting manifest"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # highlight-start
+  name: dynamic-configmap
+  # highlight-end
+data:
+  examplevalue: "Hello World"
+```
+
+:::
+
+You can find a list of all the built-in objects you can use on [the official Helm docs page](https://helm.sh/docs/chart_template_guide/builtin_objects/).
+
+### Values.yaml
+
+Another easy way to add configurability to a template is adding values into the values.yaml located at `./deployments/chart/values.yaml`.
+
+A value to add for data in the configmap could be:
+
+```yaml title="values.yaml"
+bestWeekDay: saturday
+```
+
+To reference this value you have to add:
+
+```yaml title="configmap.yaml"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configmap
+data:
+  examplevalue: "Hello World"
+  # highlight-start
+  day: {{ .Values.bestWeekDay }}
+  # highlight-end
+```
+
+This will then generate the following manifest when running `helm install weekday ./deployments/chart`:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: weekday-configmap
+data:
+  examplevalue: "Hello World"
+  day: saturday
+```
+
+This makes it easy for users to adjust these values to their needs
+since they only need to change a field in the values.yaml to customize their installation.
+
+You can find a more detailed rundown on values on [the official Helm docs](https://helm.sh/docs/chart_template_guide/values_files/).
+
+## Helpers
+
+Inside the \_helpers.tpl located at `./deployments/chart/templates/_helpers.tpl`
+you can find named templates which are custom yaml definitions that can be called across the different manifests.
+
+A helper definition could look like this:
+
+```go title="_helpers.tpl"
+{{/*
+This is a describing comment.
+*/}}
+{{- define "test.labels" -}}
+  labels:
+    test: label
+{{- end }}
+```
+
+In the code above is a describing comment encapsulated in `{{/*` and `*/}}` for the yaml definition below.
+
+The definition starts with the `define` keyword followed by the name you want to give your template in quotes.
+
+Inside the definition is everything you want to add when calling this template
+and this is then closed by the `end` keyword to mark the end of your named template.
+
+To reference this template you have to add:
+
+```yaml title="configmap.yaml"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configmap
+  # highlight-start
+  {{ include "test.labels" . }}
+  # highlight-end
+data:
+  examplevalue: "Hello World"
+  day: {{ .Values.bestWeekDay }}
+```
+
+This will then generate the following manifest when running `helm install helper ./deployments/chart`:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: helper-configmap
+  labels:
+    test: label
+data:
+  examplevalue: "Hello World"
+  day: saturday
+```
+
+## Bumping Version Numbers
+
+After you have made changes to the Helm chart and want to release a new version you should bump the version number of the chart.
+
+This can be done inside the Chart.yaml file located at `./deployments/chart/Chart.yaml`.
+
+In there you will want to bump the `version` field because this refers to the version of the Helm chart.
+
+However it might be a good idea to couple the release of the Helm chart to a release of the GoKubeDownscaler.
+In that case you also want to bump the `appVersion` field.
+
+```yaml title="Chart.yaml"
+apiVersion: v2
+name: go-kube-downscaler
+description: A Helm chart for deploying the go-kube-downscaler
+type: application
+keywords:
+  - kube-downscaler
+  - go
+  - downscaling
+# highlight-start
+version: 1.2.0
+appVersion: 1.2.0
+# highlight-end
+icon: https://raw.githubusercontent.com/caas-team/GoKubeDownscaler/refs/heads/main/logo/kubedownscaler.svg
+sources:
+  - https://github.com/caas-team/GoKubeDownscaler
+maintainers:
+  - name: jonathan-mayer
+    email: jonathan.mayer@telekom.de
+    url: https://github.com/jonathan-mayer
+  - name: JTaeuber
+    email: jan.taeuber@telekom.de
+    url: https://github.com/JTaeuber
+```
+
+Our versioning is structured according to [SemVer](https://semver.org/), ensuring predictable and structured updates.
+
+## Troubleshooting
+
+Debugging templates can be tricky because the rendered templates are sent to the Kubernetes API server,
+which may reject the YAML files for reasons other than formatting.
+
+There are a few commands that can help you debug:
+
+- `helm lint` is your go-to tool for verifying that your chart follows best practices
+- `helm template --debug` will test render chart templates locally.
+- `helm install --dry-run --debug` will also render your chart locally without installing it,
+  but will also check if conflicting resources are already running on the cluster.
+  Setting --dry-run=server will additionally execute any lookup in your chart towards the server.
+- `helm get manifest` is a good way to see what templates are installed on the server.
+
+When your YAML is failing to parse, but you want to see what is generated,
+one easy way to retrieve the YAML is to comment out the problem section in the template,
+and then re-run `helm install --dry-run --debug`:
+
+```yaml
+apiVersion: v2
+# some: problem section
+# {{ .Values.foo | quote }}
+```
+
+This provides a quick way of viewing the generated content without YAML parse errors blocking.

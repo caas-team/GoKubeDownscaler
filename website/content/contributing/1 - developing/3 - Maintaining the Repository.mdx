@@ -1,7 +1,7 @@
 ---
 title: Maintaining the Repository
 id: maintaining-the-repository
-globalReference: guides-developing-repo
+globalReference: contributing-developing-repo
 ---
 
 import { GithubLabel } from "/src/components/GithubLabel.tsx";
@@ -10,7 +10,7 @@ import { GithubLabel } from "/src/components/GithubLabel.tsx";
 
 This section covers how to do some maintainer tasks on the repository.
 
-For documentation on the workflows see [this documentation page](ref:docs-workflows).
+For documentation on the workflows see [this documentation page](ref:contributing-github-workflows).
 
 ## Releasing a New Version
 
@@ -27,7 +27,7 @@ To merge a pull request which would result in a new version once merged into mai
 there is an additional approval step to stop you from accidentally merging it without realizing.
 
 To allow the pull request to make a new release after being merged you need to add the <GithubLabel label="new release"/> label to it.
-This will in turn retrigger [the workflow](ref:docs-workflows#check-for-release) run
+This will in turn retrigger [the workflow](ref:contributing-github-workflows#check-for-release) run
 which then automatically removes the <GithubLabel label="needs approval"/> label and allows the pull request to be merged.
 
 :::
