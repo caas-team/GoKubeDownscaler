@@ -52,6 +52,30 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 	return workloads, nil
 }
 
+// GetKind gets the Kind for a given resource type.
+func GetKind(resource string) (string, error) {
+	resourceKindMap := map[string]string{
+		"deployments":              "Deployment",
+		"statefulsets":             "StatefulSet",
+		"cronjobs":                 "CronJob",
+		"jobs":                     "Job",
+		"daemonsets":               "DaemonSet",
+		"poddisruptionbudgets":     "PodDisruptionBudget",
+		"horizontalpodautoscalers": "HorizontalPodAutoscaler",
+		"scaledobjects":            "ScaledObject",
+		"rollouts":                 "Rollout",
+		"stacks":                   "Stack",
+		"prometheuses":             "Prometheus",
+	}
+
+	kind, exists := resourceKindMap[resource]
+	if !exists {
+		return "", fmt.Errorf("failed to get kind of type %q: %w", resource, errResourceNotSupported)
+	}
+
+	return kind, nil
+}
+
 // scalableResource provides all functions needed to scale any type of resource.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource
@@ -70,6 +94,8 @@ type scalableResource interface {
 	SetAnnotations(annotations map[string]string)
 	// GroupVersionKind gets the group version kind of the workload
 	GroupVersionKind() schema.GroupVersionKind
+	// GetOwnerReferences gets the owner references of the workload
+	GetOwnerReferences() []metav1.OwnerReference
 	// Reget regets the workload to ensure the latest state
 	Reget(clientsets *Clientsets, ctx context.Context) error
 }

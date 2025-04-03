@@ -14,7 +14,13 @@ import (
 const annotationOriginalReplicas = "downscaler/original-replicas"
 
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads.
-func FilterExcluded(workloads []Workload, includeLabels, excludedNamespaces, excludedWorkloads util.RegexList) []Workload {
+func FilterExcluded(
+	workloads []Workload,
+	includeLabels,
+	excludedNamespaces,
+	excludedWorkloads util.RegexList,
+	includedResources map[string]struct{},
+) []Workload {
 	externallyScaled := getExternallyScaled(workloads)
 
 	results := make([]Workload, 0, len(workloads))
@@ -40,7 +46,7 @@ func FilterExcluded(workloads []Workload, includeLabels, excludedNamespaces, exc
 			continue
 		}
 
-		if isWorkloadExcluded(workload, excludedWorkloads) {
+		if isWorkloadExcluded(workload, excludedWorkloads, includedResources) {
 			slog.Debug(
 				"the workloads name is excluded, excluding it from being scanned",
 				"workload", workload.GetName(),
@@ -167,12 +173,35 @@ func isNamespaceExcluded(workload Workload, excludedNamespaces util.RegexList) b
 }
 
 // isWorkloadExcluded checks if the workloads name is excluded.
-func isWorkloadExcluded(workload Workload, excludedWorkloads util.RegexList) bool {
+func isWorkloadExcluded(
+	workload Workload,
+	excludedWorkloads util.RegexList,
+	includedResources map[string]struct{},
+) bool {
 	if excludedWorkloads == nil {
 		return false
 	}
 
+	if isManagedByOwnerReference(workload, includedResources) {
+		return true
+	}
+
 	return excludedWorkloads.CheckMatchesAny(workload.GetName())
+}
+
+// isManagedByOwnerReference checks if the workload is managed by an owner reference that is in the includedResources list.
+func isManagedByOwnerReference(workload Workload, includedResources map[string]struct{}) bool {
+	isExcluded := false
+
+	for _, ownerReference := range workload.GetOwnerReferences() {
+		if *ownerReference.Controller {
+			if _, exists := includedResources[ownerReference.Kind]; exists {
+				isExcluded = true
+			}
+		}
+	}
+
+	return isExcluded
 }
 
 // setOriginalReplicas sets the original replicas annotation on the workload.
@@ -211,4 +240,20 @@ func removeOriginalReplicas(workload Workload) {
 	annotations := workload.GetAnnotations()
 	delete(annotations, annotationOriginalReplicas)
 	workload.SetAnnotations(annotations)
+}
+
+// GetIncludedKinds converts a comma-separated includedResources string list into a set of singular kinds.
+func GetIncludedKinds(includedResources []string) (map[string]struct{}, error) {
+	includedKinds := make(map[string]struct{}, len(includedResources))
+
+	for _, resource := range includedResources {
+		kind, err := GetKind(resource)
+		if err != nil {
+			return nil, err
+		}
+
+		includedKinds[kind] = struct{}{}
+	}
+
+	return includedKinds, nil
 }
