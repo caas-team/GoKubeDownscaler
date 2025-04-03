@@ -130,3 +130,26 @@ Info:
 
 - File: `pre_commit.yaml`
 - Runs on: push, pull_request.opened, pull_request.synchronize, pull_request.reopened
+
+## Prune
+
+This workflow deletes all untagged packages of the downscaler and their corresponding cosign signatures.
+
+This mainly happens if a tag gets overwritten by building a dev build or something similar.
+
+Info:
+
+- File: `prune.yaml`
+- Runs on: schedule == `0 0 * * *`
+
+## Validate Website Build
+
+This workflow validates the build of this documentation site.
+
+The workflow installs the dependencies needed to build the website,
+builds the website and fails if anything goes wrong.
+
+Info:
+
+- File: validate_website_build.yaml
+- Runs on: push.branches == main && push.paths == website/\*\*
