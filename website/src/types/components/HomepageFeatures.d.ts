@@ -3,4 +3,5 @@ interface SupportedResourceGroupProps {
   Svg: React.ComponentType<React.ComponentProps<"svg">>;
   href: string;
   supportedResources: string[];
+  className?: string;
 }

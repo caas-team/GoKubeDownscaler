@@ -2,6 +2,7 @@
 
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
+@import "tailwindcss-animated";
 
 @custom-variant dark (&:is([data-theme="dark"] *));
 
