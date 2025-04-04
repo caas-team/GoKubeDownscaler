@@ -11,6 +11,10 @@ import { PluginOptions } from "@easyops-cn/docusaurus-search-local";
 import { PluginConfig } from "svgo/lib/svgo";
 import path from "path";
 import { confWebpack } from "./plugins/conf-webpack.cts";
+import {
+  firstDocRedirectPlugin,
+  Config as firstDocRedirectConfig,
+} from "./plugins/firstDocRedirect.cts";
 
 const config: Config = {
   title: "GoKubeDownscaler",
@@ -161,7 +165,14 @@ const config: Config = {
       } as Partial<PluginOptions>,
     ],
   ],
-  plugins: [tailwindPlugin, confWebpack],
+  plugins: [
+    tailwindPlugin,
+    confWebpack,
+    [
+      firstDocRedirectPlugin,
+      { sidebarConfig: "sidebars.ts" } satisfies firstDocRedirectConfig,
+    ],
+  ],
   markdown: {
     parseFrontMatter: globalRefParseFrontMatter,
   },

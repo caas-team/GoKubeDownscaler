@@ -3,16 +3,14 @@ import { Redirect } from "@docusaurus/router";
 import {
   useActivePlugin,
   useAllDocsData,
-} from "@docusaurus/plugin-content-docs/client";
+} from "@docusaurus/plugin-content-docs/lib/client";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 
 interface RedirectToFirstDocProps {
   sidebar: string;
 }
 
-export const RedirectToFirstDoc: React.FC<RedirectToFirstDocProps> = ({
-  sidebar,
-}) => {
+const RedirectToFirstDoc: React.FC<RedirectToFirstDocProps> = ({ sidebar }) => {
   const activePlugin = useActivePlugin();
   const allDocsData = useAllDocsData();
   const { siteConfig } = useDocusaurusContext();
@@ -43,3 +41,5 @@ export const RedirectToFirstDoc: React.FC<RedirectToFirstDocProps> = ({
   console.error(`Sidebar "${sidebar}" does not contain a valid link`);
   return <Redirect to={siteConfig.baseUrl} />;
 };
+
+export default RedirectToFirstDoc;
