@@ -6,29 +6,53 @@ globalReference: docs-env-scope
 
 # Env Scope
 
-The Env Scope is the second type of scope available.
-It overrides the default scope, but it can be overridden by the CLI
-Scope, Namespace Scope, or Workload Scope.
+The **Env Scope** is the second type of scope available.
+It overrides the [Default Scope](ref:docs-default-scope), but it can be overridden by the [CLI Scope](ref:docs-cli-scope),
+[Namespace Scope](ref:docs-namespace-scope) or [Workload Scope](ref:docs-workload-scope)
 It is used to set both values and runtime configurations
 
-INSERT PYRAMID IMAGE
+INSERT HIERARCHICAL SCOPE IMAGE WITH ENV SCOPE HIGHLIGHTED
 
 ## Values
 
-## Runtime Configurations
+At Env Scope, the following environment variables [values](ref:docs-values) can be configured to apply global
+scaling policies across targeted resources. These global settings can be overridden by more specific scopes in the
+hierarchy.
 
-Runtime Configurations at the Env Scope level are used to set
+- [DOWNSCALE_PERIOD](ref:docs-values#downscale-period)
+- [DEFAULT_DOWNTIME](ref:docs-values#downtime)
+- [UPSCALE_PERIOD](ref:docs-values#upscale-period)
+- [DEFAULT_UPTIME](ref:docs-values#uptime)
+
+## Runtime Configuration
+
+At Env Scope, the following environment variables [runtime configurations](ref:docs-runtime-configuration) are used to
+control which namespaces or workloads should be excluded from scaling policies.
+
+- [EXCLUDE_NAMESPACES](ref:docs-runtime-configuration#exclude-namespaces)
+- [EXCLUDE_DEPLOYMENTS](ref:docs-runtime-configuration#exclude-deployments)
+
+:::info
+
+The runtime configuration set at CLI Scope will take precedence over their respective environment variables
+if they are both set.
+
+:::
+
+:::info
+
+`EXCLUDE_DEPLOYMENTS`, despite its name, is not limited to target deployments. This variable can be used to exclude
+any workload type
+
+:::
 
 ## Usage
 
-### Bare Variables
-
-```text title=".env"
-DEFAULT_UPTIME: "Mon-Fri 08:00-20:00 Pacific/Fiji"
-EXCLUDE_DEPLOYMENTS: "my-deployment, example-.*"
-```
+The Env Scope can be set in different ways, depending on your setup. You can find some examples below
 
 ### Via Helm Chart values.yaml
+
+You can set the Env Scope in the Helm Chart by using the `configMap.extraConfig` field.
 
 ```yaml title="values.yaml"
 # ...
@@ -38,6 +62,40 @@ configMap:
   extraConfig: |
     DEFAULT_DOWNTIME: "Mon-Fri 20:00-08:00 Asia/Tokyo, Sat-Sun 00:00-24:00 Asia/Tokyo"
     EXCLUDE_NAMESPACES: "my-namespace, example-.*"
+    EXCLUDE_DEPLOYMENTS: "my-deployment"
 
 # ...
+```
+
+### Via ConfigMap
+
+If you are not working directly with Helm but rather with a raw Kubernetes manifest generated using the Helm Template
+command, you can set the Env Scope inside the default ConfigMap
+
+```yaml title="ConfigMap"
+apiVersion: v1
+data:
+  DEFAULT_UPTIME: "Mon-Fri 10:00-19:00 Europe/Rome"
+  EXCLUDE_NAMESPACES: "kube-downscaler,kube-system,default"
+  EXCLUDE_DEPLOYMENTS: "my-deployment"
+kind: ConfigMap
+metadata:
+  name: go-kube-downscaler
+  namespace: go-kube-downscaler
+```
+
+:::warning
+
+After the first installation, each time you want to change the ConfigMap environment variables you need to restart the
+Downscaler pods, otherwise the changes will not be applied.
+
+:::
+
+### Binary or Go Run
+
+If you are using the Downscaler outside a Kubernetes cluster, environment variables can be set in a `.env` file
+
+```text title=".env"
+DEFAULT_UPTIME: "Mon-Fri 08:00-20:00 Pacific/Fiji"
+EXCLUDE_DEPLOYMENTS: "my-deployment, example-.*"
 ```

@@ -61,9 +61,16 @@ The Cluster-Wide mode requires cluster-level administrator permissions,
 installs the tool as a centralized component, and allows management of workloads across all namespaces.
 This mode is ideal for scenarios where an administrator wants to apply downscaling policies to the entire cluster.
 
+INSERT CLUSTER-WIDE ARCHITECTURE IMAGE
+
 ### 2. **Namespace-Scoped Mode**
 
 The Namespace-Scoped mode does not require administrative permissions on the entire cluster.
 Instead, the tool is installed with limited permissions specific to certain namespaces,
 making it perfect for teams or users with restricted access.
 It allows control over resources within their designated namespace.
+
+INSERT NAMESPACE-SCOPED ARCHITECTURE IMAGE
+
+The installation process can be performed using Helm, check the [installation guide](ref:docs-helm)
+for more details.
