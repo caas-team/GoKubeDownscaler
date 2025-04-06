@@ -19,7 +19,6 @@ func FilterExcluded(
 	includeLabels,
 	excludedNamespaces,
 	excludedWorkloads util.RegexList,
-	includedResources map[string]struct{},
 ) []Workload {
 	externallyScaled := getExternallyScaled(workloads)
 
@@ -46,7 +45,7 @@ func FilterExcluded(
 			continue
 		}
 
-		if isWorkloadExcluded(workload, excludedWorkloads, includedResources) {
+		if isWorkloadExcluded(workload, excludedWorkloads) {
 			slog.Debug(
 				"the workloads name is excluded, excluding it from being scanned",
 				"workload", workload.GetName(),
@@ -176,13 +175,12 @@ func isNamespaceExcluded(workload Workload, excludedNamespaces util.RegexList) b
 func isWorkloadExcluded(
 	workload Workload,
 	excludedWorkloads util.RegexList,
-	includedResources map[string]struct{},
 ) bool {
 	if excludedWorkloads == nil {
 		return false
 	}
 
-	if isManagedByOwnerReference(workload, includedResources) {
+	if isManagedByOwnerReference(workload) {
 		return true
 	}
 
@@ -190,14 +188,12 @@ func isWorkloadExcluded(
 }
 
 // isManagedByOwnerReference checks if the workload is managed by an owner reference that is in the includedResources list.
-func isManagedByOwnerReference(workload Workload, includedResources map[string]struct{}) bool {
+func isManagedByOwnerReference(workload Workload) bool {
 	isExcluded := false
 
 	for _, ownerReference := range workload.GetOwnerReferences() {
 		if *ownerReference.Controller {
-			if _, exists := includedResources[ownerReference.Kind]; exists {
-				isExcluded = true
-			}
+			isExcluded = true
 		}
 	}
 
@@ -240,20 +236,4 @@ func removeOriginalReplicas(workload Workload) {
 	annotations := workload.GetAnnotations()
 	delete(annotations, annotationOriginalReplicas)
 	workload.SetAnnotations(annotations)
-}
-
-// GetIncludedKinds converts a comma-separated includedResources string list into a set of singular kinds.
-func GetIncludedKinds(includedResources []string) (map[string]struct{}, error) {
-	includedKinds := make(map[string]struct{}, len(includedResources))
-
-	for _, resource := range includedResources {
-		kind, err := GetKind(resource)
-		if err != nil {
-			return nil, err
-		}
-
-		includedKinds[kind] = struct{}{}
-	}
-
-	return includedKinds, nil
 }
