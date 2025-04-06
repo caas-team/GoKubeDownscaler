@@ -16,7 +16,8 @@ INSERT HIERARCHICAL SCOPE IMAGE WITH ENV SCOPE HIGHLIGHTED
 ## Values
 
 At Env Scope, the following environment variables [values](ref:docs-values) can be configured to apply global
-scaling policies across targeted resources. These global settings can be overridden by more specific scopes in the
+scaling policies across targeted resources.
+These global settings can be overridden by more specific scopes in the
 hierarchy.
 
 - [DOWNSCALE_PERIOD](ref:docs-values#downscale-period)
@@ -41,14 +42,16 @@ if they are both set.
 
 :::info
 
-`EXCLUDE_DEPLOYMENTS`, despite its name, is not limited to target deployments. This variable can be used to exclude
+`EXCLUDE_DEPLOYMENTS`, despite its name, is not limited to target deployments.
+This variable can be used to exclude
 any workload type
 
 :::
 
 ## Usage
 
-The Env Scope can be set in different ways, depending on your setup. You can find some examples below
+The Env Scope can be set in different ways, depending on your setup.
+You can find some examples below
 
 ### Via Helm Chart values.yaml
 

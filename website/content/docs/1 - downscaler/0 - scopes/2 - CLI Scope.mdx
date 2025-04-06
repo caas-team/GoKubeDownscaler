@@ -16,7 +16,8 @@ INSERT HIERARCHICAL SCOPE IMAGE WITH CLI SCOPE HIGHLIGHTED
 ## Values
 
 At CLI Scope, the following [values](ref:docs-values) can be configured using arguments to apply global
-scaling policies across targeted resources. These global settings can be overridden by more specific scopes in the
+scaling policies across targeted resources.
+These global settings can be overridden by more specific scopes in the
 hierarchy.
 
 - [--upscale-period](ref:docs-values#upscale-period)
@@ -71,8 +72,8 @@ will take precedence over [their respective environment variables](ref:docs-env-
 
 ## Usage
 
-
-The CLI arguments can be set in different ways, depending on your setup. You can find some examples below
+The CLI arguments can be set in different ways, depending on your setup.
+You can find some examples below
 
 :::info
 
@@ -108,16 +109,16 @@ command, you can set the CLI Scope inside the args section of the `go-kube-downs
 
 ```yaml title="Deployment"
 # ...
-  containers:
+containers:
   - name: go-kube-downscaler
     image:
     imagePullPolicy: Always
     args:
-    - --include-resources=deployments,jobs,scaledobjects,cronjobs
-    - --exclude-deployments=my-deployment
-    - --max-retries-on-conflict=3
-    - --downtime-replicas=2
-    - --debug
+      - --include-resources=deployments,jobs,scaledobjects,cronjobs
+      - --exclude-deployments=my-deployment
+      - --max-retries-on-conflict=3
+      - --downtime-replicas=2
+      - --debug
 # ...
 ```
 
