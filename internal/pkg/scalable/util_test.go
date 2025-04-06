@@ -157,7 +157,6 @@ func TestFilterExcluded(t *testing.T) {
 				test.includeLabels,
 				test.excludedNamespaces,
 				test.excludedWorkloads,
-				test.includedResources,
 			)
 
 			assert.Equal(t, test.want, got)

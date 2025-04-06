@@ -162,17 +162,11 @@ func startScanning(
 			return fmt.Errorf("failed to get workloads: %w", err)
 		}
 
-		includedResourcesKindSet, err := client.GetKinds(config.IncludeResources)
-		if err != nil {
-			return fmt.Errorf("failed to get kinds for included resources: %w", err)
-		}
-
 		workloads = scalable.FilterExcluded(
 			workloads,
 			config.IncludeLabels,
 			config.ExcludeNamespaces,
 			config.ExcludeWorkloads,
-			includedResourcesKindSet,
 		)
 		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 
