@@ -6,13 +6,15 @@ globalReference: docs-values
 
 # Values
 
-Values are configuration values which decide scaling parameters.
+**Values** define the scaling behavior of targeted workloads, specifying how and when they should be scaled up or
+down.
 They can be set at any [scope](ref:docs-scopes) and therefore can be set via their respective
-[environment variables](ref:docs-environment-variables), [cli arguments](ref:docs-arguments), [namespace annotations and workload annotations](ref:docs-annotations)
+[environment variables](ref:docs-env-scope), [cli arguments](ref:docs-cli-scope),
+[namespace annotations](ref:docs-namespace-scope) and [workload annotations](ref:docs-workload-scope)
 
 :::note
 
-The default values shown below are only set on [the default scope](ref:docs-scopes#default-scope).
+The default values shown below are only set on [the default scope](ref:docs-default-scope).
 
 :::
 
@@ -47,7 +49,22 @@ This will likely change in the future to be seen as an incompatibility.
 
 :::
 
-## Downscale Period
+## Value Groups
+
+Some values within in a scope set/define very similar properties (e.g. [Force Downtime](#force-downtime)
+and [Force Uptime](#force-uptime); [Downscale Period](#downscale-period),
+[Downtime](#downtime), [Upscale Period](#upscale-period) and [Uptime](#uptime))
+
+These values are not all handled separately when choosing which scope to take the values from.
+Instead if one of them is set in a scope, the other values will be taken from the same scope.
+
+Incompatibilities between values normally only occur between values in the same value group and therefore the values on that same scope.
+
+## List Of Values
+
+Here is a list of all values that can be set on the Downscaler.
+
+### Downscale Period
 
 - Type: [Timespans](ref:docs-timespans)
 - Default: []
@@ -55,20 +72,24 @@ This will likely change in the future to be seen as an incompatibility.
   Outside of the periods, scaling will be ignored/overwritten by [Upscale Period](#upscale-period).
 - Can be paired with [upscale period](#upscale-period)
 - Incompatible with [Downtime](#downtime) and [Uptime](#uptime)
-- [Grouped](ref:docs-scopes#value-groups) with [downtime](#downtime),
+- [Grouped](#value-groups) with [downtime](#downtime),
   [uptime](#uptime) and [upscale period](#upscale-period)
+- Where to set: [ENV Scope](ref:docs-env-scope#values), [Namespace Scope](ref:docs-namespace-scope#values),
+[Workload Scope](ref:docs-workload-scope#values)
 
-## Downtime
+### Downtime
 
 - Type: [Timespans](ref:docs-timespans)
 - Default: []
 - Within these periods the [workload](ref:docs-workload-types) will be scaled down.
   Outside of the periods the [workload](ref:docs-workload-types) will be scaled up.
 - Incompatible with [downscale period](#downscale-period), [upscale period](#upscale-period) and [Uptime](#uptime)
-- [Grouped](ref:docs-scopes#value-groups) with [downscale period](#downscale-period),
+- [Grouped](#value-groups) with [downscale period](#downscale-period),
   [uptime](#uptime) and [upscale period](#upscale-period)
+- Where to set: [ENV Scope](ref:docs-env-scope#values), [Namespace Scope](ref:docs-namespace-scope#values),
+[Workload Scope](ref:docs-workload-scope#values)
 
-## Upscale Period
+### Upscale Period
 
 - Type: [Timespans](ref:docs-timespans)
 - Default: []
@@ -76,57 +97,69 @@ This will likely change in the future to be seen as an incompatibility.
   Outside of the periods, scaling will be ignored/overwritten by [Downscale Period](#downscale-period).
 - Can be paired with [downscale period](#downscale-period)
 - Incompatible with [Downtime](#downtime) and [Uptime](#uptime)
-- [Grouped](ref:docs-scopes#value-groups) with [downscale period](#downscale-period),
+- [Grouped](#value-groups) with [downscale period](#downscale-period),
   [uptime](#uptime) and [Downtime](#downtime)
+- Where to set: [ENV Scope](ref:docs-env-scope#values), [Namespace Scope](ref:docs-namespace-scope#values),
+[Workload Scope](ref:docs-workload-scope#values)
 
-## Uptime
+### Uptime
 
 - Type: [Timespans](ref:docs-timespans)
 - Default: []
 - Within these periods the [workload](ref:docs-workload-types) will be scaled up.
   Outside of the periods the [workload](ref:docs-workload-types) will be scaled down.
 - Incompatible with [downscale period](#downscale-period), [upscale period](#upscale-period) and [Downtime](#downtime)
-- [Grouped](ref:docs-scopes#value-groups) with [downscale period](#downscale-period),
+- [Grouped](#value-groups) with [downscale period](#downscale-period),
   [upscale period](#upscale-period) and [Downtime](#downtime)
+- Where to set: [ENV Scope](ref:docs-env-scope#values), [Namespace Scope](ref:docs-namespace-scope#values),
+[Workload Scope](ref:docs-workload-scope#values)
 
-## Exclude
+### Exclude
 
 - Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#alwaysnevertruefalse))
 - Default: false
 - Excludes the [workload](ref:docs-workload-types) from being scaled. (Scaling is ignored)
+- Where to set: [Namespace Scope](ref:docs-namespace-scope#values), [Workload Scope](ref:docs-workload-scope#values)
 
-## Exclude Until
+### Exclude Until
 
 - Type: [RFC3339 timestamp](https://datatracker.ietf.org/doc/html/rfc3339)
 - Default: none
 - Excludes the [workload](ref:docs-workload-types) from being scaled until the set time. (Scaling is ignored)
+- Where to set: [Namespace Scope](ref:docs-namespace-scope#values), [Workload Scope](ref:docs-workload-scope#values)
 
-## Force Uptime
+### Force Uptime
 
 - Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#alwaysnevertruefalse))
 - Default: false
 - Forces the [workload](ref:docs-workload-types) into an uptime state. (Scaling up)
 - Incompatible with [force downtime](#force-downtime)
-- [Grouped](ref:docs-scopes#value-groups) with [force downtime](#force-downtime)
+- [Grouped](#value-groups) with [force downtime](#force-downtime)
+- Where to set: [Namespace Scope](ref:docs-namespace-scope#values), [Workload Scope](ref:docs-workload-scope#values)
 
-## Force Downtime
+### Force Downtime
 
 - Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#alwaysnevertruefalse))
 - Default: false
 - Forces the [workload](ref:docs-workload-types) into a downtime state. (Scaling down)
 - Incompatible with [force uptime](#force-uptime)
-- [Grouped](ref:docs-scopes#value-groups) with [force uptime](#force-uptime)
+- [Grouped](#value-groups) with [force uptime](#force-uptime)
+- Where to set: [Namespace Scope](ref:docs-namespace-scope#values), [Workload Scope](ref:docs-workload-scope#values)
 
-## Downscale Replicas
+### Downscale Replicas
 
 - Type: [Integer](https://en.wikipedia.org/wiki/Integer)
 - Default: 0
 - The Replica count the [workload](ref:docs-workload-types) will be scaled to during downtimes.
+- Where to set: [CLI Scope](ref:docs-cli-scope#values), [Namespace Scope](ref:docs-namespace-scope#values),
+[Workload Scope](ref:docs-workload-scope#values)
 
-## Grace Period
+### Grace Period
 
 - Type: [Duration](ref:docs-duration)
 - Default: 15 minutes
 - The Duration a workload has to exist for until being scaled the first time.
   Will check against the timestamp in the [time annotation](ref:docs-runtime-configuration#time-annotation)
   instead of the creation time when set.
+- Where to set: [CLI Scope](ref:docs-cli-scope#values), [Namespace Scope](ref:docs-namespace-scope#values),
+[Workload Scope](ref:docs-workload-scope#values)

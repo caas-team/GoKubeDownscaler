@@ -6,8 +6,68 @@ globalReference: docs-workload-scope
 
 # Workload Scope
 
-INSERT PYRAMID IMAGE
+The **Workload Scope** is the fifth scope available and holds configurations set at workload level.
+It overrides values already defined inside the
+[Default Scope](ref:docs-default-scope), [ENV Scope](ref:docs-env-scope), [CLI Scope](ref:docs-cli-scope)
+and [Namespace Scope](ref:docs-namespace-scope). It is the most specific scope available and its values
+can't be overridden by other scopes.
+It is used to only set values
+
+INSERT HIERARCHICAL SCOPE IMAGE WITH WORKLOAD SCOPE HIGHLIGHTED
 
 ## Values
 
+At Worklaod Scope, the following [values](ref:docs-values) can be configured using annotations to apply
+scaling policies, exclusions and grace periods
+
+- [downscaler/downscale-period](ref:docs-values#downscale-period)
+- [downscaler/downtime](ref:docs-values#downtime)
+- [downscaler/upscale-period](ref:docs-values#upscale-period)
+- [downscaler/uptime](ref:docs-values#uptime)
+- [downscaler/exclude](ref:docs-values#exclude)
+- [downscaler/exclude-until](ref:docs-values#exclude-until)
+- [downscaler/force-uptime](ref:docs-values#force-uptime)
+- [downscaler/force-downtime](ref:docs-values#force-downtime)
+- [downscaler/downscale-replicas](ref:docs-values#downscale-replicas)
+- [downscaler/grace-period](ref:docs-values#grace-period)
+
+:::warning
+
+Some annotations are incompatible with others. Before setting them, please check their compatibility clicking on the
+hyperlink dedicated to each annotation.
+
+:::
+
 ## Usage
+
+The workload annotations can be set either directly through the workload YAML file (e.g. `kubectl edit` command)
+
+```yaml title="example-deployment.yaml"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+  # highlight-start
+  annotations:
+    downscaler/uptime: "Mon-Fri 08:00-20:00 UTC"
+  # highlight-end
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example-app
+  template:
+    metadata:
+      labels:
+        app: example-app
+    spec:
+      containers:
+        - name: example-app-container
+          image: nginx:latest
+```
+
+or by using the `kubectl annotate` command
+
+```bash
+kubectl annotate deployment example-deployment downscaler/uptime="Mon-Fri 08:00-20:00 UTC"
+```
