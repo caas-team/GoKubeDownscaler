@@ -68,11 +68,11 @@ function SupportedResourceGroup({
     >
       <div className="flex justify-center mb-2">
         <Link href={href}>
-          <Svg className="h-40 w-40" />
+          <Svg className="h-40 w-40" aria-label={title} role="img" />
         </Link>
       </div>
       <div className="text-center px-4 max-w-64 mx-auto">
-        <Heading as="h3" className="select-none">
+        <Heading as="h2" className="select-none">
           {title}
         </Heading>
         <p>{supportedResources.join(", ")}</p>
