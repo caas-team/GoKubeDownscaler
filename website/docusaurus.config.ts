@@ -77,6 +77,7 @@ const config: Config = {
   ],
 
   themeConfig: {
+    image: "img/social-preview.png",
     colorMode: {
       disableSwitch: false,
       respectPrefersColorScheme: true,
@@ -148,23 +149,24 @@ const config: Config = {
   } satisfies Preset.ThemeConfig,
   headTags: [
     {
-      tagName: 'script',
+      tagName: "script",
       attributes: {
-        type: 'application/ld+json',
+        type: "application/ld+json",
       },
       innerHTML: JSON.stringify({
-        '@context': 'https://schema.org/',
-        '@type': 'SoftwareApplication',
-        name: 'GoKubeDownscaler',
-        description: 'GoKubeDownscaler is a Kubernetes autoscaler that lets you downscale your workloads to zero replicas during off-hours to save costs on cloud bill. It is lightweight and easy-to-use; works with EKS, GKE, AKS, and every other Kubernetes clusters.',
-        applicationCategory: 'Kubernetes Addon',
-        operatingSystem: 'Linux',
-        url: 'https://caas-team.github.io/GoKubeDownscaler/',
-        logo: 'https://github.com/caas-team/GoKubeDownscaler/blob/main/logo/kubedownscaler.svg',
+        "@context": "https://schema.org/",
+        "@type": "SoftwareApplication",
+        name: "GoKubeDownscaler",
+        description:
+          "GoKubeDownscaler is a Kubernetes autoscaler that lets you downscale your workloads to zero replicas during off-hours to save costs on cloud bill. It is lightweight and easy-to-use; works with EKS, GKE, AKS, and every other Kubernetes clusters.",
+        applicationCategory: "Kubernetes Addon",
+        operatingSystem: "Linux",
+        url: "https://caas-team.github.io/GoKubeDownscaler/",
+        logo: "https://github.com/caas-team/GoKubeDownscaler/blob/main/logo/kubedownscaler.svg",
         author: {
-          '@type': 'Organization',
-          name: 'CaaS Team',
-          url: 'https://github.com/caas-team',
+          "@type": "Organization",
+          name: "CaaS Team",
+          url: "https://github.com/caas-team",
         },
       }),
     },
