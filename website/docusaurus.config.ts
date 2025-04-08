@@ -158,7 +158,7 @@ const config: Config = {
         "@type": "SoftwareApplication",
         name: "GoKubeDownscaler",
         description:
-          "GoKubeDownscaler is a Kubernetes autoscaler that lets you downscale your workloads to zero replicas during off-hours to save costs on cloud bill. It is lightweight and easy-to-use; works with EKS, GKE, AKS, and every other Kubernetes clusters.",
+          "GoKubeDownscaler is a Kubernetes autoscaler that lets you downscale your workloads during off-hours to save costs on your cloud bill. It is lightweight and easy-to-use; works with EKS, GKE, AKS, and every other Kubernetes clusters.",
         applicationCategory: "Kubernetes Addon",
         operatingSystem: "Linux",
         url: "https://caas-team.github.io/GoKubeDownscaler/",
