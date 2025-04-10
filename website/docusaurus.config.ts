@@ -14,7 +14,7 @@ import { confWebpack } from "./plugins/conf-webpack.cts";
 
 const config: Config = {
   title: "GoKubeDownscaler",
-  tagline: "A horizontal autoscaler for Kubernetes workloads",
+  tagline: "A Horizontal Autoscaler For Kubernetes Workloads",
   favicon: "img/kubedownscaler.svg",
 
   url: "https://caas-team.github.io",
