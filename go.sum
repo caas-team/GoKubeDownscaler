@@ -218,8 +218,8 @@ github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.81.0 h
 github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.81.0/go.mod h1:YfnEQzw7tUQa0Sjiz8V6QFc6JUGE+i5wybsjc3EOKn8=
 github.com/prometheus-operator/prometheus-operator/pkg/client v0.81.0 h1:z8ETgiD2hThJi3+3S8eKAbC9/pwPq1kGt8HkeGlDstw=
 github.com/prometheus-operator/prometheus-operator/pkg/client v0.81.0/go.mod h1:EKK9z5OIxxwaCZmgaidiIfvy6mF7x8M3AJHmxwx+QB4=
-github.com/prometheus/client_golang v1.21.1 h1:DOvXXTqVzvkIewV/CDPFdejpMCGeMcbGCQ8YOmu+Ibk=
-github.com/prometheus/client_golang v1.21.1/go.mod h1:U9NM32ykUErtVBxdvD3zfi+EuFkkaBvMb09mIfe0Zgg=
+github.com/prometheus/client_golang v1.22.0 h1:rb93p9lokFEsctTys46VnV1kLCDpVZ0a/Y92Vm0Zc6Q=
+github.com/prometheus/client_golang v1.22.0/go.mod h1:R7ljNsLXhuQXYZYtw6GAE9AZg8Y7vEW5scdCXrWRXC0=
 github.com/prometheus/client_model v0.6.1 h1:ZKSh/rekM+n3CeS952MLRAdFwIKqeY8b62p8ais2e9E=
 github.com/prometheus/client_model v0.6.1/go.mod h1:OrxVMOVHjw3lKMa8+x6HeMGkHMQyHDk9E3jmP2AmGiY=
 github.com/prometheus/common v0.63.0 h1:YR/EIY1o3mEFP/kZCD7iDMnLPlGyuU2Gb3HIcXnA98k=
@@ -268,8 +268,8 @@ github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.4.1/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
-github.com/zalando-incubator/stackset-controller v1.4.98 h1:xGTKSRbW7uFM1HxfLhWHTq69k81/CqN0OuF5MK9QTlk=
-github.com/zalando-incubator/stackset-controller v1.4.98/go.mod h1:3LAv4SQPDPlLMlqGQngJZFXEJ4z5y6jDun62Kr9RAZI=
+github.com/zalando-incubator/stackset-controller v1.4.99 h1:0ZjztmizVViyEvtqm500VNcYvqz3+vf2xz8DuagUsO0=
+github.com/zalando-incubator/stackset-controller v1.4.99/go.mod h1:v3jwXwt4WvL4ZTtF+UJAbpppzxRhsSQ1Bp6IT/BlsK4=
 go.etcd.io/bbolt v1.3.11 h1:yGEzV1wPz2yVCLsD8ZAiGHhHVlczyC9d1rP43/VCRJ0=
 go.etcd.io/bbolt v1.3.11/go.mod h1:dksAq7YMXoljX0xu6VF5DMZGbhYYoLUalEiSySYAS4I=
 go.etcd.io/etcd/api/v3 v3.5.21 h1:A6O2/JDb3tvHhiIz3xf9nJ7REHvtEFJJ3veW3FbCnS8=
