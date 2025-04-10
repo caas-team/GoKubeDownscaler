@@ -189,15 +189,13 @@ func isWorkloadExcluded(
 
 // isManagedByOwnerReference checks if the workload is managed by an owner reference that is in the includedResources list.
 func isManagedByOwnerReference(workload Workload) bool {
-	isExcluded := false
-
 	for _, ownerReference := range workload.GetOwnerReferences() {
 		if *ownerReference.Controller {
-			isExcluded = true
+			return true
 		}
 	}
 
-	return isExcluded
+	return false
 }
 
 // setOriginalReplicas sets the original replicas annotation on the workload.

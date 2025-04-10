@@ -99,7 +99,6 @@ func TestFilterExcluded(t *testing.T) {
 		excludedNamespaces util.RegexList
 		excludedWorkloads  util.RegexList
 		want               []Workload
-		includedResources  map[string]struct{}
 	}{
 		{
 			name:               "none set",
@@ -108,7 +107,6 @@ func TestFilterExcluded(t *testing.T) {
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
 			want:               []Workload{ns1.deployment1, ns1.deployment2, ns2.deployment1},
-			includedResources:  nil,
 		},
 		{
 			name:               "includeLabels",
@@ -117,7 +115,6 @@ func TestFilterExcluded(t *testing.T) {
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
 			want:               []Workload{ns1.labeledDeployment},
-			includedResources:  nil,
 		},
 		{
 			name:               "excludeNamespaces",
@@ -126,7 +123,6 @@ func TestFilterExcluded(t *testing.T) {
 			excludedNamespaces: util.RegexList{regexp.MustCompile("Namespace1")}, // exclude Namespace1
 			excludedWorkloads:  nil,
 			want:               []Workload{ns2.deployment1},
-			includedResources:  nil,
 		},
 		{
 			name:               "excludeWorkloads",
@@ -135,7 +131,6 @@ func TestFilterExcluded(t *testing.T) {
 			excludedNamespaces: nil,
 			excludedWorkloads:  util.RegexList{regexp.MustCompile("Deployment1")}, // exclude Deployment1
 			want:               []Workload{ns1.deployment2},
-			includedResources:  nil,
 		},
 		{
 			name:               "exclude scaled object scaled",
@@ -144,7 +139,6 @@ func TestFilterExcluded(t *testing.T) {
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
 			want:               []Workload{ns3.deployment1, ns3.scaledObject, ns1.deployment1, ns1.deployment2, ns2.deployment1},
-			includedResources:  map[string]struct{}{"Deployment": {}},
 		},
 	}
 

@@ -18,7 +18,6 @@ import (
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 )
@@ -29,7 +28,6 @@ const (
 )
 
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
-//
 
 type Client interface {
 	// GetNamespaceScopes gets the namespace scope from the namespace annotations
@@ -136,12 +134,6 @@ func (c client) GetWorkloads(
 
 			results = append(results, workloads...)
 		}
-	}
-
-	UIDToWorkloadMap := make(map[types.UID]*scalable.Workload, len(results))
-
-	for i := range results {
-		UIDToWorkloadMap[results[i].GetUID()] = &results[i] // Store pointer to the workload
 	}
 
 	return results, nil
