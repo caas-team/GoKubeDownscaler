@@ -14,7 +14,7 @@ import { confWebpack } from "./plugins/conf-webpack.cts";
 
 const config: Config = {
   title: "GoKubeDownscaler",
-  tagline: "A horizontal autoscaler for Kubernetes workloads",
+  tagline: "A Horizontal Autoscaler For Kubernetes Workloads",
   favicon: "img/kubedownscaler.svg",
 
   url: "https://caas-team.github.io",
@@ -77,6 +77,7 @@ const config: Config = {
   ],
 
   themeConfig: {
+    image: "img/social-preview.png",
     colorMode: {
       disableSwitch: false,
       respectPrefersColorScheme: true,
@@ -101,6 +102,12 @@ const config: Config = {
           sidebarId: "GuidesSidebar",
           position: "left",
           label: "Guides",
+        },
+        {
+          type: "docSidebar",
+          sidebarId: "ContributingSidebar",
+          position: "left",
+          label: "Contributing",
         },
         {
           href: "https://github.com/caas-team/GoKubeDownscaler",
@@ -141,6 +148,28 @@ const config: Config = {
     },
   } satisfies Preset.ThemeConfig,
   headTags: [
+    {
+      tagName: "script",
+      attributes: {
+        type: "application/ld+json",
+      },
+      innerHTML: JSON.stringify({
+        "@context": "https://schema.org/",
+        "@type": "SoftwareApplication",
+        name: "GoKubeDownscaler",
+        description:
+          "GoKubeDownscaler is a Kubernetes autoscaler that lets you downscale your workloads during off-hours to save costs on your cloud bill. It is lightweight and easy-to-use; works with EKS, GKE, AKS, and every other Kubernetes clusters.",
+        applicationCategory: "Kubernetes Addon",
+        operatingSystem: "Linux",
+        url: "https://caas-team.github.io/GoKubeDownscaler/",
+        logo: "https://github.com/caas-team/GoKubeDownscaler/blob/main/logo/kubedownscaler.svg",
+        author: {
+          "@type": "Organization",
+          name: "CaaS Team",
+          url: "https://github.com/caas-team",
+        },
+      }),
+    },
     {
       tagName: "link",
       attributes: {
