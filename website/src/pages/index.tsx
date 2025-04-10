@@ -5,6 +5,7 @@ import { Button } from "../components/Basic/Button";
 import * as KubedownscalerNameSVG from "@site/static/img/kubedownscaler-name-light.svg";
 import * as KubedownscalerSVG from "@site/static/img/kubedownscaler.svg";
 import Heading from "@theme/Heading";
+import Head from "@docusaurus/Head";
 
 function HomepageHeader() {
   const { siteConfig } = useDocusaurusContext();
@@ -35,6 +36,9 @@ export default function Home(): JSX.Element {
   const { siteConfig } = useDocusaurusContext();
   return (
     <Layout title={siteConfig.title} description={siteConfig.tagline}>
+        <Head>
+            <title>{siteConfig.title}: {siteConfig.tagline}</title>
+        </Head>
       <HomepageHeader />
       <main>
         <SupportedResources />
