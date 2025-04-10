@@ -91,6 +91,7 @@ func TestFilterExcluded(t *testing.T) {
 			},
 		}}},
 	}
+
 	tests := []struct {
 		name               string
 		workloads          []Workload
@@ -145,7 +146,13 @@ func TestFilterExcluded(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := FilterExcluded(test.workloads, test.includeLabels, test.excludedNamespaces, test.excludedWorkloads)
+			got := FilterExcluded(
+				test.workloads,
+				test.includeLabels,
+				test.excludedNamespaces,
+				test.excludedWorkloads,
+			)
+
 			assert.Equal(t, test.want, got)
 		})
 	}

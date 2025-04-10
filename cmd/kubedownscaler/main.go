@@ -162,7 +162,12 @@ func startScanning(
 			return fmt.Errorf("failed to get workloads: %w", err)
 		}
 
-		workloads = scalable.FilterExcluded(workloads, config.IncludeLabels, config.ExcludeNamespaces, config.ExcludeWorkloads)
+		workloads = scalable.FilterExcluded(
+			workloads,
+			config.IncludeLabels,
+			config.ExcludeNamespaces,
+			config.ExcludeWorkloads,
+		)
 		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 
 		var waitGroup sync.WaitGroup

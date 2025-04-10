@@ -26,6 +26,7 @@ const (
 )
 
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
+
 type Client interface {
 	// GetNamespaceAnnotations gets the annotations of the workload's namespace
 	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
@@ -106,7 +107,11 @@ func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (
 }
 
 // GetWorkloads gets all workloads of the specified resources for the specified namespaces.
-func (c client) GetWorkloads(namespaces, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error) {
+func (c client) GetWorkloads(
+	namespaces,
+	resourceTypes []string,
+	ctx context.Context,
+) ([]scalable.Workload, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
