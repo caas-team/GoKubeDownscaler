@@ -51,8 +51,8 @@ func (s ScopeID) String() string {
 }
 
 // NewScope gets a new scope with the default values.
-func NewScope() Scope {
-	return Scope{
+func NewScope() *Scope {
+	return &Scope{
 		DownscaleReplicas: util.Undefined,
 		GracePeriod:       util.Undefined,
 	}

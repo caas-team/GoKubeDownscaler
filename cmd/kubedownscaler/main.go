@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -24,6 +25,8 @@ import (
 const (
 	leaseName = "downscaler-lease"
 )
+
+var errNamespaceLayersRetrieveFailed = errors.New("failed to get namespace layer")
 
 func main() {
 	config := util.GetDefaultConfig()
@@ -77,11 +80,11 @@ func main() {
 	defer cancel()
 
 	if !config.LeaderElection {
-		runWithoutLeaderElection(client, ctx, scopeDefault, &scopeCli, &scopeEnv, config)
+		runWithoutLeaderElection(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
 		return
 	}
 
-	runWithLeaderElection(client, cancel, ctx, scopeDefault, &scopeCli, &scopeEnv, config)
+	runWithLeaderElection(client, cancel, ctx, scopeDefault, scopeCli, scopeEnv, config)
 }
 
 func runWithLeaderElection(
@@ -165,6 +168,11 @@ func startScanning(
 		workloads = scalable.FilterExcluded(workloads, config.IncludeLabels, config.ExcludeNamespaces, config.ExcludeWorkloads)
 		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 
+		namespaceLayers, err := client.GetNamespaceLayers(workloads, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get namespace annotations: %w", err)
+		}
+
 		var waitGroup sync.WaitGroup
 		for _, workload := range workloads {
 			waitGroup.Add(1)
@@ -174,7 +182,7 @@ func startScanning(
 
 				defer waitGroup.Done()
 
-				err = attemptScan(client, ctx, scopeDefault, scopeCli, scopeEnv, config, workload)
+				err := attemptScan(client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceLayers, config, workload)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
@@ -203,13 +211,14 @@ func attemptScan(
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
+	namespaceLayers map[string]*values.Scope,
 	config *util.RuntimeConfiguration,
 	workload scalable.Workload,
 ) error {
 	slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	for retry := range config.MaxRetriesOnConflict + 1 {
-		err := scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, config)
+		err := scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceLayers, config)
 		if err != nil {
 			if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
 				return fmt.Errorf("failed to scan workload: %w", err)
@@ -241,14 +250,11 @@ func scanWorkload(
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
+	namespaceLayers map[string]*values.Scope,
 	config *util.RuntimeConfiguration,
 ) error {
-	resourceLogger := kubernetes.NewResourceLogger(client, workload)
-
-	namespaceAnnotations, err := client.GetNamespaceAnnotations(workload.GetNamespace(), ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get namespace annotations: %w", err)
-	}
+	resourceLogger := kubernetes.NewResourceLoggerForWorkload(client, workload)
+	var err error
 
 	slog.Debug(
 		"parsing workload scope from annotations",
@@ -262,19 +268,12 @@ func scanWorkload(
 		return fmt.Errorf("failed to parse workload scope from annotations: %w", err)
 	}
 
-	slog.Debug(
-		"parsing namespace scope from annotations",
-		"annotations", namespaceAnnotations,
-		"name", workload.GetName(),
-		"namespace", workload.GetNamespace(),
-	)
-
-	scopeNamespace := values.NewScope()
-	if err = scopeNamespace.GetScopeFromAnnotations(namespaceAnnotations, resourceLogger, ctx); err != nil {
-		return fmt.Errorf("failed to parse namespace scope from annotations: %w", err)
+	scopeNamespace, exists := namespaceLayers[workload.GetNamespace()]
+	if !exists {
+		return fmt.Errorf("%w: %s", errNamespaceLayersRetrieveFailed, workload.GetNamespace())
 	}
 
-	scopes := values.Scopes{&scopeWorkload, &scopeNamespace, scopeCli, scopeEnv, scopeDefault}
+	scopes := values.Scopes{scopeWorkload, scopeNamespace, scopeCli, scopeEnv, scopeDefault}
 
 	slog.Debug("finished parsing all scopes", "scopes", scopes, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
