@@ -254,6 +254,7 @@ func scanWorkload(
 	config *util.RuntimeConfiguration,
 ) error {
 	resourceLogger := kubernetes.NewResourceLoggerForWorkload(client, workload)
+	var err error
 
 	slog.Debug(
 		"parsing workload scope from annotations",
@@ -263,7 +264,7 @@ func scanWorkload(
 	)
 
 	scopeWorkload := values.NewScope()
-	if err := scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
+	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
 		return fmt.Errorf("failed to parse workload scope from annotations: %w", err)
 	}
 
