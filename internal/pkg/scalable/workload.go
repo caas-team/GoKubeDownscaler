@@ -18,10 +18,13 @@ import (
 var (
 	errResourceNotSupported = errors.New("error: specified rescource type is not supported")
 	errNoReplicasSpecified  = errors.New("error: workload has no replicas set")
+	errConversionFailed     = errors.New("error: failed to convert workload to expected type")
 )
 
 // getResourceFunc is a function that gets a specific resource as a Workload.
 type getResourceFunc func(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error)
+
+type getChildResourceFunc func(workload Workload, clientsets *Clientsets, ctx context.Context) ([]Workload, error)
 
 // GetWorkloads gets all workloads of the given resource in the cluster.
 func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -45,6 +48,25 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 	}
 
 	workloads, err := resourceFunc(namespace, clientsets, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get workloads of type %q: %w", resource, err)
+	}
+
+	return workloads, nil
+}
+
+// GetChildrenWorkloads gets all workloads of the given resource in the cluster.
+func GetChildrenWorkloads(resource string, workload Workload, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+	resourceFuncMap := map[string]getChildResourceFunc{
+		"cronjobs": getCronJobsChildren,
+	}
+
+	resourceFunc, exists := resourceFuncMap[resource]
+	if !exists {
+		return nil, errResourceNotSupported
+	}
+
+	workloads, err := resourceFunc(workload, clientsets, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get workloads of type %q: %w", resource, err)
 	}

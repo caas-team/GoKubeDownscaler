@@ -21,6 +21,7 @@ const (
 	annotationForceDowntime     = "downscaler/force-downtime"
 	annotationDownscaleReplicas = "downscaler/downscale-replicas"
 	annotationGracePeriod       = "downscaler/grace-period"
+	annotationScaleChildren     = "downscaler/scale-children"
 
 	envUpscalePeriod   = "UPSCALE_PERIOD"
 	envUptime          = "DEFAULT_UPTIME"
@@ -68,6 +69,12 @@ func (s *Scope) ParseScopeFlags() {
 		(*util.DurationValue)(&s.GracePeriod),
 		"grace-period",
 		"the grace period between creation of workload until first downscale (default: 15min)",
+	)
+	flag.BoolVar(
+		&s.ScaleChildren,
+		"scale-children",
+		false,
+		"if set to true, the ownerReference will immediately trigger scaling of children workloads when applicable (default: false)",
 	)
 }
 
@@ -212,6 +219,16 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationGracePeriod, err)
 			logEvent.ErrorInvalidAnnotation(annotationGracePeriod, err.Error(), ctx)
+
+			return err
+		}
+	}
+
+	if scaleChildrenString, ok := annotations[annotationScaleChildren]; ok {
+		s.ScaleChildren, err = strconv.ParseBool(scaleChildrenString)
+		if err != nil {
+			err = fmt.Errorf("failed to parse %q annotation: %w", annotationScaleChildren, err)
+			logEvent.ErrorInvalidAnnotation(annotationScaleChildren, err.Error(), ctx)
 
 			return err
 		}
