@@ -26,7 +26,6 @@ const (
 )
 
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
-
 type Client interface {
 	// GetNamespaceAnnotations gets the annotations of the workload's namespace
 	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
