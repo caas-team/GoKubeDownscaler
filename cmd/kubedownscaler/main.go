@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -246,6 +247,7 @@ func attemptScan(
 	return nil
 }
 
+// nolint: cyclop // it is a big function and we can refactor it a bit but it should be fine for now
 // scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload.
 func scanWorkload(
 	workload scalable.Workload,
@@ -309,6 +311,60 @@ func scanWorkload(
 	err = scaleWorkload(scaling, workload, scopes, client, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to scale workload: %w", err)
+	}
+
+	scaleChildren := scopes.GetScaleChildren()
+	if scaleChildren {
+		err = scaleChildrenWorkloads(scaling, workload, scopes, client, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to scale children workloads: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// scaleChildrenWorkloads scales the children workloads of the given workload.
+func scaleChildrenWorkloads(
+	scaling values.Scaling,
+	workload scalable.Workload,
+	scopes values.Scopes,
+	client kubernetes.Client,
+	ctx context.Context,
+) error {
+	slog.Debug("scaling children workloads of workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
+	childrenWorkloads, err := client.GetChildrenWorkloads(workload, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get children workloads: %w", err)
+	}
+
+	var waitGroup sync.WaitGroup
+	errCh := make(chan error, len(childrenWorkloads))
+	allErrors := make([]error, 0, len(childrenWorkloads))
+
+	for _, childWorkload := range childrenWorkloads {
+		waitGroup.Add(1)
+
+		go func(childWorkload scalable.Workload) {
+			defer waitGroup.Done()
+			slog.Debug("scaling workload", "workload", childWorkload.GetName(), "namespace", childWorkload.GetNamespace())
+
+			err = scaleWorkload(scaling, childWorkload, scopes, client, ctx)
+			if err != nil {
+				errCh <- err
+			}
+		}(childWorkload)
+	}
+
+	waitGroup.Wait()
+
+	for err = range errCh {
+		allErrors = append(allErrors, err)
+	}
+
+	if len(allErrors) > 0 {
+		return errors.Join(allErrors...)
 	}
 
 	return nil

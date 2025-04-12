@@ -44,6 +44,8 @@ type Client interface {
 	CreateLease(leaseName string) (*resourcelock.LeaseLock, error)
 	// addEvent creates a new event on either a workload or a namespace
 	addEvent(eventType, reason, identifier, message string, object *corev1.ObjectReference, ctx context.Context) error
+	// GetChildrenWorkloads gets the children workloads of the specified workload
+	GetChildrenWorkloads(workload scalable.Workload, ctx context.Context) ([]scalable.Workload, error)
 }
 
 // NewClient makes a new Client.
@@ -137,6 +139,30 @@ func (c client) GetWorkloads(
 	}
 
 	return results, nil
+}
+
+// GetChildrenWorkloads gets the children workloads of the specified workload.
+func (c client) GetChildrenWorkloads(workload scalable.Workload, ctx context.Context) ([]scalable.Workload, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	var results []scalable.Workload
+	kindToChild := map[string]struct{}{
+		"CronJob": {},
+	}
+
+	if _, exists := kindToChild[workload.GroupVersionKind().Kind]; exists {
+		slog.Debug("getting children workloads of type", "resourceType", workload.GroupVersionKind().Kind)
+
+		workloads, err := scalable.GetChildrenWorkloads(strings.ToLower(workload.GroupVersionKind().Kind), workload, c.clientsets, ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get workloads: %w", err)
+		}
+
+		return append(results, workloads...), nil
+	}
+
+	return []scalable.Workload{}, nil
 }
 
 // RegetWorkload gets the workload again to ensure the latest state.
