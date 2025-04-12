@@ -352,7 +352,9 @@ func scaleChildrenWorkloads(
 
 			err = scaleWorkload(scaling, childWorkload, scopes, client, ctx)
 			if err != nil {
-				errCh <- err
+				if !strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
+					errCh <- fmt.Errorf("failed to scale workload %s: %w", childWorkload.GetName(), err)
+				}
 			}
 		}(childWorkload)
 	}
