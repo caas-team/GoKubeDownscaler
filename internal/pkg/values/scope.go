@@ -55,6 +55,7 @@ func NewScope() Scope {
 	return Scope{
 		DownscaleReplicas: util.Undefined,
 		GracePeriod:       util.Undefined,
+		ScaleChildren:     false,
 	}
 }
 
@@ -70,6 +71,7 @@ type Scope struct {
 	ForceDowntime     timeSpans     // force workload into a downtime state when in one of the timespans
 	DownscaleReplicas int32         // the replicas to scale down to
 	GracePeriod       time.Duration // grace period until new workloads will be scaled down
+	ScaleChildren     bool          // ownerReference will immediately trigger scaling of children workloads, when applicable
 }
 
 func GetDefaultScope() *Scope {
@@ -84,6 +86,7 @@ func GetDefaultScope() *Scope {
 		ForceDowntime:     nil,
 		DownscaleReplicas: 0,
 		GracePeriod:       15 * time.Minute,
+		ScaleChildren:     false,
 	}
 }
 
@@ -217,6 +220,17 @@ func (s Scopes) GetDownscaleReplicas() (int32, error) {
 	}
 
 	return 0, errValueNotSet
+}
+
+// GetScaleChildren gets the scale children of the first scope that implements scale children.
+func (s Scopes) GetScaleChildren() bool {
+	for _, scope := range s {
+		if scope.ScaleChildren {
+			return true
+		}
+	}
+
+	return false
 }
 
 // GetExcluded checks if the scopes exclude scaling.

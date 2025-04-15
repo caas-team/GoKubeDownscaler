@@ -18,10 +18,13 @@ import (
 var (
 	errResourceNotSupported = errors.New("error: specified rescource type is not supported")
 	errNoReplicasSpecified  = errors.New("error: workload has no replicas set")
+	errConversionFailed     = errors.New("error: failed to convert workload to expected type")
 )
 
 // getResourceFunc is a function that gets a specific resource as a Workload.
 type getResourceFunc func(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error)
+
+type getChildResourceFunc func(workload Workload, clientsets *Clientsets, ctx context.Context) ([]Workload, error)
 
 // GetWorkloads gets all workloads of the given resource in the cluster.
 func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -52,6 +55,25 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 	return workloads, nil
 }
 
+// GetChildrenWorkloads gets all workloads of the given resource in the cluster.
+func GetChildrenWorkloads(resource string, workload Workload, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
+	resourceFuncMap := map[string]getChildResourceFunc{
+		"cronjobs": getCronJobsChildren,
+	}
+
+	resourceFunc, exists := resourceFuncMap[resource]
+	if !exists {
+		return nil, errResourceNotSupported
+	}
+
+	workloads, err := resourceFunc(workload, clientsets, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get workloads of type %q: %w", resource, err)
+	}
+
+	return workloads, nil
+}
+
 // scalableResource provides all functions needed to scale any type of resource.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource
@@ -70,6 +92,8 @@ type scalableResource interface {
 	SetAnnotations(annotations map[string]string)
 	// GroupVersionKind gets the group version kind of the workload
 	GroupVersionKind() schema.GroupVersionKind
+	// GetOwnerReferences gets the owner references of the workload
+	GetOwnerReferences() []metav1.OwnerReference
 	// Reget regets the workload to ensure the latest state
 	Reget(clientsets *Clientsets, ctx context.Context) error
 }
