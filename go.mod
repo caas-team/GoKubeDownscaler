@@ -5,10 +5,10 @@ go 1.24.1
 require (
 	github.com/argoproj/argo-rollouts v1.8.2
 	github.com/kedacore/keda/v2 v2.17.0
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.81.0
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.81.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.82.0
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.82.0
 	github.com/stretchr/testify v1.10.0
-	github.com/zalando-incubator/stackset-controller v1.4.99
+	github.com/zalando-incubator/stackset-controller v1.4.100
 	k8s.io/api v0.32.3
 	k8s.io/apimachinery v0.32.3
 	k8s.io/apiserver v0.32.3
@@ -79,7 +79,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
-	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/net v0.39.0 // indirect
 	golang.org/x/oauth2 v0.29.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/term v0.31.0 // indirect
@@ -100,10 +100,10 @@ require (
 	k8s.io/utils v0.0.0-20250321185631-1f6e0b77f77e // indirect
 	knative.dev/pkg v0.0.0-20250331013832-c5a13b15ccdb // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.32.0 // indirect
-	sigs.k8s.io/controller-runtime v0.20.3 // indirect
+	sigs.k8s.io/controller-runtime v0.20.4 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.7.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
