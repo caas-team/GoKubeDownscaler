@@ -10,7 +10,6 @@ import { repoRefRemarkPlugin } from "./plugins/repo-ref-plugin.cts";
 import { PluginOptions } from "@easyops-cn/docusaurus-search-local";
 import { PluginConfig } from "svgo/lib/svgo";
 import path from "path";
-import { confWebpack } from "./plugins/conf-webpack.cts";
 
 const config: Config = {
   title: "GoKubeDownscaler",
@@ -74,6 +73,7 @@ const config: Config = {
         },
       } satisfies Preset.Options,
     ],
+    "@docusaurus/theme-mermaid",
   ],
 
   themeConfig: {
@@ -190,8 +190,9 @@ const config: Config = {
       } as Partial<PluginOptions>,
     ],
   ],
-  plugins: [tailwindPlugin, confWebpack],
+  plugins: [tailwindPlugin],
   markdown: {
+    mermaid: true,
     parseFrontMatter: globalRefParseFrontMatter,
   },
 };

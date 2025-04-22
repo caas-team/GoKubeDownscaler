@@ -3,7 +3,6 @@ config:
     allowed_elements: # allow the use of some specific custom elements we need/don't discourage
       - DocCardList
       - GithubLabel
-      - Excalidraw
       - Tabs
       - TabItem
   line-length:

@@ -7,8 +7,6 @@ keywords: [website, contributing]
 ---
 
 import { GithubLabel } from "/src/components/GithubLabel.tsx";
-import Excalidraw from "/src/components/Excalidraw/Excalidraw.tsx";
-import exampleDiagram from "./assets/example.excalidraw";
 
 # Website
 
@@ -206,7 +204,7 @@ re-save your file to initiate a rebuild or
 
 ### Assets
 
-Assets like PNGs, SVGs, [Excalidraw](#excalidraw) or other files can be useful to have in documentation.
+Assets like PNGs, SVGs or other files can be useful to have in documentation.
 
 Assets should be placed in an `assets` folder in the directory where it is being used.
 
@@ -233,9 +231,10 @@ import ExampleSvg from "./assets/example.svg";
 
 This will create a hyperlink with the given text and when clicked this will download or open the file (depending on filetype).
 
-#### Excalidraw Files
+### Diagrams
 
-For embedding `.excalidraw` files you need to use [our custom Excalidraw component](#excalidraw).
+Diagrams can be embedded using mermaid.
+Check out the [Mermaid documentation](https://mermaid.js.org/intro/syntax-reference.html) for more information.
 
 ### Additional Components
 
@@ -264,27 +263,6 @@ Examples:
 
 <GithubLabel label="enhancement" /> <GithubLabel label="bug" />
 <GithubLabel label="help wanted" /> <GithubLabel label="question" />
-
-#### Excalidraw
-
-The Excalidraw component is useful when you need to explain something more complex with a diagram.
-
-The Excalidraw component can render any excalidraw file.
-You can create and edit these either using [their website](https://excalidraw.com/) or an extension for your IDE.
-
-Usage:
-
-```mdx
-{/* imports should be at the top of the file */}
-import Excalidraw from "/src/components/Excalidraw/Excalidraw.tsx";
-import exampleDiagram from "./assets/example.excalidraw";
-
-<Excalidraw data={exampleDiagram} className="w-1/3" />
-```
-
-Example:
-
-<Excalidraw data={exampleDiagram} className="w-1/3" />
 
 ### Best Practices
 
