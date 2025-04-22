@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -25,8 +24,6 @@ import (
 const (
 	leaseName = "downscaler-lease"
 )
-
-var errNamespaceLayersRetrieveFailed = errors.New("failed to get namespace layer")
 
 func main() {
 	config := util.GetDefaultConfig()
@@ -250,7 +247,7 @@ func scanWorkload(
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	namespaceLayers map[string]*values.Scope,
+	namespaceScopes map[string]*values.Scope,
 	config *util.RuntimeConfiguration,
 ) error {
 	resourceLogger := kubernetes.NewResourceLoggerForWorkload(client, workload)
@@ -268,9 +265,9 @@ func scanWorkload(
 		return fmt.Errorf("failed to parse workload scope from annotations: %w", err)
 	}
 
-	scopeNamespace, exists := namespaceLayers[workload.GetNamespace()]
+	scopeNamespace, exists := namespaceScopes[workload.GetNamespace()]
 	if !exists {
-		return fmt.Errorf("%w: %s", errNamespaceLayersRetrieveFailed, workload.GetNamespace())
+		return newNamespaceScopeRetrieveError(workload.GetNamespace())
 	}
 
 	scopes := values.Scopes{scopeWorkload, scopeNamespace, scopeCli, scopeEnv, scopeDefault}
