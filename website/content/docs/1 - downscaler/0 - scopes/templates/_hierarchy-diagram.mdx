@@ -1,0 +1,15 @@
+import Mermaid from "@theme/Mermaid";
+
+<Mermaid value= {`
+    block-beta
+      columns 9
+
+      space:4 e("Workload"):1    space:4
+      space:3 d("Namespace"):3   space:3
+      space:2 c("CLI"):5         space:2
+      space   b("Environment"):7 space
+              a("Default"):9
+
+      ${props.highlight ? `style ${props.highlight} stroke:none,fill:#e20074,color:#ffffff` : ''}
+
+`}/>

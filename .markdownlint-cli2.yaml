@@ -1,10 +1,5 @@
 config:
-  no-inline-html:
-    allowed_elements: # allow the use of some specific custom elements we need/don't discourage
-      - DocCardList
-      - GithubLabel
-      - Tabs
-      - TabItem
+  no-inline-html: false # we can use inline html but should avoid it as much as possible
   line-length:
     line_length: 140 # set max length of lines to 140, which is a bit more reasonable than the 80 (default)
   single-title:
