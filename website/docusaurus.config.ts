@@ -77,7 +77,6 @@ const config: Config = {
         },
       } satisfies Preset.Options,
     ],
-    "@docusaurus/theme-mermaid",
   ],
 
   themeConfig: {
@@ -150,6 +149,9 @@ const config: Config = {
         },
       ],
     },
+    mermaid: {
+      theme: { light: "neutral", dark: "dark" },
+    },
   } satisfies Preset.ThemeConfig,
   headTags: [
     {
@@ -193,6 +195,7 @@ const config: Config = {
         searchBarShortcutHint: false,
       } as Partial<PluginOptions>,
     ],
+    "@docusaurus/theme-mermaid",
   ],
   plugins: [
     tailwindPlugin,
