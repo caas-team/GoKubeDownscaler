@@ -39,7 +39,7 @@ func (r *rollout) setReplicas(replicas int32) error {
 func (r *rollout) getReplicas() (int32, error) {
 	replicas := r.Spec.Replicas
 	if replicas == nil {
-		return 0, errNoReplicasSpecified
+		return 0, newNoReplicasError(r.Kind, r.Name)
 	}
 
 	return *r.Spec.Replicas, nil

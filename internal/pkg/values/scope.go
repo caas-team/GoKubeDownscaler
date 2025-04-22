@@ -2,20 +2,11 @@ package values
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
-)
-
-var (
-	errForceUpAndDownTime       = errors.New("error: both forceUptime and forceDowntime are defined")
-	errUpAndDownTime            = errors.New("error: both uptime and downtime are defined")
-	errTimeAndPeriod            = errors.New("error: both a time and a period is defined")
-	errInvalidDownscaleReplicas = errors.New("error: downscale replicas value is invalid")
-	errValueNotSet              = errors.New("error: no scope implements this value")
 )
 
 // Scaling is an enum that describes the current Scaling.
@@ -91,20 +82,20 @@ func GetDefaultScope() *Scope {
 func (s *Scope) CheckForIncompatibleFields() error { //nolint: cyclop // this is still fine to read, we could defnitly consider refactoring this in the future
 	// force down and uptime
 	if s.ForceDowntime != nil && s.ForceUptime != nil {
-		return errForceUpAndDownTime
+		return newIncompatibalFieldsError("forceUptime", "forceDowntime")
 	}
 	// downscale replicas invalid
 	if s.DownscaleReplicas != util.Undefined && s.DownscaleReplicas < 0 {
-		return errInvalidDownscaleReplicas
+		return newInvalidConfigError("downscale replicas")
 	}
 	// up- and downtime
 	if s.UpTime != nil && s.DownTime != nil {
-		return errUpAndDownTime
+		return newIncompatibalFieldsError("uptime", "downtime")
 	}
 	// *time and *period
 	if (s.UpTime != nil || s.DownTime != nil) &&
 		(s.UpscalePeriod != nil || s.DownscalePeriod != nil) {
-		return errTimeAndPeriod
+		return newIncompatibalFieldsError("time", "period")
 	}
 
 	return nil
@@ -216,7 +207,7 @@ func (s Scopes) GetDownscaleReplicas() (int32, error) {
 		return downscaleReplicas, nil
 	}
 
-	return 0, errValueNotSet
+	return 0, newValueNotSetError("downscaleReplicas")
 }
 
 // GetExcluded checks if the scopes exclude scaling.

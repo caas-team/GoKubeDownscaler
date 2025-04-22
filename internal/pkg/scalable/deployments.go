@@ -39,7 +39,7 @@ func (d *deployment) setReplicas(replicas int32) error {
 func (d *deployment) getReplicas() (int32, error) {
 	replicas := d.Spec.Replicas
 	if replicas == nil {
-		return 0, errNoReplicasSpecified
+		return 0, newNoReplicasError(d.Kind, d.Name)
 	}
 
 	return *d.Spec.Replicas, nil

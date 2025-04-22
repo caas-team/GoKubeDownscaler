@@ -2,7 +2,6 @@ package scalable
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
@@ -13,11 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-)
-
-var (
-	errResourceNotSupported = errors.New("error: specified rescource type is not supported")
-	errNoReplicasSpecified  = errors.New("error: workload has no replicas set")
 )
 
 // getResourceFunc is a function that gets a specific resource as a Workload.
@@ -41,7 +35,7 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 
 	resourceFunc, exists := resourceFuncMap[resource]
 	if !exists {
-		return nil, errResourceNotSupported
+		return nil, newInvalidResourceError(resource)
 	}
 
 	workloads, err := resourceFunc(namespace, clientsets, ctx)

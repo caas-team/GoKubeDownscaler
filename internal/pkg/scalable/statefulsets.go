@@ -39,7 +39,7 @@ func (s *statefulSet) setReplicas(replicas int32) error {
 func (s *statefulSet) getReplicas() (int32, error) {
 	replicas := s.Spec.Replicas
 	if replicas == nil {
-		return 0, errNoReplicasSpecified
+		return 0, newNoReplicasError(s.Kind, s.Name)
 	}
 
 	return *s.Spec.Replicas, nil

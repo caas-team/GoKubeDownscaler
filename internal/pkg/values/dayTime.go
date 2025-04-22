@@ -1,7 +1,6 @@
 package values
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,8 +11,6 @@ const (
 	Hour   dayTime = 60
 	Minute dayTime = 1
 )
-
-var errTimeOfDayOutOfRange = errors.New("error: the specified time of day is out of range")
 
 func extractDayTime(t time.Time) dayTime {
 	return dayTime(t.Hour())*Hour +
@@ -30,7 +27,7 @@ func parseDayTime(s string) (*dayTime, error) {
 	}
 
 	if hour < 0 || hour > 24 {
-		return nil, errTimeOfDayOutOfRange
+		return nil, newInvalidConfigError("time of day")
 	}
 
 	result += dayTime(hour) * Hour
@@ -41,7 +38,7 @@ func parseDayTime(s string) (*dayTime, error) {
 	}
 
 	if minute < 0 || minute >= 60 {
-		return nil, errTimeOfDayOutOfRange
+		return nil, newInvalidConfigError("time of day")
 	}
 
 	result += dayTime(minute) * Minute

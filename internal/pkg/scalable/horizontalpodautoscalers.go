@@ -47,7 +47,7 @@ func (h *horizontalPodAutoscaler) setReplicas(replicas int32) error {
 func (h *horizontalPodAutoscaler) getReplicas() (int32, error) {
 	replicas := h.Spec.MinReplicas
 	if replicas == nil {
-		return 0, errNoReplicasSpecified
+		return 0, newNoReplicasError(h.Kind, h.Name)
 	}
 
 	return *h.Spec.MinReplicas, nil

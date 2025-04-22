@@ -38,7 +38,7 @@ func (p *prometheus) setReplicas(replicas int32) error {
 func (p *prometheus) getReplicas() (int32, error) {
 	replicas := p.Spec.Replicas
 	if replicas == nil {
-		return 0, errNoReplicasSpecified
+		return 0, newNoReplicasError(p.Kind, p.Name)
 	}
 
 	return *p.Spec.Replicas, nil
