@@ -14,7 +14,7 @@ func newIncompatibalFieldsError(field1, field2 string) error {
 }
 
 func (i *IncompatibalFieldsError) Error() string {
-	return fmt.Sprintf("error: the fields %s and %s are incompatible", i.field1, i.field2)
+	return fmt.Sprintf("error: the fields %q and %q are incompatible", i.field1, i.field2)
 }
 
 type ValueNotSetError struct {
@@ -26,7 +26,7 @@ func newValueNotSetError(field string) error {
 }
 
 func (v *ValueNotSetError) Error() string {
-	return "error: no value set for field " + v.field
+	return fmt.Sprintf("error: no value set for field %q", v.field)
 }
 
 type InvalidConfigError struct {
@@ -38,5 +38,5 @@ func newInvalidConfigError(field string) error {
 }
 
 func (i *InvalidConfigError) Error() string {
-	return fmt.Sprintf("error: specified %s is invalid", i.field)
+	return fmt.Sprintf("error: specified %q is invalid", i.field)
 }

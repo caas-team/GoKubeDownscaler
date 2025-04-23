@@ -14,7 +14,7 @@ func newNoReplicasError(kind, name string) error {
 }
 
 func (n *NoReplicasError) Error() string {
-	return fmt.Sprintf("error: %s %s has no replicas set", n.kind, n.name)
+	return fmt.Sprintf("error: %q %q has no replicas set", n.kind, n.name)
 }
 
 type InvalidResourceError struct {
@@ -26,7 +26,7 @@ func newInvalidResourceError(resource string) error {
 }
 
 func (i *InvalidResourceError) Error() string {
-	return fmt.Sprintf("error: specified rescource type %s is not supported", i.resource)
+	return fmt.Sprintf("error: specified rescource type %q is not supported", i.resource)
 }
 
 type OriginalReplicasUnsetError struct {

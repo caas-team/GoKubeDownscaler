@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type NamespaceScopeRetrieveError struct {
 	namespace string
 }
@@ -9,5 +11,5 @@ func newNamespaceScopeRetrieveError(namespace string) error {
 }
 
 func (n *NamespaceScopeRetrieveError) Error() string {
-	return "failed to get namespace scope for namespace " + n.namespace
+	return fmt.Sprintf("failed to get namespace scope for namespace %q", n.namespace)
 }
