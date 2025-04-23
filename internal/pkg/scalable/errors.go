@@ -28,3 +28,15 @@ func newInvalidResourceError(resource string) error {
 func (e *InvalidResourceError) Error() string {
 	return fmt.Sprintf("error: specified rescource type %s is not supported", e.Resource)
 }
+
+type OriginalReplicasUnsetError struct {
+	reason string
+}
+
+func newOriginalReplicasUnsetError(reason string) error {
+	return &OriginalReplicasUnsetError{reason: reason}
+}
+
+func (e *OriginalReplicasUnsetError) Error() string {
+	return e.reason
+}

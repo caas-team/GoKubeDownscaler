@@ -192,7 +192,7 @@ func getOriginalReplicas(workload Workload) (*int32, error) {
 
 	originalReplicasString, ok := annotations[annotationOriginalReplicas]
 	if !ok {
-		return nil, nil //nolint: nilnil // should get fixed along with https://github.com/caas-team/GoKubeDownscaler/issues/7
+		return nil, newOriginalReplicasUnsetError("error: original replicas annotation not set on workload")
 	}
 
 	originalReplicas, err := strconv.ParseInt(originalReplicasString, 10, 32)
