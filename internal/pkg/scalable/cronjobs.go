@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sync"
 )
 
 // getCronJobs is the getResourceFunc for CronJobs.
