@@ -27,7 +27,7 @@ func parseDayTime(s string) (*dayTime, error) {
 	}
 
 	if hour < 0 || hour > 24 {
-		return nil, newInvalidConfigError("time of day")
+		return nil, newInvalidSyntaxError("time of day", "hours must be in a range from 0 to 24")
 	}
 
 	result += dayTime(hour) * Hour
@@ -38,7 +38,7 @@ func parseDayTime(s string) (*dayTime, error) {
 	}
 
 	if minute < 0 || minute >= 60 {
-		return nil, newInvalidConfigError("time of day")
+		return nil, newInvalidSyntaxError("time of day", "minutes must be in a range from 0 to 60")
 	}
 
 	result += dayTime(minute) * Minute

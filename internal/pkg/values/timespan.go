@@ -110,17 +110,17 @@ func parseRelativeTimeSpan(timespanString string) (*relativeTimeSpan, error) {
 
 	parts := strings.Split(timespanString, " ")
 	if len(parts) != 3 {
-		return nil, newInvalidConfigError("relative timespan")
+		return nil, newInvalidSyntaxError("relative timespan", "relative timespan has more spaces than expected")
 	}
 
 	weekdaySpan := strings.Split(parts[0], "-")
 	if len(weekdaySpan) != 2 {
-		return nil, newInvalidConfigError("relative timespan")
+		return nil, newInvalidSyntaxError("relative timespan", "relative timespan has more defined weekdays than expected")
 	}
 
 	timeSpan := strings.Split(parts[1], "-")
 	if len(timeSpan) != 2 {
-		return nil, newInvalidConfigError("relative timespan")
+		return nil, newInvalidSyntaxError("relative timespan", "relative timespan has more defined timespans than expected")
 	}
 
 	timezone := parts[2]
@@ -244,7 +244,7 @@ func getWeekday(weekday string) (time.Weekday, error) {
 		return day, nil
 	}
 
-	return 0, newInvalidConfigError("weekday")
+	return 0, newInvalidSyntaxError("weekday", "weekday must be one of: mon, tue, wed, thu, fri, sat, sun")
 }
 
 // booleanTimeSpan is a TimeSpan which statically is either always active or never active.

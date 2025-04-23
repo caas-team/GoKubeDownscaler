@@ -86,7 +86,7 @@ func (s *Scope) CheckForIncompatibleFields() error { //nolint: cyclop // this is
 	}
 	// downscale replicas invalid
 	if s.DownscaleReplicas != util.Undefined && s.DownscaleReplicas < 0 {
-		return newInvalidConfigError("downscale replicas")
+		return newInvalidSyntaxError("downscale replicas", "value has to be a positive integer")
 	}
 	// up- and downtime
 	if s.UpTime != nil && s.DownTime != nil {

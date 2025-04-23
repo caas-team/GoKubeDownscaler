@@ -29,14 +29,15 @@ func (v *ValueNotSetError) Error() string {
 	return fmt.Sprintf("error: no value set for field %q", v.field)
 }
 
-type InvalidConfigError struct {
-	field string
+type InvalidSyntaxError struct {
+	field  string
+	reason string
 }
 
-func newInvalidConfigError(field string) error {
-	return &InvalidConfigError{field: field}
+func newInvalidSyntaxError(field, reason string) error {
+	return &InvalidSyntaxError{field: field, reason: reason}
 }
 
-func (i *InvalidConfigError) Error() string {
-	return fmt.Sprintf("error: specified %q is invalid", i.field)
+func (i *InvalidSyntaxError) Error() string {
+	return fmt.Sprintf("error: %q is invalid. %q.", i.field, i.reason)
 }
