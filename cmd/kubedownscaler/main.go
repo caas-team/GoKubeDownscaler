@@ -188,7 +188,7 @@ func startScanning(
 
 				defer waitGroup.Done()
 
-				err := attemptScan(client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceScopes, config, workload)
+				err := scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceScopes, config)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
@@ -213,27 +213,25 @@ func startScanning(
 	return nil
 }
 
-// attemptScan is a wrapper for scanWorkload to handle retries on concurrent writes.
-func attemptScan(
+// attemptScaling handles retries for scaling a workload in case of conflicts.
+func attemptScaling(
 	client kubernetes.Client,
 	ctx context.Context,
-	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	namespaceScopes map[string]*values.Scope,
-	config *util.RuntimeConfiguration,
+	scaling values.Scaling,
 	workload scalable.Workload,
+	scopes values.Scopes,
+	config *util.RuntimeConfiguration,
 ) error {
-	slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-
 	for retry := range config.MaxRetriesOnConflict + 1 {
-		err := scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceScopes, config)
+		err := scaleWorkload(scaling, workload, scopes, client, ctx)
 		if err != nil {
-			if !(strings.Contains(err.Error(), registry.OptimisticLockErrorMsg)) {
-				return fmt.Errorf("failed to scan workload: %w", err)
+			if !strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
+				return fmt.Errorf("failed to scale workload: %w", err)
 			}
 
 			slog.Warn("workload modified, retrying", "attempt", retry+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-			err := client.RegetWorkload(workload, ctx)
+			err = client.RegetWorkload(workload, ctx)
 			if err != nil {
 				return fmt.Errorf("failed to fetch updated workload: %w", err)
 			}
@@ -241,18 +239,19 @@ func attemptScan(
 			continue
 		}
 
-		slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Debug("successfully scaled workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 		return nil
 	}
 
-	slog.Error("failed to scan workload", "attempts", config.MaxRetriesOnConflict+1)
+	slog.Error("failed to scale workload", "attempts", config.MaxRetriesOnConflict+1)
 
-	return nil
+	return errors.New("exceeded max retries for scaling workload")
 }
 
 // nolint: cyclop // it is a big function and we can refactor it a bit but it should be fine for now
 // scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload.
+// Updated scanWorkload to use the refactored functions.
 func scanWorkload(
 	workload scalable.Workload,
 	client kubernetes.Client,
@@ -262,14 +261,8 @@ func scanWorkload(
 	config *util.RuntimeConfiguration,
 ) error {
 	resourceLogger := kubernetes.NewResourceLoggerForWorkload(client, workload)
-	var err error
 
-	slog.Debug(
-		"parsing workload scope from annotations",
-		"annotations", workload.GetAnnotations(),
-		"name", workload.GetName(),
-		"namespace", workload.GetNamespace(),
-	)
+	var err error
 
 	scopeWorkload := values.NewScope()
 	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
@@ -282,8 +275,6 @@ func scanWorkload(
 	}
 
 	scopes := values.Scopes{scopeWorkload, scopeNamespace, scopeCli, scopeEnv, scopeDefault}
-
-	slog.Debug("finished parsing all scopes", "scopes", scopes, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	isInGracePeriod, err := scopes.IsInGracePeriod(
 		config.TimeAnnotation,
@@ -312,68 +303,40 @@ func scanWorkload(
 		return nil
 	}
 
-	err = scaleWorkload(scaling, workload, scopes, client, ctx)
+	err = attemptScaling(client, ctx, scaling, workload, scopes, config)
 	if err != nil {
 		return fmt.Errorf("failed to scale workload: %w", err)
 	}
 
-	scaleChildren := scopes.GetScaleChildren()
-	if scaleChildren {
-		err = scaleChildrenWorkloads(scaling, workload, scopes, client, ctx)
+	if scopes.GetScaleChildren() {
+		childrenWorkloads, err := client.GetChildrenWorkloads(workload, ctx)
 		if err != nil {
-			return fmt.Errorf("failed to scale children workloads: %w", err)
+			return fmt.Errorf("failed to get children workloads: %w", err)
 		}
+
+		scaleWorkloads(scaling, childrenWorkloads, scopes, client, ctx, config)
 	}
 
 	return nil
 }
 
-// scaleChildrenWorkloads scales the children workloads of the given workload.
-func scaleChildrenWorkloads(
+// scaleWorkloads triggers scaling for a list of workloads without waiting for results.
+func scaleWorkloads(
 	scaling values.Scaling,
-	workload scalable.Workload,
+	workloads []scalable.Workload,
 	scopes values.Scopes,
 	client kubernetes.Client,
 	ctx context.Context,
-) error {
-	slog.Debug("scaling children workloads of workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-
-	childrenWorkloads, err := client.GetChildrenWorkloads(workload, ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get children workloads: %w", err)
-	}
-
-	var waitGroup sync.WaitGroup
-	errCh := make(chan error, len(childrenWorkloads))
-	allErrors := make([]error, 0, len(childrenWorkloads))
-
-	for _, childWorkload := range childrenWorkloads {
-		waitGroup.Add(1)
-
-		go func(childWorkload scalable.Workload) {
-			defer waitGroup.Done()
-			slog.Debug("scaling workload", "workload", childWorkload.GetName(), "namespace", childWorkload.GetNamespace())
-
-			err = scaleWorkload(scaling, childWorkload, scopes, client, ctx)
+	config *util.RuntimeConfiguration,
+) {
+	for _, workload := range workloads {
+		go func(workload scalable.Workload) {
+			err := attemptScaling(client, ctx, scaling, workload, scopes, config)
 			if err != nil {
-				if !strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
-					errCh <- fmt.Errorf("failed to scale workload %s: %w", childWorkload.GetName(), err)
-				}
+				slog.Error("failed to scale workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 			}
-		}(childWorkload)
+		}(workload)
 	}
-
-	waitGroup.Wait()
-
-	for err = range errCh {
-		allErrors = append(allErrors, err)
-	}
-
-	if len(allErrors) > 0 {
-		return errors.Join(allErrors...)
-	}
-
-	return nil
 }
 
 // scaleWorkload scales the given workload according to the given wanted scaling state.

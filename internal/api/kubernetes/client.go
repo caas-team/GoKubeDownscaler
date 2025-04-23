@@ -50,6 +50,7 @@ type Client interface {
 // NewClient makes a new Client.
 func NewClient(kubeconfig string, dryRun bool) (client, error) {
 	var kubeclient client
+
 	var clientsets scalable.Clientsets
 
 	kubeclient.dryRun = dryRun
@@ -145,23 +146,18 @@ func (c client) GetChildrenWorkloads(workload scalable.Workload, ctx context.Con
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	var results []scalable.Workload
-	kindToChild := map[string]struct{}{
-		"CronJob": {},
-	}
+	if parent, ok := workload.(scalable.ParentWorkload); ok {
+		slog.Debug("getting children workloads for workload", "workload", workload.GetName(), "namespace", workload.GetNamespace(), "resourceType", workload.GroupVersionKind().Kind)
 
-	if _, exists := kindToChild[workload.GroupVersionKind().Kind]; exists {
-		slog.Debug("getting children workloads of type", "resourceType", workload.GroupVersionKind().Kind)
-
-		workloads, err := scalable.GetChildrenWorkloads(strings.ToLower(workload.GroupVersionKind().Kind), workload, c.clientsets, ctx)
+		children, err := parent.GetChildren(ctx, c.clientsets)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get workloads: %w", err)
+			return nil, fmt.Errorf("failed to get children workloads: %w", err)
 		}
 
-		return append(results, workloads...), nil
+		return children, nil
 	}
 
-	return []scalable.Workload{}, nil
+	return nil, nil
 }
 
 // RegetWorkload gets the workload again to ensure the latest state.
@@ -315,6 +311,7 @@ func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
 // GetNamespaceScopes gets the namespace scopes from the namespace annotations.
 func (c client) GetNamespaceScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error) {
 	var waitGroup sync.WaitGroup
+
 	namespaceSet := make(map[string]struct{})
 
 	for _, workload := range workloads {

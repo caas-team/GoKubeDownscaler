@@ -21,6 +21,7 @@ func TestFilterExcluded(t *testing.T) {
 		labeledDeployment Workload
 		scaledObject      Workload
 	}
+
 	ns1 := ns{
 		deployment1: &replicaScaledWorkload{&deployment{Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{

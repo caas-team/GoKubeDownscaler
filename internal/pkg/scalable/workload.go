@@ -46,6 +46,10 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 	return workloads, nil
 }
 
+type ParentWorkload interface {
+	GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error)
+}
+
 // scalableResource provides all functions needed to scale any type of resource.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource

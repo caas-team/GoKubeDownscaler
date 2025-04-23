@@ -190,7 +190,7 @@ func isWorkloadExcluded(
 // isManagedByOwnerReference checks if the workload is managed by an owner reference that is in the includedResources list.
 func isManagedByOwnerReference(workload Workload) bool {
 	for _, ownerReference := range workload.GetOwnerReferences() {
-		if *ownerReference.Controller {
+		if ownerReference.Controller != nil && *ownerReference.Controller {
 			return true
 		}
 	}

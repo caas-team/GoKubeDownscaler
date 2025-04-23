@@ -15,7 +15,7 @@ import (
 func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	cronjobs, err := clientsets.Kubernetes.BatchV1().CronJobs(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("%w: failed to convert workload to cronjobs", errConversionFailed)
+		return nil, fmt.Errorf("failed to get cronjobs: %w", err)
 	}
 
 	results := make([]Workload, 0, len(cronjobs.Items))
@@ -26,19 +26,15 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 	return results, nil
 }
 
-// getCronJobsChildren is the getResourceFunc for CronJobs children (Jobs).
-func getCronJobsChildren(workload Workload, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	cronjob, ok := workload.(*suspendScaledWorkload).suspendScaledResource.(*cronJob)
-	if !ok {
-		return nil, fmt.Errorf("%w: %v", errConversionFailed, workload)
-	}
-
-	activeJobs := cronjob.Status.Active
+func (c *cronJob) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error) {
+	activeJobs := c.Status.Active
 
 	var waitGroup sync.WaitGroup
+
+	var mutex sync.Mutex
+
 	errChannel := make(chan error, len(activeJobs))
 	results := make([]Workload, 0, len(activeJobs))
-	allErrors := make([]error, 0, len(activeJobs))
 
 	for _, activeJob := range activeJobs {
 		waitGroup.Add(1)
@@ -46,20 +42,22 @@ func getCronJobsChildren(workload Workload, clientsets *Clientsets, ctx context.
 		go func(activeJob v1.ObjectReference) {
 			defer waitGroup.Done()
 
-			singleJob, err := clientsets.Kubernetes.BatchV1().Jobs(workload.GetNamespace()).Get(ctx, activeJob.Name, metav1.GetOptions{})
+			singleJob, err := clientsets.Kubernetes.BatchV1().Jobs(c.Namespace).Get(ctx, activeJob.Name, metav1.GetOptions{})
 			if err != nil {
 				errChannel <- fmt.Errorf("failed to get job %s: %w", activeJob.Name, err)
 				return
 			}
 
+			mutex.Lock()
 			results = append(results, &suspendScaledWorkload{&job{singleJob}})
+			mutex.Unlock()
 		}(activeJob)
 	}
 
 	waitGroup.Wait()
-
 	close(errChannel)
 
+	var allErrors []error
 	for err := range errChannel {
 		allErrors = append(allErrors, err)
 	}

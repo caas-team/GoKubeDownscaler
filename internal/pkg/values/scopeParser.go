@@ -71,7 +71,7 @@ func (s *Scope) ParseScopeFlags() {
 		"the grace period between creation of workload until first downscale (default: 15min)",
 	)
 	flag.BoolVar(
-		&s.ScaleChildren,
+		&s.ScaleChildren.value,
 		"scale-children",
 		false,
 		"if set to true, the ownerReference will immediately trigger scaling of children workloads when applicable (default: false)",
@@ -108,7 +108,7 @@ func (s *Scope) GetScopeFromEnv() error {
 }
 
 // GetScopeFromAnnotations fills l with all values from the annotations and checks for compatibility.
-func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclop // it is a big function and we can refactor it a bit but it should be fine for now
+func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop // it is a big function and we can refactor it a bit but it should be fine for now
 	annotations map[string]string,
 	logEvent util.ResourceLogger,
 	ctx context.Context,
@@ -225,7 +225,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 	}
 
 	if scaleChildrenString, ok := annotations[annotationScaleChildren]; ok {
-		s.ScaleChildren, err = strconv.ParseBool(scaleChildrenString)
+		err = s.ScaleChildren.Set(scaleChildrenString)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationScaleChildren, err)
 			logEvent.ErrorInvalidAnnotation(annotationScaleChildren, err.Error(), ctx)
