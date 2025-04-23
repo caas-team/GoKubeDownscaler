@@ -5,38 +5,38 @@ import (
 )
 
 type IncompatibalFieldsError struct {
-	Field1 string
-	Field2 string
+	field1 string
+	field2 string
 }
 
 func newIncompatibalFieldsError(field1, field2 string) error {
-	return &IncompatibalFieldsError{Field1: field1, Field2: field2}
+	return &IncompatibalFieldsError{field1: field1, field2: field2}
 }
 
-func (e *IncompatibalFieldsError) Error() string {
-	return fmt.Sprintf("error: the fields %s and %s are incompatible", e.Field1, e.Field2)
+func (i *IncompatibalFieldsError) Error() string {
+	return fmt.Sprintf("error: the fields %s and %s are incompatible", i.field1, i.field2)
 }
 
 type ValueNotSetError struct {
-	Field string
+	field string
 }
 
 func newValueNotSetError(field string) error {
-	return &ValueNotSetError{Field: field}
+	return &ValueNotSetError{field: field}
 }
 
-func (e *ValueNotSetError) Error() string {
-	return "error: no value set for field " + e.Field
+func (v *ValueNotSetError) Error() string {
+	return "error: no value set for field " + v.field
 }
 
 type InvalidConfigError struct {
-	Field string
+	field string
 }
 
 func newInvalidConfigError(field string) error {
-	return &InvalidConfigError{Field: field}
+	return &InvalidConfigError{field: field}
 }
 
-func (e *InvalidConfigError) Error() string {
-	return fmt.Sprintf("error: specified %s is invalid", e.Field)
+func (i *InvalidConfigError) Error() string {
+	return fmt.Sprintf("error: specified %s is invalid", i.field)
 }

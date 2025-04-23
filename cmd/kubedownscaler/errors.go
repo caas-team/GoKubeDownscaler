@@ -1,13 +1,13 @@
 package main
 
 type NamespaceScopeRetrieveError struct {
-	Namespace string
+	namespace string
 }
 
 func newNamespaceScopeRetrieveError(namespace string) error {
-	return &NamespaceScopeRetrieveError{Namespace: namespace}
+	return &NamespaceScopeRetrieveError{namespace: namespace}
 }
 
-func (e *NamespaceScopeRetrieveError) Error() string {
-	return "failed to get namespace scope for namespace " + e.Namespace
+func (n *NamespaceScopeRetrieveError) Error() string {
+	return "failed to get namespace scope for namespace " + n.namespace
 }

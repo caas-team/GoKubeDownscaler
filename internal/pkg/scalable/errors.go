@@ -5,28 +5,28 @@ import (
 )
 
 type NoReplicasError struct {
-	Kind string
-	Name string
+	kind string
+	name string
 }
 
 func newNoReplicasError(kind, name string) error {
-	return &NoReplicasError{Kind: kind, Name: name}
+	return &NoReplicasError{kind: kind, name: name}
 }
 
-func (e *NoReplicasError) Error() string {
-	return fmt.Sprintf("error: %s %s has no replicas set", e.Kind, e.Name)
+func (n *NoReplicasError) Error() string {
+	return fmt.Sprintf("error: %s %s has no replicas set", n.kind, n.name)
 }
 
 type InvalidResourceError struct {
-	Resource string
+	resource string
 }
 
 func newInvalidResourceError(resource string) error {
-	return &InvalidResourceError{Resource: resource}
+	return &InvalidResourceError{resource: resource}
 }
 
-func (e *InvalidResourceError) Error() string {
-	return fmt.Sprintf("error: specified rescource type %s is not supported", e.Resource)
+func (i *InvalidResourceError) Error() string {
+	return fmt.Sprintf("error: specified rescource type %s is not supported", i.resource)
 }
 
 type OriginalReplicasUnsetError struct {
@@ -37,6 +37,6 @@ func newOriginalReplicasUnsetError(reason string) error {
 	return &OriginalReplicasUnsetError{reason: reason}
 }
 
-func (e *OriginalReplicasUnsetError) Error() string {
-	return e.reason
+func (o *OriginalReplicasUnsetError) Error() string {
+	return o.reason
 }
