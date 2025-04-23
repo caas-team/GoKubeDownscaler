@@ -246,7 +246,8 @@ func attemptScaling(
 
 	slog.Error("failed to scale workload", "attempts", config.MaxRetriesOnConflict+1)
 
-	return errors.New("exceeded max retries for scaling workload")
+	return errMaxRetriesExcedeed
+
 }
 
 // nolint: cyclop // it is a big function and we can refactor it a bit but it should be fine for now
