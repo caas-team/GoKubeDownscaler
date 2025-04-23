@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
-
 	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sync"
 )
 
 // getCronJobs is the getResourceFunc for CronJobs.
@@ -24,6 +23,11 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 	}
 
 	return results, nil
+}
+
+// cronJob is a wrapper for cronjob.v1.batch to implement the suspendScaledResource interface.
+type cronJob struct {
+	*batch.CronJob
 }
 
 func (c *cronJob) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error) {
@@ -57,7 +61,7 @@ func (c *cronJob) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Wo
 	waitGroup.Wait()
 	close(errChannel)
 
-	var allErrors []error
+	allErrors := make([]error, 0, len(errChannel))
 	for err := range errChannel {
 		allErrors = append(allErrors, err)
 	}
@@ -67,11 +71,6 @@ func (c *cronJob) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Wo
 	}
 
 	return results, nil
-}
-
-// cronJob is a wrapper for cronjob.v1.batch to implement the suspendScaledResource interface.
-type cronJob struct {
-	*batch.CronJob
 }
 
 // Reget regets the resource from the Kubernetes API.

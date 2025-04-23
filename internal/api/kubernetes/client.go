@@ -147,7 +147,12 @@ func (c client) GetChildrenWorkloads(workload scalable.Workload, ctx context.Con
 	defer cancel()
 
 	if parent, ok := workload.(scalable.ParentWorkload); ok {
-		slog.Debug("getting children workloads for workload", "workload", workload.GetName(), "namespace", workload.GetNamespace(), "resourceType", workload.GroupVersionKind().Kind)
+		slog.Debug(
+			"getting children workloads for workload",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+			"resourceType", workload.GroupVersionKind().Kind,
+		)
 
 		children, err := parent.GetChildren(ctx, c.clientsets)
 		if err != nil {

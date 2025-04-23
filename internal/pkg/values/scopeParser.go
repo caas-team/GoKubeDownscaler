@@ -108,7 +108,7 @@ func (s *Scope) GetScopeFromEnv() error {
 }
 
 // GetScopeFromAnnotations fills l with all values from the annotations and checks for compatibility.
-func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop // it is a big function and we can refactor it a bit but it should be fine for now
+func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocyclo // it is a big function and we can refactor it a bit but it should be fine for now
 	annotations map[string]string,
 	logEvent util.ResourceLogger,
 	ctx context.Context,
