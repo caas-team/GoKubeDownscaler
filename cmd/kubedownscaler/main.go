@@ -85,6 +85,7 @@ func main() {
 	runWithLeaderElection(client, cancel, ctx, scopeDefault, scopeCli, scopeEnv, config)
 }
 
+// runWithLeaderElection runs the downscaler with leader election enabled.
 func runWithLeaderElection(
 	client kubernetes.Client,
 	cancel context.CancelFunc,
@@ -132,6 +133,7 @@ func runWithLeaderElection(
 	})
 }
 
+// runWithoutLeaderElection runs the downscaler without leader election enabled.
 func runWithoutLeaderElection(
 	client kubernetes.Client,
 	ctx context.Context,
@@ -147,6 +149,7 @@ func runWithoutLeaderElection(
 	}
 }
 
+// startScanning periodically triggers a scan on all workloads.
 func startScanning(
 	client kubernetes.Client,
 	ctx context.Context,
@@ -210,6 +213,7 @@ func startScanning(
 	return nil
 }
 
+// attemptScan is a wrapper for scanWorkload to handle retries on concurrent writes.
 func attemptScan(
 	client kubernetes.Client,
 	ctx context.Context,
