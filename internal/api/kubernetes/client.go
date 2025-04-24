@@ -29,8 +29,8 @@ const (
 
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
 type Client interface {
-	// GetNamespaceLayers gets the namespace layer from the namespace annotations
-	GetNamespaceLayers(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error)
+	// GetNamespaceScopes gets the namespace scope from the namespace annotations
+	GetNamespaceScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
 	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
 	// RegetWorkload gets the workload again to ensure the latest state
@@ -282,8 +282,8 @@ func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
 	return lease, nil
 }
 
-// GetNamespaceLayers gets the namespace layers from the namespace annotations.
-func (c client) GetNamespaceLayers(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error) {
+// GetNamespaceScopes gets the namespace scopes from the namespace annotations.
+func (c client) GetNamespaceScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error) {
 	var waitGroup sync.WaitGroup
 	namespaceSet := make(map[string]struct{})
 
@@ -295,11 +295,11 @@ func (c client) GetNamespaceLayers(workloads []scalable.Workload, ctx context.Co
 		}
 	}
 
-	namespaceLayers := make(map[string]*values.Scope, len(namespaceSet))
+	namespaceScopes := make(map[string]*values.Scope, len(namespaceSet))
 	errChan := make(chan error, len(namespaceSet))
 
 	for namespace := range namespaceSet {
-		namespaceLayers[namespace] = values.NewScope()
+		namespaceScopes[namespace] = values.NewScope()
 	}
 
 	for namespace := range namespaceSet {
@@ -318,11 +318,11 @@ func (c client) GetNamespaceLayers(workloads []scalable.Workload, ctx context.Co
 				return
 			}
 
-			slog.Debug("parsing workload layer from annotations", "annotations", annotations, "namespace", namespace)
+			slog.Debug("parsing workload scope from annotations", "annotations", annotations, "namespace", namespace)
 
-			err = namespaceLayers[namespace].GetScopeFromAnnotations(annotations, nsLogger, ctx)
+			err = namespaceScopes[namespace].GetScopeFromAnnotations(annotations, nsLogger, ctx)
 			if err != nil {
-				errChan <- fmt.Errorf("failed to parse layer from annotations for namespace %s: %w", namespace, err)
+				errChan <- fmt.Errorf("failed to parse scope from annotations for namespace %s: %w", namespace, err)
 				return
 			}
 
@@ -340,5 +340,5 @@ func (c client) GetNamespaceLayers(workloads []scalable.Workload, ctx context.Co
 		}
 	}
 
-	return namespaceLayers, nil
+	return namespaceScopes, nil
 }

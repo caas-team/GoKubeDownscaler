@@ -1,6 +1,7 @@
 package scalable
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -61,7 +62,12 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 			}
 
 			oringalReplicas, err := getOriginalReplicas(deployment)
-			require.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			var originalReplicasUnsetErr *OriginalReplicasUnsetError
+
+			if ok := errors.As(err, &originalReplicasUnsetErr); !ok { // ignore getOriginalReplicas being unset
+				require.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			}
+
 			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
 		})
 	}
@@ -120,7 +126,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			}
 
 			oringalReplicas, err := getOriginalReplicas(deployment)
-			require.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			require.NoError(t, err) // Scaling set OrignialReplicas to faulty or unset value
 			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
 		})
 	}

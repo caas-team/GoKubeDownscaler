@@ -3,6 +3,7 @@ package scalable
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -76,12 +77,13 @@ func (p *podDisruptionBudget) setMaxUnavailable(targetMaxUnavailable int32) {
 func (p *podDisruptionBudget) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(p)
 	if err != nil {
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
-	}
+		var originalReplicasUnsetErr *OriginalReplicasUnsetError
+		if ok := errors.As(err, &originalReplicasUnsetErr); ok {
+			slog.Debug("original replicas is not set, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
+			return nil
+		}
 
-	if originalReplicas == nil {
-		slog.Debug("original replicas is not set, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
-		return nil
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
 	maxUnavailable := p.getMaxUnavailableInt()

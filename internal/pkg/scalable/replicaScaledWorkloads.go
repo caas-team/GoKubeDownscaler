@@ -2,6 +2,7 @@ package scalable
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 )
@@ -26,12 +27,13 @@ type replicaScaledWorkload struct {
 func (r *replicaScaledWorkload) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(r)
 	if err != nil {
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
-	}
+		var originalReplicasUnsetErr *OriginalReplicasUnsetError
+		if ok := errors.As(err, &originalReplicasUnsetErr); ok {
+			slog.Debug("original replicas is not set, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
+			return nil
+		}
 
-	if originalReplicas == nil {
-		slog.Debug("original replicas is not set, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
-		return nil
+		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
 	err = r.setReplicas(*originalReplicas)

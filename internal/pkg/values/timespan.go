@@ -1,18 +1,12 @@
 package values
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
-)
-
-var (
-	errInvalidWeekday          = errors.New("error: specified weekday is invalid")
-	errRelativeTimespanInvalid = errors.New("error: specified relative timespan is invalid")
 )
 
 // rfc339Regex is a regex that matches an rfc339 timestamp.
@@ -116,17 +110,17 @@ func parseRelativeTimeSpan(timespanString string) (*relativeTimeSpan, error) {
 
 	parts := strings.Split(timespanString, " ")
 	if len(parts) != 3 {
-		return nil, errRelativeTimespanInvalid
+		return nil, newInvalidSyntaxError("relative timespan has more spaces than expected", timespanString)
 	}
 
 	weekdaySpan := strings.Split(parts[0], "-")
 	if len(weekdaySpan) != 2 {
-		return nil, errRelativeTimespanInvalid
+		return nil, newInvalidSyntaxError("the relative timespans weekday span is not in the expected format (e.g. 'Mon-Fri')", parts[0])
 	}
 
 	timeSpan := strings.Split(parts[1], "-")
 	if len(timeSpan) != 2 {
-		return nil, errRelativeTimespanInvalid
+		return nil, newInvalidSyntaxError("the relative timespans time window is not in the expected format (e.g. '08:00-20:00')", parts[1])
 	}
 
 	timezone := parts[2]
@@ -250,7 +244,10 @@ func getWeekday(weekday string) (time.Weekday, error) {
 		return day, nil
 	}
 
-	return 0, errInvalidWeekday
+	return 0, newInvalidSyntaxError(
+		"weekday is not in the expected format (e.g. 'mon, tue, wed, thu, fri, sat, sun')",
+		weekday,
+	)
 }
 
 // booleanTimeSpan is a TimeSpan which statically is either always active or never active.
