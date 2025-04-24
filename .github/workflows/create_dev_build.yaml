@@ -7,7 +7,7 @@ jobs:
   create_dev_build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     outputs:
       version: ${{ steps.chart_version.outputs.version }}
 
