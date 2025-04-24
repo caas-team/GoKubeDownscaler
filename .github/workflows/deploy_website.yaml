@@ -11,6 +11,10 @@ jobs:
   build:
     name: Build Website
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
