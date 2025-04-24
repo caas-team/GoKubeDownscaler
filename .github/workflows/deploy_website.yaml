@@ -33,7 +33,8 @@ jobs:
           path: website/build
   cleanup:
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      pages: write
 
     steps:
       - name: Delete deployment
