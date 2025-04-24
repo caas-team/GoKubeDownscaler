@@ -251,7 +251,6 @@ func attemptScaling(
 
 // nolint: cyclop // it is a big function and we can refactor it a bit but it should be fine for now
 // scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload.
-// Updated scanWorkload to use the refactored functions.
 func scanWorkload(
 	workload scalable.Workload,
 	client kubernetes.Client,
@@ -275,6 +274,8 @@ func scanWorkload(
 	}
 
 	scopes := values.Scopes{scopeWorkload, scopeNamespace, scopeCli, scopeEnv, scopeDefault}
+
+	slog.Debug("finished parsing all scopes", "scopes", scopes, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	isInGracePeriod, err := scopes.IsInGracePeriod(
 		config.TimeAnnotation,
@@ -320,7 +321,7 @@ func scanWorkload(
 	return nil
 }
 
-// scaleWorkloads triggers scaling for a list of workloads without waiting for results.
+// scaleWorkloads scales the given workloads to the specified scaling asynchronously.
 func scaleWorkloads(
 	scaling values.Scaling,
 	workloads []scalable.Workload,

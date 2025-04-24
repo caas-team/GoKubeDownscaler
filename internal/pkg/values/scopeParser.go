@@ -70,10 +70,9 @@ func (s *Scope) ParseScopeFlags() {
 		"grace-period",
 		"the grace period between creation of workload until first downscale (default: 15min)",
 	)
-	flag.BoolVar(
-		&s.ScaleChildren.value,
+	flag.Var(
+		&s.ScaleChildren,
 		"scale-children",
-		false,
 		"if set to true, the ownerReference will immediately trigger scaling of children workloads when applicable (default: false)",
 	)
 }

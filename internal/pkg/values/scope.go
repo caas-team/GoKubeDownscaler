@@ -219,8 +219,8 @@ func (s Scopes) GetDownscaleReplicas() (int32, error) {
 // GetScaleChildren gets the scale children of the first scope that implements scale children.
 func (s Scopes) GetScaleChildren() bool {
 	for _, scope := range s {
-		if scope.ScaleChildren.isSet && scope.ScaleChildren.value {
-			return true
+		if scope.ScaleChildren.isSet {
+			return scope.ScaleChildren.value
 		}
 	}
 
