@@ -3,6 +3,7 @@ package values
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -86,7 +87,10 @@ func (s *Scope) CheckForIncompatibleFields() error { //nolint: cyclop // this is
 	}
 	// downscale replicas invalid
 	if s.DownscaleReplicas != util.Undefined && s.DownscaleReplicas < 0 {
-		return newInvalidSyntaxError("downscale replicas", "value has to be a positive integer")
+		return newInvalidValueError(
+			"downscale replicas has to be a positive integer",
+			strconv.Itoa(int(s.DownscaleReplicas)),
+		)
 	}
 	// up- and downtime
 	if s.UpTime != nil && s.DownTime != nil {

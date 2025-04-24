@@ -30,14 +30,27 @@ func (v *ValueNotSetError) Error() string {
 }
 
 type InvalidSyntaxError struct {
-	field  string
 	reason string
+	value  string
 }
 
-func newInvalidSyntaxError(field, reason string) error {
-	return &InvalidSyntaxError{field: field, reason: reason}
+func newInvalidSyntaxError(reason, value string) error {
+	return &InvalidSyntaxError{reason: reason, value: value}
 }
 
 func (i *InvalidSyntaxError) Error() string {
-	return fmt.Sprintf("error: %q is invalid. %q.", i.field, i.reason)
+	return fmt.Sprintf("error: %q, got %s.", i.reason, i.value)
+}
+
+type InvalidValueError struct {
+	reason string
+	value  string
+}
+
+func newInvalidValueError(reason, value string) error {
+	return &InvalidSyntaxError{reason: reason, value: value}
+}
+
+func (i *InvalidValueError) Error() string {
+	return fmt.Sprintf("error: %q, got %s.", i.reason, i.value)
 }
