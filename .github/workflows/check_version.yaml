@@ -10,6 +10,8 @@ on:
 jobs:
   check_versions:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       version_change: ${{ steps.check_for_version_change.outputs.version_change }}
       app_version_change: ${{ steps.check_for_appVersion_change.outputs.app_version_change }}

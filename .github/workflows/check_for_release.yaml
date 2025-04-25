@@ -10,6 +10,8 @@ jobs:
   check_for_release:
     name: Check For Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout code
@@ -74,7 +76,7 @@ jobs:
       - name: Extract appVersion
         id: extract_appversion
         run: |
-          appversion=$(yq e '.appVersion' ./deployments/chart/Chart.yaml)
+          appversion=$(yq e '.appVersion' ./deployments/chart/Chart.yaml | tr -d '\n' | tr -d '\r')
           echo "appversion=$appversion" >> $GITHUB_ENV
 
       - name: Post warning comment

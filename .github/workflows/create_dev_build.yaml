@@ -7,7 +7,7 @@ jobs:
   create_dev_build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     outputs:
       version: ${{ steps.chart_version.outputs.version }}
 
@@ -23,6 +23,9 @@ jobs:
 
   docker_build:
     needs: create_dev_build
+    permissions:
+      contents: read
+      packages: write
     uses: ./.github/workflows/docker_build.yaml
     with:
       appVersion: "dev"
@@ -31,6 +34,9 @@ jobs:
 
   helm_build:
     needs: create_dev_build
+    permissions:
+      contents: read
+      packages: write
     uses: ./.github/workflows/helm_build.yaml
     with:
       version: "${{ needs.create_dev_build.outputs.version }}-dev"
