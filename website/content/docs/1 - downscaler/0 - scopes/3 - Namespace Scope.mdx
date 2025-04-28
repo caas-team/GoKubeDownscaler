@@ -2,7 +2,7 @@
 title: Namespace Scope
 id: namespace-scope
 globalReference: docs-namespace-scope
-description: Learn how to set the Namespace Scope in GoKubeDownscaler
+description: Learn how to set the Namespace Scope of the GoKubeDownscaler
 keywords: [namespace scope, namespace annotations]
 ---
 
@@ -14,14 +14,14 @@ The **Namespace Scope** is the fourth scope available and holds configurations s
 It overrides values already defined inside the [Default Scope](ref:docs-default-scope),
 [ENV Scope](ref:docs-env-scope), [CLI Scope](ref:docs-cli-scope), but values defined inside the namespace scope can be overridden by
 [Workload Scope](ref:docs-workload-scope).
-It is used to only set values
+It is only used to set values
 
 <HierarchyDiagram highlight="d" />
 
 ## Values
 
-At Namespace Scope, the following [values](ref:docs-values) can be configured using annotations to apply
-scaling policies, exclusions and grace periods
+At the Namespace Scope, the following [values](ref:docs-values) can be configured using annotations
+to apply scaling policies, exclusions and grace periods
 
 - [downscaler/downscale-period](ref:docs-values#downscale-period)
 - [downscaler/downtime](ref:docs-values#downtime)
@@ -37,7 +37,7 @@ scaling policies, exclusions and grace periods
 :::warning
 
 Some annotations are incompatible with others.
-Before setting them, please check their compatibility clicking on the hyperlink dedicated to each annotation.
+You can check their compatibility by viewing the dedicated documentation page from the list above.
 
 :::
 

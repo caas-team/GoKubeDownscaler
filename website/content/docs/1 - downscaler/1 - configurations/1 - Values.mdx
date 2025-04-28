@@ -8,9 +8,8 @@ keywords: [values]
 
 # Values
 
-**Values** define the scaling behavior of targeted workloads, specifying how and when they should be scaled up or
-down.
-They can be set at any [scope](ref:docs-scopes) and therefore can be set via their respective
+**Values** define the scaling behavior of targeted workloads, specifying how and when they should be scaled up or down.
+They can be set at any [scope](ref:docs-scopes-and-scaling) and therefore can be set via their respective
 [environment variables](ref:docs-env-scope), [cli arguments](ref:docs-cli-scope),
 [namespace annotations](ref:docs-namespace-scope) and [workload annotations](ref:docs-workload-scope)
 
@@ -53,7 +52,7 @@ This will likely change in the future to be seen as an incompatibility.
 
 ## Value Groups
 
-Some values within in a scope set/define very similar properties (e.g. [Force Downtime](#force-downtime)
+Some values within a scope set/define very similar properties (e.g. [Force Downtime](#force-downtime)
 and [Force Uptime](#force-uptime); [Downscale Period](#downscale-period),
 [Downtime](#downtime), [Upscale Period](#upscale-period) and [Uptime](#uptime))
 

@@ -2,7 +2,7 @@
 title: CLI Scope
 id: cli-scope
 globalReference: docs-cli-scope
-description: Learn how to set the CLI Scope in GoKubeDownscaler
+description: Learn how to set the CLI Scope of the GoKubeDownscaler
 keywords: [cli scope, arguments]
 ---
 
@@ -13,7 +13,7 @@ import HierarchyDiagram from "./templates/_hierarchy-diagram.mdx";
 The **CLI Scope** is the third type of scope available.
 It overrides the [Default Scope](ref:docs-default-scope) and [ENV Scope](ref:docs-env-scope) but it can be overridden
 by the [Namespace Scope](ref:docs-namespace-scope) or [Workload Scope](ref:docs-workload-scope).
-It is used to set both values and runtime configurations
+It is used to set values and runtime configurations
 
 <HierarchyDiagram highlight="c" />
 
@@ -34,12 +34,12 @@ These global settings can be overridden by more specific scopes in the hierarchy
 :::info
 
 `--explicit-include` will set the [exclude value](ref:docs-values#exclude) to `true` on the cli scope.
-This will exclude every workload unless [more specific scopes](ref:docs-scopes) (e.g.: [namespace scope](ref:docs-namespace-scope),
+This will exclude every workload unless [more specific scopes](ref:docs-scopes-and-scaling) (e.g.: [namespace scope](ref:docs-namespace-scope),
 [workload scope](ref:docs-workload-scope)) [specify](ref:docs-annotations) exclude to `false`.
 
 :::
 
-:::warning
+:::note
 
 The values set by the cli arguments
 will take precedence over [their respective environment variables](ref:docs-env-scope#values)
@@ -49,7 +49,7 @@ if they are both set.
 
 ## Runtime Configuration
 
-At CLI Scope, the following [runtime configurations](ref:docs-runtime-configuration) can be configured using arugments
+At the CLI Scope, the following [runtime configurations](ref:docs-runtime-configuration) can be configured using arguments
 to set and control various behavioral aspects of the Downscaler (e.g. scan interval, retries, debug mode, ...)
 
 - [--dry-run](ref:docs-runtime-configuration#dry-run)
@@ -87,8 +87,9 @@ This will set its value to true.
 
 ### Via Helm Chart values.yaml
 
-Some arguments already have fields that specify them to make configuring them easier.
-Here is a list compiled of all of the fields that configure their respective cli arguments:
+Some arguments already have predefined fields inside the [values.yaml file](repo:deployments/chart/values.yaml)
+to make configuring them easier.
+Here is a list containing all the fields that configure their respective cli arguments:
 
 - [`includedResources`](ref:docs-helm-included-resources) directly sets `--include-resources`
 - [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces) directly sets `--namespace`
@@ -107,14 +108,14 @@ arguments:
 
 ### Via Deployment
 
-If you are not working directly with Helm but rather with a raw Kubernetes manifest generated using the Helm Template
-command, you can set the CLI Scope inside the args section of the `go-kube-downscaler` container in the deployment.
+If you are not working directly with Helm but rather with a raw Kubernetes manifest generated using the Helm Template command,
+you can set the CLI Scope inside the args section of the `go-kube-downscaler` container in the deployment.
 
 ```yaml title="Deployment"
 # ...
 containers:
   - name: go-kube-downscaler
-    image:
+    image: "ghcr.io/caas-team/gokubedownscaler"
     imagePullPolicy: Always
     args:
       - --include-resources=deployments,jobs,scaledobjects,cronjobs

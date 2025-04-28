@@ -2,7 +2,7 @@
 title: Workload Scope
 id: workload-scope
 globalReference: docs-workload-scope
-description: Learn how to set the Workload Scope in GoKubeDownscaler
+description: Learn how to set the Workload Scope of the GoKubeDownscaler
 keywords: [workload scope, workload annotations]
 ---
 
@@ -15,13 +15,13 @@ It overrides values already defined inside the
 [Default Scope](ref:docs-default-scope), [ENV Scope](ref:docs-env-scope), [CLI Scope](ref:docs-cli-scope)
 and [Namespace Scope](ref:docs-namespace-scope).
 It is the most specific scope available and its values can't be overridden by other scopes.
-It is used to only set values
+It is only used to set values
 
 <HierarchyDiagram highlight="e" />
 
 ## Values
 
-At Worklaod Scope, the following [values](ref:docs-values) can be configured using annotations to apply
+At the Workload Scope, the following [values](ref:docs-values) can be configured using annotations to apply
 scaling policies, exclusions and grace periods
 
 - [downscaler/downscale-period](ref:docs-values#downscale-period)
@@ -38,7 +38,7 @@ scaling policies, exclusions and grace periods
 :::warning
 
 Some annotations are incompatible with others.
-Before setting them, please check their compatibility clicking on the hyperlink dedicated to each annotation.
+You can check their compatibility by viewing the dedicated documentation page from the list above.
 
 :::
 

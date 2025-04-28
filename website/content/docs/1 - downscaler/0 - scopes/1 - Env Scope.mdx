@@ -2,7 +2,7 @@
 title: Env Scope
 id: env-scope
 globalReference: docs-env-scope
-description: Learn how to set the Env Scope in GoKubeDownscaler
+description: Learn how to set the environment scope of the GoKubeDownscaler
 keywords: [env scope, environment variables]
 ---
 
@@ -13,13 +13,13 @@ import HierarchyDiagram from "./templates/_hierarchy-diagram.mdx";
 The **Env Scope** is the second type of scope available.
 It overrides the [Default Scope](ref:docs-default-scope), but it can be overridden by the [CLI Scope](ref:docs-cli-scope),
 [Namespace Scope](ref:docs-namespace-scope) or [Workload Scope](ref:docs-workload-scope)
-It is used to set both values and runtime configurations
+It is used to set values and runtime configurations
 
 <HierarchyDiagram highlight="b" />
 
 ## Values
 
-At Env Scope, the following environment variables [values](ref:docs-values)
+At the environment scope, the following environment variable [values](ref:docs-values)
 can be configured to apply global scaling policies across targeted resources.
 These global settings can be overridden by more specific scopes in the hierarchy.
 
@@ -30,16 +30,16 @@ These global settings can be overridden by more specific scopes in the hierarchy
 
 ## Runtime Configuration
 
-At Env Scope, the following environment variables [runtime configurations](ref:docs-runtime-configuration) are used to
+At the environment scope, the following environment variable [runtime configurations](ref:docs-runtime-configuration) are used to
 control which namespaces or workloads should be excluded from scaling policies.
 
 - [EXCLUDE_NAMESPACES](ref:docs-runtime-configuration#exclude-namespaces)
 - [EXCLUDE_DEPLOYMENTS](ref:docs-runtime-configuration#exclude-deployments)
 
-:::info
+:::note
 
-The runtime configuration set at CLI Scope will take precedence over their respective environment variables
-if they are both set.
+The runtime configuration set at the [CLI Scope](ref:docs-cli-scope#values)
+will take precedence over their respective environment variables if they are both set.
 
 :::
 
@@ -75,7 +75,7 @@ configMap:
 ### Via ConfigMap
 
 If you are not working directly with Helm but rather with a raw Kubernetes manifest generated using the Helm Template
-command, you can set the Env Scope inside the default ConfigMap
+command, you can set the Env Scope inside the used ConfigMap
 
 ```yaml title="ConfigMap"
 apiVersion: v1
@@ -91,14 +91,18 @@ metadata:
 
 :::warning
 
-After the first installation, each time you want to change the ConfigMap environment variables you need to restart the
+After the first installation, each time you want to change the ConfigMaps environment variables you need to restart the
 Downscaler pods, otherwise the changes will not be applied.
+
+This is not necessary if [forceRestartOnConfigChange](ref:docs-helm-force-restart-on-config-change) is set to true
+since they will then automatically restart.
 
 :::
 
 ### Binary or Go Run
 
-If you are using the Downscaler outside a Kubernetes cluster, environment variables can be set in a `.env` file
+If you are using the Downscaler outside a Kubernetes cluster, environment variables can be written in a `.env` file
+and then applied to the environment variables of the current shell by running the command `dotenv`
 
 ```text title=".env"
 DEFAULT_UPTIME: "Mon-Fri 08:00-20:00 Pacific/Fiji"

@@ -1,7 +1,7 @@
 ---
 title: Scopes And Scaling
-id: scopes
-globalReference: docs-scopes
+id: scopes-and-scaling
+globalReference: docs-scopes-and-scaling
 description: Learn how scopes and scaling work in GoKubeDownscaler
 keywords: [scopes, scaling, algorithm, evaluation, exclusions]
 ---
@@ -13,15 +13,13 @@ import HierarchyDiagram from "./templates/_hierarchy-diagram.mdx";
 ## Scopes
 
 Scopes are levels that hold behavioral and scaling configurations.
-These configurations can be divided into
-two categories:
+These configurations can be divided into two categories:
 
 - **Runtime Configurations:** define how the Downscaler itself operates, controlling aspects like which namespaces and
   workload types it should target, frequency of scans, retries, whether debugging information is enabled and more.
-  Runtime
-  Configurations do not dictate how and when individual workloads are scaled.
-- **Values:** define the scaling behavior of targeted workloads, specifying how and when they should be scaled up or
-  down.
+  Runtime Configurations do not dictate how and when individual workloads are scaled.
+- **Values:** define the scaling behavior of targeted workloads,
+  specifying how and when they should be scaled up or down.
 
 ### Available Scopes
 
@@ -34,10 +32,9 @@ The available scopes are:
 - [Namespace Scope](ref:docs-namespace-scope): contains only the values set by the annotations on the namespace.
 - [Workload Scope](ref:docs-workload-scope): contains only the values set by the annotations on the workload.
 
-The hierarchy of scopes is important because it determines which configurations take precedence when a particular
-configuration is defined in multiple scopes.
-It can be visualized as pyramid, with the Default Scope at the bottom
-and the Workload Scope at the top.
+The hierarchy of scopes is important because it determines which configurations take precedence
+when a particular configuration is defined in multiple scopes.
+It can be visualized as pyramid, with the Default Scope at the bottom and the Workload Scope at the top.
 Each scope can override the configurations of the scopes below it in the hierarchy.
 
 <HierarchyDiagram />

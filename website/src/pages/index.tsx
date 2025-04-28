@@ -23,8 +23,12 @@ function HomepageHeader() {
           </div>
           <p className="animate-fade-down text-2xl">{siteConfig.tagline}</p>
           <div className="flex justify-center space-x-3">
-            <Button name="Docs" to="/docs" className="w-32" />
-            <Button name="Guides" to="/guides" className="w-32" />
+            <Button
+              name="Get Started"
+              to="/guides/getting-started"
+              className="w-52"
+            />
+            <Button name="Documentation" to="/docs" className="w-52" />
           </div>
         </div>
       </header>
@@ -36,9 +40,11 @@ export default function Home(): JSX.Element {
   const { siteConfig } = useDocusaurusContext();
   return (
     <Layout title={siteConfig.title} description={siteConfig.tagline}>
-        <Head>
-            <title>{siteConfig.title}: {siteConfig.tagline}</title>
-        </Head>
+      <Head>
+        <title>
+          {siteConfig.title}: {siteConfig.tagline}
+        </title>
+      </Head>
       <HomepageHeader />
       <main>
         <SupportedResources />
