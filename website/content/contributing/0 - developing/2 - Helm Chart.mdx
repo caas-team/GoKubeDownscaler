@@ -94,11 +94,13 @@ This will then dynamically set the release name of your Helm installation to the
 
 :::tip Example
 
-```bash title="Command"
+```bash
 helm install dynamic ./deployments/chart
 ```
 
-```yaml title="Resulting manifest"
+Resulting manifest:
+
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
