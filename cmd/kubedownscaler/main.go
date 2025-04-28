@@ -246,7 +246,7 @@ func attemptScaling(
 
 	slog.Error("failed to scale workload", "attempts", config.MaxRetriesOnConflict+1)
 
-	return errMaxRetriesExcedeed
+	return newMaxRetriesExceeded(config.MaxRetriesOnConflict)
 }
 
 // nolint: cyclop // it is a big function and we can refactor it a bit but it should be fine for now
@@ -262,6 +262,12 @@ func scanWorkload(
 	resourceLogger := kubernetes.NewResourceLoggerForWorkload(client, workload)
 
 	var err error
+	slog.Debug(
+		"parsing workload scope from annotations",
+		"annotations", workload.GetAnnotations(),
+		"name", workload.GetName(),
+		"namespace", workload.GetNamespace(),
+	)
 
 	scopeWorkload := values.NewScope()
 	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
