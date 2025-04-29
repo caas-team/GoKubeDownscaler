@@ -79,6 +79,11 @@ const config: Config = {
     ],
   ],
 
+  // see https://github.com/facebook/docusaurus/issues/10556
+  // this is necessary for tailwind since the old css minifier removes the layer from @media css rules
+  // additionally this makes building faster. if we ever get issues from this we can manually just enable the new css minimizer
+  future: { experimental_faster: true },
+
   themeConfig: {
     image: "img/social-preview.png",
     colorMode: {

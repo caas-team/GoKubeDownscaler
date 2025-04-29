@@ -83,7 +83,7 @@ function SupportedResourceGroup({
 
 export function SupportedResources(): JSX.Element {
   return (
-    <div className="useTailwind">
+    <div>
       <Heading className="block w-full text-center pt-8 select-none" as="h1">
         Supported Resources
       </Heading>

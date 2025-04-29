@@ -17,7 +17,7 @@ export const GithubLabel: React.FC<GithubLabelProps> = ({
     <Link
       title={label.description}
       href={label.url}
-      className="useTailwind px-2.5 py-0.5 border border-solid rounded-3xl text-sm font-medium whitespace-nowrap cursor-pointer no-underline hover:no-underline"
+      className="px-2.5 py-0.5 border border-solid rounded-3xl text-sm font-medium whitespace-nowrap cursor-pointer no-underline hover:no-underline"
       style={{
         color: `hsl(${label.lightHsl.h}, ${label.lightHsl.s}%, ${label.lightHsl.l}%)`,
         background: `rgba(${label.rgb.r}, ${label.rgb.g}, ${label.rgb.b}, 18%)`,
