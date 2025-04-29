@@ -90,12 +90,12 @@ data:
   examplevalue: "Hello World"
 ```
 
-This will then dynamically set the release name of your Helm installation to the configmap's name.
+Your configmap's name will now be dynamically generated depending on the name of your Helm installation.
 
 :::tip Example
 
 ```bash
-helm install dynamic ./deployments/chart
+helm install my-chart ./deployments/chart
 ```
 
 Resulting manifest:
@@ -105,7 +105,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   # highlight-start
-  name: dynamic-configmap
+  name: my-chart-configmap
   # highlight-end
 data:
   examplevalue: "Hello World"
