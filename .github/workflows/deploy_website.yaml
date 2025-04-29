@@ -34,7 +34,7 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     permissions:
-      pages: write
+      deployments: write
 
     steps:
       - name: Delete deployment
