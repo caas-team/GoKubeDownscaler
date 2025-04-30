@@ -9,7 +9,7 @@ keywords: [workloads, supported workloads, supported crds]
 # Workload Types
 
 Valid values for the workload type are the case-insensitive kubernetes resource names of the workloads.
-Workload types to be included in the scaling process can be specified using the `--include-resources` argument
+Workload types to be included in the scaling process can be specified using the [`--include-resources`](ref:docs-values#include-resources) argument
 at the [CLI Scope](ref:docs-cli-scope#runtime-configuration)
 
 ## List of Workload Types
@@ -67,6 +67,9 @@ If minAvailable or maxUnavailable are percentiles instead of replica counts, sca
 
 Scales by setting the paused replicas annotation to the [downscale replicas](ref:docs-values#downscale-replicas),
 which scales the workloads managed by the scaled object to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+When scaled objects are [being scaled](ref:docs-values#include-resources) the downscaler will
+automatically exclude the workloads the scaled objects are managing to avoid conflicts.
 
 ### Statefulsets
 

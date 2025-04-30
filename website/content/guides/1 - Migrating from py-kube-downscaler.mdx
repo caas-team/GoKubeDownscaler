@@ -29,7 +29,7 @@ You can skip this if you didn't have external automations for the downscaler.
 
 Step 4:
 
-Make sure all timestamps are [RFC3339](#rfc3339-timestamps).
+Make sure all timestamps are [RFC3339](#uniform-timestamps).
 To make this easier you could also just run the downscaler and see if it gives an error.
 
 Since only some edge cases of the ISO 8601 timestamp format are not compatible you can likely skip this step.
@@ -47,7 +47,7 @@ For that you can follow our [Installation Guide](ref:guides-installation).
 Some [values](ref:docs-values) are now incompatible with each other.
 This makes it easier to debug unwanted behavior from misconfiguration.
 
-See the [breaking changes entry](#incompatible-fields) for more information.
+See the [breaking changes entry](#from-features) for more information.
 
 ### Duration Units
 
@@ -59,14 +59,14 @@ This makes it more intuitive to configure.
 The downscaler now uses [RFC3339 timestamps](https://datatracker.ietf.org/doc/html/rfc3339) exclusively.
 This means that you will not have to juggle with multiple timestamp formats.
 
-See the [breaking changes entry](#rfc3339-timestamps) for more information.
+See the [breaking changes entry](#from-features) for more information.
 
 ### Scopes
 
 The scaling [values](ref:docs-values) are now ordered into [scopes](ref:docs-scopes-and-scaling).
 This makes it easier to understand where the values are taken from.
 
-See the [breaking changes entry](#changed-value-hierarchy) for more information.
+See the [breaking changes entry](#from-features) for more information.
 
 ### Explicit Include
 
@@ -91,7 +91,7 @@ This is a faster and less verbose way of matching the opposite of an up/downtime
 Excluding a workload now will ignore scaling the workload, instead of forcing it into uptime.
 This means that what happens when excluding a workload is more intuitive.
 
-See the [breaking changes entry](#stricter-exclusion) for more information.
+See the [breaking changes entry](#from-features) for more information.
 
 ### Workload Errors
 
@@ -103,7 +103,47 @@ This makes it so you don't have to have access to the downscalers console just t
 All boolean [values](ref:docs-values) (e.g. force up/downtime, exclude)
 now support [timespans](ref:docs-timespans) to dynamically do things.
 
+### Auto Exclude ScaledObject Scaled Workloads
+
+The Workloads scaled by [scaledobjects](ref:docs-workload-types#scaledobjects) are automatically excluded to avoid conflicts during scaling.
+
+:::note
+This currently only happens when scaled object scaling is enabled via [--include-resources](ref:docs-runtime-configuration#include-resources)
+:::
+
+### Leader Election
+
+[Leader election](ref:docs-runtime-configuration#leader-election) is now available
+making it possible to have multiple replicas running redundantly without causing conflicts.
+
+### More Workload Types
+
+The downscaler can now also scale:
+
+- [prometheus.v1.monitoring.coreos.com](ref:docs-workload-types#prometheuses)
+
+### Multiple Timespans in Force\* Time
+
+[Force uptime](ref:docs-values#force-uptime) and [force downtime](ref:docs-values#force-downtime)
+now allow multiple [timespans](ref:docs-timespans) as their value instead of just one.
+
+### Timespans in Exclude
+
+The [Exclude value](ref:docs-values#exclude) now allows [timespans](ref:docs-timespans) as a value,
+this allows for more controlled time-based exclusion.
+
 ## Breaking Changes
+
+### From Features
+
+This is a collection of breaking changes caused by a feature:
+
+| Feature                                   | Breaking Changes                                     | Severity                                              |
+| ----------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------- |
+| [Incompatibility](#incompatibility)       | Will now error out and skip scaling if misconfigured | low - might cause some workloads not to be scaled     |
+| [Actual Exclusion](#actual-exclusion)     | Excluded workloads will no longer be scaled up       | low - if you relied on this quirk                     |
+| [Scopes](#scopes)                         | Scaling value order is now consistent                | medium - could result in other values setting scaling |
+| [Uniform Timestamps](#uniform-timestamps) | RFC3339 timestamps are now used exclusively          | medium - some workloads might need to be updated      |
 
 ### New Structure of values.yaml
 
@@ -114,37 +154,3 @@ The following fields would have to be adjusted in an old values.yaml file from t
 - `constrainedDownscaler` is now not needed anymore
 - `configMapName` is now under `configMap.name`
 - `extraConfig` is now under `configMap.extraConfig`
-
-### Incompatible Fields
-
-Some [values](ref:docs-values) are now incompatible with each other.
-
-This shouldn't break anything.
-And will only cause a problem if the downscaler was misconfigured.
-
-See the [features entry](#incompatibility) for more information.
-
-### RFC3339 Timestamps
-
-The downscaler now uses [RFC3339 timestamps](https://datatracker.ietf.org/doc/html/rfc3339) exclusively.
-
-This should not break anything.
-This only causes a problem in some edge cases of the previously supported ISO 8601 timestamp format (examples: `2023-08-12`, `2023-233` or `2023-W34-1`).
-
-See the [features entry](#uniform-timestamps) for more information.
-
-### Changed Value Hierarchy
-
-The scaling [values](ref:docs-values) are now ordered into [scopes](ref:docs-scopes-and-scaling).
-
-This should not break anything.
-This only causes a problem if there was a weird quirk in the way the py-kube-downscaler got its scaling attributes from you relied on.
-
-See the [features entry](#scopes) for more information.
-
-### Stricter Exclusion
-
-Excluding a workload now will ignore scaling the workload, instead of forcing it into uptime.
-This only causes problems if you relied on the workload being automatically scaled up when excluded.
-
-See the [features entry](#actual-exclusion) for more information.

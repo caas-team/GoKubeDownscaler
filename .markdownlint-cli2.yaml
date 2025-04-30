@@ -2,6 +2,7 @@ config:
   no-inline-html: false # we can use inline html but should avoid it as much as possible
   line-length:
     line_length: 140 # set max length of lines to 140, which is a bit more reasonable than the 80 (default)
+    tables: false # markdown tables do not allow splitting a row into multiple lines so its hard to keep them small
   single-title:
     front_matter_title: "" # to ignore the title field in frontmatter, since we put the title in again anyways
   first-line-heading: false # disable because of frontmatter
