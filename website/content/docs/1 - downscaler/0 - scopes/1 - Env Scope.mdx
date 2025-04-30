@@ -72,6 +72,15 @@ configMap:
 # ...
 ```
 
+:::warning
+
+By default these config changes apply automatically.
+
+However, if you set [forceRestartOnConfigChange](ref:docs-helm-force-restart-on-config-change) to false,
+you will need to restart the Downscaler pods manually.
+
+:::
+
 ### Via ConfigMap
 
 If you are not working directly with Helm but rather with a raw Kubernetes manifest generated using the Helm Template
@@ -93,9 +102,6 @@ metadata:
 
 After the first installation, each time you want to change the ConfigMaps environment variables you need to restart the
 Downscaler pods, otherwise the changes will not be applied.
-
-This is not necessary if [forceRestartOnConfigChange](ref:docs-helm-force-restart-on-config-change) is set to true
-since they will then automatically restart.
 
 :::
 
