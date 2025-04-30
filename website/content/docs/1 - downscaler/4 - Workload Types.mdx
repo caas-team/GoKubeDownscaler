@@ -68,7 +68,7 @@ If minAvailable or maxUnavailable are percentiles instead of replica counts, sca
 Scales by setting the paused replicas annotation to the [downscale replicas](ref:docs-values#downscale-replicas),
 which scales the workloads managed by the scaled object to the [downscale replicas](ref:docs-values#downscale-replicas).
 
-When scaled objects are [being scaled](ref:docs-values#include-resources) the downscaler will
+When scaled objects are [being scaled](ref:docs-runtime-configuration#include-resources) the downscaler will
 automatically exclude the workloads the scaled objects are managing to avoid conflicts.
 
 ### Statefulsets
