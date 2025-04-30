@@ -10,9 +10,7 @@ interface RedirectToFirstDocProps {
   sidebar: string;
 }
 
-export const RedirectToFirstDoc: React.FC<RedirectToFirstDocProps> = ({
-  sidebar,
-}) => {
+const RedirectToFirstDoc: React.FC<RedirectToFirstDocProps> = ({ sidebar }) => {
   const activePlugin = useActivePlugin();
   const allDocsData = useAllDocsData();
   const { siteConfig } = useDocusaurusContext();
@@ -43,3 +41,5 @@ export const RedirectToFirstDoc: React.FC<RedirectToFirstDocProps> = ({
   console.error(`Sidebar "${sidebar}" does not contain a valid link`);
   return <Redirect to={siteConfig.baseUrl} />;
 };
+
+export default RedirectToFirstDoc;

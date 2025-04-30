@@ -11,6 +11,14 @@ Need help? You can also ask questions in our Slack channel:
 https://inviter.co/kube-downscaler
 -->
 
+<details>
+<!-- Fill out some basic information about your setup: -->
+
+- Version: x.x.x
+- Installed via: <!--e.g. Helm, Manifests, Cli-->
+
+</details>
+
 ## Description
 
 <!--

@@ -2,6 +2,7 @@ import { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import { Node, Literal } from "unist";
 import { ParseFrontMatter } from "@docusaurus/types";
+import path from "path";
 
 const references: Map<
   string,
@@ -28,9 +29,13 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
     .map((part) => encodeURIComponent(part))
     .join("/");
 
-  if (!result.frontMatter.globalReference) {
-    throw new Error(`the file '${urlPath}' does not have a globalReference set`);
-    return result;
+  if (
+    !result.frontMatter.globalReference &&
+    !path.basename(filePath).startsWith("_")
+  ) {
+    throw new Error(
+      `the file '${urlPath}' does not have a globalReference set`
+    );
   }
 
   const referenceId = result.frontMatter.globalReference as string;
@@ -38,7 +43,9 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
     references.get(referenceId) &&
     references.get(referenceId).urlPath != urlPath
   ) {
-    const errorMessage = `the globalReference '${referenceId}' is set in '${references.get(referenceId).urlPath}' and '${urlPath}'`;
+    const errorMessage = `the globalReference '${referenceId}' is set in '${
+      references.get(referenceId).urlPath
+    }' and '${urlPath}'`;
     if (process.env.NODE_ENV === "production") {
       throw new Error(errorMessage);
     }
