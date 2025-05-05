@@ -76,7 +76,55 @@ The Cluster-Wide mode requires cluster-level administrator permissions,
 installs the tool as a centralized component, and allows management of workloads across all namespaces.
 This mode is ideal for scenarios where an administrator wants to apply downscaling policies to the entire cluster.
 
-{/* TODO INSERT CLUSTER-WIDE ARCHITECTURE IMAGE */}
+```mermaid
+block-beta
+  columns 7
+
+  block:n1:2
+    columns 1
+    n1l>"namespace1"]
+    n1pod1("pod1
+
+    config:
+    force-uptime=true")
+    n1pod2("pod2
+
+    config:
+    force-downtime=false")
+  end
+
+  space
+
+  block:nsDownscaler:2
+    columns 1
+    nsDownscalerl>"kube-downscaler"]
+    downscaler("Downscaler")
+    arrow<[" "]>(up)
+    config["config:
+    namespaces=all
+    force-downtime=true
+    "]
+  end
+
+  space
+
+  block:n2:2
+    columns 1
+    n2l>"namespace2"]
+    n2pod1("pod1
+
+    config:
+    exclude=true")
+    n2pod2("pod2")
+  end
+
+  downscaler-- "scales up" -->n1pod1
+  downscaler-- " " -->n1pod2
+  downscaler-- "ignores" -->n2pod1
+  downscaler-- "scales down" -->n2pod2
+
+  style downscaler stroke-width:0.20rem
+```
 
 ### Namespace-Scoped Mode
 
@@ -87,7 +135,53 @@ It allows control over resources within their designated namespace.
 You can set which namespaces the GoKubeDownscaler is restricted to
 with the [constrainedNamespaces](ref:docs-helm-constrained-namespaces) field in the [values.yaml](repo:deployments/chart/values.yaml) file.
 
-{/* TODO INSERT NAMESPACE-SCOPED ARCHITECTURE IMAGE */}
+```mermaidblock-beta
+block-beta
+  columns 7
+
+  block:n1:2
+    columns 1
+    n1l>"namespace1"]
+    n1pod1("pod1
+
+    config:
+    force-uptime=true")
+    n1pod2("pod2
+
+    config:
+    force-downtime=false")
+  end
+
+  space
+
+  block:nsDownscaler:2
+    columns 1
+    nsDownscalerl>"kube-downscaler"]
+    downscaler("Downscaler")
+    arrow<[" "]>(up)
+    config["config:
+    namespaces=namespace2
+    force-downtime=true
+    "]
+  end
+
+  space
+
+  block:n2:2
+    columns 1
+    n2l>"namespace2"]
+    n2pod1("pod1
+
+    config:
+    exclude=true")
+    n2pod2("pod2")
+  end
+
+  downscaler-- "ignores" -->n2pod1
+  downscaler-- "scales down" -->n2pod2
+
+  style downscaler stroke-width:0.20rem
+```
 
 The installation process can be performed using Helm, check the [installation guide](ref:docs-helm)
 for more details.
