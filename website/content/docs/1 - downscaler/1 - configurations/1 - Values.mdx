@@ -61,6 +61,23 @@ Instead if one of them is set in a scope, the other values will be taken from th
 
 Incompatibilities between values normally only occur between values in the same value group and therefore the values on that same scope.
 
+Below is a diagram showing the process of a value group being evaluated.
+
+Rows where the action is:
+
+- × are not taken into account
+- « is the row the value was taken from
+- ↑ are empty and are not taken into account
+
+|             | Force Uptime | Force Downtime | Action       |
+| ----------- | ------------ | -------------- | ------------ |
+| Default     | -            | -              | ×            |
+| Environment | false        | true           | ×            |
+| CLI         | -            | false          | ×            |
+| Namespace   | true         | -              | « (any set)  |
+| Workload    | -            | -              | ↑ (none set) |
+| Result      | true         | -              |              |
+
 ## List Of Values
 
 Here is a list of all values that can be set on the Downscaler.
@@ -68,7 +85,7 @@ Here is a list of all values that can be set on the Downscaler.
 ### Downscale Period
 
 - Type: [Timespans](ref:docs-timespans)
-- Default: []
+- Default: unset (never matches)
 - Within these periods the [workload](ref:docs-workload-types) will be scaled down.
   Outside of the periods, scaling will be ignored/overwritten by [Upscale Period](#upscale-period).
 - Can be paired with [upscale period](#upscale-period)
@@ -81,7 +98,7 @@ Here is a list of all values that can be set on the Downscaler.
 ### Downtime
 
 - Type: [Timespans](ref:docs-timespans)
-- Default: []
+- Default: unset (never matches)
 - Within these periods the [workload](ref:docs-workload-types) will be scaled down.
   Outside of the periods the [workload](ref:docs-workload-types) will be scaled up.
 - Incompatible with [downscale period](#downscale-period), [upscale period](#upscale-period) and [Uptime](#uptime)
@@ -93,7 +110,7 @@ Here is a list of all values that can be set on the Downscaler.
 ### Upscale Period
 
 - Type: [Timespans](ref:docs-timespans)
-- Default: []
+- Default: unset (never matches)
 - Within these periods the [workload](ref:docs-workload-types) will be scaled up.
   Outside of the periods, scaling will be ignored/overwritten by [Downscale Period](#downscale-period).
 - Can be paired with [downscale period](#downscale-period)
@@ -106,7 +123,7 @@ Here is a list of all values that can be set on the Downscaler.
 ### Uptime
 
 - Type: [Timespans](ref:docs-timespans)
-- Default: []
+- Default: unset (never matches)
 - Within these periods the [workload](ref:docs-workload-types) will be scaled up.
   Outside of the periods the [workload](ref:docs-workload-types) will be scaled down.
 - Incompatible with [downscale period](#downscale-period), [upscale period](#upscale-period) and [Downtime](#downtime)
@@ -118,21 +135,21 @@ Here is a list of all values that can be set on the Downscaler.
 ### Exclude
 
 - Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#alwaysnevertruefalse))
-- Default: false
+- Default: unset (never matches)
 - Excludes the [workload](ref:docs-workload-types) from being scaled. (Scaling is ignored)
 - Where to set: [Namespace Scope](ref:docs-namespace-scope#values), [Workload Scope](ref:docs-workload-scope#values)
 
 ### Exclude Until
 
 - Type: [RFC3339 timestamp](https://datatracker.ietf.org/doc/html/rfc3339)
-- Default: none
+- Default: unset
 - Excludes the [workload](ref:docs-workload-types) from being scaled until the set time. (Scaling is ignored)
 - Where to set: [Namespace Scope](ref:docs-namespace-scope#values), [Workload Scope](ref:docs-workload-scope#values)
 
 ### Force Uptime
 
 - Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#alwaysnevertruefalse))
-- Default: false
+- Default: unset (never matches)
 - Forces the [workload](ref:docs-workload-types) into an uptime state. (Scaling up)
 - Incompatible with [force downtime](#force-downtime)
 - [Grouped](#value-groups) with [force downtime](#force-downtime)
@@ -141,7 +158,7 @@ Here is a list of all values that can be set on the Downscaler.
 ### Force Downtime
 
 - Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#alwaysnevertruefalse))
-- Default: false
+- Default: unset (never matches)
 - Forces the [workload](ref:docs-workload-types) into a downtime state. (Scaling down)
 - Incompatible with [force uptime](#force-uptime)
 - [Grouped](#value-groups) with [force uptime](#force-uptime)
