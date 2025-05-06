@@ -1,0 +1,26 @@
+jonathan-mayer:
+  name: Jonathan Mayer
+  title: Co-creator of the GoKubeDownscaler
+  url: https://github.com/jonathan-mayer
+  image_url: https://github.com/jonathan-mayer.png
+  email: jonathan.mayer@telekom.de
+  socials:
+    github: jonathan-mayer
+  page: true
+samuel-esp:
+  name: Samuel Esposito
+  title: Co-creator of the GoKubeDownscaler
+  url: https://github.com/samuel-esp
+  image_url: https://github.com/samuel-esp.png
+  socials:
+    github: samuel-esp
+  page: true
+JTaeuber:
+  name: Jan Täuber
+  title: Co-creator of the GoKubeDownscaler
+  url: https://github.com/JTaeuber
+  image_url: https://github.com/JTaeuber.png
+  email: jan.taeuber@telekom.de
+  socials:
+    github: JTaeuber
+  page: true

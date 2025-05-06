@@ -72,6 +72,17 @@ const config: Config = {
           editUrl:
             "https://github.com/caas-team/GoKubeDownscaler/edit/main/website",
         },
+        blog: {
+          blogTitle: "GoKubeDownscaler Blog",
+          blogDescription: "The official blog of the GoKubeDownscaler",
+          postsPerPage: "ALL",
+          showReadingTime: true,
+          editUrl:
+            "https://github.com/caas-team/GoKubeDownscaler/edit/main/website",
+          onInlineTags: "throw",
+          onInlineAuthors: "throw",
+          onUntruncatedBlogPosts: "throw",
+        },
         theme: {
           customCss: "./src/css/custom.css",
         },
@@ -116,6 +127,11 @@ const config: Config = {
           sidebarId: "ContributingSidebar",
           position: "left",
           label: "Contributing",
+        },
+        {
+          to: "blog",
+          label: "Blog",
+          position: "left",
         },
         {
           href: "https://github.com/caas-team/GoKubeDownscaler",
