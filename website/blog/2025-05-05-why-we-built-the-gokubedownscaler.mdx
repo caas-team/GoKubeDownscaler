@@ -1,0 +1,89 @@
+---
+title: Why We Built the GoKubeDownscaler
+description: This blog shows the reasons for making the GoKubeDownscaler project and its design considerations.
+slug: why-we-built-the-gokubedownscaler
+authors:
+  - jonathan-mayer
+tags: [origin, project, design, go]
+---
+
+{/* TODO: add some links to the referenced things everywhere */}
+
+# Why We Built the GoKubeDownscaler
+
+The GoKubeDownscaler project is a big project and as such there had to have been good enough reasons to make it.
+In the following blog we try to show our reasons for making this project, its design considerations and how we want to move forward.
+
+{/* truncate */}
+
+## Why Not Use the Py-Kube-Downscaler
+
+The Py-Kube-Downscaler (or just known as the kube-downscaler at the time) was a popular tool for downscaling kubernetes workloads.
+It had loads of configuration options and a big userbase.
+
+Even with its many users and contributors the project and its dependencies (like pykube) were over time all becoming unmaintained.
+Additionally its codebase became cluttered over the years of being developed which made adding new features,
+maintaining the repo and adding new resources hard to do and prone to introduce unwanted bugs.
+
+With the py-kube-downscaler becoming unmaintained more and more bugs were slowly coming to the light of day.
+At our company we also ran into some bugs which we tried to fix via a pr to the project.
+However, since the project was no longer maintained our pr did not get merged.
+After a few weeks we decided that we should maintain a fork of the project ourselves.
+This also meant maintaining the pykube (also known as pykube-ng and now new-pykube) dependency.
+
+After we cleaned up the repo and fixed the bugs our prs were aiming to fix we continued to maintain the project along with [Samuel](https://github.com/samuel-esp).
+As more work was done on the project the above points about it being hard to maintain became clear.
+This let us to decide that it was necessary to rewrite the project since doing a big refactoring would basically involve the same.
+
+## The Reason for Choosing Golang
+
+It soon became clear that rewriting the project in python would not be the best option,
+as all native kubernetes libraries including ones for CRDs are either only available to golang or native to it.
+In our team we were already basically exclusively using golang for our other projects.
+
+Golang also has many other advantages compared to python like being statically typed making collaboration easier,
+having faster execution times thanks to compilation as well as generally being more efficient with memory management and other resources.
+
+Go's concurrency model is also one of the easiest to work with this allowed us to build the downscaler
+to use concurrent operations wherever possible making for scans to complete much faster.
+
+{/* would be nice to have statistics here */}
+
+## General Design Considerations
+
+As said above the design of the Downscaler is made to be based on go's great concurrency.
+This also makes conflicts from workloads being modified while they are being scanned less likely.
+
+One of our main focuses is making this repo as easy to maintain and keep clean as possible.
+To achieve this we are making use of many strict linters and other tools like dependabot.
+
+We also want to make sure that adding new resources is as easy as possible,
+which is why we are planning on making all resources data driven allowing anyone in adding custom resources
+or modify existing ones without touching or having any knowledge of the code.
+
+It was also important to us that you can run the downscaler locally
+which greatly simplifies testing new features while developing.
+This is done by if applicable we have a runtime configuration
+to substitute these in-cluster sources of data (e.g. `-k` for setting the kubeconfig manually).
+
+## Outlook
+
+We currently plan to continue maintaining, improving and adding new features to the project.
+With the GoKubeDownscaler soon being stable and feature complete
+we are planning on concentrating on further development of the project
+while we step back from developing new features for the py-kube-downscaler.
+
+What this means is that we will in the future only maintain the py-kube-downscaler project
+by dependency updates, security fixes and bug fixes.
+The GoKubeDownscaler project will be the official successor to the old kube-downscaler
+and will likely be the only downscaler that gets new features and improvements.
+
+Any changes to the repo will continue to be strictly reviewed and tested by us maintainers and code quality/security tools.
+We will adding more linters and general tools to make sure the projects code stays clean and its dependencies up-to-date
+
+## Conclusion
+
+In summary, the lack for good first party apis for python, go's efficiency
+and the state of the py-kube-downscaler repo all led to the rewriting to the project in golang.
+The kube-downscalers rewrite is more efficient and can handle larger clusters thanks to go
+and we will continue to make sure that the GoKubeDownscaler's repo stays clean and easily maintainable.
