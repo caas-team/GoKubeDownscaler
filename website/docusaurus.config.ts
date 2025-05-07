@@ -71,6 +71,7 @@ const config: Config = {
           beforeDefaultRemarkPlugins: [docRefRemarkPlugin, repoRefRemarkPlugin],
           editUrl:
             "https://github.com/caas-team/GoKubeDownscaler/edit/main/website",
+          showLastUpdateTime: true,
         },
         blog: {
           blogTitle: "GoKubeDownscaler Blog",
@@ -82,7 +83,6 @@ const config: Config = {
           onInlineTags: "throw",
           onInlineAuthors: "throw",
           onUntruncatedBlogPosts: "throw",
-          showLastUpdateAuthor: true,
           showLastUpdateTime: true,
         },
         theme: {
