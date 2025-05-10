@@ -145,6 +145,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 			}
 
 			oringalReplicas, err := getOriginalReplicas(pdb)
+
 			var originalReplicasUnsetErr *OriginalReplicasUnsetError
 
 			if ok := errors.As(err, &originalReplicasUnsetErr); !ok { // ignore getOriginalReplicas being unset
@@ -292,6 +293,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			}
 
 			oringalReplicas, err := getOriginalReplicas(pdb)
+
 			var originalReplicasUnsetErr *OriginalReplicasUnsetError
 
 			if ok := errors.As(err, &originalReplicasUnsetErr); !ok { // ignore getOriginalReplicas being unset
