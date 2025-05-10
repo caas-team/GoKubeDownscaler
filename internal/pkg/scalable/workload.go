@@ -46,6 +46,10 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 	return workloads, nil
 }
 
+type ParentWorkload interface {
+	GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error)
+}
+
 // scalableResource provides all functions needed to scale any type of resource.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource
@@ -64,6 +68,8 @@ type scalableResource interface {
 	SetAnnotations(annotations map[string]string)
 	// GroupVersionKind gets the group version kind of the workload
 	GroupVersionKind() schema.GroupVersionKind
+	// GetOwnerReferences gets the owner references of the workload
+	GetOwnerReferences() []metav1.OwnerReference
 	// Reget regets the workload to ensure the latest state
 	Reget(clientsets *Clientsets, ctx context.Context) error
 }

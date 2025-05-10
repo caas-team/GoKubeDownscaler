@@ -62,6 +62,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 			}
 
 			oringalReplicas, err := getOriginalReplicas(deployment)
+
 			var originalReplicasUnsetErr *OriginalReplicasUnsetError
 
 			if ok := errors.As(err, &originalReplicasUnsetErr); !ok { // ignore getOriginalReplicas being unset

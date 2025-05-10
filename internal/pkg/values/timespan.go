@@ -50,6 +50,7 @@ func (t *timeSpans) Set(value string) error {
 
 	for _, timespanText := range spans {
 		var timespan TimeSpan
+
 		timespanText = strings.TrimSpace(timespanText)
 
 		timespan, ok := parseBooleanTimeSpan(timespanText)
@@ -106,6 +107,7 @@ func parseAbsoluteTimeSpan(timespan string) (absoluteTimeSpan, error) {
 
 func parseRelativeTimeSpan(timespanString string) (*relativeTimeSpan, error) {
 	var err error
+
 	timespan := relativeTimeSpan{}
 
 	parts := strings.Split(timespanString, " ")

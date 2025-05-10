@@ -43,11 +43,14 @@ type Client interface {
 	CreateLease(leaseName string) (*resourcelock.LeaseLock, error)
 	// addEvent creates a new event on either a workload or a namespace
 	addEvent(eventType, reason, identifier, message string, object *corev1.ObjectReference, ctx context.Context) error
+	// GetChildrenWorkloads gets the children workloads of the specified workload
+	GetChildrenWorkloads(workload scalable.Workload, ctx context.Context) ([]scalable.Workload, error)
 }
 
 // NewClient makes a new Client.
 func NewClient(kubeconfig string, dryRun bool) (client, error) {
 	var kubeclient client
+
 	var clientsets scalable.Clientsets
 
 	kubeclient.dryRun = dryRun
@@ -108,7 +111,11 @@ func (c client) getNamespaceAnnotations(namespace string, ctx context.Context) (
 }
 
 // GetWorkloads gets all workloads of the specified resources for the specified namespaces.
-func (c client) GetWorkloads(namespaces, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error) {
+func (c client) GetWorkloads(
+	namespaces,
+	resourceTypes []string,
+	ctx context.Context,
+) ([]scalable.Workload, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -132,6 +139,30 @@ func (c client) GetWorkloads(namespaces, resourceTypes []string, ctx context.Con
 	}
 
 	return results, nil
+}
+
+// GetChildrenWorkloads gets the children workloads of the specified workload.
+func (c client) GetChildrenWorkloads(workload scalable.Workload, ctx context.Context) ([]scalable.Workload, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	if parent, ok := workload.(scalable.ParentWorkload); ok {
+		slog.Debug(
+			"getting children workloads for workload",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+			"resourceType", workload.GroupVersionKind().Kind,
+		)
+
+		children, err := parent.GetChildren(ctx, c.clientsets)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get children workloads: %w", err)
+		}
+
+		return children, nil
+	}
+
+	return nil, nil
 }
 
 // RegetWorkload gets the workload again to ensure the latest state.
@@ -285,6 +316,7 @@ func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
 // GetNamespaceScopes gets the namespace scopes from the namespace annotations.
 func (c client) GetNamespaceScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error) {
 	var waitGroup sync.WaitGroup
+
 	namespaceSet := make(map[string]struct{})
 
 	for _, workload := range workloads {
