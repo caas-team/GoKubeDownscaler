@@ -19,6 +19,9 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
     filePath,
   });
 
+  // partial markdown files do not contain any frontmatter and do not need to be referenced
+  if (path.basename(filePath).startsWith("_")) return result;
+
   // file is not part of the docs or guides
   if (!filePath.includes("website/content/")) return result;
 
@@ -29,10 +32,7 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
     .map((part) => encodeURIComponent(part))
     .join("/");
 
-  if (
-    !result.frontMatter.globalReference &&
-    !path.basename(filePath).startsWith("_")
-  ) {
+  if (!result.frontMatter.globalReference) {
     throw new Error(
       `the file '${urlPath}' does not have a globalReference set`
     );

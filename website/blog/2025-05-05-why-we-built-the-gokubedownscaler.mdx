@@ -56,7 +56,7 @@ which made it clear to us that using golang was the way to go.
 ## General Design Considerations
 
 As said above the design of the Downscaler is made to be based on go's great concurrency.
-This also makes [conflicts from workloads being modified](ref:docs-runtime-configurations#max-retries-on-conflict)
+This also makes conflicts from workloads being modified
 while they are being scanned less likely.
 
 One of our main focuses is making this repo as easy to maintain and keep clean as possible.
@@ -67,10 +67,10 @@ We also want to make sure that adding new resources is as easy as possible,
 which is why we are planning on making all resources data driven allowing anyone in adding custom resources
 or modify existing ones without touching or having any knowledge of the code.
 
-It was also important to us that you can [run the downscaler locally](ref:contributing-developing-downscaler#running-the-downscaler-locally)
+It was also important to us that you can run the downscaler locally
 which greatly simplifies testing new features while developing.
 This is done by if applicable having a runtime configuration
-to substitute these in-cluster sources of data (e.g. [`-k`](ref:docs-runtime-configuration#kubeconfig) for setting the kubeconfig manually).
+to substitute these in-cluster sources of data (e.g. `-k` for setting the kubeconfig manually).
 
 ## Outlook
 

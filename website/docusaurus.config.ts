@@ -84,6 +84,7 @@ const config: Config = {
           onInlineAuthors: "throw",
           onUntruncatedBlogPosts: "throw",
           showLastUpdateTime: true,
+          beforeDefaultRemarkPlugins: [repoRefRemarkPlugin],
         },
         theme: {
           customCss: "./src/css/custom.css",
