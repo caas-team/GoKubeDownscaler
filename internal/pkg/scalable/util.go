@@ -176,12 +176,12 @@ func isWorkloadExcluded(
 	workload Workload,
 	excludedWorkloads util.RegexList,
 ) bool {
-	if excludedWorkloads == nil {
-		return false
-	}
-
 	if isManagedByOwnerReference(workload) {
 		return true
+	}
+
+	if excludedWorkloads == nil {
+		return false
 	}
 
 	return excludedWorkloads.CheckMatchesAny(workload.GetName())
