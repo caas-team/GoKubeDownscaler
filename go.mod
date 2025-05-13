@@ -5,8 +5,8 @@ go 1.24.1
 require (
 	github.com/argoproj/argo-rollouts v1.8.2
 	github.com/kedacore/keda/v2 v2.17.0
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.82.1
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.82.1
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.82.2
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.82.2
 	github.com/stretchr/testify v1.10.0
 	github.com/zalando-incubator/stackset-controller v1.4.101
 	k8s.io/api v0.33.0
