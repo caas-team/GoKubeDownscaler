@@ -119,15 +119,6 @@ Since, in that case, the downscaler will only run once, you might want to perfor
 
 :::
 
-### Scale Children
-
-- Type: boolean
-- Description: Enables the downscaler to immediately scale child resources of the targeted workload.
-  By default, only the main workload is scaled, which may leave child resources, such as Jobs created by a
-  CronJob, running to completion if the child kind is not included inside the `included-resource` argument
-- Default: false
-- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
-
 ### Kubeconfig
 
 - Type: string (path to a kubeconfig file)

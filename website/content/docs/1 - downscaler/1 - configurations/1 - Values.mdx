@@ -181,3 +181,13 @@ Here is a list of all values that can be set on the Downscaler.
   instead of the creation time when set.
 - Where to set: [CLI Scope](ref:docs-cli-scope#values), [Namespace Scope](ref:docs-namespace-scope#values),
   [Workload Scope](ref:docs-workload-scope#values)
+
+### Scale Children
+
+- Type: boolean
+- Description: Enables the downscaler to immediately scale child resources of the targeted workload.
+  By default, only the main workload is scaled, which may leave child resources, such as Jobs created by a
+  CronJob, running to completion if the child kind is not included inside the `included-resource` argument
+- Default: false
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration), [Namespace Scope](ref:docs-namespace-scope#values),
+  [Workload Scope](ref:docs-workload-scope#values)
