@@ -19,6 +19,7 @@ func extractDayTime(t time.Time) dayTime {
 
 func parseDayTime(s string) (*dayTime, error) {
 	var result dayTime
+
 	parts := strings.Split(s, ":")
 
 	hour, err := strconv.Atoi(parts[0])

@@ -8,6 +8,7 @@ import (
 	"github.com/kedacore/keda/v2/apis/keda/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -20,7 +21,10 @@ func TestFilterExcluded(t *testing.T) {
 		deployment2       Workload
 		labeledDeployment Workload
 		scaledObject      Workload
+		job1              Workload
+		job2              Workload
 	}
+
 	ns1 := ns{
 		deployment1: &replicaScaledWorkload{&deployment{Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
@@ -90,7 +94,38 @@ func TestFilterExcluded(t *testing.T) {
 				},
 			},
 		}}},
+		job1: &suspendScaledWorkload{&job{Job: &v1.Job{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "Job1",
+				Namespace: "Namespace3",
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion:         "batch/v1",
+						Kind:               "CronJob",
+						Name:               "CronJob1",
+						UID:                "4a6e4a30-c474-4bc5-9bf5-47f29430fb41",
+						Controller:         func() *bool { b := true; return &b }(),
+						BlockOwnerDeletion: func() *bool { b := true; return &b }(),
+					},
+				},
+			},
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "batch/v1",
+				Kind:       "Job",
+			},
+		}}},
+		job2: &suspendScaledWorkload{&job{Job: &v1.Job{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "Job2",
+				Namespace: "Namespace3",
+			},
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "batch/v1",
+				Kind:       "Job",
+			},
+		}}},
 	}
+
 	tests := []struct {
 		name               string
 		workloads          []Workload
@@ -139,13 +174,27 @@ func TestFilterExcluded(t *testing.T) {
 			excludedWorkloads:  nil,
 			want:               []Workload{ns3.deployment1, ns3.scaledObject, ns1.deployment1, ns1.deployment2, ns2.deployment1},
 		},
+		{
+			name:               "exclude managed by ownerReference",
+			workloads:          []Workload{ns3.deployment1, ns3.deployment2, ns3.scaledObject, ns1.deployment1, ns3.job1, ns3.job2},
+			includeLabels:      nil,
+			excludedNamespaces: nil,
+			excludedWorkloads:  nil,
+			want:               []Workload{ns3.deployment1, ns3.scaledObject, ns1.deployment1, ns3.job2},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := FilterExcluded(test.workloads, test.includeLabels, test.excludedNamespaces, test.excludedWorkloads)
+			got := FilterExcluded(
+				test.workloads,
+				test.includeLabels,
+				test.excludedNamespaces,
+				test.excludedWorkloads,
+			)
+
 			assert.Equal(t, test.want, got)
 		})
 	}
