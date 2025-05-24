@@ -25,7 +25,7 @@ type replicaScaledWorkload struct {
 
 // ScaleUp scales up the underlying replicaScaledResource.
 func (r *replicaScaledWorkload) ScaleUp() error {
-	originalReplicas, err := getOriginalReplicas(r)
+	originalReplicas, _, err := getOriginalReplicas(r)
 	if err != nil {
 		var originalReplicasUnsetErr *OriginalReplicasUnsetError
 		if ok := errors.As(err, &originalReplicasUnsetErr); ok {
@@ -63,7 +63,7 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas int32) error {
 		return fmt.Errorf("failed to set replicas for workload: %w", err)
 	}
 
-	setOriginalReplicas(originalReplicas, r)
+	setOriginalReplicas(originalReplicas, "", r)
 
 	return nil
 }

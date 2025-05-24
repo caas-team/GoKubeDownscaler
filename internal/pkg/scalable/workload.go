@@ -50,6 +50,10 @@ type ParentWorkload interface {
 	GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error)
 }
 
+type PercentageWorkload interface {
+	AllowPercentageReplicas() bool
+}
+
 // scalableResource provides all functions needed to scale any type of resource.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource

@@ -126,7 +126,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 			pdb.Spec.MinAvailable = test.minAvailable
 
 			if test.originalReplicas != nil {
-				setOriginalReplicas(*test.originalReplicas, pdb)
+				setOriginalReplicas(*test.originalReplicas, "", pdb)
 			}
 
 			err := pdb.ScaleUp()
@@ -144,7 +144,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 				}
 			}
 
-			oringalReplicas, err := getOriginalReplicas(pdb)
+			oringalReplicas, _, err := getOriginalReplicas(pdb)
 
 			var originalReplicasUnsetErr *OriginalReplicasUnsetError
 
@@ -206,16 +206,16 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			maxUnavailable:       nil,
 			originalReplicas:     nil,
 			wantOriginalReplicas: nil,
-			wantMinAvailable:     &percentile,
+			wantMinAvailable:     &replicasDownscaled,
 			wantMaxUnavailable:   nil,
 		},
 		{
 			name:                 "minAvailable percentile already scaled down",
-			minAvailable:         &percentile,
+			minAvailable:         &replicasDownscaled,
 			maxUnavailable:       nil,
 			originalReplicas:     intAsPointer(5),
 			wantOriginalReplicas: intAsPointer(5),
-			wantMinAvailable:     &percentile,
+			wantMinAvailable:     &replicasDownscaled,
 			wantMaxUnavailable:   nil,
 		},
 		{
@@ -252,16 +252,16 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			originalReplicas:     nil,
 			wantOriginalReplicas: nil,
 			wantMinAvailable:     nil,
-			wantMaxUnavailable:   &percentile,
+			wantMaxUnavailable:   &replicasDownscaled,
 		},
 		{
 			name:                 "maxUnavailable percentile already scaled down",
 			minAvailable:         nil,
-			maxUnavailable:       &percentile,
-			originalReplicas:     intAsPointer(5),
-			wantOriginalReplicas: intAsPointer(5),
+			maxUnavailable:       &replicasDownscaled,
+			originalReplicas:     intAsPointer(50),
+			wantOriginalReplicas: intAsPointer(50),
 			wantMinAvailable:     nil,
-			wantMaxUnavailable:   &percentile,
+			wantMaxUnavailable:   &replicasDownscaled,
 		},
 	}
 
@@ -274,7 +274,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			pdb.Spec.MinAvailable = test.minAvailable
 
 			if test.originalReplicas != nil {
-				setOriginalReplicas(*test.originalReplicas, pdb)
+				setOriginalReplicas(*test.originalReplicas, "", pdb)
 			}
 
 			err := pdb.ScaleDown(0)
@@ -292,7 +292,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 				}
 			}
 
-			oringalReplicas, err := getOriginalReplicas(pdb)
+			oringalReplicas, _, err := getOriginalReplicas(pdb)
 
 			var originalReplicasUnsetErr *OriginalReplicasUnsetError
 
