@@ -50,7 +50,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 			_ = deployment.setReplicas(test.replicas)
 
 			if test.originalReplicas != nil {
-				setOriginalReplicas(*test.originalReplicas, deployment)
+				setOriginalReplicas(*test.originalReplicas, "", deployment)
 			}
 
 			err := deployment.ScaleUp()
@@ -61,7 +61,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 				assert.Equal(t, test.wantReplicas, replicas)
 			}
 
-			oringalReplicas, err := getOriginalReplicas(deployment)
+			oringalReplicas, _, err := getOriginalReplicas(deployment)
 
 			var originalReplicasUnsetErr *OriginalReplicasUnsetError
 
@@ -115,7 +115,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			_ = deployment.setReplicas(test.replicas)
 
 			if test.originalReplicas != nil {
-				setOriginalReplicas(*test.originalReplicas, deployment)
+				setOriginalReplicas(*test.originalReplicas, "", deployment)
 			}
 
 			err := deployment.ScaleDown(0)
@@ -126,7 +126,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 				assert.Equal(t, test.wantReplicas, replicas)
 			}
 
-			oringalReplicas, err := getOriginalReplicas(deployment)
+			oringalReplicas, _, err := getOriginalReplicas(deployment)
 			require.NoError(t, err) // Scaling set OrignialReplicas to faulty or unset value
 			assertIntPointerEqual(t, test.wantOriginalReplicas, oringalReplicas)
 		})

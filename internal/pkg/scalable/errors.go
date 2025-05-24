@@ -40,3 +40,15 @@ func newOriginalReplicasUnsetError(reason string) error {
 func (o *OriginalReplicasUnsetError) Error() string {
 	return o.reason
 }
+
+type PercentageValueNotAllowedError struct {
+	reason string
+}
+
+func newPercentageValueNotAllowedError(reason string) error {
+	return &PercentageValueNotAllowedError{reason: reason}
+}
+
+func (p *PercentageValueNotAllowedError) Error() string {
+	return p.reason
+}

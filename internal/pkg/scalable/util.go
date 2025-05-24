@@ -199,34 +199,50 @@ func isManagedByOwnerReference(workload Workload) bool {
 }
 
 // setOriginalReplicas sets the original replicas annotation on the workload.
-func setOriginalReplicas(originalReplicas int32, workload Workload) {
+func setOriginalReplicas(originalReplicasInt int32, originalReplicasStr string, workload Workload) {
 	annotations := workload.GetAnnotations()
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
 
-	annotations[annotationOriginalReplicas] = strconv.Itoa(int(originalReplicas))
+	if originalReplicasStr == "" {
+		annotations[annotationOriginalReplicas] = strconv.Itoa(int(originalReplicasInt))
+	} else {
+		annotations[annotationOriginalReplicas] = originalReplicasStr
+	}
+
 	workload.SetAnnotations(annotations)
 }
 
 // getOriginalReplicas gets the original replicas annotation on the workload. nil is undefined.
-func getOriginalReplicas(workload Workload) (*int32, error) {
+//
+//nolint:gocritic // unnamedResult: function returns unnamed result values intentionally
+func getOriginalReplicas(workload Workload) (*int32, *string, error) {
 	annotations := workload.GetAnnotations()
+	emptyStr := ""
 
 	originalReplicasString, ok := annotations[annotationOriginalReplicas]
 	if !ok {
-		return nil, newOriginalReplicasUnsetError("error: original replicas annotation not set on workload")
+		return nil, &emptyStr, newOriginalReplicasUnsetError("error: original replicas annotation not set on workload")
+	}
+
+	if strings.Contains(originalReplicasString, "%") {
+		if _, ok := workload.(PercentageWorkload); !ok {
+			return nil, &emptyStr, newPercentageValueNotAllowedError("error: percentage value not allowed for this workload type")
+		}
+
+		return nil, &originalReplicasString, nil
 	}
 
 	originalReplicas, err := strconv.ParseInt(originalReplicasString, 10, 32)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse original replicas annotation on workload: %w", err)
+		return nil, &emptyStr, fmt.Errorf("failed to parse original replicas annotation on workload: %w", err)
 	}
 
 	// #nosec G115
 	result := int32(originalReplicas)
 
-	return &result, nil
+	return &result, &emptyStr, nil
 }
 
 // removeOriginalReplicas removes the annotationOriginalReplicas from the workload.
