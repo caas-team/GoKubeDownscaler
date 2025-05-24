@@ -39,10 +39,10 @@ func (p *podDisruptionBudget) AllowPercentageReplicas() bool {
 	return true
 }
 
-// getMinAvailableInt returns the spec.MinAvailable value or an undefined/empty value.
+// getMinAvailable returns the spec.MinAvailable value or an undefined/empty value.
 //
 //nolint:gocritic // unnamedResult: function returns unnamed result values intentionally
-func (p *podDisruptionBudget) getMinAvailableInt() (int32, string) {
+func (p *podDisruptionBudget) getMinAvailable() (int32, string) {
 	minAvailable := p.Spec.MinAvailable
 	if minAvailable == nil {
 		return util.Undefined, util.EmptyString
@@ -67,10 +67,10 @@ func (p *podDisruptionBudget) setMinAvailable(targetMinAvailableInt int32, targe
 	p.Spec.MinAvailable = &minAvailable
 }
 
-// getMaxUnavailableInt returns the spec.MaxUnavailable value or an undefined/empty value.
+// getMaxUnavailable returns the spec.MaxUnavailable value or an undefined/empty value.
 //
 //nolint:gocritic // unnamedResult: function returns unnamed result values intentionally
-func (p *podDisruptionBudget) getMaxUnavailableInt() (int32, string) {
+func (p *podDisruptionBudget) getMaxUnavailable() (int32, string) {
 	maxUnavailable := p.Spec.MaxUnavailable
 	if maxUnavailable == nil {
 		return util.Undefined, util.EmptyString
@@ -108,7 +108,7 @@ func (p *podDisruptionBudget) ScaleUp() error {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
-	maxUnavailable, _ := p.getMaxUnavailableInt()
+	maxUnavailable, _ := p.getMaxUnavailable()
 	if maxUnavailable != util.Undefined {
 		p.setMaxUnavailable(*originalReplicasInt, *originalReplicasStr)
 		removeOriginalReplicas(p)
@@ -116,7 +116,7 @@ func (p *podDisruptionBudget) ScaleUp() error {
 		return nil
 	}
 
-	minAvailable, _ := p.getMinAvailableInt()
+	minAvailable, _ := p.getMinAvailable()
 	if minAvailable != util.Undefined {
 		p.setMinAvailable(*originalReplicasInt, *originalReplicasStr)
 		removeOriginalReplicas(p)
@@ -130,7 +130,7 @@ func (p *podDisruptionBudget) ScaleUp() error {
 // ScaleDown scales the resource down.
 // nolint:cyclop // this function is too complex, but it is necessary to handle workload types. We should refactor this in the future.
 func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int32) error {
-	maxUnavailableInt, maxUnavailableStr := p.getMaxUnavailableInt()
+	maxUnavailableInt, maxUnavailableStr := p.getMaxUnavailable()
 	if maxUnavailableInt != util.Undefined || maxUnavailableStr != util.EmptyString {
 		if maxUnavailableInt == util.Undefined {
 			trimmedMaxUnavailableStr := strings.TrimSuffix(maxUnavailableStr, "%")
@@ -154,7 +154,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas int32) error {
 		return nil
 	}
 
-	minAvailableInt, minAvailableStr := p.getMinAvailableInt()
+	minAvailableInt, minAvailableStr := p.getMinAvailable()
 	if minAvailableInt != util.Undefined || minAvailableStr != util.EmptyString {
 		if minAvailableInt == util.Undefined {
 			trimmedMinAvailableStr := strings.TrimSuffix(minAvailableStr, "%")
