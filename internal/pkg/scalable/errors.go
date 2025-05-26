@@ -41,14 +41,14 @@ func (o *OriginalReplicasUnsetError) Error() string {
 	return o.reason
 }
 
-type PercentageValueNotAllowedError struct {
+type InvalidReplicaTypeError struct {
 	reason string
 }
 
-func newPercentageValueNotAllowedError(reason string) error {
-	return &PercentageValueNotAllowedError{reason: reason}
+func newInvalidReplicaTypeError(reason string) error {
+	return &InvalidReplicaTypeError{reason: reason}
 }
 
-func (p *PercentageValueNotAllowedError) Error() string {
+func (p *InvalidReplicaTypeError) Error() string {
 	return p.reason
 }

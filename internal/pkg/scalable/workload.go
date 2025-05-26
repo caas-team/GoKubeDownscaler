@@ -86,7 +86,7 @@ type Workload interface {
 	// ScaleUp scales up the workload
 	ScaleUp() error
 	// ScaleDown scales down the workload
-	ScaleDown(downscaleReplicas int32) error
+	ScaleDown(downscaleReplicas ReplicaCount) error
 }
 
 type Clientsets struct {

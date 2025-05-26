@@ -80,7 +80,7 @@ func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 			cronjob.Spec.Suspend = test.suspend
 			s := suspendScaledWorkload{&cronjob}
 
-			err := s.ScaleDown(0)
+			err := s.ScaleDown(&AbsoluteReplicas{Value: 0})
 			require.NoError(t, err)
 			assertBoolPointerEqual(t, test.wantSuspend, cronjob.Spec.Suspend)
 		})

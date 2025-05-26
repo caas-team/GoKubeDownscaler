@@ -199,50 +199,42 @@ func isManagedByOwnerReference(workload Workload) bool {
 }
 
 // setOriginalReplicas sets the original replicas annotation on the workload.
-func setOriginalReplicas(originalReplicasInt int32, originalReplicasStr string, workload Workload) {
+func setOriginalReplicas(replicaCount ReplicaCount, workload Workload) {
 	annotations := workload.GetAnnotations()
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
 
-	if originalReplicasStr == "" {
-		annotations[annotationOriginalReplicas] = strconv.Itoa(int(originalReplicasInt))
-	} else {
-		annotations[annotationOriginalReplicas] = originalReplicasStr
-	}
+	annotations[annotationOriginalReplicas] = replicaCount.String()
 
 	workload.SetAnnotations(annotations)
 }
 
 // getOriginalReplicas gets the original replicas annotation on the workload. nil is undefined.
 //
-//nolint:gocritic // unnamedResult: function returns unnamed result values intentionally
-func getOriginalReplicas(workload Workload) (*int32, *string, error) {
+// nolint: ireturn // interface is needed
+func getOriginalReplicas(workload Workload) (ReplicaCount, error) {
 	annotations := workload.GetAnnotations()
-	emptyStr := ""
 
 	originalReplicasString, ok := annotations[annotationOriginalReplicas]
 	if !ok {
-		return nil, &emptyStr, newOriginalReplicasUnsetError("error: original replicas annotation not set on workload")
+		return nil, newOriginalReplicasUnsetError("error: original replicas annotation not set on workload")
 	}
 
 	if strings.Contains(originalReplicasString, "%") {
 		if _, ok := workload.(PercentageWorkload); !ok {
-			return nil, &emptyStr, newPercentageValueNotAllowedError("error: percentage value not allowed for this workload type")
+			return nil, newInvalidReplicaTypeError("error: percentage value not allowed for this workload type")
 		}
 
-		return nil, &originalReplicasString, nil
+		return PercentageReplicas{Value: originalReplicasString}, nil
 	}
 
 	originalReplicas, err := strconv.ParseInt(originalReplicasString, 10, 32)
 	if err != nil {
-		return nil, &emptyStr, fmt.Errorf("failed to parse original replicas annotation on workload: %w", err)
+		return nil, fmt.Errorf("failed to parse original replicas annotation on workload: %w", err)
 	}
 
-	// #nosec G115
-	result := int32(originalReplicas)
-
-	return &result, &emptyStr, nil
+	return AbsoluteReplicas{Value: int32(originalReplicas)}, nil
 }
 
 // removeOriginalReplicas removes the annotationOriginalReplicas from the workload.

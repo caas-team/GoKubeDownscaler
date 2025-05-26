@@ -5,8 +5,10 @@ import (
 	"flag"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 )
 
@@ -61,7 +63,7 @@ func (s *Scope) ParseScopeFlags() {
 		"sets exclude on cli scope to true, makes it so namespaces or deployments have to specify downscaler/exclude=false (default: false)",
 	)
 	flag.Var(
-		(*util.Int32Value)(&s.DownscaleReplicas),
+		&scalable.ReplicaCountValue{ReplicaCount: &s.DownscaleReplicas},
 		"downtime-replicas",
 		"the replicas to scale down to (default: 0)",
 	)
@@ -107,7 +109,7 @@ func (s *Scope) GetScopeFromEnv() error {
 }
 
 // GetScopeFromAnnotations fills l with all values from the annotations and checks for compatibility.
-func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocyclo // it is a big function and we can refactor it a bit but it should be fine for now
+func (s *Scope) GetScopeFromAnnotations( //nolint: nolintlint,funlen,gocognit,cyclop,gocyclo,err113 // it is a big function and we can refactor it a bit but it should be fine for now
 	annotations map[string]string,
 	logEvent util.ResourceLogger,
 	ctx context.Context,
@@ -199,18 +201,23 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 	}
 
 	if downscaleReplicasString, ok := annotations[annotationDownscaleReplicas]; ok {
-		var downscaleReplicas int64
+		var downscaleReplicas scalable.ReplicaCount
+		var value int64
 
-		downscaleReplicas, err = strconv.ParseInt(downscaleReplicasString, 10, 32)
-		if err != nil {
-			err = fmt.Errorf("failed to parse %q annotation: %w", annotationDownscaleReplicas, err)
+		if value, err = strconv.ParseInt(downscaleReplicasString, 10, 32); err == nil {
+			downscaleReplicas = scalable.AbsoluteReplicas{Value: int32(value)}
+		} else if strings.HasSuffix(downscaleReplicasString, "%") {
+			downscaleReplicas = scalable.PercentageReplicas{Value: downscaleReplicasString}
+		} else {
+			//nolint: err113 // temp
+			err = fmt.Errorf("failed to parse %q annotation: invalid format %q", annotationDownscaleReplicas, downscaleReplicasString)
 			logEvent.ErrorInvalidAnnotation(annotationDownscaleReplicas, err.Error(), ctx)
 
 			return err
 		}
 
 		// #nosec G115 // downscaleReplicas gets parsed as a 32 bit integer, so any errors that could be thrown here are already handled above
-		s.DownscaleReplicas = int32(downscaleReplicas)
+		s.DownscaleReplicas = downscaleReplicas
 	}
 
 	if gracePeriod, ok := annotations[annotationGracePeriod]; ok {

@@ -25,7 +25,7 @@ func (r *suspendScaledWorkload) ScaleUp() error {
 }
 
 // ScaleDown scales down the underlying suspendScaledResource.
-func (r *suspendScaledWorkload) ScaleDown(_ int32) error {
+func (r *suspendScaledWorkload) ScaleDown(_ ReplicaCount) error {
 	r.setSuspend(true)
 	return nil
 }

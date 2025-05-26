@@ -24,8 +24,9 @@ type replicaScaledWorkload struct {
 }
 
 // ScaleUp scales up the underlying replicaScaledResource.
+// nolint: err113 // dynamic errors
 func (r *replicaScaledWorkload) ScaleUp() error {
-	originalReplicas, _, err := getOriginalReplicas(r)
+	originalReplicas, err := getOriginalReplicas(r)
 	if err != nil {
 		var originalReplicasUnsetErr *OriginalReplicasUnsetError
 		if ok := errors.As(err, &originalReplicasUnsetErr); ok {
@@ -36,7 +37,12 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
-	err = r.setReplicas(*originalReplicas)
+	originalReplicasAbsolute, ok := originalReplicas.(AbsoluteReplicas)
+	if !ok {
+		return fmt.Errorf("invalid replica type: expected AbsoluteReplicas, got %T", originalReplicas)
+	}
+
+	err = r.setReplicas(originalReplicasAbsolute.Value)
 	if err != nil {
 		return fmt.Errorf("failed to set original replicas for workload: %w", err)
 	}
@@ -47,23 +53,29 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 }
 
 // ScaleDown scales down the underlying replicaScaledResource.
-func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas int32) error {
+// nolint: err113 // dynamic errors
+func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas ReplicaCount) error {
+	downscaleReplicasInt, ok := downscaleReplicas.(*AbsoluteReplicas)
+	if !ok {
+		return errors.New("invalid replica type: expected AbsoluteReplicas")
+	}
+
 	originalReplicas, err := r.getReplicas()
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
-	if originalReplicas == downscaleReplicas {
+	if originalReplicas == downscaleReplicasInt.Value {
 		slog.Debug("workload is already scaled down, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
 		return nil
 	}
 
-	err = r.setReplicas(downscaleReplicas)
+	err = r.setReplicas(downscaleReplicasInt.Value)
 	if err != nil {
 		return fmt.Errorf("failed to set replicas for workload: %w", err)
 	}
 
-	setOriginalReplicas(originalReplicas, "", r)
+	setOriginalReplicas(&AbsoluteReplicas{Value: originalReplicas}, r)
 
 	return nil
 }
