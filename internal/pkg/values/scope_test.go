@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,7 +51,7 @@ func TestScope_checkForIncompatibleFields(t *testing.T) {
 		{
 			name: "downscale replicas invalid",
 			scope: Scope{
-				DownscaleReplicas: &scalable.AbsoluteReplicas{Value: -12},
+				DownscaleReplicas: AbsoluteReplicas(-12),
 			},
 			wantErr: true,
 		},

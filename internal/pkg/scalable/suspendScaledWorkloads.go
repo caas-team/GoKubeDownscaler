@@ -2,6 +2,8 @@ package scalable
 
 import (
 	"context"
+
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 )
 
 // suspendScaledResource provides all the functions needed to scale a resource which is scaled by setting a suspend field.
@@ -25,7 +27,7 @@ func (r *suspendScaledWorkload) ScaleUp() error {
 }
 
 // ScaleDown scales down the underlying suspendScaledResource.
-func (r *suspendScaledWorkload) ScaleDown(_ ReplicaCount) error {
+func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas) error {
 	r.setSuspend(true)
 	return nil
 }

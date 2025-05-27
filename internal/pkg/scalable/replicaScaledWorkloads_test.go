@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -15,14 +16,14 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 	tests := []struct {
 		name                 string
 		replicas             int32
-		originalReplicas     ReplicaCount
-		wantOriginalReplicas ReplicaCount
+		originalReplicas     values.Replicas
+		wantOriginalReplicas values.Replicas
 		wantReplicas         int32
 	}{
 		{
 			name:                 "scale up",
 			replicas:             0,
-			originalReplicas:     &AbsoluteReplicas{Value: 5},
+			originalReplicas:     values.AbsoluteReplicas(5),
 			wantOriginalReplicas: nil,
 			wantReplicas:         5,
 		},
@@ -80,29 +81,29 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 	tests := []struct {
 		name                 string
 		replicas             int32
-		originalReplicas     ReplicaCount
-		wantOriginalReplicas ReplicaCount
+		originalReplicas     values.Replicas
+		wantOriginalReplicas values.Replicas
 		wantReplicas         int32
 	}{
 		{
 			name:                 "scale down",
 			replicas:             5,
 			originalReplicas:     nil,
-			wantOriginalReplicas: &AbsoluteReplicas{Value: 5},
+			wantOriginalReplicas: values.AbsoluteReplicas(5),
 			wantReplicas:         0,
 		},
 		{
 			name:                 "already scaled down",
 			replicas:             0,
-			originalReplicas:     &AbsoluteReplicas{Value: 5},
-			wantOriginalReplicas: &AbsoluteReplicas{Value: 5},
+			originalReplicas:     values.AbsoluteReplicas(5),
+			wantOriginalReplicas: values.AbsoluteReplicas(5),
 			wantReplicas:         0,
 		},
 		{
 			name:                 "orignal replicas set, but not scaled down",
 			replicas:             2,
-			originalReplicas:     &AbsoluteReplicas{Value: 5},
-			wantOriginalReplicas: &AbsoluteReplicas{Value: 2},
+			originalReplicas:     values.AbsoluteReplicas(5),
+			wantOriginalReplicas: values.AbsoluteReplicas(2),
 			wantReplicas:         0,
 		},
 	}
@@ -118,7 +119,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, deployment)
 			}
 
-			err := deployment.ScaleDown(&AbsoluteReplicas{Value: 0})
+			err := deployment.ScaleDown(values.AbsoluteReplicas(0))
 			require.NoError(t, err)
 
 			replicas, err := deployment.getReplicas()
@@ -131,4 +132,32 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			assert.Equal(t, test.wantOriginalReplicas.String(), oringalReplicas.String())
 		})
 	}
+}
+
+func TestReplicaScaledWorkload_InvalidReplicaTypes(t *testing.T) {
+	t.Parallel()
+
+	t.Run("ScaleUp fails if originalReplicas is not AbsoluteReplicas", func(t *testing.T) {
+		t.Parallel()
+
+		deployment := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
+		_ = deployment.setReplicas(0)
+
+		setOriginalReplicas(values.PercentageReplicas(50), deployment)
+
+		err := deployment.ScaleUp()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "percentage")
+	})
+
+	t.Run("ScaleDown fails if downscaleReplicas is not AbsoluteReplicas", func(t *testing.T) {
+		t.Parallel()
+
+		deployment := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
+		_ = deployment.setReplicas(5)
+
+		err := deployment.ScaleDown(values.PercentageReplicas(50))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "percentage")
+	})
 }

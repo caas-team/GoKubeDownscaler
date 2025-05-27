@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	policy "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // getPodDisruptionBudgets is the getResourceFunc for podDisruptionBudget.
@@ -39,30 +39,18 @@ func (p *podDisruptionBudget) AllowPercentageReplicas() bool {
 // getMinAvailable returns the spec.MinAvailable value or an undefined/empty value.
 //
 // nolint: nolintlint, gocritic, ireturn // unnamedResult: function returns unnamed result values intentionally
-func (p *podDisruptionBudget) getMinAvailable() ReplicaCount {
+func (p *podDisruptionBudget) getMinAvailable() values.Replicas {
 	minAvailable := p.Spec.MinAvailable
 	if minAvailable == nil {
 		return nil
 	}
 
-	if minAvailable.Type == intstr.String {
-		return &PercentageReplicas{Value: minAvailable.StrVal}
-	}
-
-	return &AbsoluteReplicas{Value: minAvailable.IntVal}
+	return values.NewReplicasFromIntOrStr(minAvailable)
 }
 
 // setMinAvailable applies a new value to spec.MinAvailable.
-func (p *podDisruptionBudget) setMinAvailable(targetMinAvailable ReplicaCount) {
-	var minAvailable intstr.IntOrString
-
-	if percent, ok := targetMinAvailable.(PercentageReplicas); ok {
-		minAvailable = intstr.FromString(percent.Value)
-	}
-
-	if absolute, ok := targetMinAvailable.(AbsoluteReplicas); ok {
-		minAvailable = intstr.FromInt32(absolute.Value)
-	}
+func (p *podDisruptionBudget) setMinAvailable(targetMinAvailable values.Replicas) {
+	minAvailable := targetMinAvailable.AsIntStr()
 
 	p.Spec.MinAvailable = &minAvailable
 }
@@ -70,31 +58,18 @@ func (p *podDisruptionBudget) setMinAvailable(targetMinAvailable ReplicaCount) {
 // getMaxUnavailable returns the spec.MaxUnavailable value or an undefined/empty value.
 //
 // nolint: nolintlint, gocritic, ireturn // unnamedResult: function returns unnamed result values intentionally
-func (p *podDisruptionBudget) getMaxUnavailable() ReplicaCount {
+func (p *podDisruptionBudget) getMaxUnavailable() values.Replicas {
 	maxUnavailable := p.Spec.MaxUnavailable
 	if maxUnavailable == nil {
 		return nil
 	}
 
-	if maxUnavailable.Type == intstr.String {
-		return &PercentageReplicas{Value: maxUnavailable.StrVal}
-	}
-
-	return &AbsoluteReplicas{Value: maxUnavailable.IntVal}
+	return values.NewReplicasFromIntOrStr(maxUnavailable)
 }
 
 // setMaxUnavailable applies a new value to spec.MaxUnavailable.
-func (p *podDisruptionBudget) setMaxUnavailable(targetMaxUnavailable ReplicaCount) {
-	var maxUnavailable intstr.IntOrString
-
-	if percent, ok := targetMaxUnavailable.(PercentageReplicas); ok {
-		maxUnavailable = intstr.FromString(percent.Value)
-	}
-
-	if absolute, ok := targetMaxUnavailable.(AbsoluteReplicas); ok {
-		maxUnavailable = intstr.FromInt32(absolute.Value)
-	}
-
+func (p *podDisruptionBudget) setMaxUnavailable(targetMaxUnavailable values.Replicas) {
+	maxUnavailable := targetMaxUnavailable.AsIntStr()
 	p.Spec.MaxUnavailable = &maxUnavailable
 }
 
@@ -132,7 +107,7 @@ func (p *podDisruptionBudget) ScaleUp() error {
 
 // ScaleDown scales the resource down.
 // nolint:cyclop // this function is too complex, but it is necessary to handle workload types. We should refactor this in the future.
-func (p *podDisruptionBudget) ScaleDown(downscaleReplicas ReplicaCount) error {
+func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) error {
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {
 		if maxUnavailable.String() == downscaleReplicas.String() {

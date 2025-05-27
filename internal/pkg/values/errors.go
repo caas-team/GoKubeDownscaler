@@ -48,7 +48,7 @@ type InvalidValueError struct {
 }
 
 func newInvalidValueError(reason, value string) error {
-	return &InvalidSyntaxError{reason: reason, value: value}
+	return &InvalidValueError{reason: reason, value: value}
 }
 
 func (i *InvalidValueError) Error() string {

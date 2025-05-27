@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 )
 
 // replicaScaledResource provides all the functions needed to scale a resource which is scaled by setting the replica count.
@@ -37,12 +39,7 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
-	originalReplicasAbsolute, ok := originalReplicas.(AbsoluteReplicas)
-	if !ok {
-		return fmt.Errorf("invalid replica type: expected AbsoluteReplicas, got %T", originalReplicas)
-	}
-
-	err = r.setReplicas(originalReplicasAbsolute.Value)
+	err = r.setReplicas(originalReplicas.AsInt32())
 	if err != nil {
 		return fmt.Errorf("failed to set original replicas for workload: %w", err)
 	}
@@ -54,28 +51,29 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 
 // ScaleDown scales down the underlying replicaScaledResource.
 // nolint: err113 // dynamic errors
-func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas ReplicaCount) error {
-	downscaleReplicasInt, ok := downscaleReplicas.(*AbsoluteReplicas)
-	if !ok {
-		return errors.New("invalid replica type: expected AbsoluteReplicas")
+func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) error {
+	if _, ok := downscaleReplicas.(values.AbsoluteReplicas); !ok {
+		return newInvalidReplicaTypeError("error: percentage value not allowed for this workload type")
 	}
+
+	downscaleReplicasInt32 := downscaleReplicas.AsInt32()
 
 	originalReplicas, err := r.getReplicas()
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
-	if originalReplicas == downscaleReplicasInt.Value {
+	if originalReplicas == downscaleReplicasInt32 {
 		slog.Debug("workload is already scaled down, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
 		return nil
 	}
 
-	err = r.setReplicas(downscaleReplicasInt.Value)
+	err = r.setReplicas(downscaleReplicasInt32)
 	if err != nil {
 		return fmt.Errorf("failed to set replicas for workload: %w", err)
 	}
 
-	setOriginalReplicas(&AbsoluteReplicas{Value: originalReplicas}, r)
+	setOriginalReplicas(values.AbsoluteReplicas(originalReplicas), r)
 
 	return nil
 }

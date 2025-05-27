@@ -3,11 +3,9 @@ package values
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 )
 
@@ -46,24 +44,24 @@ func (s ScopeID) String() string {
 // NewScope gets a new scope with all values in an unset state.
 func NewScope() *Scope {
 	return &Scope{
-		DownscaleReplicas: &scalable.AbsoluteReplicas{Value: util.Undefined},
+		DownscaleReplicas: nil,
 		GracePeriod:       util.Undefined,
 	}
 }
 
 // Scope represents a value Scope.
 type Scope struct {
-	DownscalePeriod   timeSpans             // periods to downscale in
-	DownTime          timeSpans             // within these timespans workloads will be scaled down, outside of them they will be scaled up
-	UpscalePeriod     timeSpans             // periods to upscale in
-	UpTime            timeSpans             // within these timespans workloads will be scaled up, outside of them they will be scaled down
-	Exclude           timeSpans             // defines when the workload should be excluded
-	ExcludeUntil      *time.Time            // until when the workload should be excluded
-	ForceUptime       timeSpans             // force workload into an uptime state when in one of the timespans
-	ForceDowntime     timeSpans             // force workload into a downtime state when in one of the timespans
-	DownscaleReplicas scalable.ReplicaCount // the replicas to scale down to
-	GracePeriod       time.Duration         // grace period until new workloads will be scaled down
-	ScaleChildren     triStateBool          // ownerReference will immediately trigger scaling of children workloads, when applicable
+	DownscalePeriod   timeSpans     // periods to downscale in
+	DownTime          timeSpans     // within these timespans workloads will be scaled down, outside of them they will be scaled up
+	UpscalePeriod     timeSpans     // periods to upscale in
+	UpTime            timeSpans     // within these timespans workloads will be scaled up, outside of them they will be scaled down
+	Exclude           timeSpans     // defines when the workload should be excluded
+	ExcludeUntil      *time.Time    // until when the workload should be excluded
+	ForceUptime       timeSpans     // force workload into an uptime state when in one of the timespans
+	ForceDowntime     timeSpans     // force workload into a downtime state when in one of the timespans
+	DownscaleReplicas Replicas      // the replicas to scale down to
+	GracePeriod       time.Duration // grace period until new workloads will be scaled down
+	ScaleChildren     triStateBool  // ownerReference will immediately trigger scaling of children workloads, when applicable
 }
 
 func GetDefaultScope() *Scope {
@@ -76,7 +74,7 @@ func GetDefaultScope() *Scope {
 		ExcludeUntil:      nil,
 		ForceUptime:       nil,
 		ForceDowntime:     nil,
-		DownscaleReplicas: &scalable.AbsoluteReplicas{Value: 0},
+		DownscaleReplicas: AbsoluteReplicas(0),
 		GracePeriod:       15 * time.Minute,
 		ScaleChildren:     triStateBool{isSet: false, value: false},
 	}
@@ -89,29 +87,13 @@ func (s *Scope) CheckForIncompatibleFields() error { //nolint: nolintlint, cyclo
 		return newIncompatibalFieldsError("forceUptime", "forceDowntime")
 	}
 	// downscale replicas invalid
-	//nolint: gocritic // temp
-	if abs, ok := s.DownscaleReplicas.(*scalable.AbsoluteReplicas); ok {
-		if abs.Value < 0 && abs.Value != util.Undefined {
+	if s.DownscaleReplicas != nil {
+		if s.DownscaleReplicas.AsInt() != util.Undefined && s.DownscaleReplicas.AsInt() < 0 {
 			return newInvalidValueError(
 				"downscale replicas has to be a positive integer",
-				strconv.Itoa(int(abs.Value)),
+				s.DownscaleReplicas.String(),
 			)
 		}
-	} else if pct, ok := s.DownscaleReplicas.(*scalable.PercentageReplicas); ok {
-		percentStr := strings.TrimSuffix(pct.Value, "%")
-
-		percentInt, err := strconv.Atoi(percentStr)
-		if err != nil || percentInt < 0 || percentInt > 100 {
-			return newInvalidValueError(
-				"downscale replicas must be a percentage between 0% and 100%",
-				pct.Value,
-			)
-		}
-	} else {
-		return newInvalidValueError(
-			"invalid downscale replicas type",
-			fmt.Sprintf("%T", s.DownscaleReplicas),
-		)
 	}
 	// up- and downtime
 	if s.UpTime != nil && s.DownTime != nil {
@@ -223,19 +205,17 @@ func (s Scopes) GetCurrentScaling() Scaling {
 
 // GetDownscaleReplicas gets the downscale replicas of the first scope that implements downscale replicas.
 // nolint: ireturn // interface is needed
-func (s Scopes) GetDownscaleReplicas() (scalable.ReplicaCount, error) {
+func (s Scopes) GetDownscaleReplicas() (Replicas, error) {
 	for _, scope := range s {
 		downscaleReplicas := scope.DownscaleReplicas
-		if val, ok := downscaleReplicas.(*scalable.AbsoluteReplicas); ok {
-			if val.Value == util.Undefined {
-				continue
-			}
+		if downscaleReplicas == nil || downscaleReplicas.AsInt() == util.Undefined {
+			continue
 		}
 
 		return downscaleReplicas, nil
 	}
 
-	return &scalable.AbsoluteReplicas{Value: 0}, newValueNotSetError("downscaleReplicas")
+	return nil, newValueNotSetError("downscaleReplicas")
 }
 
 // GetScaleChildren gets the scale children of the first scope that implements scale children.

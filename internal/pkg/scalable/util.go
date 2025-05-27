@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -199,7 +199,7 @@ func isManagedByOwnerReference(workload Workload) bool {
 }
 
 // setOriginalReplicas sets the original replicas annotation on the workload.
-func setOriginalReplicas(replicaCount ReplicaCount, workload Workload) {
+func setOriginalReplicas(replicaCount values.Replicas, workload Workload) {
 	annotations := workload.GetAnnotations()
 	if annotations == nil {
 		annotations = map[string]string{}
@@ -213,7 +213,7 @@ func setOriginalReplicas(replicaCount ReplicaCount, workload Workload) {
 // getOriginalReplicas gets the original replicas annotation on the workload. nil is undefined.
 //
 // nolint: ireturn // interface is needed
-func getOriginalReplicas(workload Workload) (ReplicaCount, error) {
+func getOriginalReplicas(workload Workload) (values.Replicas, error) {
 	annotations := workload.GetAnnotations()
 
 	originalReplicasString, ok := annotations[annotationOriginalReplicas]
@@ -221,20 +221,21 @@ func getOriginalReplicas(workload Workload) (ReplicaCount, error) {
 		return nil, newOriginalReplicasUnsetError("error: original replicas annotation not set on workload")
 	}
 
-	if strings.Contains(originalReplicasString, "%") {
-		if _, ok := workload.(PercentageWorkload); !ok {
-			return nil, newInvalidReplicaTypeError("error: percentage value not allowed for this workload type")
-		}
+	var replica values.Replicas
+	replicasValue := values.ReplicasValue{Replicas: &replica}
 
-		return PercentageReplicas{Value: originalReplicasString}, nil
-	}
-
-	originalReplicas, err := strconv.ParseInt(originalReplicasString, 10, 32)
-	if err != nil {
+	if err := replicasValue.Set(originalReplicasString); err != nil {
 		return nil, fmt.Errorf("failed to parse original replicas annotation on workload: %w", err)
 	}
 
-	return AbsoluteReplicas{Value: int32(originalReplicas)}, nil
+	// keeping validation for types that support percentage replicas
+	if _, isPercentage := replica.(values.PercentageReplicas); isPercentage {
+		if _, ok := workload.(PercentageWorkload); !ok {
+			return nil, newInvalidReplicaTypeError("error: percentage value not allowed for this workload type")
+		}
+	}
+
+	return replica, nil
 }
 
 // removeOriginalReplicas removes the annotationOriginalReplicas from the workload.
