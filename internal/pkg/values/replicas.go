@@ -42,9 +42,8 @@ func (p PercentageReplicas) AsInt32() int32 {
 		maxPercentage = 100
 	)
 
-	percentage := p.AsInt() // AsInt returns int
+	percentage := p.AsInt()
 
-	// Clamp the value between min and max
 	if percentage < minPercentage {
 		return int32(minPercentage)
 	}
