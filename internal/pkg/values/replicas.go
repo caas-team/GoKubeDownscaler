@@ -105,9 +105,7 @@ func (r *ReplicasValue) Set(value string) error {
 	return fmt.Errorf("invalid replica value: %s", value)
 }
 
-// NewReplicasFromIntOrStr
-//
-// nolint: ireturn // needed to return an interface
+// NewReplicasFromIntOrStr parses a intstr.IntOrString to the correct specific replica type.
 func NewReplicasFromIntOrStr(intOrString *intstr.IntOrString) Replicas {
 	if intOrString == nil {
 		return nil

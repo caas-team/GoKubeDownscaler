@@ -106,6 +106,10 @@ linters:
     - wsl
     - zerologlint
   settings:
+    ireturn:
+      allow:
+        - Replicas
+        - error
     depguard:
       rules:
         logger:

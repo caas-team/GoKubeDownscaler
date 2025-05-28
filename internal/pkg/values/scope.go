@@ -81,7 +81,7 @@ func GetDefaultScope() *Scope {
 }
 
 // CheckForIncompatibleFields checks if there are incompatible fields.
-func (s *Scope) CheckForIncompatibleFields() error { //nolint: nolintlint, cyclop, gocyclo, gocritic // this is still fine to read, we could defnitly consider refactoring this in the future
+func (s *Scope) CheckForIncompatibleFields() error { //nolint: cyclop // this is still fine to read, we could defnitly consider refactoring this in the future
 	// force down and uptime
 	if s.ForceDowntime != nil && s.ForceUptime != nil {
 		return newIncompatibalFieldsError("forceUptime", "forceDowntime")
@@ -204,7 +204,6 @@ func (s Scopes) GetCurrentScaling() Scaling {
 }
 
 // GetDownscaleReplicas gets the downscale replicas of the first scope that implements downscale replicas.
-// nolint: ireturn // interface is needed
 func (s Scopes) GetDownscaleReplicas() (Replicas, error) {
 	for _, scope := range s {
 		downscaleReplicas := scope.DownscaleReplicas

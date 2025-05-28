@@ -211,8 +211,6 @@ func setOriginalReplicas(replicaCount values.Replicas, workload Workload) {
 }
 
 // getOriginalReplicas gets the original replicas annotation on the workload. nil is undefined.
-//
-// nolint: ireturn // interface is needed
 func getOriginalReplicas(workload Workload) (values.Replicas, error) {
 	annotations := workload.GetAnnotations()
 
