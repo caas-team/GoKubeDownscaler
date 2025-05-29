@@ -12,55 +12,31 @@ import (
 type Replicas interface {
 	String() string
 	AsIntStr() intstr.IntOrString
-	AsInt32() int32
-	AsInt() int
+	AsInt32() (int32, error)
 }
 
 type AbsoluteReplicas int32
 
 func (a AbsoluteReplicas) String() string { return strconv.Itoa(int(a)) }
 
-func (a AbsoluteReplicas) AsInt32() int32 {
-	return int32(a)
+func (a AbsoluteReplicas) AsInt32() (int32, error) {
+	return int32(a), nil
 }
 
 func (a AbsoluteReplicas) AsIntStr() intstr.IntOrString {
 	return intstr.FromInt32(int32(a))
 }
 
-func (a AbsoluteReplicas) AsInt() int {
-	return int(a)
-}
-
 type PercentageReplicas int
 
 func (p PercentageReplicas) String() string { return fmt.Sprintf("%d%%", p) }
 
-func (p PercentageReplicas) AsInt32() int32 {
-	const (
-		minPercentage = 0
-		maxPercentage = 100
-	)
-
-	percentage := p.AsInt()
-
-	if percentage < minPercentage {
-		return int32(minPercentage)
-	}
-
-	if percentage > maxPercentage {
-		return int32(maxPercentage)
-	}
-
-	return int32(percentage)
+func (p PercentageReplicas) AsInt32() (int32, error) {
+	return 0, newInvalidValueError("percentage replicas cannot be converted to int32", p.String())
 }
 
 func (p PercentageReplicas) AsIntStr() intstr.IntOrString {
 	return intstr.FromString(strconv.Itoa(int(p)) + "%")
-}
-
-func (p PercentageReplicas) AsInt() int {
-	return int(p)
 }
 
 type ReplicasValue struct {
@@ -102,7 +78,7 @@ func (r *ReplicasValue) Set(value string) error {
 		}
 	}
 
-	return fmt.Errorf("invalid replica value: %s", value)
+	return newInvalidValueError("invalid replica value", value)
 }
 
 // NewReplicasFromIntOrStr parses a intstr.IntOrString to the correct specific replica type.
@@ -126,7 +102,7 @@ func NewReplicasFromIntOrStr(intOrString *intstr.IntOrString) Replicas {
 
 func (r *ReplicasValue) String() string {
 	if r.Replicas == nil || *r.Replicas == nil {
-		return ""
+		return util.UndefinedString
 	}
 
 	return (*r.Replicas).String()

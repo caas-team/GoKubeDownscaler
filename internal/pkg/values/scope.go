@@ -81,19 +81,10 @@ func GetDefaultScope() *Scope {
 }
 
 // CheckForIncompatibleFields checks if there are incompatible fields.
-func (s *Scope) CheckForIncompatibleFields() error { //nolint: cyclop // this is still fine to read, we could defnitly consider refactoring this in the future
+func (s *Scope) CheckForIncompatibleFields() error {
 	// force down and uptime
 	if s.ForceDowntime != nil && s.ForceUptime != nil {
 		return newIncompatibalFieldsError("forceUptime", "forceDowntime")
-	}
-	// downscale replicas invalid
-	if s.DownscaleReplicas != nil {
-		if s.DownscaleReplicas.AsInt() != util.Undefined && s.DownscaleReplicas.AsInt() < 0 {
-			return newInvalidValueError(
-				"downscale replicas has to be a positive integer",
-				s.DownscaleReplicas.String(),
-			)
-		}
 	}
 	// up- and downtime
 	if s.UpTime != nil && s.DownTime != nil {
@@ -207,7 +198,7 @@ func (s Scopes) GetCurrentScaling() Scaling {
 func (s Scopes) GetDownscaleReplicas() (Replicas, error) {
 	for _, scope := range s {
 		downscaleReplicas := scope.DownscaleReplicas
-		if downscaleReplicas == nil || downscaleReplicas.AsInt() == util.Undefined {
+		if downscaleReplicas == nil {
 			continue
 		}
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	appsv1 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -43,13 +44,13 @@ func (h *horizontalPodAutoscaler) setReplicas(replicas int32) error {
 }
 
 // getReplicas gets the current amount of replicas of the resource.
-func (h *horizontalPodAutoscaler) getReplicas() (int32, error) {
+func (h *horizontalPodAutoscaler) getReplicas() (values.Replicas, error) {
 	replicas := h.Spec.MinReplicas
 	if replicas == nil {
-		return 0, newNoReplicasError(h.Kind, h.Name)
+		return nil, newNoReplicasError(h.Kind, h.Name)
 	}
 
-	return *h.Spec.MinReplicas, nil
+	return values.AbsoluteReplicas(*replicas), nil
 }
 
 // Reget regets the resource from the Kubernetes API.

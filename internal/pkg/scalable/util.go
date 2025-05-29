@@ -226,13 +226,6 @@ func getOriginalReplicas(workload Workload) (values.Replicas, error) {
 		return nil, fmt.Errorf("failed to parse original replicas annotation on workload: %w", err)
 	}
 
-	// keeping validation for types that support percentage replicas
-	if _, isPercentage := replica.(values.PercentageReplicas); isPercentage {
-		if _, ok := workload.(PercentageWorkload); !ok {
-			return nil, newInvalidReplicaTypeError("error: percentage value not allowed for this workload type")
-		}
-	}
-
 	return replica, nil
 }
 

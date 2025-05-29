@@ -15,31 +15,38 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 
 	tests := []struct {
 		name                 string
-		replicas             int32
+		replicas             values.Replicas
 		originalReplicas     values.Replicas
 		wantOriginalReplicas values.Replicas
-		wantReplicas         int32
+		wantReplicas         values.Replicas
 	}{
 		{
 			name:                 "scale up",
-			replicas:             0,
+			replicas:             values.AbsoluteReplicas(0),
 			originalReplicas:     values.AbsoluteReplicas(5),
 			wantOriginalReplicas: nil,
-			wantReplicas:         5,
+			wantReplicas:         values.AbsoluteReplicas(5),
 		},
 		{
 			name:                 "already scaled up",
-			replicas:             5,
+			replicas:             values.AbsoluteReplicas(5),
 			originalReplicas:     nil,
 			wantOriginalReplicas: nil,
-			wantReplicas:         5,
+			wantReplicas:         values.AbsoluteReplicas(5),
 		},
 		{
 			name:                 "orignal replicas not set",
-			replicas:             0,
+			replicas:             values.AbsoluteReplicas(0),
 			originalReplicas:     nil,
 			wantOriginalReplicas: nil,
-			wantReplicas:         0,
+			wantReplicas:         values.AbsoluteReplicas(0),
+		},
+		{
+			name:                 "original replicas is not AbsoluteReplicas",
+			replicas:             values.AbsoluteReplicas(0),
+			originalReplicas:     values.PercentageReplicas(50),
+			wantOriginalReplicas: nil,
+			wantReplicas:         values.AbsoluteReplicas(0),
 		},
 	}
 
@@ -48,14 +55,24 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 			t.Parallel()
 
 			deployment := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
-			_ = deployment.setReplicas(test.replicas)
+			replicasInt32, _ := test.replicas.AsInt32()
+
+			_ = deployment.setReplicas(replicasInt32)
 
 			if test.originalReplicas != nil {
 				setOriginalReplicas(test.originalReplicas, deployment)
 			}
 
 			err := deployment.ScaleUp()
+			if _, ok := test.originalReplicas.(values.PercentageReplicas); ok {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "percentage")
+
+				return
+			}
+
 			require.NoError(t, err)
+
 			replicas, err := deployment.getReplicas()
 
 			if assert.NoError(t, err) {
@@ -80,31 +97,38 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 
 	tests := []struct {
 		name                 string
-		replicas             int32
+		replicas             values.Replicas
 		originalReplicas     values.Replicas
 		wantOriginalReplicas values.Replicas
-		wantReplicas         int32
+		wantReplicas         values.Replicas
 	}{
 		{
 			name:                 "scale down",
-			replicas:             5,
+			replicas:             values.AbsoluteReplicas(5),
 			originalReplicas:     nil,
 			wantOriginalReplicas: values.AbsoluteReplicas(5),
-			wantReplicas:         0,
+			wantReplicas:         values.AbsoluteReplicas(0),
 		},
 		{
 			name:                 "already scaled down",
-			replicas:             0,
+			replicas:             values.AbsoluteReplicas(0),
 			originalReplicas:     values.AbsoluteReplicas(5),
 			wantOriginalReplicas: values.AbsoluteReplicas(5),
-			wantReplicas:         0,
+			wantReplicas:         values.AbsoluteReplicas(0),
 		},
 		{
 			name:                 "orignal replicas set, but not scaled down",
-			replicas:             2,
+			replicas:             values.AbsoluteReplicas(2),
 			originalReplicas:     values.AbsoluteReplicas(5),
 			wantOriginalReplicas: values.AbsoluteReplicas(2),
-			wantReplicas:         0,
+			wantReplicas:         values.AbsoluteReplicas(0),
+		},
+		{
+			name:                 "downscale replicas is not AbsoluteReplicas",
+			replicas:             values.AbsoluteReplicas(5),
+			originalReplicas:     nil,
+			wantOriginalReplicas: nil,
+			wantReplicas:         values.AbsoluteReplicas(5),
 		},
 	}
 
@@ -113,13 +137,28 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			t.Parallel()
 
 			deployment := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
-			_ = deployment.setReplicas(test.replicas)
+			replicasInt32, _ := test.replicas.AsInt32()
+
+			_ = deployment.setReplicas(replicasInt32)
 
 			if test.originalReplicas != nil {
 				setOriginalReplicas(test.originalReplicas, deployment)
 			}
 
-			err := deployment.ScaleDown(values.AbsoluteReplicas(0))
+			var downscaleReplica values.Replicas = values.AbsoluteReplicas(0)
+			if test.name == "downscale replicas is not AbsoluteReplicas" {
+				downscaleReplica = values.PercentageReplicas(50)
+			}
+
+			err := deployment.ScaleDown(downscaleReplica)
+
+			if _, ok := downscaleReplica.(values.PercentageReplicas); ok {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "failed to convert downscale replicas")
+
+				return
+			}
+
 			require.NoError(t, err)
 
 			replicas, err := deployment.getReplicas()
@@ -132,32 +171,4 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			assert.Equal(t, test.wantOriginalReplicas.String(), oringalReplicas.String())
 		})
 	}
-}
-
-func TestReplicaScaledWorkload_InvalidReplicaTypes(t *testing.T) {
-	t.Parallel()
-
-	t.Run("ScaleUp fails if originalReplicas is not AbsoluteReplicas", func(t *testing.T) {
-		t.Parallel()
-
-		deployment := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
-		_ = deployment.setReplicas(0)
-
-		setOriginalReplicas(values.PercentageReplicas(50), deployment)
-
-		err := deployment.ScaleUp()
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "percentage")
-	})
-
-	t.Run("ScaleDown fails if downscaleReplicas is not AbsoluteReplicas", func(t *testing.T) {
-		t.Parallel()
-
-		deployment := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
-		_ = deployment.setReplicas(5)
-
-		err := deployment.ScaleDown(values.PercentageReplicas(50))
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "percentage")
-	})
 }

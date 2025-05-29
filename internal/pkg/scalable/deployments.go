@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -36,13 +37,13 @@ func (d *deployment) setReplicas(replicas int32) error {
 }
 
 // getReplicas gets the current amount of replicas of the resource.
-func (d *deployment) getReplicas() (int32, error) {
+func (d *deployment) getReplicas() (values.Replicas, error) {
 	replicas := d.Spec.Replicas
 	if replicas == nil {
-		return 0, newNoReplicasError(d.Kind, d.Name)
+		return nil, newNoReplicasError(d.Kind, d.Name)
 	}
 
-	return *d.Spec.Replicas, nil
+	return values.AbsoluteReplicas(*replicas), nil
 }
 
 // Reget regets the resource from the Kubernetes API.

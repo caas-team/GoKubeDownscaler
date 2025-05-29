@@ -198,10 +198,12 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 	}
 
 	if downscaleReplicasString, ok := annotations[annotationDownscaleReplicas]; ok {
-		var replicasVal ReplicasValue
+		replicasVal := ReplicasValue{Replicas: &s.DownscaleReplicas}
 
 		if err = replicasVal.Set(downscaleReplicasString); err != nil {
+			err = fmt.Errorf("failed to parse %q annotation: %w", annotationDownscaleReplicas, err)
 			logEvent.ErrorInvalidAnnotation(annotationDownscaleReplicas, err.Error(), ctx)
+
 			return err
 		}
 
