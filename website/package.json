@@ -21,7 +21,7 @@
     "@eslint/compat": "^1.2.9",
     "@excalidraw/excalidraw": "^0.18.0",
     "@mdx-js/react": "^3.1.0",
-    "@tailwindcss/postcss": "^4.1.7",
+    "@tailwindcss/postcss": "^4.1.8",
     "clsx": "^2.1.1",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.1.0",
@@ -38,7 +38,7 @@
     "eslint": "^9.27.0",
     "eslint-plugin-markdown": "^5.1.0",
     "json-loader": "^0.5.7",
-    "postcss": "^8.5.3",
+    "postcss": "^8.5.4",
     "tailwindcss": "^4.0.13",
     "typescript": "~5.8.3"
   },
