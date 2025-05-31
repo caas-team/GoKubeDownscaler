@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	argov1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -36,13 +37,13 @@ func (r *rollout) setReplicas(replicas int32) error {
 }
 
 // getReplicas gets the current amount of replicas of the resource.
-func (r *rollout) getReplicas() (int32, error) {
+func (r *rollout) getReplicas() (values.Replicas, error) {
 	replicas := r.Spec.Replicas
 	if replicas == nil {
-		return 0, newNoReplicasError(r.Kind, r.Name)
+		return nil, newNoReplicasError(r.Kind, r.Name)
 	}
 
-	return *r.Spec.Replicas, nil
+	return values.AbsoluteReplicas(*replicas), nil
 }
 
 // Reget regets the resource from the Kubernetes API.

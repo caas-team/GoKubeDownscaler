@@ -36,7 +36,7 @@ type Client interface {
 	// RegetWorkload gets the workload again to ensure the latest state
 	RegetWorkload(workload scalable.Workload, ctx context.Context) error
 	// DownscaleWorkload downscales the workload to the specified replicas
-	DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error
+	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context) error
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
 	// CreateLease creates a new lease for the downscaler
@@ -176,7 +176,7 @@ func (c client) RegetWorkload(workload scalable.Workload, ctx context.Context) e
 }
 
 // DownscaleWorkload downscales the workload to the specified replicas.
-func (c client) DownscaleWorkload(replicas int32, workload scalable.Workload, ctx context.Context) error {
+func (c client) DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context) error {
 	err := workload.ScaleDown(replicas)
 	if err != nil {
 		return fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
