@@ -54,9 +54,9 @@ func (s *scaledObject) setReplicas(replicas int32) error {
 // getReplicas gets the current value of the pausedReplicas annotation.
 func (s *scaledObject) getReplicas() (values.Replicas, error) {
 	pausedReplicasAnnotation, ok := s.Annotations[annotationKedaPausedReplicas]
-	//nolint:nilnil // if the annotation is not set, we return nil to indicate that no replicas are set
+
 	if !ok {
-		return nil, nil
+		return values.AbsoluteReplicas(util.Undefined), nil
 	}
 
 	pausedReplicas, err := strconv.ParseInt(pausedReplicasAnnotation, 10, 32)

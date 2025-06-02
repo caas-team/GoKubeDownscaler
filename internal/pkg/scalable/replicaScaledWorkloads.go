@@ -59,7 +59,7 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) error {
 	downscaleReplicasInt32, err := downscaleReplicas.AsInt32()
 	if err != nil {
-		return newInvalidReplicaTypeError("failed to convert downscale replicas to int32")
+		return fmt.Errorf("failed to convert replicas to int32: %w", err)
 	}
 
 	originalReplicas, err := r.getReplicas()

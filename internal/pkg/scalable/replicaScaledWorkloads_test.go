@@ -19,6 +19,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 		originalReplicas     values.Replicas
 		wantOriginalReplicas values.Replicas
 		wantReplicas         values.Replicas
+		wantErr              error
 	}{
 		{
 			name:                 "scale up",
@@ -35,7 +36,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 			wantReplicas:         values.AbsoluteReplicas(5),
 		},
 		{
-			name:                 "orignal replicas not set",
+			name:                 "original replicas not set",
 			replicas:             values.AbsoluteReplicas(0),
 			originalReplicas:     nil,
 			wantOriginalReplicas: nil,
@@ -47,6 +48,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 			originalReplicas:     values.PercentageReplicas(50),
 			wantOriginalReplicas: nil,
 			wantReplicas:         values.AbsoluteReplicas(0),
+			wantErr:              &values.InvalidReplicaTypeError{},
 		},
 	}
 
@@ -56,7 +58,6 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 
 			deployment := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
 			replicasInt32, _ := test.replicas.AsInt32()
-
 			_ = deployment.setReplicas(replicasInt32)
 
 			if test.originalReplicas != nil {
@@ -64,27 +65,24 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 			}
 
 			err := deployment.ScaleUp()
-			if _, ok := test.originalReplicas.(values.PercentageReplicas); ok {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), "percentage")
+			var invalidReplicaTypeError *values.InvalidReplicaTypeError
 
+			if errors.As(test.wantErr, &invalidReplicaTypeError) {
+				assert.ErrorAs(t, err, &invalidReplicaTypeError)
 				return
 			}
 
 			require.NoError(t, err)
 
 			replicas, err := deployment.getReplicas()
-
-			if assert.NoError(t, err) {
-				assert.Equal(t, test.wantReplicas, replicas)
-			}
+			require.NoError(t, err)
+			assert.Equal(t, test.wantReplicas, replicas)
 
 			oringalReplicas, err := getOriginalReplicas(deployment)
+			var unsetErr *OriginalReplicasUnsetError
 
-			var originalReplicasUnsetErr *OriginalReplicasUnsetError
-
-			if ok := errors.As(err, &originalReplicasUnsetErr); !ok { // ignore getOriginalReplicas being unset
-				require.NoError(t, err) // Scaling set OrignialReplicas to faulty value
+			if !errors.As(err, &unsetErr) {
+				require.NoError(t, err)
 			}
 
 			assert.Equal(t, test.wantOriginalReplicas, oringalReplicas)
@@ -99,13 +97,16 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 		name                 string
 		replicas             values.Replicas
 		originalReplicas     values.Replicas
+		downtimeReplicas     values.Replicas
 		wantOriginalReplicas values.Replicas
 		wantReplicas         values.Replicas
+		wantErr              error
 	}{
 		{
 			name:                 "scale down",
 			replicas:             values.AbsoluteReplicas(5),
 			originalReplicas:     nil,
+			downtimeReplicas:     values.AbsoluteReplicas(0),
 			wantOriginalReplicas: values.AbsoluteReplicas(5),
 			wantReplicas:         values.AbsoluteReplicas(0),
 		},
@@ -113,13 +114,15 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			name:                 "already scaled down",
 			replicas:             values.AbsoluteReplicas(0),
 			originalReplicas:     values.AbsoluteReplicas(5),
+			downtimeReplicas:     values.AbsoluteReplicas(0),
 			wantOriginalReplicas: values.AbsoluteReplicas(5),
 			wantReplicas:         values.AbsoluteReplicas(0),
 		},
 		{
-			name:                 "orignal replicas set, but not scaled down",
+			name:                 "original replicas set, but not scaled down",
 			replicas:             values.AbsoluteReplicas(2),
 			originalReplicas:     values.AbsoluteReplicas(5),
+			downtimeReplicas:     values.AbsoluteReplicas(0),
 			wantOriginalReplicas: values.AbsoluteReplicas(2),
 			wantReplicas:         values.AbsoluteReplicas(0),
 		},
@@ -127,8 +130,10 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			name:                 "downscale replicas is not AbsoluteReplicas",
 			replicas:             values.AbsoluteReplicas(5),
 			originalReplicas:     nil,
+			downtimeReplicas:     values.PercentageReplicas(50),
 			wantOriginalReplicas: nil,
 			wantReplicas:         values.AbsoluteReplicas(5),
+			wantErr:              &values.InvalidReplicaTypeError{},
 		},
 	}
 
@@ -138,37 +143,29 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 
 			deployment := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
 			replicasInt32, _ := test.replicas.AsInt32()
-
 			_ = deployment.setReplicas(replicasInt32)
 
 			if test.originalReplicas != nil {
 				setOriginalReplicas(test.originalReplicas, deployment)
 			}
 
-			var downscaleReplica values.Replicas = values.AbsoluteReplicas(0)
-			if test.name == "downscale replicas is not AbsoluteReplicas" {
-				downscaleReplica = values.PercentageReplicas(50)
-			}
+			err := deployment.ScaleDown(test.downtimeReplicas)
+			var invalidReplicaTypeError *values.InvalidReplicaTypeError
 
-			err := deployment.ScaleDown(downscaleReplica)
-
-			if _, ok := downscaleReplica.(values.PercentageReplicas); ok {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), "failed to convert downscale replicas")
-
+			if errors.As(test.wantErr, &invalidReplicaTypeError) {
+				assert.ErrorAs(t, err, &invalidReplicaTypeError)
 				return
 			}
 
 			require.NoError(t, err)
 
 			replicas, err := deployment.getReplicas()
-			if assert.NoError(t, err) {
-				assert.Equal(t, test.wantReplicas, replicas)
-			}
+			require.NoError(t, err)
+			assert.Equal(t, test.wantReplicas, replicas)
 
 			oringalReplicas, err := getOriginalReplicas(deployment)
-			require.NoError(t, err) // Scaling set OrignialReplicas to faulty or unset value
-			assert.Equal(t, test.wantOriginalReplicas.String(), oringalReplicas.String())
+			require.NoError(t, err)
+			assert.Equal(t, test.wantOriginalReplicas, oringalReplicas)
 		})
 	}
 }

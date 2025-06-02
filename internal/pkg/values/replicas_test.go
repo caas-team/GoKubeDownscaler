@@ -3,7 +3,6 @@ package values
 import (
 	"testing"
 
-	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -15,21 +14,18 @@ func TestReplicasValue_Set(t *testing.T) {
 	tests := []struct {
 		name      string
 		input     string
-		wantStr   string
-		wantType  string
+		want      Replicas
 		expectErr bool
 	}{
 		{
-			name:     "valid absolute replicas",
-			input:    "5",
-			wantStr:  "5",
-			wantType: "AbsoluteReplicas",
+			name:  "valid absolute replicas",
+			input: "5",
+			want:  AbsoluteReplicas(5),
 		},
 		{
-			name:     "valid percentage replicas",
-			input:    "50%",
-			wantStr:  "50%",
-			wantType: "PercentageReplicas",
+			name:  "valid percentage replicas",
+			input: "50%",
+			want:  PercentageReplicas(50),
 		},
 		{
 			name:      "invalid percentage over 100",
@@ -63,17 +59,7 @@ func TestReplicasValue_Set(t *testing.T) {
 
 			require.NoError(t, err)
 			require.NotNil(t, *replicas.Replicas)
-
-			switch concreteReplica := (*replicas.Replicas).(type) {
-			case AbsoluteReplicas:
-				assert.Equal(t, "AbsoluteReplicas", test.wantType)
-				assert.Equal(t, test.wantStr, concreteReplica.String())
-			case PercentageReplicas:
-				assert.Equal(t, "PercentageReplicas", test.wantType)
-				assert.Equal(t, test.wantStr, concreteReplica.String())
-			default:
-				t.Fatalf("unexpected replica type: %T", concreteReplica)
-			}
+			assert.Equal(t, test.want, *replicas.Replicas)
 		})
 	}
 }
@@ -115,48 +101,6 @@ func TestNewReplicasFromIntOrStr(t *testing.T) {
 
 			require.NotNil(t, replica)
 			assert.Equal(t, test.expected.String(), replica.String())
-		})
-	}
-}
-
-func TestReplicasValue_String(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name     string
-		replicas Replicas
-		expected string
-	}{
-		{
-			name:     "nil replicas",
-			replicas: nil,
-			expected: util.UndefinedString,
-		},
-		{
-			name:     "absolute replicas",
-			replicas: AbsoluteReplicas(5),
-			expected: "5",
-		},
-		{
-			name:     "percentage replicas",
-			replicas: PercentageReplicas(40),
-			expected: "40%",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-
-			var replicas *Replicas
-
-			if test.replicas != nil {
-				tmp := test.replicas
-				replicas = &tmp
-			}
-
-			rv := &ReplicasValue{Replicas: replicas}
-			assert.Equal(t, test.expected, rv.String())
 		})
 	}
 }

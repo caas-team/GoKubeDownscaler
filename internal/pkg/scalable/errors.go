@@ -40,15 +40,3 @@ func newOriginalReplicasUnsetError(reason string) error {
 func (o *OriginalReplicasUnsetError) Error() string {
 	return o.reason
 }
-
-type InvalidReplicaTypeError struct {
-	reason string
-}
-
-func newInvalidReplicaTypeError(reason string) error {
-	return &InvalidReplicaTypeError{reason: reason}
-}
-
-func (p *InvalidReplicaTypeError) Error() string {
-	return p.reason
-}

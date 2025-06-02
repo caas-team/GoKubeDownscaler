@@ -54,3 +54,16 @@ func newInvalidValueError(reason, value string) error {
 func (i *InvalidValueError) Error() string {
 	return fmt.Sprintf("error: %q, got %s.", i.reason, i.value)
 }
+
+type InvalidReplicaTypeError struct {
+	reason string
+	value  string
+}
+
+func newInvalidReplicaTypeError(reason, value string) error {
+	return &InvalidReplicaTypeError{reason: reason, value: value}
+}
+
+func (p *InvalidReplicaTypeError) Error() string {
+	return fmt.Sprintf("invalid replica type error: %q, got %s.", p.reason, p.value)
+}

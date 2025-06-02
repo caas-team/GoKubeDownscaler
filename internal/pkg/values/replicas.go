@@ -32,7 +32,7 @@ type PercentageReplicas int
 func (p PercentageReplicas) String() string { return fmt.Sprintf("%d%%", p) }
 
 func (p PercentageReplicas) AsInt32() (int32, error) {
-	return 0, newInvalidValueError("percentage replicas cannot be converted to int32", p.String())
+	return 0, newInvalidReplicaTypeError("percentage replicas cannot be converted to int32", p.String())
 }
 
 func (p PercentageReplicas) AsIntStr() intstr.IntOrString {
@@ -49,7 +49,7 @@ func (r *ReplicasValue) Set(value string) error {
 		replica := AbsoluteReplicas(int32(v))
 
 		if int(replica) < 0 && int(replica) != util.Undefined {
-			return newInvalidValueError(
+			return newInvalidReplicaTypeError(
 				"downscale replicas has to be a positive integer",
 				value,
 			)
@@ -66,7 +66,7 @@ func (r *ReplicasValue) Set(value string) error {
 			replica := PercentageReplicas(p)
 
 			if p < 0 || p > 100 {
-				return newInvalidValueError(
+				return newInvalidReplicaTypeError(
 					"downscale replicas must be a percentage between 0% and 100%",
 					value,
 				)
@@ -78,7 +78,7 @@ func (r *ReplicasValue) Set(value string) error {
 		}
 	}
 
-	return newInvalidValueError("invalid replica value", value)
+	return newInvalidReplicaTypeError("invalid replica value", value)
 }
 
 // NewReplicasFromIntOrStr parses a intstr.IntOrString to the correct specific replica type.
