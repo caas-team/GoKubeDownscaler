@@ -40,6 +40,14 @@ This will exclude every workload unless [more specific scopes](ref:docs-scopes-a
 
 :::
 
+:::warning
+
+Setting a percentage value for `--downscale-replicas` when the `--include-resources` argument (described below) targets
+resources that do not support percentage scaling (e.g. Deployments, StatefulSets, etc.) will result in a scaling error
+when these resources are processed.
+
+:::
+
 :::note
 
 The values set by the cli arguments

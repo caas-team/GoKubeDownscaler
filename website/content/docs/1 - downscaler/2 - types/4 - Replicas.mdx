@@ -1,0 +1,36 @@
+---
+title: Replicas
+id: replicas
+globalReference: docs-replicas
+description: Learn how to set replicas in GoKubeDownscaler.
+keywords: [replicas]
+---
+
+# Replicas
+
+Replicas is a struct that holds the value of the desired number of replicas or the desired percentage
+value for scaling workloads.
+
+## Syntax
+
+Replicas can be represented as an integer for all workloads
+
+```text
+2 ·# 2 Replicas
+```
+
+Replicas can also be represented as a string percentage exclusively when targeting PodDisruption Budgets
+
+```text
+50% # 50% of the current replicas
+```
+
+:::warning
+
+A percentage value cannot be used inside a Scope that is also targeting workloads other than PodDisruptionBudgets.
+For
+example, you cannot use a percentage value inside the [CLI Scope](ref:docs-cli-scope) or the
+[Namespace Scope](ref:docs-namespace-scope) if you are also targeting Deployments, StatefulSets, or other workload types.
+This will result in an error on scaling workloads that do not support percentage scaling.
+
+:::

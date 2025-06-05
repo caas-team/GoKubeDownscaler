@@ -57,16 +57,9 @@ Scales by setting the suspend property to true, which stops the execution of the
 - id: poddisruptionbudgets
 - resource: poddisruptionbudget.v1.policy
 
-Scales by setting the maxUnavailable or minAvailable properties (depending on which one is used) to the [downscale replicas](ref:docs-values#downscale-replicas).
-
-:::info
-
-For PodDisruptionBudgets the [downscale replicas](ref:docs-values#downscale-replicas) value can be an absolute number or a percentage.
-If you are also scaling resources other than PodDisruptionBudgets the value set for
-[downscale replicas](ref:docs-values#downscale-replicas) at Namespace Scope or CLI Scope must always be an absolute number or the
-Downscaler will throw an error when processing other resources.
-
-:::
+Scales by setting the maxUnavailable or minAvailable properties (depending on which one is used) to the
+[downscale replicas](ref:docs-values#downscale-replicas).
+Percentage values are supported as well
 
 ### ScaledObjects
 
