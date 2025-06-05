@@ -3,7 +3,7 @@ module github.com/caas-team/gokubedownscaler
 go 1.24.1
 
 require (
-	github.com/argoproj/argo-rollouts v1.8.2
+	github.com/argoproj/argo-rollouts v1.8.3
 	github.com/kedacore/keda/v2 v2.17.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.83.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.83.0
