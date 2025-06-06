@@ -77,7 +77,7 @@ func TestDaemonSet_ScaleDown(t *testing.T) {
 				deamonset.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: "true"}
 			}
 
-			err := deamonset.ScaleDown(0)
+			err := deamonset.ScaleDown(nil)
 			require.NoError(t, err)
 
 			_, ok := deamonset.Spec.Template.Spec.NodeSelector[labelMatchNone]

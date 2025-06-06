@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -51,19 +52,20 @@ func (s *scaledObject) setReplicas(replicas int32) error {
 }
 
 // getReplicas gets the current value of the pausedReplicas annotation.
-func (s *scaledObject) getReplicas() (int32, error) {
+func (s *scaledObject) getReplicas() (values.Replicas, error) {
 	pausedReplicasAnnotation, ok := s.Annotations[annotationKedaPausedReplicas]
+
 	if !ok {
-		return util.Undefined, nil
+		return values.AbsoluteReplicas(util.Undefined), nil
 	}
 
 	pausedReplicas, err := strconv.ParseInt(pausedReplicasAnnotation, 10, 32)
 	if err != nil {
-		return 0, fmt.Errorf("invalid value for annotation %q: %w", annotationKedaPausedReplicas, err)
+		return nil, fmt.Errorf("invalid value for annotation %q: %w", annotationKedaPausedReplicas, err)
 	}
 
 	// #nosec G115
-	return int32(pausedReplicas), nil
+	return values.AbsoluteReplicas(int32(pausedReplicas)), nil
 }
 
 // Reget regets the resource from the Kubernetes API.

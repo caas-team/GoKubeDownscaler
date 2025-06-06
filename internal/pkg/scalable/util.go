@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -199,18 +199,19 @@ func isManagedByOwnerReference(workload Workload) bool {
 }
 
 // setOriginalReplicas sets the original replicas annotation on the workload.
-func setOriginalReplicas(originalReplicas int32, workload Workload) {
+func setOriginalReplicas(replicaCount values.Replicas, workload Workload) {
 	annotations := workload.GetAnnotations()
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
 
-	annotations[annotationOriginalReplicas] = strconv.Itoa(int(originalReplicas))
+	annotations[annotationOriginalReplicas] = replicaCount.String()
+
 	workload.SetAnnotations(annotations)
 }
 
 // getOriginalReplicas gets the original replicas annotation on the workload. nil is undefined.
-func getOriginalReplicas(workload Workload) (*int32, error) {
+func getOriginalReplicas(workload Workload) (values.Replicas, error) {
 	annotations := workload.GetAnnotations()
 
 	originalReplicasString, ok := annotations[annotationOriginalReplicas]
@@ -218,15 +219,14 @@ func getOriginalReplicas(workload Workload) (*int32, error) {
 		return nil, newOriginalReplicasUnsetError("error: original replicas annotation not set on workload")
 	}
 
-	originalReplicas, err := strconv.ParseInt(originalReplicasString, 10, 32)
-	if err != nil {
+	var replica values.Replicas
+	replicasValue := values.ReplicasValue{Replicas: &replica}
+
+	if err := replicasValue.Set(originalReplicasString); err != nil {
 		return nil, fmt.Errorf("failed to parse original replicas annotation on workload: %w", err)
 	}
 
-	// #nosec G115
-	result := int32(originalReplicas)
-
-	return &result, nil
+	return replica, nil
 }
 
 // removeOriginalReplicas removes the annotationOriginalReplicas from the workload.
