@@ -42,14 +42,6 @@ You can check their compatibility by viewing the dedicated documentation page fr
 
 :::
 
-:::warning
-
-Setting a percentage value for `downscaler/downscale-replicas` when the `--include-resources` argument of the
-[CLI Scope](ref:docs-cli-scope#runtime-configuration) targets resources that do not support percentage scaling
-(e.g. Deployments, StatefulSets, etc.) will result in a scaling error when these resources are processed.
-
-:::
-
 ## Usage
 
 The namespace annotations can be set either directly through the Namespace YAML file (e.g. `kubectl edit` command)
