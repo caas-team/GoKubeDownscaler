@@ -15,8 +15,8 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@docusaurus/core": "3.8.0",
-    "@docusaurus/preset-classic": "3.8.0",
+    "@docusaurus/core": "3.8.1",
+    "@docusaurus/preset-classic": "3.8.1",
     "@easyops-cn/docusaurus-search-local": "^0.50.0",
     "@eslint/compat": "^1.2.9",
     "@excalidraw/excalidraw": "^0.18.0",
@@ -29,10 +29,10 @@
     "roughjs": "^4.6.6"
   },
   "devDependencies": {
-    "@docusaurus/eslint-plugin": "3.8.0",
-    "@docusaurus/module-type-aliases": "3.8.0",
-    "@docusaurus/tsconfig": "3.8.0",
-    "@docusaurus/types": "3.8.0",
+    "@docusaurus/eslint-plugin": "3.8.1",
+    "@docusaurus/module-type-aliases": "3.8.1",
+    "@docusaurus/tsconfig": "3.8.1",
+    "@docusaurus/types": "3.8.1",
     "@typescript-eslint/eslint-plugin": "^8.33.1",
     "@typescript-eslint/parser": "^8.32.1",
     "eslint": "^9.28.0",
