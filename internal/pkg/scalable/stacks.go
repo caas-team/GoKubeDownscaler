@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	zalandov1 "github.com/zalando-incubator/stackset-controller/pkg/apis/zalando.org/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -36,13 +37,13 @@ func (s *stack) setReplicas(replicas int32) error {
 }
 
 // getReplicas gets the current amount of replicas of the resource.
-func (s *stack) getReplicas() (int32, error) {
+func (s *stack) getReplicas() (values.Replicas, error) {
 	replicas := s.Spec.Replicas
 	if replicas == nil {
-		return 0, newNoReplicasError(s.Kind, s.Name)
+		return nil, newNoReplicasError(s.Kind, s.Name)
 	}
 
-	return *s.Spec.Replicas, nil
+	return values.AbsoluteReplicas(*replicas), nil
 }
 
 // Reget regets the resource from the Kubernetes API.

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
@@ -50,6 +51,10 @@ type ParentWorkload interface {
 	GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error)
 }
 
+type PercentageWorkload interface {
+	AllowPercentageReplicas() bool
+}
+
 // scalableResource provides all functions needed to scale any type of resource.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource
@@ -82,7 +87,7 @@ type Workload interface {
 	// ScaleUp scales up the workload
 	ScaleUp() error
 	// ScaleDown scales down the workload
-	ScaleDown(downscaleReplicas int32) error
+	ScaleDown(downscaleReplicas values.Replicas) error
 }
 
 type Clientsets struct {

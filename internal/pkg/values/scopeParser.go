@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
@@ -61,7 +60,7 @@ func (s *Scope) ParseScopeFlags() {
 		"sets exclude on cli scope to true, makes it so namespaces or deployments have to specify downscaler/exclude=false (default: false)",
 	)
 	flag.Var(
-		(*util.Int32Value)(&s.DownscaleReplicas),
+		&ReplicasValue{Replicas: &s.DownscaleReplicas},
 		"downtime-replicas",
 		"the replicas to scale down to (default: 0)",
 	)
@@ -199,18 +198,16 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 	}
 
 	if downscaleReplicasString, ok := annotations[annotationDownscaleReplicas]; ok {
-		var downscaleReplicas int64
+		replicasVal := ReplicasValue{Replicas: &s.DownscaleReplicas}
 
-		downscaleReplicas, err = strconv.ParseInt(downscaleReplicasString, 10, 32)
-		if err != nil {
+		if err = replicasVal.Set(downscaleReplicasString); err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationDownscaleReplicas, err)
 			logEvent.ErrorInvalidAnnotation(annotationDownscaleReplicas, err.Error(), ctx)
 
 			return err
 		}
 
-		// #nosec G115 // downscaleReplicas gets parsed as a 32 bit integer, so any errors that could be thrown here are already handled above
-		s.DownscaleReplicas = int32(downscaleReplicas)
+		s.DownscaleReplicas = *replicasVal.Replicas
 	}
 
 	if gracePeriod, ok := annotations[annotationGracePeriod]; ok {

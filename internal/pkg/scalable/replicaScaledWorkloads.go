@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 )
 
 // replicaScaledResource provides all the functions needed to scale a resource which is scaled by setting the replica count.
@@ -15,7 +17,7 @@ type replicaScaledResource interface {
 	// setReplicas sets the replicas of the workload
 	setReplicas(replicas int32) error
 	// getReplicas gets the replicas of the workload
-	getReplicas() (int32, error)
+	getReplicas() (values.Replicas, error)
 }
 
 // replicaScaledWorkload is a wrapper for all resources which are scaled by setting the replica count.
@@ -24,6 +26,7 @@ type replicaScaledWorkload struct {
 }
 
 // ScaleUp scales up the underlying replicaScaledResource.
+// nolint: err113 // dynamic errors
 func (r *replicaScaledWorkload) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(r)
 	if err != nil {
@@ -36,7 +39,12 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
-	err = r.setReplicas(*originalReplicas)
+	originalReplicasInt32, err := originalReplicas.AsInt32()
+	if err != nil {
+		return fmt.Errorf("failed to convert original replicas to int32: %w", err)
+	}
+
+	err = r.setReplicas(originalReplicasInt32)
 	if err != nil {
 		return fmt.Errorf("failed to set original replicas for workload: %w", err)
 	}
@@ -47,18 +55,29 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 }
 
 // ScaleDown scales down the underlying replicaScaledResource.
-func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas int32) error {
+// nolint: err113 // dynamic errors
+func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) error {
+	downscaleReplicasInt32, err := downscaleReplicas.AsInt32()
+	if err != nil {
+		return fmt.Errorf("failed to convert replicas to int32: %w", err)
+	}
+
 	originalReplicas, err := r.getReplicas()
 	if err != nil {
 		return fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
-	if originalReplicas == downscaleReplicas {
+	originalReplicasInt32, err := originalReplicas.AsInt32()
+	if err != nil {
+		return fmt.Errorf("failed to convert original replicas to int32: %w", err)
+	}
+
+	if originalReplicasInt32 == downscaleReplicasInt32 {
 		slog.Debug("workload is already scaled down, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
 		return nil
 	}
 
-	err = r.setReplicas(downscaleReplicas)
+	err = r.setReplicas(downscaleReplicasInt32)
 	if err != nil {
 		return fmt.Errorf("failed to set replicas for workload: %w", err)
 	}
