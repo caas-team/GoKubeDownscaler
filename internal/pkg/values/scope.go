@@ -14,10 +14,11 @@ import (
 type Scaling int
 
 const (
-	ScalingNone   Scaling = iota // no scaling set in this scope, go to next scope
-	ScalingIgnore                // not scaling
-	ScalingDown                  // scaling down
-	ScalingUp                    // scaling up
+	ScalingNone     Scaling = iota // no scaling set in this scope, go to next scope
+	ScalingIgnore                  // not scaling
+	ScalingDown                    // scaling down
+	ScalingUp                      // scaling up
+	ScalingMultiple                // multiple scalings with same priority matched, this should be handled as an error
 )
 
 // ScopeID is an enum that describes the current Scope.
@@ -80,11 +81,7 @@ func GetDefaultScope() *Scope {
 }
 
 // CheckForIncompatibleFields checks if there are incompatible fields.
-func (s *Scope) CheckForIncompatibleFields() error { //nolint: cyclop // this is still fine to read, we could defnitly consider refactoring this in the future
-	// force down and uptime
-	if s.ForceDowntime != nil && s.ForceUptime != nil {
-		return newIncompatibalFieldsError("forceUptime", "forceDowntime")
-	}
+func (s *Scope) CheckForIncompatibleFields() error {
 	// downscale replicas invalid
 	if s.DownscaleReplicas != util.Undefined && s.DownscaleReplicas < 0 {
 		return newInvalidValueError(
@@ -137,7 +134,7 @@ func (s *Scope) getScalingFromPeriods() Scaling {
 	inUptime := s.UpscalePeriod.inTimeSpans()
 
 	if inUptime && inDowntime {
-		return ScalingIgnore // this prevents unintended behavior; in the future this should be handled while checking for conflicts
+		return ScalingMultiple // this prevents unintended behavior; in the future this should be handled while checking for conflicts
 	}
 
 	if inDowntime {
@@ -152,12 +149,18 @@ func (s *Scope) getScalingFromPeriods() Scaling {
 }
 
 func (s *Scope) getForceScaling() Scaling {
-	// check forced scaling
-	if s.ForceDowntime.inTimeSpans() {
+	forceDowntime := s.ForceDowntime.inTimeSpans()
+	forceUptime := s.ForceUptime.inTimeSpans()
+
+	if forceDowntime && forceUptime {
+		return ScalingMultiple // this prevents unintended behavior; in the future this should be handled while checking for conflicts
+	}
+
+	if forceDowntime {
 		return ScalingDown
 	}
 
-	if s.ForceUptime.inTimeSpans() {
+	if forceUptime {
 		return ScalingUp
 	}
 

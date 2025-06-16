@@ -70,7 +70,7 @@ See the [breaking changes entry](#from-features) for more information.
 
 ### Explicit Include
 
-Added the [`--explicit-include` cli argument](ref:docs-arguments).
+Added the [`--explicit-include` cli argument](ref:docs-cli-scope#values).
 
 This is a simple way to exclude all workloads by default and only add those you want to have scaled.
 
@@ -97,11 +97,6 @@ See the [breaking changes entry](#from-features) for more information.
 
 Configuration errors on workloads are now shown as error events on the workload.
 This makes it so you don't have to have access to the downscalers console just to see whats wrong with your configuration.
-
-### Booleans to Timespans
-
-All boolean [values](ref:docs-values) (e.g. force up/downtime, exclude)
-now support [timespans](ref:docs-timespans) to dynamically do things.
 
 ### Auto Exclude ScaledObject Scaled Workloads
 

@@ -48,28 +48,28 @@ Here is a list of all the available runtime configurations for the Downscaler.
 ### Namespace
 
 - Type: [String List](ref:docs-string-list) (list of namespace names)
-- Description: Sets the namespaces the Downscaler will scan over.
+- Description: Sets the namespaces the Downscaler will scan over (restricts the 'cluster-wide' scopes to specific namespaces).
 - Default: All Namespaces
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
 
 ### Include Resources
 
 - Type: [String List](ref:docs-string-list) (list of [workload types](ref:docs-workload-types))
-- Description: Sets the resources/workload types the downscaler will scan over.
+- Description: Sets the resources/workload types the downscaler will scan over (restricts the 'cluster-wide' scopes to specific types).
 - Default: `deployments`
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
 
 ### Exclude Namespaces
 
 - Type: [Regex List](ref:docs-regex-list) (list of regex patterns matching namespace names)
-- Description: Makes the downscaler exclude workloads within matching namespaces.
+- Description: Makes the downscaler exclude workloads within matching namespaces (restricts the 'cluster-wide' scopes to exclude specific namespaces).
 - Default: `kube-system`, `kube-downscaler`
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration), [ENV Scope](ref:docs-env-scope)
 
 ### Exclude Deployments
 
 - Type: [Regex List](ref:docs-regex-list) (list of regex patterns matching workload names)
-- Description: Makes the downscaler exclude matching workloads.
+- Description: Makes the downscaler exclude workloads with matching names (restricts the 'cluster-wide' scopes to exclude matching workloads).
 - Default: none
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration), [ENV Scope](ref:docs-env-scope)
 
@@ -84,7 +84,8 @@ Here is a list of all the available runtime configurations for the Downscaler.
 
   :::
 
-- Description: Makes the downscaler only scale workloads whose labels match at least one of the patterns.
+- Description: Makes the downscaler only scale workloads whose labels match at least one of the patterns
+  (restricts the 'cluster-wide' scopes to matching workloads).
 - Default: none (the workloads don't have to match any label)
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
 

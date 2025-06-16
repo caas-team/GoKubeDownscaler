@@ -33,26 +33,38 @@ func (s *Scope) ParseScopeFlags() {
 	flag.Var(
 		&s.DownscalePeriod,
 		"downscale-period",
-		"period to scale down in (default: never, incompatible: UpscaleTime, DownscaleTime)",
+		"period to scale down in (default: none, incompatible: UpscaleTime, DownscaleTime)",
 	)
 	flag.Var(
 		&s.DownTime,
 		"default-downtime",
 		`timespans where workloads will be scaled down.
 		outside of them they will be scaled up.
-		(default: never, incompatible: UpscalePeriod, DownscalePeriod)`,
+		(default: none, incompatible: UpscalePeriod, DownscalePeriod)`,
+	)
+	flag.Var(
+		&s.ForceDowntime,
+		"force-downtime",
+		`timespans where workloads will be forced to be scaled down.
+		(default: none)`,
 	)
 	flag.Var(
 		&s.UpscalePeriod,
 		"upscale-period",
-		"periods to scale up in (default: never, incompatible: UpscaleTime, DownscaleTime)",
+		"periods to scale up in (default: none, incompatible: UpscaleTime, DownscaleTime)",
 	)
 	flag.Var(
 		&s.UpTime,
 		"default-uptime",
 		`timespans where workloads will be scaled up.
 		outside of them they will be scaled down.
-		(default: never, incompatible: UpscalePeriod, DownscalePeriod)`,
+		(default: none, incompatible: UpscalePeriod, DownscalePeriod)`,
+	)
+	flag.Var(
+		&s.ForceUptime,
+		"force-uptime",
+		`timespans where workloads will be forced to be scaled up.
+		(default: none)`,
 	)
 	flag.Var(
 		&s.Exclude,

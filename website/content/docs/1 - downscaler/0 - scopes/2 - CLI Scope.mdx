@@ -27,6 +27,8 @@ These global settings can be overridden by more specific scopes in the hierarchy
 - [--default-uptime](ref:docs-values#uptime)
 - [--downscale-period](ref:docs-values#downscale-period)
 - [--default-downtime](ref:docs-values#downtime)
+- [--force-downtime](ref:docs-values#force-downtime)
+- [--force-uptime](ref:docs-values#force-uptime)
 - [--downtime-replicas](ref:docs-values#downscale-replicas)
 - [--grace-period](ref:docs-values#grace-period)
 - [--explicit-include](ref:docs-values#exclude)
@@ -36,7 +38,7 @@ These global settings can be overridden by more specific scopes in the hierarchy
 
 `--explicit-include` will set the [exclude value](ref:docs-values#exclude) to `true` on the cli scope.
 This will exclude every workload unless [more specific scopes](ref:docs-scopes-and-scaling) (e.g.: [namespace scope](ref:docs-namespace-scope),
-[workload scope](ref:docs-workload-scope)) [specify](ref:docs-annotations) exclude to `false`.
+[workload scope](ref:docs-workload-scope)) specify exclude to `false`.
 
 :::
 

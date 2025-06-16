@@ -11,7 +11,7 @@ keywords: [configMap]
 The `configMap` value contains the two fields `name` and `extraConfig`:
 
 - `name` defines the name of the configmap for the GoKubeDownscaler.
-- `extraConfig` adds additional specified [environment variables](ref:docs-environment-variables) to the ConfigMap.
+- `extraConfig` adds additional specified [environment variables](ref:docs-env-scope) to the ConfigMap.
 
 :::info
 
@@ -26,7 +26,7 @@ configMap:
 :::
 
 By default the `extraConfig` field is empty.
-Appending a line will add the corresponding [environment variable](ref:docs-environment-variables) to the configMap.
+Appending a line will add the corresponding [environment variable](ref:docs-env-scope) to the configMap.
 
 This then changes how the GoKubeDownscaler behaves.
 
@@ -46,4 +46,4 @@ from the scaling process of the GoKubeDownscaler even if they have a fitting ann
 
 :::
 
-You can find a list of all possible environment variables on [our documentation page](ref:docs-environment-variables).
+You can find a list of all possible environment variables on [our documentation page](ref:docs-env-scope).

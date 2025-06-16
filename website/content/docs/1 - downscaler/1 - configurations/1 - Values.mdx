@@ -151,18 +151,18 @@ Here is a list of all values that can be set on the Downscaler.
 - Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#alwaysnevertruefalse))
 - Default: unset (never matches)
 - Forces the [workload](ref:docs-workload-types) into an uptime state. (Scaling up)
-- Incompatible with [force downtime](#force-downtime)
 - [Grouped](#value-groups) with [force downtime](#force-downtime)
-- Where to set: [Namespace Scope](ref:docs-namespace-scope#values), [Workload Scope](ref:docs-workload-scope#values)
+- Where to set: [CLI Scope](ref:docs-cli-scope#values), [Namespace Scope](ref:docs-namespace-scope#values),
+  [Workload Scope](ref:docs-workload-scope#values)
 
 ### Force Downtime
 
 - Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#alwaysnevertruefalse))
 - Default: unset (never matches)
 - Forces the [workload](ref:docs-workload-types) into a downtime state. (Scaling down)
-- Incompatible with [force uptime](#force-uptime)
 - [Grouped](#value-groups) with [force uptime](#force-uptime)
-- Where to set: [Namespace Scope](ref:docs-namespace-scope#values), [Workload Scope](ref:docs-workload-scope#values)
+- Where to set: [CLI Scope](ref:docs-cli-scope#values), [Namespace Scope](ref:docs-namespace-scope#values),
+  [Workload Scope](ref:docs-workload-scope#values)
 
 ### Downscale Replicas
 

@@ -296,10 +296,6 @@ func scanWorkload(
 	}
 
 	scaling := scopes.GetCurrentScaling()
-	if scaling == values.ScalingNone {
-		slog.Debug("scaling is not set by any scope, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return nil
-	}
 
 	err = scaleWorkload(scaling, workload, scopes, client, ctx)
 	if err != nil {
@@ -317,9 +313,22 @@ func scaleWorkload(
 	client kubernetes.Client,
 	ctx context.Context,
 ) error {
+	if scaling == values.ScalingNone {
+		slog.Debug("scaling is not set by any scope, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return nil
+	}
+
 	if scaling == values.ScalingIgnore {
 		slog.Debug("scaling is ignored, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return nil
+	}
+
+	if scaling == values.ScalingMultiple {
+		return newScalingInvalidError(
+			`scaling values matched to multiple states.
+this is the result of a faulty configuration where on a scope there is multiple values with the same priority
+setting different scaling states at the same time (e.g. downtime-period and uptime-period or force-downtime and force-uptime)`,
+		)
 	}
 
 	if scaling == values.ScalingDown {

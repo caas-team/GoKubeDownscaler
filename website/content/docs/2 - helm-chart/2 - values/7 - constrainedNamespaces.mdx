@@ -9,7 +9,7 @@ keywords: [constrainedNamespaces]
 # constrainedNamespaces
 
 The `constrainedNamespaces` value is a comma separated list of namespaces the GoKubeDownscaler is going to operate on when constrained.
-This means that it does not run clusterwide but restricted to the given namespaces.
+This means that it does not run cluster-wide but restricted to the given namespaces.
 
 :::info
 
@@ -31,4 +31,4 @@ This ensures that theGoKubeDownscaler only has access to actions on the namespac
 
 It will also create roles in each of these namespaces instead of a clusterrole for the needed [permissions](ref:docs-helm-permissions).
 
-This feature is very useful if you don't have the necessary rights to make a clusterwide installation.
+This feature is very useful if you don't have the necessary rights to make a cluster-wide installation.

@@ -15,17 +15,17 @@ One of the easiest ways and most common use cases for the Downscaler is using it
 
 A good time to start saving resources at night could be from 6:00 PM to 8:00 AM during weekdays and on weekends.
 
-Depending on your use case you can apply the night time saving clusterwide or on either namespace or workload level.
+Depending on your use case you can apply the night time saving cluster-wide or on either namespace or workload level.
 
-## Clusterwide
+## Cluster-Wide
 
-In order to apply the wanted downtime clusterwide the GoKubeDownscaler has to know what downtime to use.
+In order to apply the wanted downtime cluster-wide the GoKubeDownscaler has to know what downtime to use.
 
-This can be done by either using an [environment variable](ref:docs-environment-variables) or a [cli argument](ref:docs-arguments) for the GoKubeDownscaler.
+This can be done by either using an [environment variable](ref:docs-env-scope) or a [cli argument](ref:docs-cli-scope) for the GoKubeDownscaler.
 
 ### Environment Variable
 
-If you want to add a clusterwide downtime with environment variables
+If you want to add a cluster-wide downtime with environment variables
 you can add them inside the [values.yaml](repo:deployments/chart/values.yaml) file.
 
 There you have to add it to the `configMap.extraConfig` field:
@@ -43,7 +43,7 @@ configMap:
 
 ### Cli Argument
 
-If you want to instead use a cli argument for the clusterwide downtime
+If you want to instead use a cli argument for the cluster-wide downtime
 you can also add them inside the [values.yaml](repo:deployments/chart/values.yaml) file.
 
 There you have to add it to the `arguments` field:
