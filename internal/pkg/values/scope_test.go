@@ -25,30 +25,6 @@ func TestScope_checkForIncompatibleFields(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "forced up and downtime",
-			scope: Scope{
-				ForceUptime:   timeSpans{booleanTimeSpan(true)},
-				ForceDowntime: timeSpans{booleanTimeSpan(true)},
-			},
-			wantErr: true,
-		},
-		{
-			name: "forced up and downtime one false",
-			scope: Scope{
-				ForceUptime:   timeSpans{booleanTimeSpan(false)},
-				ForceDowntime: timeSpans{booleanTimeSpan(true)},
-			},
-			wantErr: true, // this might be changed in the future
-		},
-		{
-			name: "forced up and downtime false",
-			scope: Scope{
-				ForceUptime:   timeSpans{booleanTimeSpan(false)},
-				ForceDowntime: timeSpans{booleanTimeSpan(false)},
-			},
-			wantErr: true, // this might be changed in the future
-		},
-		{
 			name: "up- and downtime",
 			scope: Scope{
 				UpTime:   timeSpans{relativeTimeSpan{}},
@@ -212,6 +188,52 @@ func TestScope_getForceScaling(t *testing.T) {
 			name: "forceUptime",
 			scope: Scope{
 				ForceUptime: timeSpans{booleanTimeSpan(true)},
+			},
+			wantScaling: ScalingUp,
+		},
+		{
+			name: "forceDowntime false",
+			scope: Scope{
+				ForceDowntime: timeSpans{booleanTimeSpan(false)},
+			},
+			wantScaling: ScalingIgnore,
+		},
+		{
+			name: "forceUptime false",
+			scope: Scope{
+				ForceUptime: timeSpans{booleanTimeSpan(false)},
+			},
+			wantScaling: ScalingIgnore,
+		},
+		{
+			name: "forceUptime and forceDowntime true",
+			scope: Scope{
+				ForceUptime:   timeSpans{booleanTimeSpan(true)},
+				ForceDowntime: timeSpans{booleanTimeSpan(true)},
+			},
+			wantScaling: ScalingMultiple,
+		},
+		{
+			name: "forceUptime and forceDowntime false",
+			scope: Scope{
+				ForceUptime:   timeSpans{booleanTimeSpan(false)},
+				ForceDowntime: timeSpans{booleanTimeSpan(false)},
+			},
+			wantScaling: ScalingIgnore,
+		},
+		{
+			name: "forceUptime false and forceDowntime true",
+			scope: Scope{
+				ForceUptime:   timeSpans{booleanTimeSpan(false)},
+				ForceDowntime: timeSpans{booleanTimeSpan(true)},
+			},
+			wantScaling: ScalingDown,
+		},
+		{
+			name: "forceUptime true and forceDowntime false",
+			scope: Scope{
+				ForceUptime:   timeSpans{booleanTimeSpan(true)},
+				ForceDowntime: timeSpans{booleanTimeSpan(false)},
 			},
 			wantScaling: ScalingUp,
 		},

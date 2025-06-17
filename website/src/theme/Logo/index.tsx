@@ -80,6 +80,7 @@ export default function Logo(props: Props): ReactNode {
   return (
     <Link
       to={logoLink}
+      aria-label="GoKubeDownscaler Homepage"
       {...propsRest}
       {...(logo?.target && { target: logo.target })}
     >

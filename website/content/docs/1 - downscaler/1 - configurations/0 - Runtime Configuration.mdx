@@ -1,0 +1,130 @@
+---
+title: Runtime Configuration
+id: runtime-configuration
+globalReference: docs-runtime-configuration
+description: Learn what runtime configurations are available for GoKubeDownscaler and how to use them
+keywords: [runtime configurations]
+---
+
+# Runtime Configuration
+
+**Runtime Configurations** change how the Downscaler operates. controlling aspects like which namespaces and workload types
+it should target, frequency of scans, retries, whether debugging information is enabled and more.
+Runtime Configurations do not dictate how and when individual workloads are scaled.
+
+## List Of Runtime Configurations
+
+Here is a list of all the available runtime configurations for the Downscaler.
+
+### Dry Run
+
+- Type: boolean
+- Description: Makes the downscaler print the changes it would have made instead of applying them.
+  Will additionally enable [Debug](#debug).
+- Default: false
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+### Debug
+
+- Type: boolean
+- Description: Will print additional debug information.
+- Default: false
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+### Once
+
+- Type: boolean
+- Description: Makes the Downscaler only scan once before exiting.
+- Default: false
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+### Interval
+
+- Type: [Duration](ref:docs-duration)
+- Description: Sets the time the Downscaler waits between scans.
+- Default: 30s
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+### Namespace
+
+- Type: [String List](ref:docs-string-list) (list of namespace names)
+- Description: Sets the namespaces the Downscaler will scan over (restricts the 'cluster-wide' scopes to specific namespaces).
+- Default: All Namespaces
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+### Include Resources
+
+- Type: [String List](ref:docs-string-list) (list of [workload types](ref:docs-workload-types))
+- Description: Sets the resources/workload types the downscaler will scan over (restricts the 'cluster-wide' scopes to specific types).
+- Default: `deployments`
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+### Exclude Namespaces
+
+- Type: [Regex List](ref:docs-regex-list) (list of regex patterns matching namespace names)
+- Description: Makes the downscaler exclude workloads within matching namespaces (restricts the 'cluster-wide' scopes to exclude specific namespaces).
+- Default: `kube-system`, `kube-downscaler`
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration), [ENV Scope](ref:docs-env-scope)
+
+### Exclude Deployments
+
+- Type: [Regex List](ref:docs-regex-list) (list of regex patterns matching workload names)
+- Description: Makes the downscaler exclude workloads with matching names (restricts the 'cluster-wide' scopes to exclude matching workloads).
+- Default: none
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration), [ENV Scope](ref:docs-env-scope)
+
+### Matching Labels
+
+- Type: [Regex List](ref:docs-regex-list) (list of regex patterns matching labels)
+  :::info
+
+  The Pattern has to match this pattern: `LABEL_NAME=LABEL_VALUE`.
+  This means that to match the `example` label to be `"true"` you would put in `example=true`.
+  To match a workload having the label no matter the value you would use `example=.*`.
+
+  :::
+
+- Description: Makes the downscaler only scale workloads whose labels match at least one of the patterns
+  (restricts the 'cluster-wide' scopes to matching workloads).
+- Default: none (the workloads don't have to match any label)
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+### Time Annotation
+
+- Type: string (annotation on workload containing an [RFC3339 formatted timestamp](https://datatracker.ietf.org/doc/html/rfc3339))
+- Description: Makes the downscaler check the [grace period](ref:docs-values#grace-period) against the value of the annotation
+  instead of the creation time of the workload.
+- Default: none (the downscaler will use the creation time of the workload)
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+### Leader Election
+
+- Type: boolean
+- Description: Enforces leader election by creating [lease objects](https://kubernetes.io/docs/concepts/architecture/leases/)
+  to ensure only one instance of the GoKubeDownscaler is active at any given time to avoid conflicts.
+- Default: false
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+### Max Retries on Conflict
+
+- Type: integer
+- Description: Sets the maximum number of retries for handling HTTP 409 conflict errors,
+  which occur when another entity modifies a resource that the downscaler is currently processing.
+- Default: 0
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+:::tip
+
+We recommend setting this to a value greater than 0 when [once](#once) is enabled.
+Since, in that case, the downscaler will only run once, you might want to perform retries if such conflicts occurs.
+
+:::
+
+### Kubeconfig
+
+- Type: string (path to a kubeconfig file)
+- Description: Makes the downscaler use the local kubeconfig instead of using the in-cluster config.
+  It will use the `current-context` specified in the kubeconfig.
+  The token/account used by the kubeconfig needs to have the [permissions necessary for scaling](ref:docs-helm-permissions).
+- Default: none (the downscaler will use the in-cluster config)
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)

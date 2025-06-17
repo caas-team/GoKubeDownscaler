@@ -1,0 +1,223 @@
+---
+title: Scaling Down for Holidays
+id: scaling-down-for-holidays
+globalReference: guides-scaling-down-for-holidays
+description: How to scale down your cluster for holidays with the GoKubeDownscaler.
+keywords: [getting started, holiday, basic setup guide]
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# Scaling Down for Holidays
+
+Another common use case for the Kubedownscaler is using it to scale down the cluster over Holidays.
+
+Depending on your use case you can apply this cluster-wide or on either namespace or workload level.
+
+For this we will use the [force downtime value](ref:docs-values#force-downtime) since it doesn't interfere with the usual downtime configuration
+and [can still be overridden to be able to stop some workloads or entire namespaces from being downscaled by this configuration](#excluding-workloads-from-this-configuration).
+
+The Timespan(s) for this sort of configuration would likely be manually configured [absolute timespans](ref:docs-timespans#absolute-timespans),
+commonly between 12 AM the day the holiday starts and 12 AM the day after the holiday ends.
+This way, the other configuration (like [night time scaling](ref:guides-basic-night-time-saving))
+can handle the cluster until and after the Holiday begins.
+
+:::note
+
+If any error occurs during scanning the workload its state will not be changed.
+
+:::
+
+## Cluster-Wide
+
+In order to apply the wanted downtime cluster-wide the GoKubeDownscaler has to know what downtime to use.
+This can be done by using a [cli argument](ref:docs-cli-scope) for the GoKubeDownscaler.
+
+You can add cli arguments inside the [values.yaml](repo:deployments/chart/values.yaml) file.
+
+There you have to add it to the `arguments` field:
+
+```yaml title="values.yaml"
+# ...
+
+arguments:
+  - --force-downtime="2025-12-22T00:00:00+01:00 - 2026-1-7T00:00:00+01:00"
+# ...
+```
+
+After setting the value all workloads in your cluster will be scaled down from the 22nd of December 2025 to the end of 6th of January 2026.
+
+## Namespace Level
+
+To set this up for all workloads in a namespace you have to annotate the namespace with the wanted time span.
+
+This can be done using a `kubectl` command or by editing the namespace's yaml manifest.
+
+<Tabs>
+  <TabItem value="kubectl" label="kubectl" default>
+    Adding the downtime with kubectl is a single command:
+
+    ```bash
+    kubectl annotate ns my-namespace downscaler/force-downtime="2025-12-22T00:00:00+01:00 - 2026-1-7T00:00:00+01:00"
+    ```
+
+  </TabItem>
+  <TabItem value="manifest" label="Edit manifest">
+    If you want to edit the annotations manually with a yaml manifest file
+    or by running `kubectl edit ns my-namespace` you have to add the following:
+
+    ```yaml title="my-namespace.yaml"
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: my-namespace
+      # highlight-start
+      annotations:
+        downscaler/force-downtime: "2025-12-22T00:00:00+01:00 - 2026-1-7T00:00:00+01:00"
+      # highlight-end
+    ```
+
+  </TabItem>
+</Tabs>
+
+Now all workloads in `my-namespace` will be scaled down from the 22nd of December 2025 to the end of 6th of January 2026.
+
+## Workload Level
+
+To set this up for individual workloads you have to set an annotation on each workload you want to scale down.
+
+This can also be done by either using a `kubectl` command or by editing the workload's yaml manifest.
+
+For demo purposes we will showcase this with a deployment.
+
+<Tabs>
+  <TabItem value="kubectl" label="kubectl" default>
+    Adding the downtime with kubectl is a single command:
+
+    ```bash
+    kubectl annotate deployment my-deployment downscaler/force-downtime="2025-12-22T00:00:00+01:00 - 2026-1-7T00:00:00+01:00"
+    ```
+
+  </TabItem>
+  <TabItem value="manifest" label="Edit manifest">
+    If you want to edit the annotations manually with a yaml manifest file
+    or by running `kubectl edit deployment my-deployment` you have to add the following:
+
+    ```yaml title="my-deployment.yaml"
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: my-deployment
+      # highlight-start
+      annotations:
+        downscaler/force-downtime: "2025-12-22T00:00:00+01:00 - 2026-1-7T00:00:00+01:00"
+      # highlight-end
+    spec:
+      replicas: 3
+      selector:
+        matchLabels:
+          app: nginx
+      template:
+        metadata:
+          labels:
+            app: nginx
+        spec:
+          containers:
+          - name: nginx
+            image: nginx:1.14.2
+            ports:
+            - containerPort: 80
+    ```
+
+  </TabItem>
+</Tabs>
+
+Now your deployment my-deployment will be scaled down from the 22nd of December 2025 to the end of 6th of January 2026.
+
+## Excluding Workloads From This Configuration
+
+For excluding a workload specifically from this kind of configuration we can simply reuse the [force downtime value](ref:docs-values#force-downtime)
+by setting it to `false` on the [workload](#excluding-a-workload) or the [namespace](#excluding-a-namespace)
+
+:::note
+
+You could also just as well use the [exclude value](ref:docs-values#exclude) to stop workloads from being influenced by this configuration.
+The only difference is that this will not allow you to use any of the downscalers functionality on this workload.
+
+:::
+
+### Excluding a Namespace
+
+<Tabs>
+  <TabItem value="kubectl" label="kubectl" default>
+    Adding the downtime with kubectl is a single command:
+
+    ```bash
+    kubectl annotate ns my-namespace downscaler/force-downtime="false"
+    ```
+
+  </TabItem>
+  <TabItem value="manifest" label="Edit manifest">
+    If you want to edit the annotations manually with a yaml manifest file
+    or by running `kubectl edit ns my-namespace` you have to add the following:
+
+    ```yaml title="my-namespace.yaml"
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: my-namespace
+      # highlight-start
+      annotations:
+        downscaler/force-downtime: "false"
+      # highlight-end
+    ```
+
+  </TabItem>
+</Tabs>
+
+This way every workload within this namespace doesn't get affected by the cluster-wide holiday downtime.
+
+### Excluding a Workload
+
+<Tabs>
+  <TabItem value="kubectl" label="kubectl" default>
+    Adding the downtime with kubectl is a single command:
+
+    ```bash
+    kubectl annotate deployment my-deployment downscaler/force-downtime="false"
+    ```
+
+  </TabItem>
+  <TabItem value="manifest" label="Edit manifest">
+    If you want to edit the annotations manually with a yaml manifest file
+    or by running `kubectl edit deployment my-deployment` you have to add the following:
+
+    ```yaml title="my-deployment.yaml"
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: my-deployment
+      # highlight-start
+      annotations:
+        downscaler/force-downtime: "false"
+      # highlight-end
+    spec:
+      replicas: 3
+      selector:
+        matchLabels:
+          app: nginx
+      template:
+        metadata:
+          labels:
+            app: nginx
+        spec:
+          containers:
+          - name: nginx
+            image: nginx:1.14.2
+            ports:
+            - containerPort: 80
+    ```
+
+  </TabItem>
+</Tabs>

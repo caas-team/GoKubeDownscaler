@@ -6,6 +6,10 @@ on:
       - main
     paths:
       - "website/**"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "website/**"
 
 jobs:
   build:

@@ -25,3 +25,15 @@ func newMaxRetriesExceeded(maxRetries int) error {
 func (m *MaxRetriesExceededError) Error() string {
 	return fmt.Sprintf("failed to scale resource: number of max retries exceeded (%d) will try again in the next cycle", m.maxRetries)
 }
+
+type ScalingInvalidError struct {
+	message string
+}
+
+func newScalingInvalidError(message string) error {
+	return &ScalingInvalidError{message: message}
+}
+
+func (s *ScalingInvalidError) Error() string {
+	return s.message
+}

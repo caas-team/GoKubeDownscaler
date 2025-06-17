@@ -1,0 +1,42 @@
+---
+title: Helm Chart Components
+id: helm-chart-components
+globalReference: docs-helm-components
+description: List of All GoKubeDownscaler Helm Chart Components
+keywords: [components, helm chart components]
+---
+
+# Helm Chart Components
+
+The following Kubernetes Objects can be created with our Helm Chart:
+
+## Deployment
+
+The [deployment.yaml](repo:deployments/chart/templates/deployment.yaml) file creates the main Deployment of the GoKubeDownscaler
+with a reference to the provided ServiceAccount and ConfigMap.
+
+## Serviceaccount
+
+The [serviceaccount.yaml](repo:deployments/chart/templates/serviceaccount.yaml) file creates a ServiceAccount
+that will be used by the GoKubeDownscaler to interact with Kubernetes.
+
+## Configmap
+
+The [configmap.yaml](repo:deployments/chart/templates/configmap.yaml) file creates a new ConfigMap with the provided name.
+It is used to store environment variables like `EXCLUDE_NAMESPACES`.
+
+## Clusterrole
+
+The [clusterrole.yaml](repo:deployments/chart/templates/clusterrole.yaml) file creates a ClusterRole and a ClusterRoleBinding
+for the desired cluster if there are no namespaces defined in [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces).
+These allow the actions the GoKubeDownscaler needs to scale down workloads in a cluster-wide context.
+
+## Role
+
+The [role.yaml](repo:deployments/chart/templates/role.yaml) file creates a Role and a RoleBinding
+for every namespace listed in [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces).
+
+## Leaserole
+
+The [leaserole.yaml](repo:deployments/chart/templates/leaserole.yaml) file creates a Role and RoleBinding
+if [`--leader-election`](ref:docs-runtime-configuration#leader-election) is enabled in order to make lease management possible.

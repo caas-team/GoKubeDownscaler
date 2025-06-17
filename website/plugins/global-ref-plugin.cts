@@ -2,6 +2,7 @@ import { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import { Node, Literal } from "unist";
 import { ParseFrontMatter } from "@docusaurus/types";
+import path from "path";
 
 const references: Map<
   string,
@@ -18,6 +19,9 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
     filePath,
   });
 
+  // partial markdown files do not contain any frontmatter and do not need to be referenced
+  if (path.basename(filePath).startsWith("_")) return result;
+
   // file is not part of the docs or guides
   if (!filePath.includes("website/content/")) return result;
 
@@ -29,8 +33,9 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
     .join("/");
 
   if (!result.frontMatter.globalReference) {
-    throw new Error(`the file '${urlPath}' does not have a globalReference set`);
-    return result;
+    throw new Error(
+      `the file '${urlPath}' does not have a globalReference set`
+    );
   }
 
   const referenceId = result.frontMatter.globalReference as string;
@@ -38,7 +43,9 @@ export const globalRefParseFrontMatter: ParseFrontMatter = async ({
     references.get(referenceId) &&
     references.get(referenceId).urlPath != urlPath
   ) {
-    const errorMessage = `the globalReference '${referenceId}' is set in '${references.get(referenceId).urlPath}' and '${urlPath}'`;
+    const errorMessage = `the globalReference '${referenceId}' is set in '${
+      references.get(referenceId).urlPath
+    }' and '${urlPath}'`;
     if (process.env.NODE_ENV === "production") {
       throw new Error(errorMessage);
     }

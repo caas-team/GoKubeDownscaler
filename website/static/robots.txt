@@ -1,0 +1,3 @@
+User-agent: *
+Disallow:
+Sitemap: https://caas-team.github.io/GoKubeDownscaler/sitemap.xml

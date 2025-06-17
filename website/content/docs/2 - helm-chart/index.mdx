@@ -1,0 +1,32 @@
+---
+title: Helm Chart Documentation
+id: helm-chart-documentation
+globalReference: docs-helm
+description: Documentation for the GoKubeDownscaler Helm Chart
+keywords: [helm chart documentation, helm chart]
+---
+
+import DocCardList from "@theme/DocCardList";
+
+# Helm Chart
+
+In order to make the installation of the GoKubeDownscaler as easy as possible we provide a fully customizable Helm Chart.
+
+The Helm Chart is available on [ArtifactHub](https://artifacthub.io/packages/helm/py-kube-downscaler/go-kube-downscaler),
+the [charts/go-kube-downscaler package](https://github.com/caas-team/GoKubeDownscaler/pkgs/container/charts%2Fgo-kube-downscaler)
+or in our Helm chart repository which you can add by running:
+
+```bash
+helm repo add caas-team https://caas-team.github.io/helm-charts/
+```
+
+The following pages will cover the most important things you might want to know about the Helm Chart:
+
+- [Components](ref:docs-helm-components): Overview of the components that can be deployed with the Helm Chart
+- [Permissions](ref:docs-helm-permissions): Overview of the permissions that will be set by the Helm Chart
+- [Values](ref:docs-helm-values): Overview of the values available in the Helm Chart to customize the installation
+
+A practical example of how to install the Helm Chart can be found in the
+[Getting Started guide](ref:guides-installation).
+
+<DocCardList />

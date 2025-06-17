@@ -10,11 +10,14 @@ import { repoRefRemarkPlugin } from "./plugins/repo-ref-plugin.cts";
 import { PluginOptions } from "@easyops-cn/docusaurus-search-local";
 import { PluginConfig } from "svgo/lib/svgo";
 import path from "path";
-import { confWebpack } from "./plugins/conf-webpack.cts";
+import {
+  firstDocRedirectPlugin,
+  Config as firstDocRedirectConfig,
+} from "./plugins/first-doc-redirect.cts";
 
 const config: Config = {
   title: "GoKubeDownscaler",
-  tagline: "A horizontal autoscaler for Kubernetes workloads",
+  tagline: "A Horizontal Autoscaler For Kubernetes Workloads",
   favicon: "img/kubedownscaler.svg",
 
   url: "https://caas-team.github.io",
@@ -68,6 +71,20 @@ const config: Config = {
           beforeDefaultRemarkPlugins: [docRefRemarkPlugin, repoRefRemarkPlugin],
           editUrl:
             "https://github.com/caas-team/GoKubeDownscaler/edit/main/website",
+          showLastUpdateTime: true,
+        },
+        blog: {
+          blogTitle: "GoKubeDownscaler Blog",
+          blogDescription: "The official blog of the GoKubeDownscaler",
+          postsPerPage: "ALL",
+          showReadingTime: true,
+          editUrl:
+            "https://github.com/caas-team/GoKubeDownscaler/edit/main/website",
+          onInlineTags: "throw",
+          onInlineAuthors: "throw",
+          onUntruncatedBlogPosts: "throw",
+          showLastUpdateTime: true,
+          beforeDefaultRemarkPlugins: [repoRefRemarkPlugin],
         },
         theme: {
           customCss: "./src/css/custom.css",
@@ -76,7 +93,13 @@ const config: Config = {
     ],
   ],
 
+  // see https://github.com/facebook/docusaurus/issues/10556
+  // this is necessary for tailwind since the old css minifier removes the layer from @media css rules
+  // additionally this makes building faster. if we ever get issues from this we can manually just enable the new css minimizer
+  future: { experimental_faster: true, v4: true },
+
   themeConfig: {
+    image: "img/social-preview.png",
     colorMode: {
       disableSwitch: false,
       respectPrefersColorScheme: true,
@@ -101,6 +124,17 @@ const config: Config = {
           sidebarId: "GuidesSidebar",
           position: "left",
           label: "Guides",
+        },
+        {
+          type: "docSidebar",
+          sidebarId: "ContributingSidebar",
+          position: "left",
+          label: "Contributing",
+        },
+        {
+          to: "blog",
+          label: "Blog",
+          position: "left",
         },
         {
           href: "https://github.com/caas-team/GoKubeDownscaler",
@@ -139,8 +173,33 @@ const config: Config = {
         },
       ],
     },
+    mermaid: {
+      theme: { light: "neutral", dark: "dark" },
+    },
   } satisfies Preset.ThemeConfig,
   headTags: [
+    {
+      tagName: "script",
+      attributes: {
+        type: "application/ld+json",
+      },
+      innerHTML: JSON.stringify({
+        "@context": "https://schema.org/",
+        "@type": "SoftwareApplication",
+        name: "GoKubeDownscaler",
+        description:
+          "GoKubeDownscaler is a Kubernetes autoscaler that lets you downscale your workloads during off-hours to save costs on your cloud bill. It is lightweight and easy-to-use; works with EKS, GKE, AKS, and every other Kubernetes clusters.",
+        applicationCategory: "Kubernetes Addon",
+        operatingSystem: "Linux",
+        url: "https://caas-team.github.io/GoKubeDownscaler/",
+        logo: "https://github.com/caas-team/GoKubeDownscaler/blob/main/logo/kubedownscaler.svg",
+        author: {
+          "@type": "Organization",
+          name: "CaaS Team",
+          url: "https://github.com/caas-team",
+        },
+      }),
+    },
     {
       tagName: "link",
       attributes: {
@@ -160,9 +219,17 @@ const config: Config = {
         searchBarShortcutHint: false,
       } as Partial<PluginOptions>,
     ],
+    "@docusaurus/theme-mermaid",
   ],
-  plugins: [tailwindPlugin, confWebpack],
+  plugins: [
+    tailwindPlugin,
+    [
+      firstDocRedirectPlugin,
+      { sidebarConfig: "sidebars.ts" } satisfies firstDocRedirectConfig,
+    ],
+  ],
   markdown: {
+    mermaid: true,
     parseFrontMatter: globalRefParseFrontMatter,
   },
 };

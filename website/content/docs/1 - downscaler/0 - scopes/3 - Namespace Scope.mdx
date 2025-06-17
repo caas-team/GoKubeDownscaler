@@ -1,0 +1,66 @@
+---
+title: Namespace Scope
+id: namespace-scope
+globalReference: docs-namespace-scope
+description: Learn how to set the Namespace Scope of the GoKubeDownscaler
+keywords: [namespace scope, namespace annotations]
+---
+
+import HierarchyDiagram from "./templates/_hierarchy-diagram.mdx";
+
+# Namespace Scope
+
+The **Namespace Scope** is the fourth scope available and holds configurations set at namespace level.
+It overrides values already defined inside the [Default Scope](ref:docs-default-scope),
+[ENV Scope](ref:docs-env-scope), [CLI Scope](ref:docs-cli-scope), but values defined inside the namespace scope can be overridden by
+[Workload Scope](ref:docs-workload-scope).
+It is only used to set values
+
+<HierarchyDiagram highlight="d" />
+
+## Values
+
+At the Namespace Scope, the following [values](ref:docs-values) can be configured using annotations
+to apply scaling policies, exclusions and grace periods
+
+- [downscaler/downscale-period](ref:docs-values#downscale-period)
+- [downscaler/downtime](ref:docs-values#downtime)
+- [downscaler/upscale-period](ref:docs-values#upscale-period)
+- [downscaler/uptime](ref:docs-values#uptime)
+- [downscaler/exclude](ref:docs-values#exclude)
+- [downscaler/exclude-until](ref:docs-values#exclude-until)
+- [downscaler/force-uptime](ref:docs-values#force-uptime)
+- [downscaler/force-downtime](ref:docs-values#force-downtime)
+- [downscaler/downscale-replicas](ref:docs-values#downscale-replicas)
+- [downscaler/grace-period](ref:docs-values#grace-period)
+- [downscaler/scale-children](ref:docs-values#scale-children)
+
+:::warning
+
+Some annotations are incompatible with others.
+You can check their compatibility by viewing the dedicated documentation page from the list above.
+
+:::
+
+## Usage
+
+The namespace annotations can be set either directly through the Namespace YAML file (e.g. `kubectl edit` command)
+
+```yaml title="example-namespace.yaml"
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: example-namespace
+  # highlight-start
+  annotations:
+    downscaler/downscale-replicas: "1"
+    downscaler/exclude: "false"
+  # highlight-end
+```
+
+or by using the `kubectl annotate` command
+
+```bash
+kubectl annotate namespace example-namespace downscaler/downscale-replicas="1"
+kubectl annotate namespace example-namespace downscaler/exclude="false"
+```
