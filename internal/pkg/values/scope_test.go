@@ -25,13 +25,6 @@ func TestScope_checkForIncompatibleFields(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "downscale replicas invalid",
-			scope: Scope{
-				DownscaleReplicas: -12,
-			},
-			wantErr: true,
-		},
-		{
 			name: "up- and downtime",
 			scope: Scope{
 				UpTime:   timeSpans{relativeTimeSpan{}},

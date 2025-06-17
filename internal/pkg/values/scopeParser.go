@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
@@ -21,6 +20,7 @@ const (
 	annotationForceDowntime     = "downscaler/force-downtime"
 	annotationDownscaleReplicas = "downscaler/downscale-replicas"
 	annotationGracePeriod       = "downscaler/grace-period"
+	annotationScaleChildren     = "downscaler/scale-children"
 
 	envUpscalePeriod   = "UPSCALE_PERIOD"
 	envUptime          = "DEFAULT_UPTIME"
@@ -72,7 +72,7 @@ func (s *Scope) ParseScopeFlags() {
 		"sets exclude on cli scope to true, makes it so namespaces or deployments have to specify downscaler/exclude=false (default: false)",
 	)
 	flag.Var(
-		(*util.Int32Value)(&s.DownscaleReplicas),
+		&ReplicasValue{Replicas: &s.DownscaleReplicas},
 		"downtime-replicas",
 		"the replicas to scale down to (default: 0)",
 	)
@@ -80,6 +80,11 @@ func (s *Scope) ParseScopeFlags() {
 		(*util.DurationValue)(&s.GracePeriod),
 		"grace-period",
 		"the grace period between creation of workload until first downscale (default: 15min)",
+	)
+	flag.Var(
+		&s.ScaleChildren,
+		"scale-children",
+		"if set to true, the ownerReference will immediately trigger scaling of children workloads when applicable (default: false)",
 	)
 }
 
@@ -113,7 +118,7 @@ func (s *Scope) GetScopeFromEnv() error {
 }
 
 // GetScopeFromAnnotations fills l with all values from the annotations and checks for compatibility.
-func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclop // it is a big function and we can refactor it a bit but it should be fine for now
+func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocyclo // it is a big function and we can refactor it a bit but it should be fine for now
 	annotations map[string]string,
 	logEvent util.ResourceLogger,
 	ctx context.Context,
@@ -205,18 +210,16 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 	}
 
 	if downscaleReplicasString, ok := annotations[annotationDownscaleReplicas]; ok {
-		var downscaleReplicas int64
+		replicasVal := ReplicasValue{Replicas: &s.DownscaleReplicas}
 
-		downscaleReplicas, err = strconv.ParseInt(downscaleReplicasString, 10, 32)
-		if err != nil {
+		if err = replicasVal.Set(downscaleReplicasString); err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationDownscaleReplicas, err)
 			logEvent.ErrorInvalidAnnotation(annotationDownscaleReplicas, err.Error(), ctx)
 
 			return err
 		}
 
-		// #nosec G115 // downscaleReplicas gets parsed as a 32 bit integer, so any errors that could be thrown here are already handled above
-		s.DownscaleReplicas = int32(downscaleReplicas)
+		s.DownscaleReplicas = *replicasVal.Replicas
 	}
 
 	if gracePeriod, ok := annotations[annotationGracePeriod]; ok {
@@ -224,6 +227,16 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,gocyclo,cyclo
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationGracePeriod, err)
 			logEvent.ErrorInvalidAnnotation(annotationGracePeriod, err.Error(), ctx)
+
+			return err
+		}
+	}
+
+	if scaleChildrenString, ok := annotations[annotationScaleChildren]; ok {
+		err = s.ScaleChildren.Set(scaleChildrenString)
+		if err != nil {
+			err = fmt.Errorf("failed to parse %q annotation: %w", annotationScaleChildren, err)
+			logEvent.ErrorInvalidAnnotation(annotationScaleChildren, err.Error(), ctx)
 
 			return err
 		}

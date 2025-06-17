@@ -3,7 +3,6 @@ package values
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -43,10 +42,10 @@ func (s ScopeID) String() string {
 	}[s]
 }
 
-// NewScope gets a new scope with the default values.
+// NewScope gets a new scope with all values in an unset state.
 func NewScope() *Scope {
 	return &Scope{
-		DownscaleReplicas: util.Undefined,
+		DownscaleReplicas: nil,
 		GracePeriod:       util.Undefined,
 	}
 }
@@ -61,8 +60,9 @@ type Scope struct {
 	ExcludeUntil      *time.Time    // until when the workload should be excluded
 	ForceUptime       timeSpans     // force workload into an uptime state when in one of the timespans
 	ForceDowntime     timeSpans     // force workload into a downtime state when in one of the timespans
-	DownscaleReplicas int32         // the replicas to scale down to
+	DownscaleReplicas Replicas      // the replicas to scale down to
 	GracePeriod       time.Duration // grace period until new workloads will be scaled down
+	ScaleChildren     triStateBool  // ownerReference will immediately trigger scaling of children workloads, when applicable
 }
 
 func GetDefaultScope() *Scope {
@@ -75,20 +75,14 @@ func GetDefaultScope() *Scope {
 		ExcludeUntil:      nil,
 		ForceUptime:       nil,
 		ForceDowntime:     nil,
-		DownscaleReplicas: 0,
+		DownscaleReplicas: AbsoluteReplicas(0),
 		GracePeriod:       15 * time.Minute,
+		ScaleChildren:     triStateBool{isSet: false, value: false},
 	}
 }
 
 // CheckForIncompatibleFields checks if there are incompatible fields.
 func (s *Scope) CheckForIncompatibleFields() error {
-	// downscale replicas invalid
-	if s.DownscaleReplicas != util.Undefined && s.DownscaleReplicas < 0 {
-		return newInvalidValueError(
-			"downscale replicas has to be a positive integer",
-			strconv.Itoa(int(s.DownscaleReplicas)),
-		)
-	}
 	// up- and downtime
 	if s.UpTime != nil && s.DownTime != nil {
 		return newIncompatibalFieldsError("uptime", "downtime")
@@ -204,17 +198,28 @@ func (s Scopes) GetCurrentScaling() Scaling {
 }
 
 // GetDownscaleReplicas gets the downscale replicas of the first scope that implements downscale replicas.
-func (s Scopes) GetDownscaleReplicas() (int32, error) {
+func (s Scopes) GetDownscaleReplicas() (Replicas, error) {
 	for _, scope := range s {
 		downscaleReplicas := scope.DownscaleReplicas
-		if downscaleReplicas == util.Undefined {
+		if downscaleReplicas == nil {
 			continue
 		}
 
 		return downscaleReplicas, nil
 	}
 
-	return 0, newValueNotSetError("downscaleReplicas")
+	return nil, newValueNotSetError("downscaleReplicas")
+}
+
+// GetScaleChildren gets the scale children of the first scope that implements scale children.
+func (s Scopes) GetScaleChildren() bool {
+	for _, scope := range s {
+		if scope.ScaleChildren.isSet {
+			return scope.ScaleChildren.value
+		}
+	}
+
+	return false
 }
 
 // GetExcluded checks if the scopes exclude scaling.

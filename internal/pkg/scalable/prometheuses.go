@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -35,13 +36,13 @@ func (p *prometheus) setReplicas(replicas int32) error {
 }
 
 // getReplicas gets the current amount of replicas of the resource.
-func (p *prometheus) getReplicas() (int32, error) {
+func (p *prometheus) getReplicas() (values.Replicas, error) {
 	replicas := p.Spec.Replicas
 	if replicas == nil {
-		return 0, newNoReplicasError(p.Kind, p.Name)
+		return nil, newNoReplicasError(p.Kind, p.Name)
 	}
 
-	return *p.Spec.Replicas, nil
+	return values.AbsoluteReplicas(*replicas), nil
 }
 
 // Reget regets the resource from the Kubernetes API.

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
@@ -46,6 +47,14 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 	return workloads, nil
 }
 
+type ParentWorkload interface {
+	GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error)
+}
+
+type PercentageWorkload interface {
+	AllowPercentageReplicas() bool
+}
+
 // scalableResource provides all functions needed to scale any type of resource.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource
@@ -64,6 +73,8 @@ type scalableResource interface {
 	SetAnnotations(annotations map[string]string)
 	// GroupVersionKind gets the group version kind of the workload
 	GroupVersionKind() schema.GroupVersionKind
+	// GetOwnerReferences gets the owner references of the workload
+	GetOwnerReferences() []metav1.OwnerReference
 	// Reget regets the workload to ensure the latest state
 	Reget(clientsets *Clientsets, ctx context.Context) error
 }
@@ -76,7 +87,7 @@ type Workload interface {
 	// ScaleUp scales up the workload
 	ScaleUp() error
 	// ScaleDown scales down the workload
-	ScaleDown(downscaleReplicas int32) error
+	ScaleDown(downscaleReplicas values.Replicas) error
 }
 
 type Clientsets struct {
