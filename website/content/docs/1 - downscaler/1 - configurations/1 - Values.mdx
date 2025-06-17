@@ -43,10 +43,15 @@ Otherwise the [Downscale Period](#downscale-period), [Downtime](#downtime),
 
 :::note
 
-Currently if [Downscale Period](#downscale-period) and [Upscale Period](#upscale-period) is set,
-and both match the same time the workload will ignore scaling.
+Currently if [Downscale Period](#downscale-period) and [Upscale Period](#upscale-period)
+or [Force Downtime](#force-downtime) and [Force Uptime](#force-uptime) is set,
+and both of either match the same time the workload will result in an error during scaling,
+basically skipping scaling on the workload.
 This is _**NOT**_ final intended behavior and you should not rely on this.
-This will likely change in the future to be seen as an incompatibility.
+This might change in the future to be seen as an [parsing incompatibility](#parsing-incompatibility)
+instead of an [runtime](#runtime-incompatibility) one.
+If this gets changed this would result in misconfigured workloads
+to not being scaled at all, instead erroring during scaling.
 
 :::
 
@@ -191,3 +196,31 @@ Here is a list of all values that can be set on the Downscaler.
 - Default: false
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration), [Namespace Scope](ref:docs-namespace-scope#values),
   [Workload Scope](ref:docs-workload-scope#values)
+
+## Incompatibilities
+
+### Parsing Incompatibility
+
+Parsing incompatibilities covers most of the downscalers incompatibilities.
+This currently includes the `Incompatible with` field shown [above](#list-of-values),
+which marks the incompatibility of two values being set in the same scope.
+
+These incompatibilities are easy to catch, since they get shown every scan.
+
+### Runtime Incompatibility
+
+These are incompatibilities we at least currently cannot check for during parsing.
+This currently only affects [timespan](ref:docs-timespans) values that have the same order/priority within the scope
+and are setting different scaling states when matching
+like [Downscale Period](#downscale-period) and [Upscale Period](#upscale-period)
+or [Force Downtime](#force-downtime) and [Force Uptime](#force-uptime).
+
+We have strongly tried to make these incompatibilities not cause unexpected behavior,
+opting for just printing an error and ignoring the workload that scan cycle.
+
+What can't be changed is that these will be hard to notice and find the cause for,
+since depending on the configuration causing this and the scan interval
+it could happen that this configuration error only shows up every few years.
+
+Avoiding these should be relatively simple, by reading the documentation and making sure not to overlap [timespans](ref:docs-timespans)
+between values like [Downscale Period](#downscale-period) and [Upscale Period](#upscale-period).
