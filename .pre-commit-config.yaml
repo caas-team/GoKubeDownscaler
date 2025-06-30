@@ -24,7 +24,7 @@ repos:
     hooks:
       - id: go-deadcode
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.6.1
+    rev: v3.6.2
     hooks:
       - id: prettier
         files: \.(md|mdx)$
