@@ -19,6 +19,10 @@ repos:
         args: [-l, -w]
       - id: golangci-lint-repo-mod
         args: [--config, .golangci.yaml, --, --fix]
+  - repo: https://github.com/jonathan-mayer/pre-commit-deadcode
+    rev: v0.0.1
+    hooks:
+      - id: go-deadcode
   - repo: https://github.com/rbubley/mirrors-prettier
     rev: v3.6.1
     hooks:
