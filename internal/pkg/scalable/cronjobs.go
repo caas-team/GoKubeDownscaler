@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 
 	admissionv1 "k8s.io/api/admission/v1"
-	"sync"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	batch "k8s.io/api/batch/v1"
