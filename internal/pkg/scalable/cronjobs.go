@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 
 	admissionv1 "k8s.io/api/admission/v1"
-	"sync"
 
 	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
