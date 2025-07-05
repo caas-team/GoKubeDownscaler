@@ -3,10 +3,12 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	argov1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -23,6 +25,45 @@ func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) 
 	}
 
 	return results, nil
+}
+
+// parseRolloutFromAdmissionRequest parses the admission review and returns the rollout.
+//
+//nolint:ireturn //required for interface-based factory
+func parseRolloutFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var roll argov1alpha1.Rollout
+	if err := json.Unmarshal(review.Request.Object.Raw, &roll); err != nil {
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
+	}
+
+	return &replicaScaledWorkload{&rollout{&roll}}, nil
+}
+
+// deepCopyRollout creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a rollout.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyRollout(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	ro, ok := rsw.replicaScaledResource.(*rollout)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*rollout)(nil), rsw.replicaScaledResource)
+	}
+
+	if ro.Rollout == nil {
+		return nil, newNilUnderlyingObjectError("rollout not found")
+	}
+
+	copied := ro.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &rollout{
+			Rollout: copied,
+		},
+	}, nil
 }
 
 // rollout is a wrapper for rollout.v1alpha1.argoproj.io to implement the replicaScaledResource interface.

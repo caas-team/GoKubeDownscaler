@@ -2,10 +2,12 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -22,6 +24,45 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 	}
 
 	return results, nil
+}
+
+// parsePrometheusFromAdmissionRequest parses the admission review and returns the prometheus.
+//
+//nolint:ireturn //required for interface-based factory
+func parsePrometheusFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var prom monitoringv1.Prometheus
+	if err := json.Unmarshal(review.Request.Object.Raw, &prom); err != nil {
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
+	}
+
+	return &replicaScaledWorkload{&prometheus{&prom}}, nil
+}
+
+// deepCopyPrometheus creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a prometheus.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyPrometheus(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	prom, ok := rsw.replicaScaledResource.(*prometheus)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*prometheus)(nil), rsw.replicaScaledResource)
+	}
+
+	if prom.Prometheus == nil {
+		return nil, newNilUnderlyingObjectError("prometheus not found")
+	}
+
+	copied := prom.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &prometheus{
+			Prometheus: copied,
+		},
+	}, nil
 }
 
 // prometheus is a wrapper for prometheus.v1.monitoring.coreos.com to implement the replicaScaledResource interface.

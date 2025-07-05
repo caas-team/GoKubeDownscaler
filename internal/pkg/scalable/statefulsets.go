@@ -3,9 +3,11 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -23,6 +25,45 @@ func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Conte
 	}
 
 	return results, nil
+}
+
+// parseStatefulSetFromAdmissionRequest parses the admission review and returns the statefulset.
+//
+//nolint:ireturn //required for interface-based factory
+func parseStatefulSetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var sts appsv1.StatefulSet
+	if err := json.Unmarshal(review.Request.Object.Raw, &sts); err != nil {
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
+	}
+
+	return &replicaScaledWorkload{&statefulSet{&sts}}, nil
+}
+
+// deepCopyStatefulSet creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a statefulSet.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyStatefulSet(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	sts, ok := rsw.replicaScaledResource.(*statefulSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*statefulSet)(nil), rsw.replicaScaledResource)
+	}
+
+	if sts.StatefulSet == nil {
+		return nil, newNilUnderlyingObjectError("statefulset not found")
+	}
+
+	copied := sts.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &statefulSet{
+			StatefulSet: copied,
+		},
+	}, nil
 }
 
 // statefulset is a wrapper for statefulset.v1.apps to implement the replicaScaledResource interface.

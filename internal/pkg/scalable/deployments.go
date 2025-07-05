@@ -3,9 +3,11 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -23,6 +25,45 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 	}
 
 	return results, nil
+}
+
+// parseDeploymentFromAdmissionRequest parses the admission review and returns the deployment.
+//
+//nolint:ireturn // required for interface-based factory
+func parseDeploymentFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var dep appsv1.Deployment
+	if err := json.Unmarshal(review.Request.Object.Raw, &dep); err != nil {
+		return nil, fmt.Errorf("failed to decode deployment: %w", err)
+	}
+
+	return &replicaScaledWorkload{&deployment{&dep}}, nil
+}
+
+// deepCopyDeployment creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a deployment.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyDeployment(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	dep, ok := rsw.replicaScaledResource.(*deployment)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*deployment)(nil), rsw.replicaScaledResource)
+	}
+
+	if dep.Deployment == nil {
+		return nil, newNilUnderlyingObjectError("deployment not found")
+	}
+
+	copied := dep.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &deployment{
+			Deployment: copied,
+		},
+	}, nil
 }
 
 // deployment is a wrapper for deployment.v1.apps to implement the replicaScaledResource interface.

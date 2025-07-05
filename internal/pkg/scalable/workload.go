@@ -3,12 +3,14 @@ package scalable
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
+	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -45,6 +47,70 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 	}
 
 	return workloads, nil
+}
+
+// parseWorkloadFunc is a function that parses a specific admission review as a Workload.
+type parseWorkloadFunc func(review *admissionv1.AdmissionReview) (Workload, error)
+
+// ParseWorkloadFromAdmissionReview parse the admission review and returns the workloads.
+//
+//nolint:ireturn //required for interface-based factory
+func ParseWorkloadFromAdmissionReview(resource string, review *admissionv1.AdmissionReview) (Workload, error) {
+	parseWorkloadFuncMap := map[string]parseWorkloadFunc{
+		"deployment":              parseDeploymentFromAdmissionRequest,
+		"statefulset":             parseStatefulSetFromAdmissionRequest,
+		"cronjob":                 parseCronJobFromAdmissionRequest,
+		"job":                     parseJobFromAdmissionRequest,
+		"daemonset":               parseDaemonSetFromAdmissionRequest,
+		"poddisruptionbudget":     parsePodDisruptionBudgetFromAdmissionRequest,
+		"horizontalpodautoscaler": parseHorizontalPodAutoscalerFromAdmissionRequest,
+		"scaledobject":            parseScaledObjectFromAdmissionRequest,
+		"rollout":                 parseRolloutFromAdmissionRequest,
+		"stack":                   parseStackFromAdmissionRequest,
+		"prometheus":              parsePrometheusFromAdmissionRequest,
+	}
+
+	parseFunc, exists := parseWorkloadFuncMap[resource]
+	if !exists {
+		return nil, newInvalidResourceError(resource)
+	}
+
+	workload, err := parseFunc(review)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse workloads of type %q: %w from admission request", resource, err)
+	}
+
+	return workload, nil
+}
+
+// deepCopyWorkloadFunc is a function that deep copies a Workload.
+type deepCopyWorkloadFunc func(w Workload) (Workload, error)
+
+// DeepCopyWorkload deep copies the given workload. It returns an error if the resource type is not supported.
+//
+//nolint:ireturn //required for interface-based workflow
+func DeepCopyWorkload(workload Workload) (Workload, error) {
+	resource := strings.ToLower(workload.GroupVersionKind().Kind)
+	deepCopyFuncMap := map[string]deepCopyWorkloadFunc{
+		"deployment":              deepCopyDeployment,
+		"statefulset":             deepCopyStatefulSet,
+		"cronjob":                 deepCopyCronJob,
+		"job":                     deepCopyJob,
+		"daemonset":               deepCopyDaemonSet,
+		"poddisruptionbudget":     deepCopyPodDisruptionBudget,
+		"horizontalpodautoscaler": deepCopyHorizontalPodAutoscaler,
+		"scaledobject":            deepCopyScaledObject,
+		"rollout":                 deepCopyRollout,
+		"stack":                   deepCopyStack,
+		"prometheus":              deepCopyPrometheus,
+	}
+
+	copyFunc, exists := deepCopyFuncMap[resource]
+	if !exists {
+		return nil, newInvalidResourceError(resource)
+	}
+
+	return copyFunc(workload)
 }
 
 type ParentWorkload interface {

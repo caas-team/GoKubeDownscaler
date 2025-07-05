@@ -40,3 +40,31 @@ func newOriginalReplicasUnsetError(reason string) error {
 func (o *OriginalReplicasUnsetError) Error() string {
 	return o.reason
 }
+
+type ExpectTypeGotTypeError struct {
+	expected any
+	actual   any
+}
+
+func newExpectTypeGotTypeError(expected, actual any) error {
+	return &ExpectTypeGotTypeError{
+		expected: expected,
+		actual:   actual,
+	}
+}
+
+func (e *ExpectTypeGotTypeError) Error() string {
+	return fmt.Sprintf("expected type %T, got %T", e.expected, e.actual)
+}
+
+type NilUnderlyingObjectError struct {
+	reason string
+}
+
+func newNilUnderlyingObjectError(reason string) error {
+	return &NilUnderlyingObjectError{reason: reason}
+}
+
+func (o *NilUnderlyingObjectError) Error() string {
+	return o.reason
+}
