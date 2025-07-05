@@ -53,6 +53,8 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 type parseWorkloadFunc func(review *admissionv1.AdmissionReview) (Workload, error)
 
 // ParseWorkloadFromAdmissionReview parse the admission review and returns the workloads.
+//
+//nolint:ireturn //required for interface-based factory
 func ParseWorkloadFromAdmissionReview(resource string, review *admissionv1.AdmissionReview) (Workload, error) {
 	parseWorkloadFuncMap := map[string]parseWorkloadFunc{
 		"deployment":              parseDeploymentFromAdmissionRequest,
@@ -70,7 +72,7 @@ func ParseWorkloadFromAdmissionReview(resource string, review *admissionv1.Admis
 
 	parseFunc, exists := parseWorkloadFuncMap[resource]
 	if !exists {
-		return nil, errResourceNotSupported
+		return nil, newInvalidResourceError(resource)
 	}
 
 	workload, err := parseFunc(review)

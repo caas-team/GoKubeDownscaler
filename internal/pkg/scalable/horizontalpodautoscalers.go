@@ -32,6 +32,8 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 }
 
 // parseHorizontalPodAutoscalerFromAdmissionRequest parses the admission review and returns the horizontalPodAutoscaler.
+//
+//nolint:ireturn //required for interface-based factory
 func parseHorizontalPodAutoscalerFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var hpa appsv1.HorizontalPodAutoscaler
 	if err := json.Unmarshal(review.Request.Object.Raw, &hpa); err != nil {
@@ -81,8 +83,6 @@ func (h *horizontalPodAutoscaler) Reget(clientsets *Clientsets, ctx context.Cont
 }
 
 // getSavedResourcesRequests calculates the total saved resources requests when downscaling the HorizontalPodAutoscaler.
-//
-
 func (h *horizontalPodAutoscaler) getSavedResourcesRequests(_ int32) *metrics.SavedResources {
 	return metrics.NewSavedResources(0, 0)
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -17,7 +16,6 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
-	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/server/mux"
@@ -30,43 +28,7 @@ const (
 )
 
 func main() {
-	config := util.GetDefaultConfig()
-	config.ParseConfigFlags()
-
-	err := config.ParseConfigEnvVars()
-	if err != nil {
-		slog.Error("failed to parse env vars for config", "error", err)
-		os.Exit(1)
-	}
-
-	scopeDefault := values.GetDefaultScope()
-	scopeCli := values.NewScope()
-	scopeEnv := values.NewScope()
-
-	err = scopeEnv.GetScopeFromEnv()
-	if err != nil {
-		slog.Error("failed to get scope from env", "error", err)
-		os.Exit(1)
-	}
-
-	scopeCli.ParseScopeFlags()
-
-	flag.Parse()
-
-	if config.Debug || config.DryRun {
-		slog.SetLogLoggerLevel(slog.LevelDebug)
-	}
-
-	if err = scopeCli.CheckForIncompatibleFields(); err != nil {
-		slog.Error("found incompatible fields", "error", err)
-		os.Exit(1)
-	}
-
-	slog.Debug("finished getting startup config",
-		"envScope", scopeEnv,
-		"cliScope", scopeCli,
-		"config", config,
-	)
+	config, scopeDefault, scopeCli, scopeEnv := initComponent()
 
 	slog.Debug("getting client for kubernetes")
 
@@ -120,7 +82,7 @@ func runWithLeaderElection(
 	cancel context.CancelFunc,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) {
 	lease, err := client.CreateLease(leaseName)
 	if err != nil {
@@ -177,7 +139,7 @@ func runWithoutLeaderElection(
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) {
 	slog.Warn("proceeding without leader election; this could cause errors when running with multiple replicas")
 
@@ -193,7 +155,7 @@ func startScanning(
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) error {
 	downscalerMetrics := initMetrics(config)
 
@@ -277,9 +239,9 @@ func attemptScaling(
 	client kubernetes.Client,
 	ctx context.Context,
 	scaling values.Scaling,
-	config *util.KubeDownscalerRuntimeConfiguration,
 	workload scalable.Workload,
 	scopes values.Scopes,
+	config *runtimeConfiguration,
 	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
 ) error {
 	for retry := range config.MaxRetriesOnConflict + 1 {
@@ -319,8 +281,8 @@ func scanWorkload(
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	namespaceScopes map[string]*values.Scope,
+	config *runtimeConfiguration,
 	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
-	config *util.RuntimeConfiguration,
 ) error {
 	resourceLogger := kubernetes.NewResourceLoggerForWorkload(client, workload)
 
@@ -413,7 +375,7 @@ func scaleWorkloads(
 	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
 	client kubernetes.Client,
 	ctx context.Context,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) {
 	for _, workload := range workloads {
 		go func(workload scalable.Workload) {

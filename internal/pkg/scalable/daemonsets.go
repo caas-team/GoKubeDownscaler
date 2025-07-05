@@ -9,6 +9,7 @@ import (
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,6 +34,8 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 }
 
 // parseDaemonSetFromAdmissionRequest parses the admission review and returns the daemonset.
+//
+//nolint:ireturn //required for interface-based factory
 func parseDaemonSetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var ds appsv1.DaemonSet
 	if err := json.Unmarshal(review.Request.Object.Raw, &ds); err != nil {
@@ -54,8 +57,6 @@ func (d *daemonSet) ScaleUp() error {
 }
 
 // ScaleDown scales the resource down.
-//
-
 func (d *daemonSet) ScaleDown(_ values.Replicas) (*metrics.SavedResources, error) {
 	if d.Spec.Template.Spec.NodeSelector == nil {
 		d.Spec.Template.Spec.NodeSelector = map[string]string{}
