@@ -3,7 +3,6 @@ package admission
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -13,39 +12,33 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-type admissionHandler interface {
-	// HandleValidation validates the admission request and returns an AdmissionResponse
-	HandleValidation() *admissionv1.AdmissionResponse
-}
-
 // parseAdmissionReviewFromRequest extracts an AdmissionReview from a http.Request if possible.
 func parseAdmissionReviewFromRequest(request *http.Request) (*admissionv1.AdmissionReview, error) {
 	if request.Header.Get("Content-Type") != "application/json" {
-		return nil, fmt.Errorf("Content-Type: %q should be %q",
-			request.Header.Get("Content-Type"), "application/json")
+		return nil, newContentTypeError("Content-Type: %q should be application/json ", request.Header.Get("Content-Type"))
 	}
 
 	bodybuf := new(bytes.Buffer)
 
 	_, err := bodybuf.ReadFrom(request.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read body: %w", err)
+		return nil, newFailedToReadBodyError("failed to read body from request")
 	}
 
 	body := bodybuf.Bytes()
 
 	if len(body) == 0 {
-		return nil, errors.New("admission request body is empty")
+		return nil, newRequestBodyIsEmptyError("admission review request body is empty")
 	}
 
 	var admissionReview admissionv1.AdmissionReview
 
 	if err := json.Unmarshal(body, &admissionReview); err != nil {
-		return nil, fmt.Errorf("could not parse admission review request: %w", err)
+		return nil, newFailedToParseRequestError("failed to parse admission review request: %w", err)
 	}
 
 	if admissionReview.Request == nil {
-		return nil, errors.New("admission review can't be used: Request field is nil")
+		return nil, newRequestFieldIsNilError("admission review can't be used: Request field is nil")
 	}
 
 	return &admissionReview, nil

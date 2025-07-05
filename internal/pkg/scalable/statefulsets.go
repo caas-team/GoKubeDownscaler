@@ -6,9 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	admissionv1 "k8s.io/api/admission/v1"
-
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,6 +28,8 @@ func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Conte
 }
 
 // parseStatefulSetFromAdmissionRequest parses the admission review and returns the statefulset.
+//
+//nolint:ireturn //required for interface-based factory
 func parseStatefulSetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var sts appsv1.StatefulSet
 	if err := json.Unmarshal(review.Request.Object.Raw, &sts); err != nil {

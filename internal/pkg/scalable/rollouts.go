@@ -28,6 +28,8 @@ func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) 
 }
 
 // parseRolloutFromAdmissionRequest parses the admission review and returns the rollout.
+//
+//nolint:ireturn //required for interface-based factory
 func parseRolloutFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var roll argov1alpha1.Rollout
 	if err := json.Unmarshal(review.Request.Object.Raw, &roll); err != nil {

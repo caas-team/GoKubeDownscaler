@@ -6,9 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	admissionv1 "k8s.io/api/admission/v1"
-
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -31,6 +30,8 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 }
 
 // parseHorizontalPodAutoscalerFromAdmissionRequest parses the admission review and returns the horizontalPodAutoscaler.
+//
+//nolint:ireturn //required for interface-based factory
 func parseHorizontalPodAutoscalerFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var hpa appsv1.HorizontalPodAutoscaler
 	if err := json.Unmarshal(review.Request.Object.Raw, &hpa); err != nil {

@@ -26,6 +26,8 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 }
 
 // parseCronJobFromAdmissionRequest parses the admission review and returns the cronjob.
+//
+//nolint:ireturn //required for interface-based factory
 func parseJobFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var j batch.Job
 	if err := json.Unmarshal(review.Request.Object.Raw, &j); err != nil {

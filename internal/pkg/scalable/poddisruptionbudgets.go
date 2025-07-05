@@ -28,6 +28,9 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 	return results, nil
 }
 
+// parsePodDisruptionBudgetFromAdmissionRequest parses the admission review and returns the podDisruptionBudget wrapped in a Workload.
+//
+//nolint:ireturn //required for interface-based factory
 func parsePodDisruptionBudgetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var pdb policy.PodDisruptionBudget
 	if err := json.Unmarshal(review.Request.Object.Raw, &pdb); err != nil {

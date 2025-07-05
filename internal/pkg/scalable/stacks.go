@@ -6,10 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
-	admissionv1 "k8s.io/api/admission/v1"
-
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
 	zalandov1 "github.com/zalando-incubator/stackset-controller/pkg/apis/zalando.org/v1"
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,6 +29,8 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 }
 
 // parseStackFromAdmissionRequest parses the admission review and returns the stack.
+//
+//nolint:ireturn //required for interface-based factory
 func parseStackFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var so kedav1alpha1.ScaledObject
 	if err := json.Unmarshal(review.Request.Object.Raw, &so); err != nil {

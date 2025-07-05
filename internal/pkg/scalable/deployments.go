@@ -6,9 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	admissionv1 "k8s.io/api/admission/v1"
-
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,6 +28,8 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 }
 
 // parseDeploymentFromAdmissionRequest parses the admission review and returns the deployment.
+//
+//nolint:ireturn // required for interface-based factory
 func parseDeploymentFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var dep appsv1.Deployment
 	if err := json.Unmarshal(review.Request.Object.Raw, &dep); err != nil {

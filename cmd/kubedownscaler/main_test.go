@@ -8,7 +8,6 @@ import (
 
 	client "github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
-	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -69,7 +68,7 @@ func TestScanWorkload(t *testing.T) {
 
 	scopeCli := values.NewScope()
 	scopeEnv := values.NewScope()
-	config := &util.KubeDownscalerRuntimeConfiguration{}
+	config := &runtimeConfiguration{}
 
 	scopeCli.DownscaleReplicas = values.AbsoluteReplicas(0)
 	scopeCli.GracePeriod = 15 * time.Minute

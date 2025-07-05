@@ -9,6 +9,7 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 
+	admissionv1 "k8s.io/api/admission/v1"
 	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,6 +31,8 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 }
 
 // parseCronJobFromAdmissionRequest parses the admission review and returns the cronjob wrapped in a Workload.
+//
+//nolint:ireturn //required for interface-based factory
 func parseCronJobFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var cj batch.CronJob
 	if err := json.Unmarshal(review.Request.Object.Raw, &cj); err != nil {

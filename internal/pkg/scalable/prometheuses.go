@@ -27,6 +27,8 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 }
 
 // parsePrometheusFromAdmissionRequest parses the admission review and returns the prometheus.
+//
+//nolint:ireturn //required for interface-based factory
 func parsePrometheusFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var prom monitoringv1.Prometheus
 	if err := json.Unmarshal(review.Request.Object.Raw, &prom); err != nil {

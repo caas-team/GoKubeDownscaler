@@ -15,34 +15,34 @@ import (
 
 // WorkloadAdmissionHandler is a struct that implements the admissionHandler interface.
 type WorkloadAdmissionHandler struct {
-	admissionHandler
-	client       kubernetes.Client
-	scopeCli     *values.Scope
-	scopeEnv     *values.Scope
-	scopeDefault *values.Scope
-	config       *util.AdmissionControllerRuntimeConfiguration
-	ctx          context.Context
+	client            kubernetes.Client
+	scopeCli          *values.Scope
+	scopeEnv          *values.Scope
+	scopeDefault      *values.Scope
+	includeLabels     *util.RegexList
+	excludeNamespaces *util.RegexList
+	excludeWorkloads  *util.RegexList
 }
 
 // NewWorkloadAdmissionHandler creates a new WorkloadAdmissionHandler.
 func NewWorkloadAdmissionHandler(
 	client kubernetes.Client,
 	scopeCli, scopeEnv, scopeDefault *values.Scope,
-	config *util.AdmissionControllerRuntimeConfiguration,
-	ctx context.Context,
+	includeLabels, excludeNamespaces, excludeWorkloads *util.RegexList,
 ) *WorkloadAdmissionHandler {
 	return &WorkloadAdmissionHandler{
-		client:       client,
-		scopeCli:     scopeCli,
-		scopeEnv:     scopeEnv,
-		scopeDefault: scopeDefault,
-		config:       config,
-		ctx:          ctx,
+		client:            client,
+		scopeCli:          scopeCli,
+		scopeEnv:          scopeEnv,
+		scopeDefault:      scopeDefault,
+		includeLabels:     includeLabels,
+		excludeNamespaces: excludeNamespaces,
+		excludeWorkloads:  excludeWorkloads,
 	}
 }
 
 // HandleValidation handles the validation of a workload.
-func (v *WorkloadAdmissionHandler) HandleValidation(writer http.ResponseWriter, request *http.Request) {
+func (v *WorkloadAdmissionHandler) HandleValidation(ctx context.Context, writer http.ResponseWriter, request *http.Request) {
 	input, err := parseAdmissionReviewFromRequest(request)
 	if err != nil {
 		slog.Error("error encountered while parsing the request", "error", err)
@@ -59,7 +59,7 @@ func (v *WorkloadAdmissionHandler) HandleValidation(writer http.ResponseWriter, 
 		return
 	}
 
-	out, err := v.validateWorkload(workload, input)
+	out, err := v.validateWorkload(ctx, workload, input)
 	if err != nil {
 		slog.Error("error encountered while validating workload", "error", err)
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -72,17 +72,18 @@ func (v *WorkloadAdmissionHandler) HandleValidation(writer http.ResponseWriter, 
 
 // validateWorkload validates the workload and returns an AdmissionReview.
 func (v *WorkloadAdmissionHandler) validateWorkload(
+	ctx context.Context,
 	workload scalable.Workload,
 	review *admissionv1.AdmissionReview,
 ) (*admissionv1.AdmissionReview, error) {
-	resourceLogger := kubernetes.NewResourceLogger(v.client, workload)
+	resourceLogger := kubernetes.NewResourceLoggerForWorkload(v.client, workload)
 
 	slog.Debug("validating workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	// check if workload is excluded
 	workloadArray := []scalable.Workload{workload}
 
-	workloads := scalable.FilterExcluded(workloadArray, v.config.IncludeLabels, v.config.ExcludeNamespaces, v.config.ExcludeWorkloads)
+	workloads := scalable.FilterExcluded(workloadArray, *v.includeLabels, *v.excludeNamespaces, *v.excludeWorkloads)
 
 	if len(workloads) == 0 {
 		slog.Debug("workload is excluded from downscaling", "workload", workload.GetName(), "namespace", workload.GetNamespace())
@@ -94,7 +95,7 @@ func (v *WorkloadAdmissionHandler) validateWorkload(
 	slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 	slog.Debug("scanning over workloads matching filters", "amount", len(workloads))
 
-	namespaceAnnotations, err := v.client.GetNamespaceAnnotations(workload.GetNamespace(), v.ctx)
+	namespaceAnnotations, err := v.client.GetNamespaceAnnotations(workload.GetNamespace(), ctx)
 	if err != nil {
 		reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to get namespace annotations")
 	}
@@ -107,7 +108,7 @@ func (v *WorkloadAdmissionHandler) validateWorkload(
 	)
 
 	scopeWorkload := values.NewScope()
-	if err := scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, v.ctx); err != nil {
+	if err := scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
 		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to get scope from annotations"), err
 	}
 
@@ -119,11 +120,11 @@ func (v *WorkloadAdmissionHandler) validateWorkload(
 	)
 
 	scopeNamespace := values.NewScope()
-	if err := scopeNamespace.GetScopeFromAnnotations(namespaceAnnotations, resourceLogger, v.ctx); err != nil {
+	if err := scopeNamespace.GetScopeFromAnnotations(namespaceAnnotations, resourceLogger, ctx); err != nil {
 		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to get scope from annotations"), err
 	}
 
-	scopes := values.Scopes{&scopeWorkload, &scopeNamespace, v.scopeCli, v.scopeEnv, v.scopeDefault}
+	scopes := values.Scopes{scopeWorkload, scopeNamespace, v.scopeCli, v.scopeEnv, v.scopeDefault}
 
 	slog.Debug("finished parsing all scopes", "scopes", scopes, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 

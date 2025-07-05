@@ -33,6 +33,8 @@ func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Cont
 }
 
 // parseScaledObjectFromAdmissionRequest parses the admission review and returns the scaledObject.
+//
+//nolint:ireturn //required for interface-based factory
 func parseScaledObjectFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var so kedav1alpha1.ScaledObject
 	if err := json.Unmarshal(review.Request.Object.Raw, &so); err != nil {
