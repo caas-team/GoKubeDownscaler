@@ -42,6 +42,24 @@ func parseDaemonSetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Wo
 	return &daemonSet{&ds}, nil
 }
 
+// deepCopyDaemonSet creates a deep copy of the given Workload, which is expected to be a daemonSet.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyDaemonSet(w Workload) (Workload, error) {
+	ds, ok := w.(*daemonSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*daemonSet)(nil), w)
+	}
+
+	if ds.DaemonSet == nil {
+		return nil, newNilUnderlyingObjectError("daemonSet not found")
+	}
+
+	copied := ds.DeepCopy()
+
+	return &daemonSet{DaemonSet: copied}, nil
+}
+
 // daemonSet is a wrapper for daemonset.v1.apps to implement the Workload interface.
 type daemonSet struct {
 	*appsv1.DaemonSet

@@ -30,7 +30,7 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 
 // parsePodDisruptionBudgetFromAdmissionRequest parses the admission review and returns the podDisruptionBudget wrapped in a Workload.
 //
-//nolint:ireturn //required for interface-based factory
+//nolint:ireturn //required for interface-based workflow
 func parsePodDisruptionBudgetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var pdb policy.PodDisruptionBudget
 	if err := json.Unmarshal(review.Request.Object.Raw, &pdb); err != nil {
@@ -38,6 +38,24 @@ func parsePodDisruptionBudgetFromAdmissionRequest(review *admissionv1.AdmissionR
 	}
 
 	return &podDisruptionBudget{&pdb}, nil
+}
+
+// deepCopyPodDisruptionBudget creates a deep copy of the given Workload, which is expected to be a podDisruptionBudget.
+//
+//nolint:ireturn //required for interface-based workflow
+func deepCopyPodDisruptionBudget(w Workload) (Workload, error) {
+	pdb, ok := w.(*podDisruptionBudget)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*podDisruptionBudget)(nil), w)
+	}
+
+	if pdb.PodDisruptionBudget == nil {
+		return nil, newNilUnderlyingObjectError("podDisruptionBudget not found")
+	}
+
+	copied := pdb.DeepCopy()
+
+	return &podDisruptionBudget{PodDisruptionBudget: copied}, nil
 }
 
 // podDisruptionBudget is a wrapper for poddisruptionbudget.v1.policy to implement the Workload interface.

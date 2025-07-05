@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
-	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
 	zalandov1 "github.com/zalando-incubator/stackset-controller/pkg/apis/zalando.org/v1"
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,12 +31,39 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 //
 //nolint:ireturn //required for interface-based factory
 func parseStackFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
-	var so kedav1alpha1.ScaledObject
-	if err := json.Unmarshal(review.Request.Object.Raw, &so); err != nil {
+	var st zalandov1.Stack
+	if err := json.Unmarshal(review.Request.Object.Raw, &st); err != nil {
 		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
 	}
 
-	return &replicaScaledWorkload{&scaledObject{&so}}, nil
+	return &replicaScaledWorkload{&stack{&st}}, nil
+}
+
+// deepCopyStack creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a stack.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyStack(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	st, ok := rsw.replicaScaledResource.(*stack)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*stack)(nil), rsw.replicaScaledResource)
+	}
+
+	if st.Stack == nil {
+		return nil, newNilUnderlyingObjectError("stack not found")
+	}
+
+	copied := st.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &stack{
+			Stack: copied,
+		},
+	}, nil
 }
 
 // stack is a wrapper for stack.v1.zalando.org to implement the replicaScaledResource interface.

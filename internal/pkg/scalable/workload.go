@@ -3,6 +3,7 @@ package scalable
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -80,6 +81,36 @@ func ParseWorkloadFromAdmissionReview(resource string, review *admissionv1.Admis
 	}
 
 	return workload, nil
+}
+
+// deepCopyWorkloadFunc is a function that deep copies a Workload.
+type deepCopyWorkloadFunc func(w Workload) (Workload, error)
+
+// DeepCopyWorkload deep copies the given workload. It returns an error if the resource type is not supported.
+//
+//nolint:ireturn //required for interface-based workflow
+func DeepCopyWorkload(workload Workload) (Workload, error) {
+	resource := strings.ToLower(workload.GroupVersionKind().Kind)
+	deepCopyFuncMap := map[string]deepCopyWorkloadFunc{
+		"deployment":              deepCopyDeployment,
+		"statefulset":             deepCopyStatefulSet,
+		"cronjob":                 deepCopyCronJob,
+		"job":                     deepCopyJob,
+		"daemonset":               deepCopyDaemonSet,
+		"poddisruptionbudget":     deepCopyPodDisruptionBudget,
+		"horizontalpodautoscaler": deepCopyHorizontalPodAutoscaler,
+		"scaledobject":            deepCopyScaledObject,
+		"rollout":                 deepCopyRollout,
+		"stack":                   deepCopyStack,
+		"prometheus":              deepCopyPrometheus,
+	}
+
+	copyFunc, exists := deepCopyFuncMap[resource]
+	if !exists {
+		return nil, newInvalidResourceError(resource)
+	}
+
+	return copyFunc(workload)
 }
 
 type ParentWorkload interface {

@@ -25,6 +25,33 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 	return results, nil
 }
 
+// parseJobFromAdmissionRequest parses the admission review and returns the job wrapped in a Workload.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyJob(w Workload) (Workload, error) {
+	ssw, ok := w.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), w)
+	}
+
+	jb, ok := ssw.suspendScaledResource.(*job)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*job)(nil), ssw.suspendScaledResource)
+	}
+
+	if jb.Job == nil {
+		return nil, newNilUnderlyingObjectError("job not found")
+	}
+
+	copied := jb.DeepCopy()
+
+	return &suspendScaledWorkload{
+		suspendScaledResource: &job{
+			Job: copied,
+		},
+	}, nil
+}
+
 // parseCronJobFromAdmissionRequest parses the admission review and returns the cronjob.
 //
 //nolint:ireturn //required for interface-based factory

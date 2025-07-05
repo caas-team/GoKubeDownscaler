@@ -39,6 +39,33 @@ func parseDeploymentFromAdmissionRequest(review *admissionv1.AdmissionReview) (W
 	return &replicaScaledWorkload{&deployment{&dep}}, nil
 }
 
+// deepCopyDeployment creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a deployment.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyDeployment(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	dep, ok := rsw.replicaScaledResource.(*deployment)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*deployment)(nil), rsw.replicaScaledResource)
+	}
+
+	if dep.Deployment == nil {
+		return nil, newNilUnderlyingObjectError("deployment not found")
+	}
+
+	copied := dep.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &deployment{
+			Deployment: copied,
+		},
+	}, nil
+}
+
 // deployment is a wrapper for deployment.v1.apps to implement the replicaScaledResource interface.
 type deployment struct {
 	*appsv1.Deployment

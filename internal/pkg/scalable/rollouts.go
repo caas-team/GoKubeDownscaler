@@ -39,6 +39,33 @@ func parseRolloutFromAdmissionRequest(review *admissionv1.AdmissionReview) (Work
 	return &replicaScaledWorkload{&rollout{&roll}}, nil
 }
 
+// deepCopyRollout creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a rollout.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyRollout(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	ro, ok := rsw.replicaScaledResource.(*rollout)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*rollout)(nil), rsw.replicaScaledResource)
+	}
+
+	if ro.Rollout == nil {
+		return nil, newNilUnderlyingObjectError("rollout not found")
+	}
+
+	copied := ro.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &rollout{
+			Rollout: copied,
+		},
+	}, nil
+}
+
 // rollout is a wrapper for rollout.v1alpha1.argoproj.io to implement the replicaScaledResource interface.
 type rollout struct {
 	*argov1alpha1.Rollout

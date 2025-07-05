@@ -38,6 +38,33 @@ func parsePrometheusFromAdmissionRequest(review *admissionv1.AdmissionReview) (W
 	return &replicaScaledWorkload{&prometheus{&prom}}, nil
 }
 
+// deepCopyPrometheus creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a prometheus.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyPrometheus(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	prom, ok := rsw.replicaScaledResource.(*prometheus)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*prometheus)(nil), rsw.replicaScaledResource)
+	}
+
+	if prom.Prometheus == nil {
+		return nil, newNilUnderlyingObjectError("prometheus not found")
+	}
+
+	copied := prom.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &prometheus{
+			Prometheus: copied,
+		},
+	}, nil
+}
+
 // prometheus is a wrapper for prometheus.v1.monitoring.coreos.com to implement the replicaScaledResource interface.
 type prometheus struct {
 	*monitoringv1.Prometheus

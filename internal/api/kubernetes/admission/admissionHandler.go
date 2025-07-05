@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// parseAdmissionReviewFromRequest extracts an AdmissionReview from a http.Request if possible.
+// parseAdmissionReviewFromRequest extracts an AdmissionReview from an http.Request if possible.
 func parseAdmissionReviewFromRequest(request *http.Request) (*admissionv1.AdmissionReview, error) {
 	if request.Header.Get("Content-Type") != "application/json" {
 		return nil, newContentTypeError("Content-Type: %q should be application/json ", request.Header.Get("Content-Type"))
@@ -60,6 +60,24 @@ func reviewResponse(uid types.UID, allowed bool, httpCode int32, reason string) 
 			},
 		},
 	}
+}
+
+// patchReviewResponse creates an admission review with a JSON patch.
+func patchReviewResponse(uid types.UID, patch []byte) (*admissionv1.AdmissionReview, error) {
+	patchType := admissionv1.PatchTypeJSONPatch
+
+	return &admissionv1.AdmissionReview{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AdmissionReview",
+			APIVersion: "admission.k8s.io/v1",
+		},
+		Response: &admissionv1.AdmissionResponse{
+			UID:       uid,
+			Allowed:   true,
+			PatchType: &patchType,
+			Patch:     patch,
+		},
+	}, nil
 }
 
 // sendAdmissionResponse sends the admission response to the client.

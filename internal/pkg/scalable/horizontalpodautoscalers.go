@@ -41,6 +41,34 @@ func parseHorizontalPodAutoscalerFromAdmissionRequest(review *admissionv1.Admiss
 	return &replicaScaledWorkload{&horizontalPodAutoscaler{&hpa}}, nil
 }
 
+// deepCopyHorizontalPodAutoscaler creates a deep copy of the given Workload,
+// which is expected to be a replicaScaledWorkload wrapping a horizontalPodAutoscaler.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyHorizontalPodAutoscaler(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	hpa, ok := rsw.replicaScaledResource.(*horizontalPodAutoscaler)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*horizontalPodAutoscaler)(nil), rsw.replicaScaledResource)
+	}
+
+	if hpa.HorizontalPodAutoscaler == nil {
+		return nil, newNilUnderlyingObjectError("horizontalPodAutoscaler not found")
+	}
+
+	copied := hpa.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &horizontalPodAutoscaler{
+			HorizontalPodAutoscaler: copied,
+		},
+	}, nil
+}
+
 // horizontalPodAutoscaler is a wrapper for horizontalpodautoscaler.v2.autoscaling to implement the replicaScaledResource interface.
 type horizontalPodAutoscaler struct {
 	*appsv1.HorizontalPodAutoscaler

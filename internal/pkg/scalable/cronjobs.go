@@ -8,8 +8,6 @@ import (
 	"sync"
 
 	admissionv1 "k8s.io/api/admission/v1"
-
-	admissionv1 "k8s.io/api/admission/v1"
 	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +38,33 @@ func parseCronJobFromAdmissionRequest(review *admissionv1.AdmissionReview) (Work
 	}
 
 	return &suspendScaledWorkload{&cronJob{&cj}}, nil
+}
+
+// deepCopyCronJob creates a deep copy of the given Workload, which is expected to be a suspendScaledWorkload wrapping a cronJob.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyCronJob(w Workload) (Workload, error) {
+	ssw, ok := w.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), w)
+	}
+
+	cj, ok := ssw.suspendScaledResource.(*cronJob)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*cronJob)(nil), ssw.suspendScaledResource)
+	}
+
+	if cj.CronJob == nil {
+		return nil, newNilUnderlyingObjectError("cronJob not found")
+	}
+
+	copied := cj.DeepCopy()
+
+	return &suspendScaledWorkload{
+		suspendScaledResource: &cronJob{
+			CronJob: copied,
+		},
+	}, nil
 }
 
 // cronJob is a wrapper for cronjob.v1.batch to implement the suspendScaledResource interface.

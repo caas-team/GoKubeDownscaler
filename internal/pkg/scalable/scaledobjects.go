@@ -44,6 +44,33 @@ func parseScaledObjectFromAdmissionRequest(review *admissionv1.AdmissionReview) 
 	return &replicaScaledWorkload{&scaledObject{&so}}, nil
 }
 
+// deepCopyScaledObject creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a scaledObject.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyScaledObject(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	so, ok := rsw.replicaScaledResource.(*scaledObject)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*scaledObject)(nil), rsw.replicaScaledResource)
+	}
+
+	if so.ScaledObject == nil {
+		return nil, newNilUnderlyingObjectError("scaledObject not found")
+	}
+
+	copied := so.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &scaledObject{
+			ScaledObject: copied,
+		},
+	}, nil
+}
+
 // scaledObject is a wrapper for scaledobject.v1alpha1.keda.sh to implement the replicaScaledResource interface.
 type scaledObject struct {
 	*kedav1alpha1.ScaledObject
