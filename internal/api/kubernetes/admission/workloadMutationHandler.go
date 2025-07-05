@@ -2,6 +2,7 @@ package admission
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -10,11 +11,12 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/wI2L/jsondiff"
 	admissionv1 "k8s.io/api/admission/v1"
 )
 
-// WorkloadAdmissionHandler is a struct that implements the admissionHandler interface.
-type WorkloadAdmissionHandler struct {
+// MutationHandler is a struct that implements the admissionHandler interface.
+type MutationHandler struct {
 	client            kubernetes.Client
 	scopeCli          *values.Scope
 	scopeEnv          *values.Scope
@@ -24,13 +26,13 @@ type WorkloadAdmissionHandler struct {
 	excludeWorkloads  *util.RegexList
 }
 
-// NewWorkloadAdmissionHandler creates a new WorkloadAdmissionHandler.
-func NewWorkloadAdmissionHandler(
+// NewMutationHandler creates a new MutationHandler.
+func NewMutationHandler(
 	client kubernetes.Client,
 	scopeCli, scopeEnv, scopeDefault *values.Scope,
 	includeLabels, excludeNamespaces, excludeWorkloads *util.RegexList,
-) *WorkloadAdmissionHandler {
-	return &WorkloadAdmissionHandler{
+) *MutationHandler {
+	return &MutationHandler{
 		client:            client,
 		scopeCli:          scopeCli,
 		scopeEnv:          scopeEnv,
@@ -41,8 +43,8 @@ func NewWorkloadAdmissionHandler(
 	}
 }
 
-// HandleValidation handles the validation of a workload.
-func (v *WorkloadAdmissionHandler) HandleValidation(ctx context.Context, writer http.ResponseWriter, request *http.Request) {
+// HandleMutation handles the validation of a workload.
+func (v *MutationHandler) HandleMutation(ctx context.Context, writer http.ResponseWriter, request *http.Request) {
 	input, err := parseAdmissionReviewFromRequest(request)
 	if err != nil {
 		slog.Error("error encountered while parsing the request", "error", err)
@@ -59,7 +61,7 @@ func (v *WorkloadAdmissionHandler) HandleValidation(ctx context.Context, writer 
 		return
 	}
 
-	out, err := v.validateWorkload(ctx, workload, input)
+	out, err := v.evaluateMutation(ctx, workload, input)
 	if err != nil {
 		slog.Error("error encountered while validating workload", "error", err)
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -70,15 +72,17 @@ func (v *WorkloadAdmissionHandler) HandleValidation(ctx context.Context, writer 
 	sendAdmissionReviewResponse(writer, out)
 }
 
-// validateWorkload validates the workload and returns an AdmissionReview.
-func (v *WorkloadAdmissionHandler) validateWorkload(
+// evaluateMutation validates the workload and returns an AdmissionReview.
+//
+//nolint:govet //needed to reassign the error to a new variable
+func (v *MutationHandler) evaluateMutation(
 	ctx context.Context,
 	workload scalable.Workload,
 	review *admissionv1.AdmissionReview,
 ) (*admissionv1.AdmissionReview, error) {
 	resourceLogger := kubernetes.NewResourceLoggerForWorkload(v.client, workload)
 
-	slog.Debug("validating workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	slog.Debug("evaluation mutation on workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	// check if workload is excluded
 	workloadArray := []scalable.Workload{workload}
@@ -87,12 +91,11 @@ func (v *WorkloadAdmissionHandler) validateWorkload(
 
 	if len(workloads) == 0 {
 		slog.Debug("workload is excluded from downscaling", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "workload is excluded from downscaling, allowing it"), nil
+		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "workload is excluded from downscaling, doesn't need mutation"), nil
 	}
 
 	workload = workloads[0]
 
-	slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 	slog.Debug("scanning over workloads matching filters", "amount", len(workloads))
 
 	namespaceAnnotations, err := v.client.GetNamespaceAnnotations(workload.GetNamespace(), ctx)
@@ -130,8 +133,51 @@ func (v *WorkloadAdmissionHandler) validateWorkload(
 
 	if scopes.GetExcluded() {
 		slog.Debug("workload is excluded", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "workload is excluded from downscaling, allowing it"), nil
+		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "workload is excluded from downscaling, doesn't need mutation"), nil
 	}
 
-	return reviewResponse(review.Request.UID, false, http.StatusBadRequest, "workload is not allowed during downscale time"), nil
+	response, err := mutateWorkload(workload, review, scopes)
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
+// mutateWorkload mutates the workload by scaling it down based on the scopes.
+func mutateWorkload(
+	workload scalable.Workload,
+	review *admissionv1.AdmissionReview,
+	scopes values.Scopes,
+) (*admissionv1.AdmissionReview, error) {
+	// generate a deep copy of the workload to be able to generate a comparison patch
+	workloadCopy, err := scalable.DeepCopyWorkload(workload)
+	if err != nil {
+		slog.Error("failed to deep copy workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to deep copy workload"), err
+	}
+
+	downscaleReplicas, err := scopes.GetDownscaleReplicas()
+	if err != nil {
+		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to get downscale replicas"), err
+	}
+
+	err = workloadCopy.ScaleDown(downscaleReplicas)
+	if err != nil {
+		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to scale down workload"), err
+	}
+
+	// generate a patch to be returned in the admission review
+	patch, err := jsondiff.Compare(workload, workloadCopy)
+	if err != nil {
+		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to compare workload"), err
+	}
+
+	// convert the patch into JSON format
+	jsonPatch, err := json.Marshal(patch)
+	if err != nil {
+		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to marshal patch"), err
+	}
+
+	return patchReviewResponse(review.Request.UID, jsonPatch)
 }

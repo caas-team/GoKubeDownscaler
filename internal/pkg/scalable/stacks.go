@@ -36,12 +36,39 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 //
 //nolint:ireturn //required for interface-based factory
 func parseStackFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
-	var so kedav1alpha1.ScaledObject
-	if err := json.Unmarshal(review.Request.Object.Raw, &so); err != nil {
+	var st zalandov1.Stack
+	if err := json.Unmarshal(review.Request.Object.Raw, &st); err != nil {
 		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
 	}
 
-	return &replicaScaledWorkload{&scaledObject{&so}}, nil
+	return &replicaScaledWorkload{&stack{&st}}, nil
+}
+
+// deepCopyStack creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a stack.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyStack(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	st, ok := rsw.replicaScaledResource.(*stack)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*stack)(nil), rsw.replicaScaledResource)
+	}
+
+	if st.Stack == nil {
+		return nil, newNilUnderlyingObjectError("stack not found")
+	}
+
+	copied := st.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &stack{
+			Stack: copied,
+		},
+	}, nil
 }
 
 // stack is a wrapper for stack.v1.zalando.org to implement the replicaScaledResource interface.
