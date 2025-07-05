@@ -47,6 +47,8 @@ type Client interface {
 	ensureSecret(namespace, secretName string, ctx context.Context) (bool, error)
 	// CreateLease creates a new lease for the downscaler
 	CreateLease(leaseName string) (*resourcelock.LeaseLock, error)
+	// GetNamespaceAnnotations gets the annotations of the workload's namespace
+	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
 	// addEvent creates a new event on either a workload or a namespace
 	addEvent(eventType, reason, identifier, message string, object *corev1.ObjectReference, ctx context.Context) error
 	// GetChildrenWorkloads gets the children workloads of the specified workload
@@ -107,7 +109,7 @@ type client struct {
 }
 
 // getNamespaceAnnotations gets the annotations of the workload's namespace.
-func (c client) getNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
+func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
 	ns, err := c.clientsets.Kubernetes.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace: %w", err)
