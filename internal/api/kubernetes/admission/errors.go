@@ -1,5 +1,7 @@
 package admission
 
+import "fmt"
+
 type ContentTypeError struct {
 	message     string
 	contentType string
@@ -10,7 +12,7 @@ func newContentTypeError(message, contentType string) error {
 }
 
 func (a *ContentTypeError) Error() string {
-	return a.message
+	return fmt.Sprintf("%s %s", a.message, a.contentType)
 }
 
 type RequestBodyIsEmptyError struct {
