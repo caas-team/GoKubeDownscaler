@@ -190,6 +190,8 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 		if err != nil {
 			return response, err
 		}
+
+		return response, nil
 	}
 
 	if scaling == values.ScalingUp {
