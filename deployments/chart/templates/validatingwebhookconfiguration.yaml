@@ -5,14 +5,14 @@ metadata:
   name: org.kube-downscaler.webhook
 webhooks:
   - name: org.kube-downscaler.webhook
+    rules:
+{{ include "go-kube-downscaler.webhookresources" . | trim | nindent 6 }}
     namespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
           operator: NotIn
           values:
             - {{ .Release.Namespace }}
-    rules:
-{{ include "go-kube-downscaler.webhookresources" . | trim | nindent 6 }}
     clientConfig:
       service:
         namespace: {{ .Release.Namespace }}
@@ -20,6 +20,9 @@ webhooks:
         path: /validate-workloads
         port: 443
       caBundle: {{ .Values.admissionController.caBundle }}
+    matchConditions:
+      - name: 'exclude-downscaler-origin'
+        expression: 'request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}"'
     admissionReviewVersions: ["v1"]
     sideEffects: None
     failurePolicy: Ignore

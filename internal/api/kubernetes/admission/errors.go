@@ -63,3 +63,15 @@ func newRequestFieldIsNilError(message string) error {
 func (a *RequestFieldIsNilError) Error() string {
 	return a.message
 }
+
+type ScalingInvalidError struct {
+	message string
+}
+
+func newScalingInvalidError(message string) error {
+	return &ScalingInvalidError{message: message}
+}
+
+func (s *ScalingInvalidError) Error() string {
+	return s.message
+}
