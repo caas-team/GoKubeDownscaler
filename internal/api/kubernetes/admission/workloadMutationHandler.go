@@ -160,12 +160,12 @@ func evaluateScalingConditions(
 ) (*admissionv1.AdmissionReview, error) {
 	if scaling == values.ScalingNone {
 		slog.Debug("scaling is not set by any scope, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "scaling configuration is not set for workload: accepted"), nil
+		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "scaling configuration is not set for workload"), nil
 	}
 
 	if scaling == values.ScalingIgnore {
 		slog.Debug("scaling is ignored, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "scaling configuration is ignored for workload: accepted"), nil
+		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "scaling configuration is ignored for workload"), nil
 	}
 
 	if scaling == values.ScalingMultiple {
@@ -175,11 +175,11 @@ this is the result of a faulty configuration where on a scope there is multiple 
 setting different scaling states at the same time (e.g. downtime-period and uptime-period or force-downtime and force-uptime)`,
 		)
 
-		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "scaling configuration is invalid for workload: accepted"), err
+		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "scaling configuration is invalid for workload"), err
 	}
 
 	if scaling == values.ScalingDown {
-		slog.Debug("workload should be scaled down", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Info("mutating workload matching scaling down condition", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 		downscaleReplicas, err := scopes.GetDownscaleReplicas()
 		if err != nil {
@@ -193,8 +193,8 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	}
 
 	if scaling == values.ScalingUp {
-		slog.Debug("workload is up", "workload", workload.GetName(), "namespace", workload.GetNamespace())
-		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "scaling configuration is 'up' for workload: accepted"), nil
+		slog.Debug("workload matches scaling up conditions, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "workload matches scaling up conditions"), nil
 	}
 
 	return reviewResponse(review.Request.UID, true, http.StatusAccepted, "workload doesn't match any scaling condition"), nil
