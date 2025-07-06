@@ -3,10 +3,13 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/wI2L/jsondiff"
 	zalandov1 "github.com/zalando-incubator/stackset-controller/pkg/apis/zalando.org/v1"
+	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -23,6 +26,81 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 	}
 
 	return results, nil
+}
+
+// parseStackFromAdmissionRequest parses the admission review and returns the stack.
+//
+//nolint:ireturn //required for interface-based factory
+func parseStackFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var st zalandov1.Stack
+	if err := json.Unmarshal(review.Request.Object.Raw, &st); err != nil {
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
+	}
+
+	return &replicaScaledWorkload{&stack{&st}}, nil
+}
+
+// deepCopyStack creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a stack.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyStack(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	st, ok := rsw.replicaScaledResource.(*stack)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*stack)(nil), rsw.replicaScaledResource)
+	}
+
+	if st.Stack == nil {
+		return nil, newNilUnderlyingObjectError(st.Kind)
+	}
+
+	copied := st.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &stack{
+			Stack: copied,
+		},
+	}, nil
+}
+
+// compareStacks compares two stack resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func compareStacks(workload, workloadCopy Workload) (jsondiff.Patch, error) {
+	rsw, ok := workload.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
+	}
+
+	st, ok := rsw.replicaScaledResource.(*stack)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*stack)(nil), rsw.replicaScaledResource)
+	}
+
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	stCopy, ok := rswCopy.replicaScaledResource.(*stack)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*stack)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if st.Stack == nil || stCopy.Stack == nil {
+		return nil, newNilUnderlyingObjectError(st.Kind)
+	}
+
+	diff, err := jsondiff.Compare(st.Stack, stCopy.Stack)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(st.Kind, err)
+	}
+
+	return diff, nil
 }
 
 // stack is a wrapper for stack.v1.zalando.org to implement the replicaScaledResource interface.

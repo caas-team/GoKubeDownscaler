@@ -40,3 +40,44 @@ func newOriginalReplicasUnsetError(reason string) error {
 func (o *OriginalReplicasUnsetError) Error() string {
 	return o.reason
 }
+
+type ExpectTypeGotTypeError struct {
+	expected any
+	actual   any
+}
+
+func newExpectTypeGotTypeError(expected, actual any) error {
+	return &ExpectTypeGotTypeError{
+		expected: expected,
+		actual:   actual,
+	}
+}
+
+func (e *ExpectTypeGotTypeError) Error() string {
+	return fmt.Sprintf("expected type %T, got %T", e.expected, e.actual)
+}
+
+type NilUnderlyingObjectError struct {
+	workloadType string
+}
+
+func newNilUnderlyingObjectError(workloadType string) error {
+	return &NilUnderlyingObjectError{workloadType: workloadType}
+}
+
+func (o *NilUnderlyingObjectError) Error() string {
+	return o.workloadType + " not found"
+}
+
+type FailedToCompareWorkloadsError struct {
+	workloadType string
+	err          error
+}
+
+func newFailedToCompareWorkloadsError(workloadType string, err error) error {
+	return &FailedToCompareWorkloadsError{workloadType: workloadType, err: err}
+}
+
+func (o *FailedToCompareWorkloadsError) Error() string {
+	return fmt.Sprintf("failed to compare workloads of kind %s: %s", o.workloadType, o.err)
+}

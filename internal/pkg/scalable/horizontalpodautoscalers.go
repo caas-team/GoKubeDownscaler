@@ -1,11 +1,15 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/wI2L/jsondiff"
+	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -25,6 +29,82 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 	}
 
 	return results, nil
+}
+
+// parseHorizontalPodAutoscalerFromAdmissionRequest parses the admission review and returns the horizontalPodAutoscaler.
+//
+//nolint:ireturn //required for interface-based factory
+func parseHorizontalPodAutoscalerFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var hpa appsv1.HorizontalPodAutoscaler
+	if err := json.Unmarshal(review.Request.Object.Raw, &hpa); err != nil {
+		return nil, fmt.Errorf("failed to decode horizontalpodautoscaler: %w", err)
+	}
+
+	return &replicaScaledWorkload{&horizontalPodAutoscaler{&hpa}}, nil
+}
+
+// deepCopyHorizontalPodAutoscaler creates a deep copy of the given Workload,
+// which is expected to be a replicaScaledWorkload wrapping a horizontalPodAutoscaler.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyHorizontalPodAutoscaler(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	hpa, ok := rsw.replicaScaledResource.(*horizontalPodAutoscaler)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*horizontalPodAutoscaler)(nil), rsw.replicaScaledResource)
+	}
+
+	if hpa.HorizontalPodAutoscaler == nil {
+		return nil, newNilUnderlyingObjectError(hpa.Kind)
+	}
+
+	copied := hpa.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &horizontalPodAutoscaler{
+			HorizontalPodAutoscaler: copied,
+		},
+	}, nil
+}
+
+// compareHorizontalPodAutoscalers compares two horizontalPodAutoscaler resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func compareHorizontalPodAutoscalers(workload, workloadCopy Workload) (jsondiff.Patch, error) {
+	rsw, ok := workload.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
+	}
+
+	hpa, ok := rsw.replicaScaledResource.(*horizontalPodAutoscaler)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*horizontalPodAutoscaler)(nil), rsw.replicaScaledResource)
+	}
+
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	hpaCopy, ok := rswCopy.replicaScaledResource.(*horizontalPodAutoscaler)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*horizontalPodAutoscaler)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if hpa.HorizontalPodAutoscaler == nil || hpaCopy.HorizontalPodAutoscaler == nil {
+		return nil, newNilUnderlyingObjectError(hpa.Kind)
+	}
+
+	diff, err := jsondiff.Compare(hpa.HorizontalPodAutoscaler, hpa.HorizontalPodAutoscaler)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(hpa.Kind, err)
+	}
+
+	return diff, nil
 }
 
 // horizontalPodAutoscaler is a wrapper for horizontalpodautoscaler.v2.autoscaling to implement the replicaScaledResource interface.

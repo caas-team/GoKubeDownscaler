@@ -1,13 +1,17 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
+	"github.com/wI2L/jsondiff"
+	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,6 +32,81 @@ func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Cont
 	}
 
 	return results, nil
+}
+
+// parseScaledObjectFromAdmissionRequest parses the admission review and returns the scaledObject.
+//
+//nolint:ireturn //required for interface-based factory
+func parseScaledObjectFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var so kedav1alpha1.ScaledObject
+	if err := json.Unmarshal(review.Request.Object.Raw, &so); err != nil {
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
+	}
+
+	return &replicaScaledWorkload{&scaledObject{&so}}, nil
+}
+
+// deepCopyScaledObject creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a scaledObject.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyScaledObject(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	so, ok := rsw.replicaScaledResource.(*scaledObject)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*scaledObject)(nil), rsw.replicaScaledResource)
+	}
+
+	if so.ScaledObject == nil {
+		return nil, newNilUnderlyingObjectError(so.Kind)
+	}
+
+	copied := so.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &scaledObject{
+			ScaledObject: copied,
+		},
+	}, nil
+}
+
+// compareScaledObjects compares two scaledObject resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func compareScaledObjects(workload, workloadCopy Workload) (jsondiff.Patch, error) {
+	rsw, ok := workload.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
+	}
+
+	so, ok := rsw.replicaScaledResource.(*scaledObject)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*scaledObject)(nil), rsw.replicaScaledResource)
+	}
+
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	soCopy, ok := rswCopy.replicaScaledResource.(*scaledObject)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*scaledObject)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if so.ScaledObject == nil || soCopy.ScaledObject == nil {
+		return nil, newNilUnderlyingObjectError(so.Kind)
+	}
+
+	diff, err := jsondiff.Compare(so.ScaledObject, soCopy.ScaledObject)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(so.Kind, err)
+	}
+
+	return diff, nil
 }
 
 // scaledObject is a wrapper for scaledobject.v1alpha1.keda.sh to implement the replicaScaledResource interface.

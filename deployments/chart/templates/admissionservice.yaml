@@ -1,0 +1,16 @@
+{{- if .Values.admissionController.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "go-kube-downscaler.fullname" . }}-webhook
+  labels:
+    {{- include "go-kube-downscaler.labels" . | nindent 4 }}-webhook
+spec:
+  selector:
+    {{- include "go-kube-downscaler.selectorLabels" . | nindent 6 }}-webhook
+  type: ClusterIP
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 443
+{{- end }}

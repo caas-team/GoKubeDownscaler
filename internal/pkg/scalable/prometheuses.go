@@ -1,11 +1,15 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/wI2L/jsondiff"
+	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -22,6 +26,81 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 	}
 
 	return results, nil
+}
+
+// parsePrometheusFromAdmissionRequest parses the admission review and returns the prometheus.
+//
+//nolint:ireturn //required for interface-based factory
+func parsePrometheusFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+	var prom monitoringv1.Prometheus
+	if err := json.Unmarshal(review.Request.Object.Raw, &prom); err != nil {
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
+	}
+
+	return &replicaScaledWorkload{&prometheus{&prom}}, nil
+}
+
+// deepCopyPrometheus creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a prometheus.
+//
+//nolint:ireturn,varnamelen //required for interface-based workflow
+func deepCopyPrometheus(w Workload) (Workload, error) {
+	rsw, ok := w.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
+	}
+
+	prom, ok := rsw.replicaScaledResource.(*prometheus)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*prometheus)(nil), rsw.replicaScaledResource)
+	}
+
+	if prom.Prometheus == nil {
+		return nil, newNilUnderlyingObjectError(prom.Kind)
+	}
+
+	copied := prom.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &prometheus{
+			Prometheus: copied,
+		},
+	}, nil
+}
+
+// comparePrometheuses compares two prometheus resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func comparePrometheuses(workload, workloadCopy Workload) (jsondiff.Patch, error) {
+	rsw, ok := workload.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
+	}
+
+	prom, ok := rsw.replicaScaledResource.(*prometheus)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*prometheus)(nil), rsw.replicaScaledResource)
+	}
+
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	promCopy, ok := rswCopy.replicaScaledResource.(*prometheus)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*prometheus)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if prom.Prometheus == nil || promCopy.Prometheus == nil {
+		return nil, newNilUnderlyingObjectError(prom.Kind)
+	}
+
+	diff, err := jsondiff.Compare(prom.Prometheus, promCopy.Prometheus)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(prom.Kind, err)
+	}
+
+	return diff, nil
 }
 
 // prometheus is a wrapper for prometheus.v1.monitoring.coreos.com to implement the replicaScaledResource interface.

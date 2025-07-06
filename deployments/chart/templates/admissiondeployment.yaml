@@ -1,0 +1,68 @@
+{{- if .Values.admissionController.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "go-kube-downscaler.fullname" . }}-webhook
+  labels:
+    {{- include "go-kube-downscaler.labels" . | nindent 4 }}-webhook
+spec:
+  replicas: {{ .Values.admissionController.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "go-kube-downscaler.admissionController.selectorLabels" . | nindent 6 }}-webhook
+  template:
+    metadata:
+      labels:
+        {{- include "go-kube-downscaler.admissionController.selectorLabels" . | nindent 8 }}-webhook
+    spec:
+      serviceAccountName: {{ include "go-kube-downscaler.admissionController.serviceAccountName" . }}-webhook
+      containers:
+        - name: {{ .Chart.Name }}-admission-webhook
+          image: "{{ .Values.admissionController.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          args:
+            - --include-resources={{ join "," .Values.includedResources }}
+          {{- with .Values.arguments }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- if .Values.constrainedDownscaler }}
+            - --namespace={{ join "," .Values.constrainedNamespaces }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.configMap.name }}
+                optional: true
+          resources:
+            {{- toYaml .Values.admissionController.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: tls
+              mountPath: "/etc/admission-webhook/tls"
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            timeoutSeconds: 2
+      volumes:
+        - name: tls
+          secret:
+            secretName: {{ include "go-kube-downscaler.admissionController.secretName" . }}-webhook
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
