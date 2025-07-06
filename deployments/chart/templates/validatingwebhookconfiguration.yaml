@@ -5,6 +5,12 @@ metadata:
   name: org.kube-downscaler.webhook
 webhooks:
   - name: org.kube-downscaler.webhook
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - {{ .Release.Namespace }}
     rules:
 {{ include "go-kube-downscaler.webhookresources" . | trim | nindent 6 }}
     clientConfig:
