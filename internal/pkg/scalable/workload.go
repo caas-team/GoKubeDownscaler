@@ -9,6 +9,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
+	"github.com/wI2L/jsondiff"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -83,7 +84,7 @@ func ParseWorkloadFromAdmissionReview(resource string, review *admissionv1.Admis
 	return workload, nil
 }
 
-// deepCopyWorkloadFunc is a function that deep copies a Workload.
+// deepCopyWorkloadFunc is a function type that deep copies a Workload.
 type deepCopyWorkloadFunc func(w Workload) (Workload, error)
 
 // DeepCopyWorkload deep copies the given workload. It returns an error if the resource type is not supported.
@@ -111,6 +112,36 @@ func DeepCopyWorkload(workload Workload) (Workload, error) {
 	}
 
 	return copyFunc(workload)
+}
+
+// compareWorkloadFunc is a function type that compares two workloads and returns the differences as a jsondiff.Patch.
+type compareWorkloadFunc func(workload, workloadCopy Workload) (jsondiff.Patch, error)
+
+// CompareWorkloads is a function that compares two workloads and returns the differences as a jsondiff.Patch.
+//
+
+func CompareWorkloads(workload, workloadCopy Workload) (jsondiff.Patch, error) {
+	resource := strings.ToLower(workload.GroupVersionKind().Kind)
+	compareFuncMap := map[string]compareWorkloadFunc{
+		"deployment":              compareDeployments,
+		"statefulset":             compareStatefulSets,
+		"cronjob":                 compareCronJobs,
+		"job":                     compareJobs,
+		"daemonset":               compareDaemonSets,
+		"poddisruptionbudget":     comparePodDisruptionBudgets,
+		"horizontalpodautoscaler": compareHorizontalPodAutoscalers,
+		"scaledobject":            compareScaledObjects,
+		"rollout":                 compareRollouts,
+		"stack":                   compareStacks,
+		"prometheus":              comparePrometheuses,
+	}
+
+	compareFunc, exists := compareFuncMap[resource]
+	if !exists {
+		return nil, newInvalidResourceError(resource)
+	}
+
+	return compareFunc(workload, workloadCopy)
 }
 
 type ParentWorkload interface {

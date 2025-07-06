@@ -8,6 +8,7 @@ import (
 
 	argov1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/wI2L/jsondiff"
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -54,7 +55,7 @@ func deepCopyRollout(w Workload) (Workload, error) {
 	}
 
 	if ro.Rollout == nil {
-		return nil, newNilUnderlyingObjectError("rollout not found")
+		return nil, newNilUnderlyingObjectError(ro.Kind)
 	}
 
 	copied := ro.DeepCopy()
@@ -64,6 +65,42 @@ func deepCopyRollout(w Workload) (Workload, error) {
 			Rollout: copied,
 		},
 	}, nil
+}
+
+// compareRollouts compares two rollout resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func compareRollouts(workload, workloadCopy Workload) (jsondiff.Patch, error) {
+	rsw, ok := workload.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
+	}
+
+	roll, ok := rsw.replicaScaledResource.(*rollout)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*rollout)(nil), rsw.replicaScaledResource)
+	}
+
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	rollCopy, ok := rswCopy.replicaScaledResource.(*rollout)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*rollout)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if roll.Rollout == nil || rollCopy.Rollout == nil {
+		return nil, newNilUnderlyingObjectError(roll.Kind)
+	}
+
+	diff, err := jsondiff.Compare(roll.Rollout, rollCopy.Rollout)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(roll.Kind, err)
+	}
+
+	return diff, nil
 }
 
 // rollout is a wrapper for rollout.v1alpha1.argoproj.io to implement the replicaScaledResource interface.

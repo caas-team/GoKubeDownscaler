@@ -80,8 +80,6 @@ func main() {
 
 // ServeHealth returns 200 when things are good.
 func (s *serverConfig) serveHealth(w http.ResponseWriter, _ *http.Request) {
-	slog.Debug("healthy")
-
 	_, err := fmt.Fprint(w, "OK")
 	if err != nil {
 		return
@@ -92,7 +90,7 @@ func (s *serverConfig) serveHealth(w http.ResponseWriter, _ *http.Request) {
 func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	slog.Info("received validation request from uri", "requestURI", request.RequestURI)
+	slog.Debug("received validation request from uri", "requestURI", request.RequestURI)
 
 	admissionHandler := admission.NewMutationHandler(
 		s.client,
@@ -105,5 +103,5 @@ func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, reques
 	)
 	admissionHandler.HandleMutation(ctx, writer, request)
 
-	slog.Info("validation request was processed", "requestURI", request.RequestURI)
+	slog.Info("validation request was correctly processed")
 }

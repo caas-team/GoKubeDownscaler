@@ -1,3 +1,4 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -5,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/wI2L/jsondiff"
 	admissionv1 "k8s.io/api/admission/v1"
 	batch "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +42,7 @@ func deepCopyJob(w Workload) (Workload, error) {
 	}
 
 	if jb.Job == nil {
-		return nil, newNilUnderlyingObjectError("job not found")
+		return nil, newNilUnderlyingObjectError(jb.Kind)
 	}
 
 	copied := jb.DeepCopy()
@@ -62,6 +64,42 @@ func parseJobFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload
 	}
 
 	return &suspendScaledWorkload{&job{&j}}, nil
+}
+
+// compareJobs compares two Job resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func compareJobs(workload, workloadCopy Workload) (jsondiff.Patch, error) {
+	ssw, ok := workload.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workload)
+	}
+
+	j, ok := ssw.suspendScaledResource.(*job)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*job)(nil), ssw.suspendScaledResource)
+	}
+
+	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
+	}
+
+	jCopy, ok := sswCopy.suspendScaledResource.(*job)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*job)(nil), sswCopy.suspendScaledResource)
+	}
+
+	if j.Job == nil || jCopy.Job == nil {
+		return nil, newNilUnderlyingObjectError(j.Kind)
+	}
+
+	diff, err := jsondiff.Compare(j.Job, jCopy.Job)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(j.Kind, err)
+	}
+
+	return diff, nil
 }
 
 // job is a wrapper for job.v1.batch to implement the suspendScaledResource interface.

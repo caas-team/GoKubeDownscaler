@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/wI2L/jsondiff"
 	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,7 +55,7 @@ func deepCopyStatefulSet(w Workload) (Workload, error) {
 	}
 
 	if sts.StatefulSet == nil {
-		return nil, newNilUnderlyingObjectError("statefulset not found")
+		return nil, newNilUnderlyingObjectError(sts.Kind)
 	}
 
 	copied := sts.DeepCopy()
@@ -64,6 +65,42 @@ func deepCopyStatefulSet(w Workload) (Workload, error) {
 			StatefulSet: copied,
 		},
 	}, nil
+}
+
+// compareStatefulSets compares two statefulSet resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func compareStatefulSets(workload, workloadCopy Workload) (jsondiff.Patch, error) {
+	rsw, ok := workload.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
+	}
+
+	sts, ok := rsw.replicaScaledResource.(*statefulSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*statefulSet)(nil), rsw.replicaScaledResource)
+	}
+
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	stsCopy, ok := rswCopy.replicaScaledResource.(*statefulSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*statefulSet)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if sts.StatefulSet == nil || stsCopy.StatefulSet == nil {
+		return nil, newNilUnderlyingObjectError(sts.Kind)
+	}
+
+	diff, err := jsondiff.Compare(sts.StatefulSet, stsCopy.StatefulSet)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(sts.Kind, err)
+	}
+
+	return diff, nil
 }
 
 // statefulset is a wrapper for statefulset.v1.apps to implement the replicaScaledResource interface.

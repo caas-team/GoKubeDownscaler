@@ -1,3 +1,4 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -9,6 +10,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
+	"github.com/wI2L/jsondiff"
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -59,7 +61,7 @@ func deepCopyScaledObject(w Workload) (Workload, error) {
 	}
 
 	if so.ScaledObject == nil {
-		return nil, newNilUnderlyingObjectError("scaledObject not found")
+		return nil, newNilUnderlyingObjectError(so.Kind)
 	}
 
 	copied := so.DeepCopy()
@@ -69,6 +71,42 @@ func deepCopyScaledObject(w Workload) (Workload, error) {
 			ScaledObject: copied,
 		},
 	}, nil
+}
+
+// compareScaledObjects compares two scaledObject resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func compareScaledObjects(workload, workloadCopy Workload) (jsondiff.Patch, error) {
+	rsw, ok := workload.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
+	}
+
+	so, ok := rsw.replicaScaledResource.(*scaledObject)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*scaledObject)(nil), rsw.replicaScaledResource)
+	}
+
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	soCopy, ok := rswCopy.replicaScaledResource.(*scaledObject)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*scaledObject)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if so.ScaledObject == nil || soCopy.ScaledObject == nil {
+		return nil, newNilUnderlyingObjectError(so.Kind)
+	}
+
+	diff, err := jsondiff.Compare(so.ScaledObject, soCopy.ScaledObject)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(so.Kind, err)
+	}
+
+	return diff, nil
 }
 
 // scaledObject is a wrapper for scaledobject.v1alpha1.keda.sh to implement the replicaScaledResource interface.

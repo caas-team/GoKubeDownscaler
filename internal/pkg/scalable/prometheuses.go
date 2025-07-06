@@ -1,3 +1,4 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -7,6 +8,7 @@ import (
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/wI2L/jsondiff"
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -53,7 +55,7 @@ func deepCopyPrometheus(w Workload) (Workload, error) {
 	}
 
 	if prom.Prometheus == nil {
-		return nil, newNilUnderlyingObjectError("prometheus not found")
+		return nil, newNilUnderlyingObjectError(prom.Kind)
 	}
 
 	copied := prom.DeepCopy()
@@ -63,6 +65,42 @@ func deepCopyPrometheus(w Workload) (Workload, error) {
 			Prometheus: copied,
 		},
 	}, nil
+}
+
+// comparePrometheuses compares two prometheus resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func comparePrometheuses(workload, workloadCopy Workload) (jsondiff.Patch, error) {
+	rsw, ok := workload.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
+	}
+
+	prom, ok := rsw.replicaScaledResource.(*prometheus)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*prometheus)(nil), rsw.replicaScaledResource)
+	}
+
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	promCopy, ok := rswCopy.replicaScaledResource.(*prometheus)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*prometheus)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if prom.Prometheus == nil || promCopy.Prometheus == nil {
+		return nil, newNilUnderlyingObjectError(prom.Kind)
+	}
+
+	diff, err := jsondiff.Compare(prom.Prometheus, promCopy.Prometheus)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(prom.Kind, err)
+	}
+
+	return diff, nil
 }
 
 // prometheus is a wrapper for prometheus.v1.monitoring.coreos.com to implement the replicaScaledResource interface.

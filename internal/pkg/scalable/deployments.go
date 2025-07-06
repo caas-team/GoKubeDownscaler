@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/wI2L/jsondiff"
 	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,7 +55,7 @@ func deepCopyDeployment(w Workload) (Workload, error) {
 	}
 
 	if dep.Deployment == nil {
-		return nil, newNilUnderlyingObjectError("deployment not found")
+		return nil, newNilUnderlyingObjectError(dep.Kind)
 	}
 
 	copied := dep.DeepCopy()
@@ -64,6 +65,42 @@ func deepCopyDeployment(w Workload) (Workload, error) {
 			Deployment: copied,
 		},
 	}, nil
+}
+
+// compareDeployments compares two deployment resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func compareDeployments(workload, workloadCopy Workload) (jsondiff.Patch, error) {
+	rsw, ok := workload.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
+	}
+
+	dep, ok := rsw.replicaScaledResource.(*deployment)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*deployment)(nil), rsw.replicaScaledResource)
+	}
+
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	depCopy, ok := rswCopy.replicaScaledResource.(*deployment)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*deployment)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if dep.Deployment == nil || depCopy.Deployment == nil {
+		return nil, newNilUnderlyingObjectError(dep.Kind)
+	}
+
+	diff, err := jsondiff.Compare(dep.Deployment, depCopy.Deployment)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(dep.Kind, err)
+	}
+
+	return diff, nil
 }
 
 // deployment is a wrapper for deployment.v1.apps to implement the replicaScaledResource interface.

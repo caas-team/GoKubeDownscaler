@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/wI2L/jsondiff"
 	zalandov1 "github.com/zalando-incubator/stackset-controller/pkg/apis/zalando.org/v1"
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,7 +55,7 @@ func deepCopyStack(w Workload) (Workload, error) {
 	}
 
 	if st.Stack == nil {
-		return nil, newNilUnderlyingObjectError("stack not found")
+		return nil, newNilUnderlyingObjectError(st.Kind)
 	}
 
 	copied := st.DeepCopy()
@@ -64,6 +65,42 @@ func deepCopyStack(w Workload) (Workload, error) {
 			Stack: copied,
 		},
 	}, nil
+}
+
+// compareStacks compares two stack resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func compareStacks(workload, workloadCopy Workload) (jsondiff.Patch, error) {
+	rsw, ok := workload.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
+	}
+
+	st, ok := rsw.replicaScaledResource.(*stack)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*stack)(nil), rsw.replicaScaledResource)
+	}
+
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	stCopy, ok := rswCopy.replicaScaledResource.(*stack)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*stack)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if st.Stack == nil || stCopy.Stack == nil {
+		return nil, newNilUnderlyingObjectError(st.Kind)
+	}
+
+	diff, err := jsondiff.Compare(st.Stack, stCopy.Stack)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(st.Kind, err)
+	}
+
+	return diff, nil
 }
 
 // stack is a wrapper for stack.v1.zalando.org to implement the replicaScaledResource interface.

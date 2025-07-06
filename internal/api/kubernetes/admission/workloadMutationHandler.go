@@ -11,7 +11,6 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
-	"github.com/wI2L/jsondiff"
 	admissionv1 "k8s.io/api/admission/v1"
 )
 
@@ -61,6 +60,12 @@ func (v *MutationHandler) HandleMutation(ctx context.Context, writer http.Respon
 		return
 	}
 
+	slog.Info("received validation request for workload",
+		"workload", workload.GetName(),
+		"namespace", workload.GetNamespace(),
+		"kind", workload.GroupVersionKind().Kind,
+	)
+
 	out, err := v.evaluateMutation(ctx, workload, input)
 	if err != nil {
 		slog.Error("error encountered while validating workload", "error", err)
@@ -82,7 +87,7 @@ func (v *MutationHandler) evaluateMutation(
 ) (*admissionv1.AdmissionReview, error) {
 	resourceLogger := kubernetes.NewResourceLoggerForWorkload(v.client, workload)
 
-	slog.Debug("evaluation mutation on workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	slog.Info("evaluating mutation on workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	// check if workload is excluded
 	workloadArray := []scalable.Workload{workload}
@@ -132,9 +137,11 @@ func (v *MutationHandler) evaluateMutation(
 	slog.Debug("finished parsing all scopes", "scopes", scopes, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	if scopes.GetExcluded() {
-		slog.Debug("workload is excluded", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Info("workload is excluded from mutation", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "workload is excluded from downscaling, doesn't need mutation"), nil
 	}
+
+	slog.Info("workload matches mutation condition, scaling it down", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	response, err := mutateWorkload(workload, review, scopes)
 	if err != nil {
@@ -167,11 +174,12 @@ func mutateWorkload(
 		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to scale down workload"), err
 	}
 
-	// generate a patch to be returned in the admission review
-	patch, err := jsondiff.Compare(workload, workloadCopy)
+	patch, err := scalable.CompareWorkloads(workload, workloadCopy)
 	if err != nil {
 		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to compare workload"), err
 	}
+
+	slog.Debug("comparison patch correctly generated", "patch", patch.String())
 
 	// convert the patch into JSON format
 	jsonPatch, err := json.Marshal(patch)

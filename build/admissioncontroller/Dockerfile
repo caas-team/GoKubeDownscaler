@@ -1,4 +1,4 @@
-FROM golang:1.24.0 AS build
+FROM golang:1.24.4 AS build
 
 WORKDIR /tmp/kubedownscaler
 
@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY ../.. /tmp/kubedownscaler
 
-RUN CGO_ENABLED=0 go build -o bin/admissioncontroller ./cmd/admissioncontroller
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o bin/admissioncontroller ./cmd/admissioncontroller
 
 FROM scratch
 
