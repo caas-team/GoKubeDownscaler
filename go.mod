@@ -17,6 +17,7 @@ require (
 	k8s.io/client-go v0.34.1
 	sigs.k8s.io/controller-runtime v0.21.0
 	go.uber.org/zap v1.27.0
+	github.com/zalando-incubator/stackset-controller v1.4.108
 )
 
 require (
