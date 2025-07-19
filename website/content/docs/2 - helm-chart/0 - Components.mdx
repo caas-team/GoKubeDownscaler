@@ -40,3 +40,35 @@ for every namespace listed in [`constrainedNamespaces`](ref:docs-helm-constraine
 
 The [leaserole.yaml](repo:deployments/chart/templates/leaserole.yaml) file creates a Role and RoleBinding
 if [`--leader-election`](ref:docs-runtime-configuration#leader-election) is enabled in order to make lease management possible.
+
+## Webhookdeployment
+
+The [webhookdeployment.yaml](repo:deployments/chart/templates/webhookdeployment.yaml) file creates the Deployment
+for the Admission Controller Webhook.
+This resource is created only if the `webhook.enabled` value is set to `true`.
+
+## Webhookservice
+
+The [webhookservice.yaml](repo:deployments/chart/templates/webhookservice.yaml) file creates the Service that exposes
+the Webhook Deployment.
+This resource is created only if the `webhook.enabled` value is set to `true`.
+
+## Webhooksecret
+
+The [webhooksecret.yaml](repo:deployments/chart/templates/webhooksecret.yaml) file creates a Secret that contains the
+TLS certificate and key needed to encrypt the communication between the Webhook and the Kubernetes API server.
+
+## Webhookrole
+
+The [webhookrole.yaml](repo:deployments/chart/templates/webhookrole.yaml) file creates a Role and RoleBinding that
+allows the Webhook Deployment to only read the Webhook secret
+
+## Mutatingwebhookconfiguration
+
+The [mutatingwebhookconfiguration.yaml](repo:deployments/chart/templates/mutatingwebhookconfiguration.yaml) file creates
+the MutatingWebhookConfiguration needed for the Admission Controller Webhook to work.
+By default, it intercepts all the
+creation and update requests for the targeted resources and send the review request to the Webhook Deployment through
+its Service in a secure way.
+The MutatingWebhookConfiguration does not apply for the namespace where the Webhook
+is deployed and from requests originated by the main Deployment of the GoKubeDownscaler.

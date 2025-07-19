@@ -1,0 +1,47 @@
+---
+title: admissionControllerImage
+id: admissionControllerImage
+globalReference: docs-helm-admission-controller-image
+description: How to specify a custom image for the GoKubeDownscaler Webhook Deployment
+keywords: [admissionControllerImage]
+---
+
+# admissionController.image
+
+The `admissionController.image` value contains the three fields `repository`, `pullPolicy` and `tag`:
+
+- `repository` is the repository URL where the image versions of the GoKubeDownscaler are located
+- `pullPolicy` specifies when the image should be pulled
+- `tag` is the version tag of the image
+
+:::info
+
+The default values for `admissionController.image` are:
+
+```yaml
+admissionController:
+  image:
+    repository: ghcr.io/caas-team/gokubedownscaler-webhook
+    pullPolicy: IfNotPresent
+    tag: ""
+```
+
+:::
+
+Changing the value of `repository` will result in the images being pulled from another location.
+It is advised to leave this as is unless you want or need to pull the images from a private registry of your choice.
+
+There are three possible values for `pullPolicy`:
+
+- `IfNotPresent` means that the image will only be pulled if it is not already present locally
+- `Always` will always pull a container image unless the exact digest is already cached
+- `Never` means that no image will be fetched and it has to be locally available
+
+If `pullPolicy` field is left empty it will default to [Kubernetes' default value](https://kubernetes.io/docs/concepts/containers/images/#imagepullpolicy-defaulting).
+More info on the `imagePullPolicy` can be found on [the official Kubernetes documentation](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy).
+
+Changing the value of `tag` will deploy a different version of the GoKubeDownscaler.
+If left empty like it is by default the GoKubeDownscaler will use the
+[appVersion](repo:deployments/chart/Chart.yaml#L10) of the currently used Helm Chart.
+
+You can find all versions of the GoKubeDownscaler [on the github releases page](https://github.com/caas-team/gokubedownscaler/releases).

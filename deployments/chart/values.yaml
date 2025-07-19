@@ -79,17 +79,22 @@ configMap:
   #   DOWNSCALE_PERIOD: "Mon-Sun 19:00-20:00 Europe/Berlin"
   extraConfig: ""
 
+# Force pod restart when the configuration changes
+forceRestartOnConfigChange: true
+
 admissionController:
 
+  enabled: false
+
   image:
-    repository: ghcr.io/caas-team/gokubedownscaler-admission
+    repository: ghcr.io/caas-team/gokubedownscaler-webhook
+    pullPolicy: IfNotPresent
     tag: "" # Dynamically set from CI
 
-  tlsCrt: ""
-  tlsKey: ""
-  caBundle: ""
-
-  enabled: false
+  certs:
+    tlsCrt: ""
+    tlsKey: ""
+    caBundle: ""
 
   replicaCount: 1
 
@@ -106,6 +111,3 @@ admissionController:
   tolerations: []
 
   affinity: {}
-
-# Force pod restart when the configuration changes
-forceRestartOnConfigChange: true
