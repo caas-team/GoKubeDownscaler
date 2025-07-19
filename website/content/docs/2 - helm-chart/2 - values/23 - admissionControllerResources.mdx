@@ -1,0 +1,34 @@
+---
+title: admissionControllerResources
+id: admissionControllerResources
+globalReference: docs-helm-admission-controller-resources
+description: How to set resources for the GoKubeDownscaler Webhook Deployment
+keywords: [admissionControllerResources]
+---
+
+# admissionController.resources
+
+The `admissionController.resources` value defines the CPU and memory limits and requests.
+
+:::info
+
+The default values for `admissionController.resources` are:
+
+```yaml
+admissionController:
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 900Mi
+    requests:
+      cpu: 200m
+      memory: 300Mi
+```
+
+:::
+
+Here you can adjust the minimum and maximum amounts of cpu and memory the GoKubeDownscaler Pod is allowed to use.
+
+The `requests` value being the minimum/reserved memory for the pod and the `limits` being the maximum the pod can use.
+
+For more information on resource management you can reference [the official Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).

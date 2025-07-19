@@ -1,0 +1,68 @@
+---
+title: admissionControllerAffinity
+id: admissionControllerAffinity
+globalReference: docs-helm-admission-controller-affinity
+description: How to set affinity rules for the GoKubeDownscaler Webhook Deployment
+keywords: [admissionControllerAffinity]
+---
+
+# admissionController.affinity
+
+The `admissionController.affinity` value defines rules for node affinity and pod affinity/anti-affinity.
+
+:::info
+
+The default value for `admissionController.affinity` is:
+
+```yaml
+admissionController:
+  affinity: {}
+```
+
+:::
+
+By default the `admissionController.affinity` field is empty.
+
+You can add affinity rules to this field that give you a few more options for pod scheduling than [`nodeSelector`](ref:docs-helm-node-selector).
+
+## Node Affinity
+
+You can use Node affinity to achieve something very similar to the [`nodeSelector`](ref:docs-helm-node-selector).
+
+```yaml
+admissionController:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values:
+                  - antarctica-east1
+                  - antarctica-west1
+```
+
+With the configuration above the GoKubeDownscaler will only be scheduled on a Node where the label `topology.kubernetes.io/zone` exists and
+has either the value `antarctica-east1` or `antarctica-west1`.
+
+## Pod Affinity
+
+Pod affinity on the other hand will compare the labels of all **pods** on a Node.
+
+```yaml
+admissionController:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: env
+                operator: In
+                values:
+                  - test
+```
+
+With this configuration the GoKubeDownscaler will only try to deploy the pods on a Node where no other pod has the label `env=test`.
+
+For more information on affinity you can reference [the official Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity).

@@ -1,0 +1,39 @@
+---
+title: admissionControllerTolerations
+id: admissionControllerTolerations
+globalReference: docs-helm-admission-controller-tolerations
+description: How to set tolerations for the GoKubeDownscaler Webhook Deployment
+keywords: [admissionControllerTolerations]
+---
+
+# admissionController.tolerations
+
+The `admissionController.tolerations` value adds tolerations to the pods of the deployment to be able to be scheduled on
+nodes with matching taints.
+
+:::info
+
+The default value for `admissionController.tolerations` is:
+
+```yaml
+admissionController:
+  tolerations: []
+```
+
+:::
+
+This field allows the GoKubeDownscaler Webhook pods to be scheduled on Nodes with certain taints.
+
+If you want to allow the GoKubeDownscaler Webhook pods to schedule on a Node with a taint `key1=value1:NoSchedule` you
+can set:
+
+```yaml
+admissionController:
+  tolerations:
+    - key: "key1"
+      operator: "Equal"
+      value: "value1"
+      effect: "NoSchedule"
+```
+
+For more information on taints and tolerations you can reference [the official Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration).

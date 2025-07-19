@@ -1,0 +1,32 @@
+---
+title: admissionControllerCerts
+id: admissionControllerCerts
+globalReference: docs-helm-admission-controller-certs
+description: How specify the secrets for the GoKubeDownscaler Webhook Certs for the Secret and MutatingWebhookConfiguration
+keywords: [admissionControllerSecrets, tls.key, tls.cert, caBundle]
+---
+
+# admissionController.certs
+
+The `admissionController.certs` value contains the three fields `tlsCrt`, `tlsKey` and `caBundle`:
+
+- `tlsCrt` is the TLS certificate used by the GoKubeDownscaler Webhook Deployment and stored in the dedicated Kubernetes Secret
+- `tlsKey` is the TLS key used by the GoKubeDownscaler Webhook Deployment and stored in the dedicated Kubernetes Secret
+- `caBundle` is the CA bundle used by the MutatingWebhookConfiguration to verify the TLS certificate of the GoKubeDownscaler Webhook Deployment.
+  It is stored directly in the MutatingWebhookConfiguration
+
+:::info
+
+The default values for `admissionController.certs` subfields are empty, real values must be provided by the user:
+
+```yaml
+admissionController:
+  certs:
+    tlsCrt: ""
+    tlsKey: ""
+    caBundle: ""
+```
+
+:::
+
+These values are important to ensure a secure communication between the GoKubeDownscaler Webhook Deployment and the Kubernetes API server.

@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY ../.. /tmp/kubedownscaler
 
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o bin/admissioncontroller ./cmd/admissioncontroller
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/admissioncontroller ./cmd/admissioncontroller
 
 FROM scratch
 
