@@ -6,7 +6,7 @@ metadata:
 webhooks:
   - name: org.kube-downscaler.webhook
     rules:
-{{ include "go-kube-downscaler.webhookresources" . | trim | nindent 6 }}
+{{- include "go-kube-downscaler.webhookresources" . | trim | nindent 6 }}
     namespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name

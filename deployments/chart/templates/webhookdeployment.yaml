@@ -2,20 +2,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "go-kube-downscaler.fullname" . }}-webhook
+  name: {{ include "go-kube-downscaler.admissionController.fullname" . }}
   labels:
-    {{- include "go-kube-downscaler.labels" . | nindent 4 }}-webhook
+    {{- include "go-kube-downscaler.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.admissionController.replicaCount }}
   selector:
     matchLabels:
-      {{- include "go-kube-downscaler.admissionController.selectorLabels" . | nindent 6 }}-webhook
+      {{- include "go-kube-downscaler.admissionController.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "go-kube-downscaler.admissionController.selectorLabels" . | nindent 8 }}-webhook
+        {{- include "go-kube-downscaler.admissionController.selectorLabels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ include "go-kube-downscaler.admissionController.serviceAccountName" . }}-webhook
+      serviceAccountName: {{ include "go-kube-downscaler.serviceAccountName" . }}
       containers:
         - name: {{ .Chart.Name }}-admission-webhook
           image: "{{ .Values.admissionController.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -50,7 +50,7 @@ spec:
       volumes:
         - name: tls
           secret:
-            secretName: {{ include "go-kube-downscaler.admissionController.secretName" . }}-webhook
+            secretName: {{ include "go-kube-downscaler.admissionController.fullname" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
     {{- with .Values.nodeSelector }}

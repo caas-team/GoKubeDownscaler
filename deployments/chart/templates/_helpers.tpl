@@ -53,13 +53,6 @@ Selector labels
 application: {{ include "go-kube-downscaler.fullname" . }}
 {{- end }}
 
-{{/*
-Selector labels for admission controller
-*/}}
-{{- define "go-kube-downscaler.admissionController.selectorLabels" -}}
-application: {{ include "go-kube-downscaler.admissionController.fullName" . }}
-{{- end }}
-
 
 {{/*
 Create the name of the service account to use
@@ -73,38 +66,30 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Create the name of the service account to use for admission controller
+Create admission controller full name
 */}}
-{{- define "go-kube-downscaler.admissionController.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "go-kube-downscaler.admissionController.fullName" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
+{{- define "go-kube-downscaler.admissionController.fullname" -}}
+{{ include "go-kube-downscaler.fullname" . }}-webhook
 {{- end }}
 
 {{/*
-Generate the name for the admission webhook full name
+Create selector label for the webhook
 */}}
-{{- define "go-kube-downscaler.admissionController.fullName" -}}
-{{- printf "%s-admission-webhook" (include "go-kube-downscaler.fullname" .) }}
+{{- define "go-kube-downscaler.admissionController.selectorLabels" -}}
+{{ include "go-kube-downscaler.selectorLabels" . }}-webhook
 {{- end }}
 
-{{/*
-Generate the name for the admission webhook secret
-*/}}
-{{- define "go-kube-downscaler.admissionController.secretName" -}}
-{{- printf "%s-secret" (include "go-kube-downscaler.admissionController.fullName" .) }}
-{{- end }}
 
 {{/*
-Create defined permissions for admission webhook deployment
+Create defined permissions for the webhook role
 */}}
 {{- define "go-kube-downscaler.admissionController.permissions" -}}
 - apiGroups:
     - ""
   resources:
     - secrets
+  resourceNames:
+    - {{ include "go-kube-downscaler.fullname" . }}-webhook
   verbs:
     - get
     - watch
@@ -246,9 +231,9 @@ Create defined permissions for roles
 {{/*
 Create webhook resources
 */}}
-{{ define "go-kube-downscaler.webhookresources" -}}
-{{- range $resource := .Values.includedResources }}
-{{- if eq $resource "deployments" }}
+{{- define "go-kube-downscaler.webhookresources" -}}
+{{- range $resource := .Values.includedResources -}}
+{{- if eq $resource "deployments" -}}
 - apiGroups:
     - apps
   apiVersions:
@@ -258,8 +243,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - deployments
-{{- end }}
-{{- if eq $resource "statefulsets" }}
+{{- end -}}
+{{- if eq $resource "statefulsets" -}}
 - apiGroups:
     - apps
   apiVersions:
@@ -269,8 +254,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - statefulsets
-{{- end }}
-{{- if eq $resource "daemonsets" }}
+{{- end -}}
+{{- if eq $resource "daemonsets" -}}
 - apiGroups:
     - apps
   apiVersions:
@@ -280,8 +265,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - daemonsets
-{{- end }}
-{{- if eq $resource "rollouts" }}
+{{- end -}}
+{{- if eq $resource "rollouts" -}}
 - apiGroups:
     - argoproj.io
   apiVersions:
@@ -291,8 +276,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - rollouts
-{{- end }}
-{{- if eq $resource "horizontalpodautoscalers" }}
+{{- end -}}
+{{- if eq $resource "horizontalpodautoscalers" -}}
 - apiGroups:
     - autoscaling
   apiVersions:
@@ -302,8 +287,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - horizontalpodautoscalers
-{{- end }}
-{{- if eq $resource "jobs" }}
+{{- end -}}
+{{- if eq $resource "jobs" -}}
 - apiGroups:
     - batch
   apiVersions:
@@ -313,8 +298,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - jobs
-{{- end }}
-{{- if eq $resource "cronjobs" }}
+{{- end -}}
+{{- if eq $resource "cronjobs" -}}
 - apiGroups:
     - batch
   apiVersions:
@@ -324,8 +309,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - cronjobs
-{{- end }}
-{{- if eq $resource "scaledobjects" }}
+{{- end -}}
+{{- if eq $resource "scaledobjects" -}}
 - apiGroups:
     - keda.sh
   apiVersions:
@@ -335,8 +320,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - scaledobjects
-{{- end }}
-{{- if eq $resource "stacks" }}
+{{- end -}}
+{{- if eq $resource "stacks" -}}
 - apiGroups:
     - zalando.org
   resources:
@@ -346,8 +331,8 @@ Create webhook resources
   operations:
     - "CREATE"
     - "UPDATE"
-{{- end }}
-{{- if eq $resource "prometheuses" }}
+{{- end -}}
+{{- if eq $resource "prometheuses" -}}
 - apiGroups:
     - monitoring.coreos.com
   resources:
@@ -357,8 +342,8 @@ Create webhook resources
   operations:
     - "CREATE"
     - "UPDATE"
-{{- end }}
-{{- if eq $resource "poddisruptionbudgets" }}
+{{- end -}}
+{{- if eq $resource "poddisruptionbudgets" -}}
 - apiGroups:
     - policy
   apiVersions:
@@ -368,6 +353,6 @@ Create webhook resources
     - "UPDATE"
   resources:
     - poddisruptionbudgets
-{{- end }}
-{{- end }}
+{{- end -}}
+{{- end -}}
 {{- end }}
