@@ -21,7 +21,6 @@ admissionController:
 
 :::
 
-The Webhook Deployment implements the same algorithm as the main GoKubeDownscaler deployment, but it is used to downscale straight-away the target
-resources when they are deployed without waiting for the GoKubeDownscaler main deployment to run its cycle.
-It is useful to avoid unnecessary node
-provisioning when the cluster is already downscaled and a new resource is deployed.
+The Webhook Deployment implements the same algorithm as the main GoKubeDownscaler deployment, but it is used to downscale straight-away the
+target resources when they are deployed without waiting for the GoKubeDownscaler main deployment to run its cycle.
+It is useful to avoid unnecessary node provisioning when the cluster is already downscaled and a new resource is deployed.
