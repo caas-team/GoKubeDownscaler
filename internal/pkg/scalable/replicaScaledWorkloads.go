@@ -26,7 +26,6 @@ type replicaScaledWorkload struct {
 }
 
 // ScaleUp scales up the underlying replicaScaledResource.
-// nolint: err113 // dynamic errors
 func (r *replicaScaledWorkload) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(r)
 	if err != nil {
@@ -55,7 +54,6 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 }
 
 // ScaleDown scales down the underlying replicaScaledResource.
-// nolint: err113 // dynamic errors
 func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) error {
 	downscaleReplicasInt32, err := downscaleReplicas.AsInt32()
 	if err != nil {
