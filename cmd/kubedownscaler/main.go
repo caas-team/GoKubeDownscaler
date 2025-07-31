@@ -212,7 +212,6 @@ func attemptScaling(
 
 // scanWorkload runs a scan on the workload, determining the scaling and scaling the workload.
 //
-
 func scanWorkload(
 	workload scalable.Workload,
 	client kubernetes.Client,
@@ -224,6 +223,7 @@ func scanWorkload(
 	resourceLogger := kubernetes.NewResourceLoggerForWorkload(client, workload)
 
 	var err error
+
 	slog.Debug(
 		"parsing workload scope from annotations",
 		"annotations", workload.GetAnnotations(),

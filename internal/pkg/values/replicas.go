@@ -43,7 +43,6 @@ type ReplicasValue struct {
 	Replicas *Replicas
 }
 
-// nolint: err113 // this is a value type, not a pointer
 func (r *ReplicasValue) Set(value string) error {
 	if v, err := strconv.ParseInt(value, 10, 32); err == nil {
 		replica := AbsoluteReplicas(int32(v))

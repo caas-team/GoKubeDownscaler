@@ -69,7 +69,7 @@ linters:
     - nilnesserr
     - nilnil
     #- nlreturn # wsl has a better implementation of the same principle, where you only have to put whitespaces if the block is longer
-    - noctx
+    #- noctx # we should re-enable this after we implement issue #125 to refactor the logging
     - nolintlint
     - nonamedreturns
     - nosprintfhostport
@@ -103,9 +103,15 @@ linters:
     - wastedassign
     - whitespace
     - wrapcheck
-    - wsl
+    - wsl_v5
     - zerologlint
   settings:
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
+      disable:
+        - decl
     ireturn:
       allow:
         - Replicas
@@ -180,8 +186,6 @@ linters:
         - name: unexported-return
           disabled: true
         - name: unused-parameter
-    wsl:
-      allow-cuddle-declarations: true
   exclusions:
     generated: lax
     presets:
