@@ -213,7 +213,6 @@ func attemptScaling(
 
 // scanWorkload runs a scan on the workload, determining the scaling and scaling the workload.
 //
-
 func scanWorkload(
 	workload scalable.Workload,
 	client kubernetes.Client,
