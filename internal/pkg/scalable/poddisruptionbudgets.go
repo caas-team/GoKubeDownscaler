@@ -36,8 +36,6 @@ func (p *podDisruptionBudget) AllowPercentageReplicas() bool {
 }
 
 // getMinAvailable returns the spec.MinAvailable value or an undefined/empty value.
-//
-// nolint: gocritic // unnamedResult: function returns unnamed result values intentionally
 func (p *podDisruptionBudget) getMinAvailable() values.Replicas {
 	minAvailable := p.Spec.MinAvailable
 	if minAvailable == nil {
@@ -55,8 +53,6 @@ func (p *podDisruptionBudget) setMinAvailable(targetMinAvailable values.Replicas
 }
 
 // getMaxUnavailable returns the spec.MaxUnavailable value or an undefined/empty value.
-//
-// nolint: gocritic // unnamedResult: function returns unnamed result values intentionally
 func (p *podDisruptionBudget) getMaxUnavailable() values.Replicas {
 	maxUnavailable := p.Spec.MaxUnavailable
 	if maxUnavailable == nil {
@@ -105,7 +101,6 @@ func (p *podDisruptionBudget) ScaleUp() error {
 }
 
 // ScaleDown scales the resource down.
-// nolint:cyclop // this function is too complex, but it is necessary to handle workload types. We should refactor this in the future.
 func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) error {
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {

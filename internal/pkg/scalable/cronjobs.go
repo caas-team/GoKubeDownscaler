@@ -54,7 +54,9 @@ func (c *cronJob) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Wo
 			}
 
 			mutex.Lock()
+
 			results = append(results, &suspendScaledWorkload{&job{singleJob}})
+
 			mutex.Unlock()
 		}(activeJob)
 	}
