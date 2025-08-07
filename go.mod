@@ -5,10 +5,10 @@ go 1.24.1
 require (
 	github.com/argoproj/argo-rollouts v1.8.3
 	github.com/kedacore/keda/v2 v2.17.2
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.84.0
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.84.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.84.1
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.84.1
 	github.com/stretchr/testify v1.10.0
-	github.com/zalando-incubator/stackset-controller v1.4.113
+	github.com/zalando-incubator/stackset-controller v1.4.114
 	k8s.io/api v0.33.3
 	k8s.io/apimachinery v0.33.3
 	k8s.io/apiserver v0.33.3
