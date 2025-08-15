@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/kedacore/keda/v2/apis/keda/v1alpha1"
 	"github.com/stretchr/testify/assert"
@@ -167,12 +168,13 @@ func TestFilterExcluded(t *testing.T) {
 	}
 
 	tests := []struct {
-		name               string
-		workloads          []Workload
-		includeLabels      util.RegexList
-		excludedNamespaces util.RegexList
-		excludedWorkloads  util.RegexList
-		want               []Workload
+		name                      string
+		workloads                 []Workload
+		includeLabels             util.RegexList
+		excludedNamespaces        util.RegexList
+		excludedWorkloads         util.RegexList
+		currentNamespaceToMetrics map[string]*metrics.NamespaceMetricsHolder
+		want                      []Workload
 	}{
 		{
 			name:               "none set",
@@ -180,7 +182,12 @@ func TestFilterExcluded(t *testing.T) {
 			includeLabels:      nil,
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
-			want:               []Workload{ns1.deployment1, ns1.deployment2, ns2.deployment1},
+			currentNamespaceToMetrics: map[string]*metrics.NamespaceMetricsHolder{
+				"Namespace1": {},
+				"Namespace2": {},
+				"Namespace3": {},
+			},
+			want: []Workload{ns1.deployment1, ns1.deployment2, ns2.deployment1},
 		},
 		{
 			name:               "apiVersion without slash",
@@ -204,7 +211,12 @@ func TestFilterExcluded(t *testing.T) {
 			includeLabels:      util.RegexList{regexp.MustCompile(".*")}, // match any label
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
-			want:               []Workload{ns1.labeledDeployment},
+			currentNamespaceToMetrics: map[string]*metrics.NamespaceMetricsHolder{
+				"Namespace1": {},
+				"Namespace2": {},
+				"Namespace3": {},
+			},
+			want: []Workload{ns1.labeledDeployment},
 		},
 		{
 			name:               "excludeNamespaces",
@@ -212,7 +224,12 @@ func TestFilterExcluded(t *testing.T) {
 			includeLabels:      nil,
 			excludedNamespaces: util.RegexList{regexp.MustCompile("Namespace1")}, // exclude Namespace1
 			excludedWorkloads:  nil,
-			want:               []Workload{ns2.deployment1},
+			currentNamespaceToMetrics: map[string]*metrics.NamespaceMetricsHolder{
+				"Namespace1": {},
+				"Namespace2": {},
+				"Namespace3": {},
+			},
+			want: []Workload{ns2.deployment1},
 		},
 		{
 			name:               "excludeWorkloads",
@@ -220,7 +237,12 @@ func TestFilterExcluded(t *testing.T) {
 			includeLabels:      nil,
 			excludedNamespaces: nil,
 			excludedWorkloads:  util.RegexList{regexp.MustCompile("Deployment1")}, // exclude Deployment1
-			want:               []Workload{ns1.deployment2},
+			currentNamespaceToMetrics: map[string]*metrics.NamespaceMetricsHolder{
+				"Namespace1": {},
+				"Namespace2": {},
+				"Namespace3": {},
+			},
+			want: []Workload{ns1.deployment2},
 		},
 		{
 			name:               "exclude scaled object scaled",
@@ -228,7 +250,12 @@ func TestFilterExcluded(t *testing.T) {
 			includeLabels:      nil,
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
-			want:               []Workload{ns3.deployment1, ns3.scaledObject, ns1.deployment1, ns1.deployment2, ns2.deployment1},
+			currentNamespaceToMetrics: map[string]*metrics.NamespaceMetricsHolder{
+				"Namespace1": {},
+				"Namespace2": {},
+				"Namespace3": {},
+			},
+			want: []Workload{ns3.deployment1, ns3.scaledObject, ns1.deployment1, ns1.deployment2, ns2.deployment1},
 		},
 		{
 			name:               "exclude managed by ownerReference",
@@ -236,7 +263,12 @@ func TestFilterExcluded(t *testing.T) {
 			includeLabels:      nil,
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
-			want:               []Workload{ns3.deployment1, ns3.scaledObject, ns1.deployment1, ns3.job2},
+			currentNamespaceToMetrics: map[string]*metrics.NamespaceMetricsHolder{
+				"Namespace1": {},
+				"Namespace2": {},
+				"Namespace3": {},
+			},
+			want: []Workload{ns3.deployment1, ns3.scaledObject, ns1.deployment1, ns3.job2},
 		},
 	}
 
@@ -249,6 +281,7 @@ func TestFilterExcluded(t *testing.T) {
 				test.includeLabels,
 				test.excludedNamespaces,
 				test.excludedWorkloads,
+				test.currentNamespaceToMetrics,
 			)
 
 			assert.Equal(t, test.want, got)

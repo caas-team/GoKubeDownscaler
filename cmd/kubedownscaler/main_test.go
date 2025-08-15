@@ -7,6 +7,7 @@ import (
 	"time"
 
 	client "github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -81,6 +82,8 @@ func TestScanWorkload(t *testing.T) {
 		},
 	}
 
+	namespaceMetrics := &metrics.NamespaceMetricsHolder{}
+
 	mockClient := new(MockClient)
 	mockWorkload := new(MockWorkload)
 
@@ -92,7 +95,7 @@ func TestScanWorkload(t *testing.T) {
 	})
 	mockClient.On("DownscaleWorkload", values.AbsoluteReplicas(0), mockWorkload, ctx).Return(nil)
 
-	err := scanWorkload(mockWorkload, mockClient, ctx, values.GetDefaultScope(), scopeCli, scopeEnv, namespaceScopes, config)
+	err := scanWorkload(mockWorkload, mockClient, ctx, values.GetDefaultScope(), scopeCli, scopeEnv, namespaceScopes, namespaceMetrics, config)
 
 	require.NoError(t, err)
 

@@ -13,6 +13,8 @@ require (
 	k8s.io/apimachinery v0.34.1
 	k8s.io/apiserver v0.34.1
 	k8s.io/client-go v0.34.1
+	k8s.io/component-base v0.33.3
+	github.com/prometheus/client_golang v1.22.0
 )
 
 require (
