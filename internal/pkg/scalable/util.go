@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -19,6 +20,7 @@ func FilterExcluded(
 	includeLabels,
 	excludedNamespaces,
 	excludedWorkloads util.RegexList,
+	currentNamespaceToMetrics map[string]*metrics.NamespaceMetricsHolder,
 ) []Workload {
 	externallyScaled := getExternallyScaled(workloads)
 
@@ -31,6 +33,7 @@ func FilterExcluded(
 				"workload", workload.GetName(),
 				"namespace", workload.GetNamespace(),
 			)
+			currentNamespaceToMetrics[workload.GetNamespace()].IncrementDownscaledWorkloadsCount()
 
 			continue
 		}
@@ -41,6 +44,7 @@ func FilterExcluded(
 				"workload", workload.GetName(),
 				"namespace", workload.GetNamespace(),
 			)
+			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}
@@ -51,6 +55,7 @@ func FilterExcluded(
 				"workload", workload.GetName(),
 				"namespace", workload.GetNamespace(),
 			)
+			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}
@@ -61,6 +66,7 @@ func FilterExcluded(
 				"workload", workload.GetName(),
 				"namespace", workload.GetNamespace(),
 			)
+			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}

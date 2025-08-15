@@ -86,6 +86,12 @@ func (s *Scope) ParseScopeFlags() {
 		"scale-children",
 		"if set to true, the ownerReference will immediately trigger scaling of children workloads when applicable (default: false)",
 	)
+	flag.BoolVar(
+		&s.MetricsEnabled,
+		"metrics",
+		false,
+		"if set to true, the downscaler will serve Prometheus metrics on port 8085 (default: false)",
+	)
 }
 
 // GetScopeFromEnv fills l with all values from environment variables and checks for compatibility.
