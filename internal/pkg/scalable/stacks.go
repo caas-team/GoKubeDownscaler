@@ -1,4 +1,4 @@
-//nolint:dupl // this code is very similar for every resource, but its not really abstractable to avoid more duplication
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -56,6 +56,24 @@ func (s *stack) Reget(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// getSavedResourcesRequests calculates the total saved resources requests when downscaling the Stack.
+//
+//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
+func (s *stack) getSavedResourcesRequests(downscaleReplicas int32) (totalSavedCPU, totalSavedMemory float64) {
+	for i := range s.Spec.PodTemplate.Spec.Containers {
+		container := &s.Spec.PodTemplate.Spec.Containers[i]
+		if container.Resources.Requests != nil {
+			totalSavedCPU += container.Resources.Requests.Cpu().AsApproximateFloat64()
+			totalSavedMemory += container.Resources.Requests.Memory().AsApproximateFloat64()
+		}
+	}
+
+	totalSavedCPU *= float64(*s.Spec.Replicas - downscaleReplicas)
+	totalSavedMemory *= float64(*s.Spec.Replicas - downscaleReplicas)
+
+	return totalSavedCPU, totalSavedMemory
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

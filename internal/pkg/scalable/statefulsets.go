@@ -1,4 +1,3 @@
-//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -56,6 +55,26 @@ func (s *statefulSet) Reget(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// getSavedResourcesRequests calculates the total saved resources requests when downscaling the StatefulSet.
+//
+//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
+func (s *statefulSet) getSavedResourcesRequests(downscaleReplicas int32) (totalSavedCPU, totalSavedMemory float64) {
+	for i := range s.Spec.Template.Spec.Containers {
+		container := &s.Spec.Template.Spec.Containers[i]
+		if container.Resources.Requests != nil {
+			cpu := container.Resources.Requests.Cpu().AsApproximateFloat64()
+			memory := container.Resources.Requests.Memory().AsApproximateFloat64()
+			totalSavedCPU += cpu
+			totalSavedMemory += memory
+		}
+	}
+
+	totalSavedCPU *= totalSavedCPU * float64(*s.Spec.Replicas-downscaleReplicas)
+	totalSavedMemory *= float64(*s.Spec.Replicas - downscaleReplicas)
+
+	return totalSavedCPU, totalSavedMemory
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

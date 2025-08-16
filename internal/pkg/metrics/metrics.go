@@ -25,43 +25,62 @@ type Metrics struct {
 	downscalerExecutionsTotal      *k8smetrics.Counter
 }
 
-func NewMetrics() *Metrics {
+// metricName returns the name of the metric based on the base name and whether it's a dry run.
+func metricName(base string, dryRun bool) string {
+	if dryRun {
+		return "kubedownscaler_potential_" + base
+	}
+
+	return "kubedownscaler_" + base
+}
+
+func helperDescription(base string, dryRun bool) string {
+	if dryRun {
+		return "Number of potential " + base
+	}
+
+	return "Number of " + base
+}
+
+func NewMetrics(dryRun bool) *Metrics {
 	return &Metrics{
 		downscaledWorkloadGauge: k8smetrics.NewGaugeVec(
 			&k8smetrics.GaugeOpts{
-				Name: "kubedownscaler_downscaled_workloads",
-				Help: "Number of downscaled workloads managed by kubedownscaler broken down by namespace.",
+				Name: metricName("downscaled_workloads", dryRun),
+				Help: helperDescription("downscaled workloads managed by kubedownscaler broken down by namespace.", dryRun),
 			}, []string{"namespace"},
 		),
 		upscaledWorkloadGauge: k8smetrics.NewGaugeVec(
 			&k8smetrics.GaugeOpts{
-				Name: "kubedownscaler_upscaled_workloads",
-				Help: "Number of upscaled workloads managed by kubedownscaler broken down by namespace.",
+				Name: metricName("upscaled_workloads", dryRun),
+				Help: helperDescription("upscaled workloads managed by kubedownscaler broken down by namespace.", dryRun),
 			}, []string{"namespace"},
 		),
+		excludedWorkloadGauge: k8smetrics.NewGaugeVec(
+			&k8smetrics.GaugeOpts{
+				Name: metricName("excluded_workloads", dryRun),
+				Help: helperDescription("workloads excluded from kubedownscaler management broken down by namespace.", dryRun),
+			}, []string{"namespace"},
+		),
+		savedMemoryGauge: k8smetrics.NewGaugeVec(
+			&k8smetrics.GaugeOpts{
+				Name: metricName("current_saved_memory_bytes", dryRun),
+				Help: helperDescription("bytes of memory saved by kubedownscaler downscaling actions.", dryRun),
+			}, []string{"namespace"},
+		),
+		savedCPUGauge: k8smetrics.NewGaugeVec(
+			&k8smetrics.GaugeOpts{
+				Name: metricName("current_saved_cpu_cores", dryRun),
+				Help: helperDescription("cores of cpu saved by kubedownscaler downscaling actions.", dryRun),
+			}, []string{"namespace"},
+		),
+
+		// always stable (never marked as "potential")
 		scalingErrorWorkloadGauge: k8smetrics.NewGaugeVec(
 			&k8smetrics.GaugeOpts{
 				Name: "kubedownscaler_scaling_errors",
 				Help: "Number of scaling errors encountered during the scale process.",
 			}, []string{"namespace", "type"},
-		),
-		excludedWorkloadGauge: k8smetrics.NewGaugeVec(
-			&k8smetrics.GaugeOpts{
-				Name: "kubedownscaler_excluded_workloads",
-				Help: "Number of workloads excluded from kubedownscaler management broken down by namespace.",
-			}, []string{"namespace"},
-		),
-		savedMemoryGauge: k8smetrics.NewGaugeVec(
-			&k8smetrics.GaugeOpts{
-				Name: "kubedownscaler_current_saved_memory_bytes",
-				Help: "Bytes of memory saved by kubedownscaler downscaling actions.",
-			}, []string{"namespace"},
-		),
-		savedCPUGauge: k8smetrics.NewGaugeVec(
-			&k8smetrics.GaugeOpts{
-				Name: "kubedownscaler_current_saved_cpu_cores",
-				Help: "Cores of cpu saved by kubedownscaler downscaling actions.",
-			}, []string{"namespace"},
 		),
 		downscalerCycleDurationSeconds: k8smetrics.NewGauge(
 			&k8smetrics.GaugeOpts{
@@ -82,9 +101,9 @@ func (m *Metrics) RegisterAll() {
 	legacyregistry.MustRegister(m.downscaledWorkloadGauge)
 	legacyregistry.MustRegister(m.upscaledWorkloadGauge)
 	legacyregistry.MustRegister(m.excludedWorkloadGauge)
-	legacyregistry.MustRegister(m.scalingErrorWorkloadGauge)
 	legacyregistry.MustRegister(m.savedMemoryGauge)
 	legacyregistry.MustRegister(m.savedCPUGauge)
+	legacyregistry.MustRegister(m.scalingErrorWorkloadGauge)
 	legacyregistry.MustRegister(m.downscalerCycleDurationSeconds)
 	legacyregistry.MustRegister(m.downscalerExecutionsTotal)
 }
@@ -94,6 +113,7 @@ func (m *Metrics) UpdateMetrics(
 	previousNamespacesToMetrics map[string]*NamespaceMetricsHolder,
 	cycleDuration float64,
 ) {
+	// delete metrics for namespaces that are no longer present in the cluster
 	for previousNamespace := range previousNamespacesToMetrics {
 		if _, exists := currentNamespaceToMetrics[previousNamespace]; exists {
 			continue
@@ -107,6 +127,7 @@ func (m *Metrics) UpdateMetrics(
 		m.savedCPUGauge.DeleteLabelValues(previousNamespace)
 	}
 
+	// update metrics for current namespaces
 	for currentNamespace, metricsRecord := range currentNamespaceToMetrics {
 		m.downscaledWorkloadGauge.WithLabelValues(currentNamespace).Set(metricsRecord.DownscaledWorkloads())
 		m.upscaledWorkloadGauge.WithLabelValues(currentNamespace).Set(metricsRecord.UpscaledWorkloads())

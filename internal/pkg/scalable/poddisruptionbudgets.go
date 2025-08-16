@@ -101,34 +101,36 @@ func (p *podDisruptionBudget) ScaleUp() error {
 }
 
 // ScaleDown scales the resource down.
-func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) error {
+//
+//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
+func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (totalSavedCPU, totalSavedMemory float64, err error) {
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {
 		if maxUnavailable.String() == downscaleReplicas.String() {
 			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
-			return nil
+			return totalSavedCPU, totalSavedMemory, nil
 		}
 
 		p.setMaxUnavailable(downscaleReplicas)
 		setOriginalReplicas(maxUnavailable, p)
 
-		return nil
+		return totalSavedCPU, totalSavedMemory, nil
 	}
 
 	minAvailable := p.getMinAvailable()
 	if minAvailable != nil {
 		if minAvailable.String() == downscaleReplicas.String() {
 			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
-			return nil
+			return totalSavedCPU, totalSavedMemory, nil
 		}
 
 		p.setMinAvailable(downscaleReplicas)
 		setOriginalReplicas(minAvailable, p)
 
-		return nil
+		return totalSavedCPU, totalSavedMemory, nil
 	}
 
-	return nil
+	return totalSavedCPU, totalSavedMemory, nil
 }
 
 // Reget regets the resource from the Kubernetes API.
