@@ -58,6 +58,24 @@ func (r *rollout) Reget(clientsets *Clientsets, ctx context.Context) error {
 	return nil
 }
 
+// getSavedResourcesRequests calculates the total saved resources requests when downscaling the Rollout.
+//
+//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
+func (r *rollout) getSavedResourcesRequests(downscaleReplicas int32) (totalSavedCPU, totalSavedMemory float64) {
+	for i := range r.Spec.Template.Spec.Containers {
+		container := &r.Spec.Template.Spec.Containers[i]
+		if container.Resources.Requests != nil {
+			totalSavedCPU += container.Resources.Requests.Cpu().AsApproximateFloat64()
+			totalSavedMemory += container.Resources.Requests.Memory().AsApproximateFloat64()
+		}
+	}
+
+	totalSavedCPU *= float64(*r.Spec.Replicas - downscaleReplicas)
+	totalSavedMemory *= float64(*r.Spec.Replicas - downscaleReplicas)
+
+	return totalSavedCPU, totalSavedMemory
+}
+
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
 func (r *rollout) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(r.Namespace).Update(ctx, r.Rollout, metav1.UpdateOptions{})

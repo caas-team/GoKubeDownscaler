@@ -145,9 +145,9 @@ func runWithLeaderElection(
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				var downscalerMetrics *metrics.Metrics = nil
-				if scopeCli.MetricsEnabled {
+				if config.MetricsEnabled {
 					go serveMetrics()
-					downscalerMetrics = metrics.NewMetrics()
+					downscalerMetrics = metrics.NewMetrics(config.DryRun)
 					downscalerMetrics.RegisterAll()
 				}
 				slog.Info("started leading")
@@ -180,10 +180,10 @@ func runWithoutLeaderElection(
 
 	var downscalerMetrics *metrics.Metrics = nil
 
-	if scopeCli.MetricsEnabled {
+	if config.MetricsEnabled {
 		go serveMetrics()
 
-		downscalerMetrics = metrics.NewMetrics()
+		downscalerMetrics = metrics.NewMetrics(config.DryRun)
 		downscalerMetrics.RegisterAll()
 	}
 
@@ -260,7 +260,7 @@ func startScanning(
 			break
 		}
 
-		if scopeCli.MetricsEnabled {
+		if config.MetricsEnabled && downscalerMetrics != nil {
 			downscalerMetrics.UpdateMetrics(currentNamespaceToMetrics, previousNamespacesToMetrics, time.Since(start).Seconds())
 		}
 
@@ -466,12 +466,14 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 			return fmt.Errorf("failed to get downscale replicas: %w", err)
 		}
 
-		err = client.DownscaleWorkload(downscaleReplicas, workload, ctx)
+		totalSavedCPU, totalSavedMemory, err := client.DownscaleWorkload(downscaleReplicas, workload, ctx)
 		if err != nil {
 			return fmt.Errorf("failed to downscale workload: %w", err)
 		}
 
 		workloadNamespaceMetrics.IncrementDownscaledWorkloadsCount()
+		workloadNamespaceMetrics.IncrementSavedCPUCoresCount(totalSavedCPU)
+		workloadNamespaceMetrics.IncrementSavedMemoryBytesCount(totalSavedMemory)
 	}
 
 	if scaling == values.ScalingUp {

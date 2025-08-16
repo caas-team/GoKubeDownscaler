@@ -45,6 +45,24 @@ func (j *job) Reget(clientsets *Clientsets, ctx context.Context) error {
 	return nil
 }
 
+// getSavedResourcesRequests calculates the total saved resources requests when downscaling the Job.
+//
+//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
+func (j *job) getSavedResourcesRequests() (totalSavedCPU, totalSavedMemory float64) {
+	for i := range j.Spec.Template.Spec.Containers {
+		container := &j.Spec.Template.Spec.Containers[i] // use pointer to avoid copy
+		if container.Resources.Requests != nil {
+			totalSavedCPU += container.Resources.Requests.Cpu().AsApproximateFloat64()
+			totalSavedMemory += container.Resources.Requests.Memory().AsApproximateFloat64()
+		}
+	}
+
+	totalSavedCPU *= float64(*j.Spec.Parallelism)
+	totalSavedMemory *= float64(*j.Spec.Parallelism)
+
+	return totalSavedCPU, totalSavedMemory
+}
+
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
 func (j *job) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Kubernetes.BatchV1().Jobs(j.Namespace).Update(ctx, j.Job, metav1.UpdateOptions{})

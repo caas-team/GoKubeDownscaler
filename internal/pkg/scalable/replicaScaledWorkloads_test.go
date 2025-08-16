@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
@@ -100,6 +102,8 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 		downtimeReplicas     values.Replicas
 		wantOriginalReplicas values.Replicas
 		wantReplicas         values.Replicas
+		wantSavedCPU         float64 // in cores
+		wantSavedMemory      float64 // in bytes
 		wantErr              error
 	}{
 		{
@@ -109,6 +113,8 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			downtimeReplicas:     values.AbsoluteReplicas(0),
 			wantOriginalReplicas: values.AbsoluteReplicas(5),
 			wantReplicas:         values.AbsoluteReplicas(0),
+			wantSavedCPU:         0.5,               // 5 replicas × 0.1 cores each
+			wantSavedMemory:      320 * 1024 * 1024, // 5 replicas × 64Mi = 320MiB
 		},
 		{
 			name:                 "already scaled down",
@@ -117,6 +123,8 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			downtimeReplicas:     values.AbsoluteReplicas(0),
 			wantOriginalReplicas: values.AbsoluteReplicas(5),
 			wantReplicas:         values.AbsoluteReplicas(0),
+			wantSavedCPU:         0.0,
+			wantSavedMemory:      0.0,
 		},
 		{
 			name:                 "original replicas set, but not scaled down",
@@ -125,6 +133,8 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			downtimeReplicas:     values.AbsoluteReplicas(0),
 			wantOriginalReplicas: values.AbsoluteReplicas(2),
 			wantReplicas:         values.AbsoluteReplicas(0),
+			wantSavedCPU:         0.2,               // 2 replicas × 0.1 cores
+			wantSavedMemory:      128 * 1024 * 1024, // 2 replicas × 64Mi
 		},
 		{
 			name:                 "downscale replicas is not AbsoluteReplicas",
@@ -133,6 +143,8 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			downtimeReplicas:     values.PercentageReplicas(50),
 			wantOriginalReplicas: nil,
 			wantReplicas:         values.AbsoluteReplicas(5),
+			wantSavedCPU:         0.0,
+			wantSavedMemory:      0.0,
 			wantErr:              &values.InvalidReplicaTypeError{},
 		},
 	}
@@ -141,31 +153,49 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			deployment := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
+			deploy := &appsv1.Deployment{}
 			replicasInt32, _ := test.replicas.AsInt32()
-			_ = deployment.setReplicas(replicasInt32)
+			deploy.Spec.Replicas = new(int32)
+			*deploy.Spec.Replicas = replicasInt32
 
-			if test.originalReplicas != nil {
-				setOriginalReplicas(test.originalReplicas, deployment)
+			deploy.Spec.Template.Spec.Containers = []corev1.Container{
+				{
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("100m"),
+							corev1.ResourceMemory: resource.MustParse("64Mi"),
+						},
+					},
+				},
 			}
 
-			err := deployment.ScaleDown(test.downtimeReplicas)
-			var invalidReplicaTypeError *values.InvalidReplicaTypeError
+			workload := &replicaScaledWorkload{&deployment{deploy}}
 
-			if errors.As(test.wantErr, &invalidReplicaTypeError) {
-				assert.ErrorAs(t, err, &invalidReplicaTypeError)
+			if test.originalReplicas != nil {
+				setOriginalReplicas(test.originalReplicas, workload)
+			}
+
+			totalSavedCPU, totalSavedMemory, err := workload.ScaleDown(test.downtimeReplicas)
+
+			if test.wantErr != nil {
+				var targetErr *values.InvalidReplicaTypeError
+				assert.ErrorAs(t, err, &targetErr)
+
 				return
 			}
 
 			require.NoError(t, err)
 
-			replicas, err := deployment.getReplicas()
+			gotReplicas, err := workload.getReplicas()
 			require.NoError(t, err)
-			assert.Equal(t, test.wantReplicas, replicas)
+			assert.Equal(t, test.wantReplicas, gotReplicas)
 
-			oringalReplicas, err := getOriginalReplicas(deployment)
+			gotOriginal, err := getOriginalReplicas(workload)
 			require.NoError(t, err)
-			assert.Equal(t, test.wantOriginalReplicas, oringalReplicas)
+			assert.Equal(t, test.wantOriginalReplicas, gotOriginal)
+
+			assert.InDelta(t, test.wantSavedCPU, totalSavedCPU, 0.0001)    // CPU tolerance
+			assert.InDelta(t, test.wantSavedMemory, totalSavedMemory, 1e5) // Memory tolerance
 		})
 	}
 }

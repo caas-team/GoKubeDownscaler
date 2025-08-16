@@ -66,6 +66,13 @@ func (h *horizontalPodAutoscaler) Reget(clientsets *Clientsets, ctx context.Cont
 	return nil
 }
 
+// getSavedResourcesRequests calculates the total saved resources requests when downscaling the HorizontalPodAutoscaler.
+//
+//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
+func (h *horizontalPodAutoscaler) getSavedResourcesRequests(_ int32) (totalSavedCPU, totalSavedMemory float64) {
+	return totalSavedCPU, totalSavedMemory
+}
+
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
 func (h *horizontalPodAutoscaler) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(h.Namespace).Update(

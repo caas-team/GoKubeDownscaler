@@ -36,7 +36,7 @@ type Client interface {
 	// RegetWorkload gets the workload again to ensure the latest state
 	RegetWorkload(workload scalable.Workload, ctx context.Context) error
 	// DownscaleWorkload downscales the workload to the specified replicas
-	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context) error
+	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context) (float64, float64, error)
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
 	// CreateLease creates a new lease for the downscaler
@@ -176,10 +176,16 @@ func (c client) RegetWorkload(workload scalable.Workload, ctx context.Context) e
 }
 
 // DownscaleWorkload downscales the workload to the specified replicas.
-func (c client) DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context) error {
-	err := workload.ScaleDown(replicas)
+//
+//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
+func (c client) DownscaleWorkload(
+	replicas values.Replicas,
+	workload scalable.Workload,
+	ctx context.Context,
+) (totalSavedCPU, totalSavedMemory float64, err error) {
+	totalSavedCPU, totalSavedMemory, err = workload.ScaleDown(replicas)
 	if err != nil {
-		return fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
+		return 0.0, 0.0, fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
 	}
 
 	if c.dryRun {
@@ -189,17 +195,17 @@ func (c client) DownscaleWorkload(replicas values.Replicas, workload scalable.Wo
 			"namespace", workload.GetNamespace(),
 		)
 
-		return nil
+		return 0.0, 0.0, nil
 	}
 
 	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
-		return fmt.Errorf("failed to update the workload: %w", err)
+		return 0.0, 0.0, fmt.Errorf("failed to update the workload: %w", err)
 	}
 
 	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-	return nil
+	return totalSavedCPU, totalSavedMemory, nil
 }
 
 // UpscaleWorkload upscales the workload to the original replicas.

@@ -58,6 +58,24 @@ func (d *deployment) Reget(clientsets *Clientsets, ctx context.Context) error {
 	return nil
 }
 
+// getSavedResourcesRequests calculates the total saved resources requests when downscaling the Deployment.
+//
+//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
+func (d *deployment) getSavedResourcesRequests(downscaleReplicas int32) (totalSavedCPU, totalSavedMemory float64) {
+	for i := range d.Spec.Template.Spec.Containers {
+		container := &d.Spec.Template.Spec.Containers[i]
+		if container.Resources.Requests != nil {
+			totalSavedCPU += container.Resources.Requests.Cpu().AsApproximateFloat64()
+			totalSavedMemory += container.Resources.Requests.Memory().AsApproximateFloat64()
+		}
+	}
+
+	totalSavedCPU *= float64(*d.Spec.Replicas - downscaleReplicas)
+	totalSavedMemory *= float64(*d.Spec.Replicas - downscaleReplicas)
+
+	return totalSavedCPU, totalSavedMemory
+}
+
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
 func (d *deployment) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Update(ctx, d.Deployment, metav1.UpdateOptions{})

@@ -18,6 +18,8 @@ type replicaScaledResource interface {
 	setReplicas(replicas int32) error
 	// getReplicas gets the replicas of the workload
 	getReplicas() (values.Replicas, error)
+	// getSavedResourcesRequests returns the saved CPU and memory requests for the workload based on the downscale replicas.
+	getSavedResourcesRequests(downscaleReplicas int32) (float64, float64)
 }
 
 // replicaScaledWorkload is a wrapper for all resources which are scaled by setting the replica count.
@@ -54,33 +56,37 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 }
 
 // ScaleDown scales down the underlying replicaScaledResource.
-func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) error {
+//
+//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
+func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (totalSavedCPU, totalSavedMemory float64, err error) {
 	downscaleReplicasInt32, err := downscaleReplicas.AsInt32()
 	if err != nil {
-		return fmt.Errorf("failed to convert replicas to int32: %w", err)
+		return totalSavedCPU, totalSavedMemory, fmt.Errorf("failed to convert replicas to int32: %w", err)
 	}
 
 	originalReplicas, err := r.getReplicas()
 	if err != nil {
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+		return totalSavedCPU, totalSavedMemory, fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
 	originalReplicasInt32, err := originalReplicas.AsInt32()
 	if err != nil {
-		return fmt.Errorf("failed to convert original replicas to int32: %w", err)
+		return totalSavedCPU, totalSavedMemory, fmt.Errorf("failed to convert original replicas to int32: %w", err)
 	}
 
 	if originalReplicasInt32 == downscaleReplicasInt32 {
 		slog.Debug("workload is already scaled down, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
-		return nil
+		return totalSavedCPU, totalSavedMemory, nil
 	}
+
+	totalSavedCPU, totalSavedMemory = r.getSavedResourcesRequests(downscaleReplicasInt32)
 
 	err = r.setReplicas(downscaleReplicasInt32)
 	if err != nil {
-		return fmt.Errorf("failed to set replicas for workload: %w", err)
+		return totalSavedCPU, totalSavedMemory, fmt.Errorf("failed to set replicas for workload: %w", err)
 	}
 
 	setOriginalReplicas(originalReplicas, r)
 
-	return nil
+	return totalSavedCPU, totalSavedMemory, nil
 }
