@@ -10,7 +10,6 @@ type NamespaceMetricsHolder struct {
 	genericErrors             float64
 	savedMemoryBytes          float64
 	savedCPUcores             float64
-	dryRun                    bool
 }
 
 func (m *NamespaceMetricsHolder) DownscaledWorkloads() float64 {
@@ -46,21 +45,15 @@ func (m *NamespaceMetricsHolder) SavedCPUCores() float64 {
 }
 
 func (m *NamespaceMetricsHolder) IncrementDownscaledWorkloadsCount() {
-	if !m.dryRun {
-		m.downscaledWorkloads++
-	}
+	m.downscaledWorkloads++
 }
 
 func (m *NamespaceMetricsHolder) IncrementUpscaledWorkloadsCount() {
-	if !m.dryRun {
-		m.upscaledWorkloads++
-	}
+	m.upscaledWorkloads++
 }
 
 func (m *NamespaceMetricsHolder) IncrementExcludedWorkloadsCount() {
-	if !m.dryRun {
-		m.excludedWorkloads++
-	}
+	m.excludedWorkloads++
 }
 
 func (m *NamespaceMetricsHolder) IncrementInvalidScalingValueErrorsCount() {
@@ -76,13 +69,9 @@ func (m *NamespaceMetricsHolder) IncrementGenericErrorsCount() {
 }
 
 func (m *NamespaceMetricsHolder) IncrementSavedMemoryBytesCount(value float64) {
-	if !m.dryRun {
-		m.savedMemoryBytes += value
-	}
+	m.savedMemoryBytes += value
 }
 
 func (m *NamespaceMetricsHolder) IncrementSavedCPUCoresCount(value float64) {
-	if !m.dryRun {
-		m.savedCPUcores += value
-	}
+	m.savedCPUcores += value
 }

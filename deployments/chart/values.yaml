@@ -29,6 +29,9 @@ nameOverride: ""
 
 constrainedNamespaces: []
 
+metrics:
+  enabled: true
+
 serviceAccount:
   create: true
   annotations: {}

@@ -36,8 +36,15 @@ spec:
           {{- if eq (include "go-kube-downscaler.leaderElection" .) "true" }}
           - --leader-election
           {{- end }}
+          {{- if .Values.metrics.enabled }}
+          - --metrics
+          {{- end }}
           {{- if .Values.constrainedNamespaces }}
           - --namespace={{ join "," .Values.constrainedNamespaces }}
+          {{- end }}
+          {{- if .Values.metrics.enabled }}
+          ports:
+            - containerPort: 8085
           {{- end }}
           envFrom:
           - configMapRef:
