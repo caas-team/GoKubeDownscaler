@@ -1,0 +1,33 @@
+---
+title: metrics
+id: metrics
+globalReference: docs-helm-metrics
+description: How to enable Prometheus metrics for the GoKubeDownscaler in the Helm Chart
+keywords: [metrics]
+---
+
+# serviceAccount
+
+The `metrics` value contains one field:
+
+- `enabled` is a boolean value indicating if metrics should be enabled or not
+
+:::info
+
+The default values for `metrics` are:
+
+```yaml
+metrics:
+  enabled: true
+```
+
+:::
+
+By default the `metrics.enabled` value of the Helm Chart is set to false.
+When set to true, the Helm Chart will create
+a Service that exposes the GoKubeDownscaler metrics on port 8085.
+To understand which metrics are exposed and how to use
+them refer to the [metrics documentation](ref:docs-metrics).
+Enabling metrics can impact the performance of the GoKubeDownscaler,
+especially memory usage, so it is recommended to monitor the resource usage of the GoKubeDownscaler when enabling metrics,
+especially in very large clusters.
