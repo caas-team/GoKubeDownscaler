@@ -29,9 +29,6 @@ nameOverride: ""
 
 constrainedNamespaces: []
 
-metrics:
-  enabled: true
-
 serviceAccount:
   create: true
   annotations: {}
@@ -84,3 +81,6 @@ configMap:
 
 # Force pod restart when the configuration changes
 forceRestartOnConfigChange: true
+
+metrics:
+  enabled: false

@@ -15,6 +15,12 @@ The following Kubernetes Objects can be created with our Helm Chart:
 The [deployment.yaml](repo:deployments/chart/templates/deployment.yaml) file creates the main Deployment of the GoKubeDownscaler
 with a reference to the provided ServiceAccount and ConfigMap.
 
+## Service
+
+The [service.yaml](repo:deployments/chart/templates/service.yaml) file creates the main Service of the GoKubeDownscaler.
+This
+Service is created only when [`--metrics`](ref:docs-metrics) are enabled.
+
 ## Serviceaccount
 
 The [serviceaccount.yaml](repo:deployments/chart/templates/serviceaccount.yaml) file creates a ServiceAccount
