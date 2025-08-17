@@ -1,0 +1,14 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "go-kube-downscaler.fullname" . }}
+spec:
+  selector:
+    {{- include "go-kube-downscaler.selectorLabels" . | nindent 4 }}
+  ports:
+    - protocol: TCP
+      port: 8085
+      targetPort: 8085
+  type: ClusterIP
+{{- end }}
