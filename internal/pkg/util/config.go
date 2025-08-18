@@ -35,6 +35,8 @@ type RuntimeConfiguration struct {
 	MaxRetriesOnConflict int
 	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
 	Kubeconfig string
+	// MetricsEnabled sets if Prometheus metrics should be exposed.
+	MetricsEnabled bool
 }
 
 func GetDefaultConfig() *RuntimeConfiguration {
@@ -50,6 +52,7 @@ func GetDefaultConfig() *RuntimeConfiguration {
 		IncludeLabels:     nil,
 		TimeAnnotation:    "",
 		Kubeconfig:        "",
+		MetricsEnabled:    false,
 	}
 }
 
@@ -126,6 +129,12 @@ func (c *RuntimeConfiguration) ParseConfigFlags() {
 		"max-retries-on-conflict",
 		0,
 		"the annotation to use instead of creation time for grace period (optional)",
+	)
+	flag.BoolVar(
+		&c.MetricsEnabled,
+		"metrics",
+		false,
+		"expose Prometheus metrics (default: false)",
 	)
 }
 

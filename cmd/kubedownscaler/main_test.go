@@ -7,6 +7,7 @@ import (
 	"time"
 
 	client "github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -25,9 +26,14 @@ func (m *MockClient) GetNamespaceAnnotations(namespace string, ctx context.Conte
 	return args.Get(0).(map[string]string), args.Error(1)
 }
 
-func (m *MockClient) DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context) error {
+//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
+func (m *MockClient) DownscaleWorkload(
+	replicas values.Replicas,
+	workload scalable.Workload,
+	ctx context.Context,
+) (totalSavedCPU, totalSavedMemory float64, err error) {
 	args := m.Called(replicas, workload, ctx)
-	return args.Error(0)
+	return args.Get(0).(float64), args.Get(1).(float64), args.Error(2)
 }
 
 func (m *MockClient) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
@@ -81,6 +87,8 @@ func TestScanWorkload(t *testing.T) {
 		},
 	}
 
+	namespaceMetrics := &metrics.NamespaceMetricsHolder{}
+
 	mockClient := new(MockClient)
 	mockWorkload := new(MockWorkload)
 
@@ -90,9 +98,8 @@ func TestScanWorkload(t *testing.T) {
 	mockWorkload.On("GetAnnotations").Return(map[string]string{
 		"downscaler/force-downtime": "true",
 	})
-	mockClient.On("DownscaleWorkload", values.AbsoluteReplicas(0), mockWorkload, ctx).Return(nil)
-
-	err := scanWorkload(mockWorkload, mockClient, ctx, values.GetDefaultScope(), scopeCli, scopeEnv, namespaceScopes, config)
+	mockClient.On("DownscaleWorkload", values.AbsoluteReplicas(0), mockWorkload, ctx).Return(0.0, 0.0, nil)
+	err := scanWorkload(mockWorkload, mockClient, ctx, values.GetDefaultScope(), scopeCli, scopeEnv, namespaceScopes, namespaceMetrics, config)
 
 	require.NoError(t, err)
 

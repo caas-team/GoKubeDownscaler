@@ -80,6 +80,13 @@ func (s *scaledObject) Reget(clientsets *Clientsets, ctx context.Context) error 
 	return nil
 }
 
+// getSavedResourcesRequests returns the total saved CPU and memory requests for the scaled object.
+//
+//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
+func (s *scaledObject) getSavedResourcesRequests(_ int32) (totalSavedCPU, totalSavedMemory float64) {
+	return totalSavedCPU, totalSavedMemory
+}
+
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
 func (s *scaledObject) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(s.Namespace).Update(ctx, s.ScaledObject, metav1.UpdateOptions{})
