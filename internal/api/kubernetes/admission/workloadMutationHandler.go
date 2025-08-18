@@ -209,7 +209,7 @@ func mutateWorkload(
 	downscaleReplicas values.Replicas,
 ) (*admissionv1.AdmissionReview, error) {
 	// generate a deep copy of the workload to be able to generate a comparison patch
-	workloadCopy, err := scalable.DeepCopyWorkload(workload)
+	workloadCopy, err := workload.Copy()
 	if err != nil {
 		slog.Error("failed to deep copy workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to deep copy workload"), err
@@ -220,7 +220,7 @@ func mutateWorkload(
 		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to scale down workload"), err
 	}
 
-	patch, err := scalable.CompareWorkloads(workload, workloadCopy)
+	patch, err := workload.Compare(workloadCopy)
 	if err != nil {
 		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to compare workload"), err
 	}

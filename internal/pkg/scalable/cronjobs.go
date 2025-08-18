@@ -17,6 +17,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const CronJobKind = "CronJob"
+
 // getCronJobs is the getResourceFunc for CronJobs.
 func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	cronjobs, err := clientsets.Kubernetes.BatchV1().CronJobs(namespace).List(ctx, metav1.ListOptions{})
@@ -42,69 +44,6 @@ func parseCronJobFromAdmissionRequest(review *admissionv1.AdmissionReview) (Work
 	}
 
 	return &suspendScaledWorkload{&cronJob{&cj}}, nil
-}
-
-// deepCopyCronJob creates a deep copy of the given Workload, which is expected to be a suspendScaledWorkload wrapping a cronJob.
-//
-//nolint:ireturn,varnamelen //required for interface-based workflow
-func deepCopyCronJob(w Workload) (Workload, error) {
-	ssw, ok := w.(*suspendScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), w)
-	}
-
-	cj, ok := ssw.suspendScaledResource.(*cronJob)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*cronJob)(nil), ssw.suspendScaledResource)
-	}
-
-	if cj.CronJob == nil {
-		return nil, newNilUnderlyingObjectError(cj.Kind)
-	}
-
-	copied := cj.DeepCopy()
-
-	return &suspendScaledWorkload{
-		suspendScaledResource: &cronJob{
-			CronJob: copied,
-		},
-	}, nil
-}
-
-// compareCronJobs compares two cronJob resources and returns the differences as a jsondiff.Patch.
-//
-//nolint:varnamelen //required for interface-based workflow
-func compareCronJobs(workload, workloadCopy Workload) (jsondiff.Patch, error) {
-	ssw, ok := workload.(*suspendScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workload)
-	}
-
-	cj, ok := ssw.suspendScaledResource.(*cronJob)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*cronJob)(nil), ssw.suspendScaledResource)
-	}
-
-	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
-	}
-
-	cjCopy, ok := sswCopy.suspendScaledResource.(*cronJob)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*cronJob)(nil), sswCopy.suspendScaledResource)
-	}
-
-	if cj.CronJob == nil || cjCopy.CronJob == nil {
-		return nil, newNilUnderlyingObjectError(cj.Kind)
-	}
-
-	diff, err := jsondiff.Compare(cj.CronJob, cjCopy.CronJob)
-	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(cj.Kind, err)
-	}
-
-	return diff, nil
 }
 
 // cronJob is a wrapper for cronjob.v1.batch to implement the suspendScaledResource interface.
@@ -202,4 +141,47 @@ func (c *cronJob) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload, which is expected to be a suspendScaledWorkload wrapping a cronJob.
+//
+//nolint:ireturn //required for interface-based workflow
+func (c *cronJob) Copy() (Workload, error) {
+	if c.CronJob == nil {
+		return nil, newNilUnderlyingObjectError(CronJobKind)
+	}
+
+	copied := c.DeepCopy()
+
+	return &suspendScaledWorkload{
+		suspendScaledResource: &cronJob{
+			CronJob: copied,
+		},
+	}, nil
+}
+
+// Compare compares two cronJob resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (c *cronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
+	}
+
+	cjCopy, ok := sswCopy.suspendScaledResource.(*cronJob)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*cronJob)(nil), sswCopy.suspendScaledResource)
+	}
+
+	if c.CronJob == nil || cjCopy.CronJob == nil {
+		return nil, newNilUnderlyingObjectError(CronJobKind)
+	}
+
+	diff, err := jsondiff.Compare(c.CronJob, cjCopy.CronJob)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(CronJobKind, err)
+	}
+
+	return diff, nil
 }
