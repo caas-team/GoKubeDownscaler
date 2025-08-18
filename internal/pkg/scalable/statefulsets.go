@@ -13,6 +13,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const StatefulSetKind = "StatefulSet"
+
 // getStatefulSets is the getResourceFunc for StatefulSets.
 func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	statefulsets, err := clientsets.Kubernetes.AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{})
@@ -38,69 +40,6 @@ func parseStatefulSetFromAdmissionRequest(review *admissionv1.AdmissionReview) (
 	}
 
 	return &replicaScaledWorkload{&statefulSet{&sts}}, nil
-}
-
-// deepCopyStatefulSet creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a statefulSet.
-//
-//nolint:ireturn,varnamelen //required for interface-based workflow
-func deepCopyStatefulSet(w Workload) (Workload, error) {
-	rsw, ok := w.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
-	}
-
-	sts, ok := rsw.replicaScaledResource.(*statefulSet)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*statefulSet)(nil), rsw.replicaScaledResource)
-	}
-
-	if sts.StatefulSet == nil {
-		return nil, newNilUnderlyingObjectError(sts.Kind)
-	}
-
-	copied := sts.DeepCopy()
-
-	return &replicaScaledWorkload{
-		replicaScaledResource: &statefulSet{
-			StatefulSet: copied,
-		},
-	}, nil
-}
-
-// compareStatefulSets compares two statefulSet resources and returns the differences as a jsondiff.Patch.
-//
-//nolint:varnamelen //required for interface-based workflow
-func compareStatefulSets(workload, workloadCopy Workload) (jsondiff.Patch, error) {
-	rsw, ok := workload.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
-	}
-
-	sts, ok := rsw.replicaScaledResource.(*statefulSet)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*statefulSet)(nil), rsw.replicaScaledResource)
-	}
-
-	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
-	}
-
-	stsCopy, ok := rswCopy.replicaScaledResource.(*statefulSet)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*statefulSet)(nil), rswCopy.replicaScaledResource)
-	}
-
-	if sts.StatefulSet == nil || stsCopy.StatefulSet == nil {
-		return nil, newNilUnderlyingObjectError(sts.Kind)
-	}
-
-	diff, err := jsondiff.Compare(sts.StatefulSet, stsCopy.StatefulSet)
-	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(sts.Kind, err)
-	}
-
-	return diff, nil
 }
 
 // statefulset is a wrapper for statefulset.v1.apps to implement the replicaScaledResource interface.
@@ -144,4 +83,47 @@ func (s *statefulSet) Update(clientsets *Clientsets, ctx context.Context) error 
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a statefulSet.
+//
+//nolint:ireturn //required for interface-based workflow
+func (s *statefulSet) Copy() (Workload, error) {
+	if s.StatefulSet == nil {
+		return nil, newNilUnderlyingObjectError(StatefulSetKind)
+	}
+
+	copied := s.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &statefulSet{
+			StatefulSet: copied,
+		},
+	}, nil
+}
+
+// Compare compares two statefulSet resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (s *statefulSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	stsCopy, ok := rswCopy.replicaScaledResource.(*statefulSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*statefulSet)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if s.StatefulSet == nil || stsCopy.StatefulSet == nil {
+		return nil, newNilUnderlyingObjectError(StatefulSetKind)
+	}
+
+	diff, err := jsondiff.Compare(s.StatefulSet, stsCopy.StatefulSet)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(StatefulSetKind, err)
+	}
+
+	return diff, nil
 }

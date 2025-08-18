@@ -12,6 +12,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const JobKind = "Job"
+
 // getDeployments is the getResourceFunc for Jobs.
 func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	jobs, err := clientsets.Kubernetes.BatchV1().Jobs(namespace).List(ctx, metav1.ListOptions{})
@@ -27,33 +29,6 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 	return results, nil
 }
 
-// parseJobFromAdmissionRequest parses the admission review and returns the job wrapped in a Workload.
-//
-//nolint:ireturn,varnamelen //required for interface-based workflow
-func deepCopyJob(w Workload) (Workload, error) {
-	ssw, ok := w.(*suspendScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), w)
-	}
-
-	jb, ok := ssw.suspendScaledResource.(*job)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*job)(nil), ssw.suspendScaledResource)
-	}
-
-	if jb.Job == nil {
-		return nil, newNilUnderlyingObjectError(jb.Kind)
-	}
-
-	copied := jb.DeepCopy()
-
-	return &suspendScaledWorkload{
-		suspendScaledResource: &job{
-			Job: copied,
-		},
-	}, nil
-}
-
 // parseCronJobFromAdmissionRequest parses the admission review and returns the cronjob.
 //
 //nolint:ireturn //required for interface-based factory
@@ -64,42 +39,6 @@ func parseJobFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload
 	}
 
 	return &suspendScaledWorkload{&job{&j}}, nil
-}
-
-// compareJobs compares two Job resources and returns the differences as a jsondiff.Patch.
-//
-//nolint:varnamelen //required for interface-based workflow
-func compareJobs(workload, workloadCopy Workload) (jsondiff.Patch, error) {
-	ssw, ok := workload.(*suspendScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workload)
-	}
-
-	j, ok := ssw.suspendScaledResource.(*job)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*job)(nil), ssw.suspendScaledResource)
-	}
-
-	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
-	}
-
-	jCopy, ok := sswCopy.suspendScaledResource.(*job)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*job)(nil), sswCopy.suspendScaledResource)
-	}
-
-	if j.Job == nil || jCopy.Job == nil {
-		return nil, newNilUnderlyingObjectError(j.Kind)
-	}
-
-	diff, err := jsondiff.Compare(j.Job, jCopy.Job)
-	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(j.Kind, err)
-	}
-
-	return diff, nil
 }
 
 // job is a wrapper for job.v1.batch to implement the suspendScaledResource interface.
@@ -132,4 +71,47 @@ func (j *job) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the job resource and returns it as a Workload.
+//
+//nolint:ireturn //required for interface-based workflow
+func (j *job) Copy() (Workload, error) {
+	if j.Job == nil {
+		return nil, newNilUnderlyingObjectError(JobKind)
+	}
+
+	copied := j.DeepCopy()
+
+	return &suspendScaledWorkload{
+		suspendScaledResource: &job{
+			Job: copied,
+		},
+	}, nil
+}
+
+// Compare compares two Job resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (j *job) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
+	}
+
+	jCopy, ok := sswCopy.suspendScaledResource.(*job)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*job)(nil), sswCopy.suspendScaledResource)
+	}
+
+	if j.Job == nil || jCopy.Job == nil {
+		return nil, newNilUnderlyingObjectError(JobKind)
+	}
+
+	diff, err := jsondiff.Compare(j.Job, jCopy.Job)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(JobKind, err)
+	}
+
+	return diff, nil
 }

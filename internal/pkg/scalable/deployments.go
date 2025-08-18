@@ -13,6 +13,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const DeploymentKind = "Deployment"
+
 // getDeployments is the getResourceFunc for Deployments.
 func getDeployments(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	deployments, err := clientsets.Kubernetes.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
@@ -38,69 +40,6 @@ func parseDeploymentFromAdmissionRequest(review *admissionv1.AdmissionReview) (W
 	}
 
 	return &replicaScaledWorkload{&deployment{&dep}}, nil
-}
-
-// deepCopyDeployment creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a deployment.
-//
-//nolint:ireturn,varnamelen //required for interface-based workflow
-func deepCopyDeployment(w Workload) (Workload, error) {
-	rsw, ok := w.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
-	}
-
-	dep, ok := rsw.replicaScaledResource.(*deployment)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*deployment)(nil), rsw.replicaScaledResource)
-	}
-
-	if dep.Deployment == nil {
-		return nil, newNilUnderlyingObjectError(dep.Kind)
-	}
-
-	copied := dep.DeepCopy()
-
-	return &replicaScaledWorkload{
-		replicaScaledResource: &deployment{
-			Deployment: copied,
-		},
-	}, nil
-}
-
-// compareDeployments compares two deployment resources and returns the differences as a jsondiff.Patch.
-//
-//nolint:varnamelen //required for interface-based workflow
-func compareDeployments(workload, workloadCopy Workload) (jsondiff.Patch, error) {
-	rsw, ok := workload.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
-	}
-
-	dep, ok := rsw.replicaScaledResource.(*deployment)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*deployment)(nil), rsw.replicaScaledResource)
-	}
-
-	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
-	}
-
-	depCopy, ok := rswCopy.replicaScaledResource.(*deployment)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*deployment)(nil), rswCopy.replicaScaledResource)
-	}
-
-	if dep.Deployment == nil || depCopy.Deployment == nil {
-		return nil, newNilUnderlyingObjectError(dep.Kind)
-	}
-
-	diff, err := jsondiff.Compare(dep.Deployment, depCopy.Deployment)
-	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(dep.Kind, err)
-	}
-
-	return diff, nil
 }
 
 // deployment is a wrapper for deployment.v1.apps to implement the replicaScaledResource interface.
@@ -144,4 +83,47 @@ func (d *deployment) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a deployment.
+//
+//nolint:ireturn //required for interface-based workflow
+func (d *deployment) Copy() (Workload, error) {
+	if d.Deployment == nil {
+		return nil, newNilUnderlyingObjectError(DeploymentKind)
+	}
+
+	copied := d.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &deployment{
+			Deployment: copied,
+		},
+	}, nil
+}
+
+// Compare compares two deployment resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (d *deployment) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	depCopy, ok := rswCopy.replicaScaledResource.(*deployment)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*deployment)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if d.Deployment == nil || depCopy.Deployment == nil {
+		return nil, newNilUnderlyingObjectError(DeploymentKind)
+	}
+
+	diff, err := jsondiff.Compare(d.Deployment, depCopy.Deployment)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(DeploymentKind, err)
+	}
+
+	return diff, nil
 }

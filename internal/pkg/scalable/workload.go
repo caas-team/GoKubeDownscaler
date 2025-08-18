@@ -3,7 +3,6 @@ package scalable
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -84,66 +83,6 @@ func ParseWorkloadFromAdmissionReview(resource string, review *admissionv1.Admis
 	return workload, nil
 }
 
-// deepCopyWorkloadFunc is a function type that deep copies a Workload.
-type deepCopyWorkloadFunc func(w Workload) (Workload, error)
-
-// DeepCopyWorkload deep copies the given workload. It returns an error if the resource type is not supported.
-//
-//nolint:ireturn //required for interface-based workflow
-func DeepCopyWorkload(workload Workload) (Workload, error) {
-	resource := strings.ToLower(workload.GroupVersionKind().Kind)
-	deepCopyFuncMap := map[string]deepCopyWorkloadFunc{
-		"deployment":              deepCopyDeployment,
-		"statefulset":             deepCopyStatefulSet,
-		"cronjob":                 deepCopyCronJob,
-		"job":                     deepCopyJob,
-		"daemonset":               deepCopyDaemonSet,
-		"poddisruptionbudget":     deepCopyPodDisruptionBudget,
-		"horizontalpodautoscaler": deepCopyHorizontalPodAutoscaler,
-		"scaledobject":            deepCopyScaledObject,
-		"rollout":                 deepCopyRollout,
-		"stack":                   deepCopyStack,
-		"prometheus":              deepCopyPrometheus,
-	}
-
-	copyFunc, exists := deepCopyFuncMap[resource]
-	if !exists {
-		return nil, newInvalidResourceError(resource)
-	}
-
-	return copyFunc(workload)
-}
-
-// compareWorkloadFunc is a function type that compares two workloads and returns the differences as a jsondiff.Patch.
-type compareWorkloadFunc func(workload, workloadCopy Workload) (jsondiff.Patch, error)
-
-// CompareWorkloads is a function that compares two workloads and returns the differences as a jsondiff.Patch.
-//
-
-func CompareWorkloads(workload, workloadCopy Workload) (jsondiff.Patch, error) {
-	resource := strings.ToLower(workload.GroupVersionKind().Kind)
-	compareFuncMap := map[string]compareWorkloadFunc{
-		"deployment":              compareDeployments,
-		"statefulset":             compareStatefulSets,
-		"cronjob":                 compareCronJobs,
-		"job":                     compareJobs,
-		"daemonset":               compareDaemonSets,
-		"poddisruptionbudget":     comparePodDisruptionBudgets,
-		"horizontalpodautoscaler": compareHorizontalPodAutoscalers,
-		"scaledobject":            compareScaledObjects,
-		"rollout":                 compareRollouts,
-		"stack":                   compareStacks,
-		"prometheus":              comparePrometheuses,
-	}
-
-	compareFunc, exists := compareFuncMap[resource]
-	if !exists {
-		return nil, newInvalidResourceError(resource)
-	}
-
-	return compareFunc(workload, workloadCopy)
-}
-
 type ParentWorkload interface {
 	GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error)
 }
@@ -185,6 +124,10 @@ type Workload interface {
 	ScaleUp() error
 	// ScaleDown scales down the workload
 	ScaleDown(downscaleReplicas values.Replicas) error
+	// Copy creates a deep copy of the workload
+	Copy() (Workload, error)
+	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
+	Compare(workloadCopy Workload) (jsondiff.Patch, error)
 }
 
 type Clientsets struct {

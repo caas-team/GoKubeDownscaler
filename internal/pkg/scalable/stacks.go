@@ -13,6 +13,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const StackKind = "Stack"
+
 // getStacks is the getResourceFunc for Zalando Stacks.
 func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	stacks, err := clientsets.Zalando.ZalandoV1().Stacks(namespace).List(ctx, metav1.ListOptions{})
@@ -38,69 +40,6 @@ func parseStackFromAdmissionRequest(review *admissionv1.AdmissionReview) (Worklo
 	}
 
 	return &replicaScaledWorkload{&stack{&st}}, nil
-}
-
-// deepCopyStack creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a stack.
-//
-//nolint:ireturn,varnamelen //required for interface-based workflow
-func deepCopyStack(w Workload) (Workload, error) {
-	rsw, ok := w.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
-	}
-
-	st, ok := rsw.replicaScaledResource.(*stack)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*stack)(nil), rsw.replicaScaledResource)
-	}
-
-	if st.Stack == nil {
-		return nil, newNilUnderlyingObjectError(st.Kind)
-	}
-
-	copied := st.DeepCopy()
-
-	return &replicaScaledWorkload{
-		replicaScaledResource: &stack{
-			Stack: copied,
-		},
-	}, nil
-}
-
-// compareStacks compares two stack resources and returns the differences as a jsondiff.Patch.
-//
-//nolint:varnamelen //required for interface-based workflow
-func compareStacks(workload, workloadCopy Workload) (jsondiff.Patch, error) {
-	rsw, ok := workload.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
-	}
-
-	st, ok := rsw.replicaScaledResource.(*stack)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*stack)(nil), rsw.replicaScaledResource)
-	}
-
-	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
-	}
-
-	stCopy, ok := rswCopy.replicaScaledResource.(*stack)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*stack)(nil), rswCopy.replicaScaledResource)
-	}
-
-	if st.Stack == nil || stCopy.Stack == nil {
-		return nil, newNilUnderlyingObjectError(st.Kind)
-	}
-
-	diff, err := jsondiff.Compare(st.Stack, stCopy.Stack)
-	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(st.Kind, err)
-	}
-
-	return diff, nil
 }
 
 // stack is a wrapper for stack.v1.zalando.org to implement the replicaScaledResource interface.
@@ -144,4 +83,47 @@ func (s *stack) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// deepCopyStack creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a stack.
+//
+//nolint:ireturn //required for interface-based workflow
+func (s *stack) Copy() (Workload, error) {
+	if s.Stack == nil {
+		return nil, newNilUnderlyingObjectError(StackKind)
+	}
+
+	copied := s.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &stack{
+			Stack: copied,
+		},
+	}, nil
+}
+
+// compareStacks compares two stack resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (s *stack) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	stCopy, ok := rswCopy.replicaScaledResource.(*stack)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*stack)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if s.Stack == nil || stCopy.Stack == nil {
+		return nil, newNilUnderlyingObjectError(StackKind)
+	}
+
+	diff, err := jsondiff.Compare(s.Stack, stCopy.Stack)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(StackKind, err)
+	}
+
+	return diff, nil
 }

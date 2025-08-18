@@ -14,6 +14,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const HorizontalPodAutoscalerKind = "HorizontalPodAutoscaler"
+
 var errMinReplicasBoundsExceeded = errors.New("error: an HPAs minReplicas can only be set to int32 values larger than 1")
 
 // getHorizontalPodAutoscalers is the getResourceFunc for horizontalPodAutoscalers.
@@ -41,70 +43,6 @@ func parseHorizontalPodAutoscalerFromAdmissionRequest(review *admissionv1.Admiss
 	}
 
 	return &replicaScaledWorkload{&horizontalPodAutoscaler{&hpa}}, nil
-}
-
-// deepCopyHorizontalPodAutoscaler creates a deep copy of the given Workload,
-// which is expected to be a replicaScaledWorkload wrapping a horizontalPodAutoscaler.
-//
-//nolint:ireturn,varnamelen //required for interface-based workflow
-func deepCopyHorizontalPodAutoscaler(w Workload) (Workload, error) {
-	rsw, ok := w.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
-	}
-
-	hpa, ok := rsw.replicaScaledResource.(*horizontalPodAutoscaler)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*horizontalPodAutoscaler)(nil), rsw.replicaScaledResource)
-	}
-
-	if hpa.HorizontalPodAutoscaler == nil {
-		return nil, newNilUnderlyingObjectError(hpa.Kind)
-	}
-
-	copied := hpa.DeepCopy()
-
-	return &replicaScaledWorkload{
-		replicaScaledResource: &horizontalPodAutoscaler{
-			HorizontalPodAutoscaler: copied,
-		},
-	}, nil
-}
-
-// compareHorizontalPodAutoscalers compares two horizontalPodAutoscaler resources and returns the differences as a jsondiff.Patch.
-//
-//nolint:varnamelen //required for interface-based workflow
-func compareHorizontalPodAutoscalers(workload, workloadCopy Workload) (jsondiff.Patch, error) {
-	rsw, ok := workload.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
-	}
-
-	hpa, ok := rsw.replicaScaledResource.(*horizontalPodAutoscaler)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*horizontalPodAutoscaler)(nil), rsw.replicaScaledResource)
-	}
-
-	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
-	}
-
-	hpaCopy, ok := rswCopy.replicaScaledResource.(*horizontalPodAutoscaler)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*horizontalPodAutoscaler)(nil), rswCopy.replicaScaledResource)
-	}
-
-	if hpa.HorizontalPodAutoscaler == nil || hpaCopy.HorizontalPodAutoscaler == nil {
-		return nil, newNilUnderlyingObjectError(hpa.Kind)
-	}
-
-	diff, err := jsondiff.Compare(hpa.HorizontalPodAutoscaler, hpa.HorizontalPodAutoscaler)
-	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(hpa.Kind, err)
-	}
-
-	return diff, nil
 }
 
 // horizontalPodAutoscaler is a wrapper for horizontalpodautoscaler.v2.autoscaling to implement the replicaScaledResource interface.
@@ -157,4 +95,48 @@ func (h *horizontalPodAutoscaler) Update(clientsets *Clientsets, ctx context.Con
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload,
+// which is expected to be a replicaScaledWorkload wrapping a horizontalPodAutoscaler.
+//
+//nolint:ireturn //required for interface-based workflow
+func (h *horizontalPodAutoscaler) Copy() (Workload, error) {
+	if h.HorizontalPodAutoscaler == nil {
+		return nil, newNilUnderlyingObjectError(HorizontalPodAutoscalerKind)
+	}
+
+	copied := h.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &horizontalPodAutoscaler{
+			HorizontalPodAutoscaler: copied,
+		},
+	}, nil
+}
+
+// Compare compares two horizontalPodAutoscaler resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (h *horizontalPodAutoscaler) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	hpaCopy, ok := rswCopy.replicaScaledResource.(*horizontalPodAutoscaler)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*horizontalPodAutoscaler)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if h.HorizontalPodAutoscaler == nil || hpaCopy.HorizontalPodAutoscaler == nil {
+		return nil, newNilUnderlyingObjectError(HorizontalPodAutoscalerKind)
+	}
+
+	diff, err := jsondiff.Compare(h.HorizontalPodAutoscaler, hpaCopy.HorizontalPodAutoscaler)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(HorizontalPodAutoscalerKind, err)
+	}
+
+	return diff, nil
 }

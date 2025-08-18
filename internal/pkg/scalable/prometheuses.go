@@ -13,6 +13,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const PrometheusKind = "Prometheus"
+
 // getPrometheuses is the getResourceFunc for Prometheuses.
 func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	prometheuses, err := clientsets.Monitoring.MonitoringV1().Prometheuses(namespace).List(ctx, metav1.ListOptions{})
@@ -38,69 +40,6 @@ func parsePrometheusFromAdmissionRequest(review *admissionv1.AdmissionReview) (W
 	}
 
 	return &replicaScaledWorkload{&prometheus{&prom}}, nil
-}
-
-// deepCopyPrometheus creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a prometheus.
-//
-//nolint:ireturn,varnamelen //required for interface-based workflow
-func deepCopyPrometheus(w Workload) (Workload, error) {
-	rsw, ok := w.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
-	}
-
-	prom, ok := rsw.replicaScaledResource.(*prometheus)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*prometheus)(nil), rsw.replicaScaledResource)
-	}
-
-	if prom.Prometheus == nil {
-		return nil, newNilUnderlyingObjectError(prom.Kind)
-	}
-
-	copied := prom.DeepCopy()
-
-	return &replicaScaledWorkload{
-		replicaScaledResource: &prometheus{
-			Prometheus: copied,
-		},
-	}, nil
-}
-
-// comparePrometheuses compares two prometheus resources and returns the differences as a jsondiff.Patch.
-//
-//nolint:varnamelen //required for interface-based workflow
-func comparePrometheuses(workload, workloadCopy Workload) (jsondiff.Patch, error) {
-	rsw, ok := workload.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
-	}
-
-	prom, ok := rsw.replicaScaledResource.(*prometheus)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*prometheus)(nil), rsw.replicaScaledResource)
-	}
-
-	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
-	}
-
-	promCopy, ok := rswCopy.replicaScaledResource.(*prometheus)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*prometheus)(nil), rswCopy.replicaScaledResource)
-	}
-
-	if prom.Prometheus == nil || promCopy.Prometheus == nil {
-		return nil, newNilUnderlyingObjectError(prom.Kind)
-	}
-
-	diff, err := jsondiff.Compare(prom.Prometheus, promCopy.Prometheus)
-	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(prom.Kind, err)
-	}
-
-	return diff, nil
 }
 
 // prometheus is a wrapper for prometheus.v1.monitoring.coreos.com to implement the replicaScaledResource interface.
@@ -144,4 +83,47 @@ func (p *prometheus) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a prometheus.
+//
+//nolint:ireturn //required for interface-based workflow
+func (p *prometheus) Copy() (Workload, error) {
+	if p.Prometheus == nil {
+		return nil, newNilUnderlyingObjectError(PrometheusKind)
+	}
+
+	copied := p.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &prometheus{
+			Prometheus: copied,
+		},
+	}, nil
+}
+
+// Compare compares two prometheus resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (p *prometheus) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	promCopy, ok := rswCopy.replicaScaledResource.(*prometheus)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*prometheus)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if p.Prometheus == nil || promCopy.Prometheus == nil {
+		return nil, newNilUnderlyingObjectError(PrometheusKind)
+	}
+
+	diff, err := jsondiff.Compare(p.Prometheus, promCopy.Prometheus)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(PrometheusKind, err)
+	}
+
+	return diff, nil
 }

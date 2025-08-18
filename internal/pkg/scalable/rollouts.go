@@ -13,6 +13,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const RolloutKind = "Rollout"
+
 // getRollouts is the getResourceFunc for Argo Rollouts.
 func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	rollouts, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(namespace).List(ctx, metav1.ListOptions{})
@@ -38,69 +40,6 @@ func parseRolloutFromAdmissionRequest(review *admissionv1.AdmissionReview) (Work
 	}
 
 	return &replicaScaledWorkload{&rollout{&roll}}, nil
-}
-
-// deepCopyRollout creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a rollout.
-//
-//nolint:ireturn,varnamelen //required for interface-based workflow
-func deepCopyRollout(w Workload) (Workload, error) {
-	rsw, ok := w.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
-	}
-
-	ro, ok := rsw.replicaScaledResource.(*rollout)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*rollout)(nil), rsw.replicaScaledResource)
-	}
-
-	if ro.Rollout == nil {
-		return nil, newNilUnderlyingObjectError(ro.Kind)
-	}
-
-	copied := ro.DeepCopy()
-
-	return &replicaScaledWorkload{
-		replicaScaledResource: &rollout{
-			Rollout: copied,
-		},
-	}, nil
-}
-
-// compareRollouts compares two rollout resources and returns the differences as a jsondiff.Patch.
-//
-//nolint:varnamelen //required for interface-based workflow
-func compareRollouts(workload, workloadCopy Workload) (jsondiff.Patch, error) {
-	rsw, ok := workload.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
-	}
-
-	roll, ok := rsw.replicaScaledResource.(*rollout)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*rollout)(nil), rsw.replicaScaledResource)
-	}
-
-	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
-	}
-
-	rollCopy, ok := rswCopy.replicaScaledResource.(*rollout)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*rollout)(nil), rswCopy.replicaScaledResource)
-	}
-
-	if roll.Rollout == nil || rollCopy.Rollout == nil {
-		return nil, newNilUnderlyingObjectError(roll.Kind)
-	}
-
-	diff, err := jsondiff.Compare(roll.Rollout, rollCopy.Rollout)
-	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(roll.Kind, err)
-	}
-
-	return diff, nil
 }
 
 // rollout is a wrapper for rollout.v1alpha1.argoproj.io to implement the replicaScaledResource interface.
@@ -144,4 +83,47 @@ func (r *rollout) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// deepCopyRollout creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a rollout.
+//
+//nolint:ireturn //required for interface-based workflow
+func (r *rollout) Copy() (Workload, error) {
+	if r.Rollout == nil {
+		return nil, newNilUnderlyingObjectError(RolloutKind)
+	}
+
+	copied := r.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &rollout{
+			Rollout: copied,
+		},
+	}, nil
+}
+
+// compareRollouts compares two rollout resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (r *rollout) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	rollCopy, ok := rswCopy.replicaScaledResource.(*rollout)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*rollout)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if r.Rollout == nil || rollCopy.Rollout == nil {
+		return nil, newNilUnderlyingObjectError(RolloutKind)
+	}
+
+	diff, err := jsondiff.Compare(r.Rollout, rollCopy.Rollout)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(RolloutKind, err)
+	}
+
+	return diff, nil
 }

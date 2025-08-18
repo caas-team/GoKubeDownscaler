@@ -27,11 +27,7 @@ Create chart name and version as used by the chart label.
 If replicaCount is greater than 1, leader election is enabled by default.
 */}}
 {{- define "go-kube-downscaler.leaderElection" -}}
-{{ if gt (.Values.replicaCount | int) 1 -}}
-true
-{{ else -}}
-false
-{{ end -}}
+{{- if gt (.Values.replicaCount | int) 1 -}}true{{- else -}}false{{- end -}}
 {{- end }}
 
 {{/*
@@ -233,7 +229,7 @@ Create webhook resources
 */}}
 {{- define "go-kube-downscaler.webhookresources" -}}
 {{- range $resource := .Values.includedResources -}}
-{{- if eq $resource "deployments" -}}
+{{ if eq $resource "deployments" -}}
 - apiGroups:
     - apps
   apiVersions:
@@ -243,8 +239,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - deployments
-{{- end -}}
-{{- if eq $resource "statefulsets" -}}
+{{ end -}}
+{{ if eq $resource "statefulsets" -}}
 - apiGroups:
     - apps
   apiVersions:
@@ -254,8 +250,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - statefulsets
-{{- end -}}
-{{- if eq $resource "daemonsets" -}}
+{{ end -}}
+{{ if eq $resource "daemonsets" -}}
 - apiGroups:
     - apps
   apiVersions:
@@ -265,8 +261,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - daemonsets
-{{- end -}}
-{{- if eq $resource "rollouts" -}}
+{{ end -}}
+{{ if eq $resource "rollouts" -}}
 - apiGroups:
     - argoproj.io
   apiVersions:
@@ -276,8 +272,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - rollouts
-{{- end -}}
-{{- if eq $resource "horizontalpodautoscalers" -}}
+{{ end -}}
+{{ if eq $resource "horizontalpodautoscalers" -}}
 - apiGroups:
     - autoscaling
   apiVersions:
@@ -287,8 +283,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - horizontalpodautoscalers
-{{- end -}}
-{{- if eq $resource "jobs" -}}
+{{ end -}}
+{{ if eq $resource "jobs" -}}
 - apiGroups:
     - batch
   apiVersions:
@@ -298,8 +294,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - jobs
-{{- end -}}
-{{- if eq $resource "cronjobs" -}}
+{{ end -}}
+{{ if eq $resource "cronjobs" -}}
 - apiGroups:
     - batch
   apiVersions:
@@ -309,8 +305,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - cronjobs
-{{- end -}}
-{{- if eq $resource "scaledobjects" -}}
+{{ end -}}
+{{ if eq $resource "scaledobjects" -}}
 - apiGroups:
     - keda.sh
   apiVersions:
@@ -320,8 +316,8 @@ Create webhook resources
     - "UPDATE"
   resources:
     - scaledobjects
-{{- end -}}
-{{- if eq $resource "stacks" -}}
+{{ end -}}
+{{ if eq $resource "stacks" -}}
 - apiGroups:
     - zalando.org
   resources:
@@ -331,8 +327,8 @@ Create webhook resources
   operations:
     - "CREATE"
     - "UPDATE"
-{{- end -}}
-{{- if eq $resource "prometheuses" -}}
+{{ end -}}
+{{ if eq $resource "prometheuses" -}}
 - apiGroups:
     - monitoring.coreos.com
   resources:
@@ -342,8 +338,8 @@ Create webhook resources
   operations:
     - "CREATE"
     - "UPDATE"
-{{- end -}}
-{{- if eq $resource "poddisruptionbudgets" -}}
+{{ end -}}
+{{ if eq $resource "poddisruptionbudgets" -}}
 - apiGroups:
     - policy
   apiVersions:
@@ -353,6 +349,6 @@ Create webhook resources
     - "UPDATE"
   resources:
     - poddisruptionbudgets
-{{- end -}}
-{{- end -}}
+{{ end -}}
+{{ end -}}
 {{- end }}

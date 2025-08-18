@@ -2,9 +2,9 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: org.kube-downscaler.webhook
+  name: webhook.kube-downscaler.k8s
 webhooks:
-  - name: org.kube-downscaler.webhook
+  - name: webhook.kube-downscaler.k8s
     rules:
 {{- include "go-kube-downscaler.webhookresources" . | trim | nindent 6 }}
     namespaceSelector:

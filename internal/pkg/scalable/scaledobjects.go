@@ -1,4 +1,3 @@
-//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -17,6 +16,7 @@ import (
 
 const (
 	annotationKedaPausedReplicas = "autoscaling.keda.sh/paused-replicas"
+	ScaledObjectKind             = "ScaledObject"
 )
 
 // getScaledObjects is the getResourceFunc for Keda ScaledObjects.
@@ -44,69 +44,6 @@ func parseScaledObjectFromAdmissionRequest(review *admissionv1.AdmissionReview) 
 	}
 
 	return &replicaScaledWorkload{&scaledObject{&so}}, nil
-}
-
-// deepCopyScaledObject creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a scaledObject.
-//
-//nolint:ireturn,varnamelen //required for interface-based workflow
-func deepCopyScaledObject(w Workload) (Workload, error) {
-	rsw, ok := w.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), w)
-	}
-
-	so, ok := rsw.replicaScaledResource.(*scaledObject)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*scaledObject)(nil), rsw.replicaScaledResource)
-	}
-
-	if so.ScaledObject == nil {
-		return nil, newNilUnderlyingObjectError(so.Kind)
-	}
-
-	copied := so.DeepCopy()
-
-	return &replicaScaledWorkload{
-		replicaScaledResource: &scaledObject{
-			ScaledObject: copied,
-		},
-	}, nil
-}
-
-// compareScaledObjects compares two scaledObject resources and returns the differences as a jsondiff.Patch.
-//
-//nolint:varnamelen //required for interface-based workflow
-func compareScaledObjects(workload, workloadCopy Workload) (jsondiff.Patch, error) {
-	rsw, ok := workload.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workload)
-	}
-
-	so, ok := rsw.replicaScaledResource.(*scaledObject)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*scaledObject)(nil), rsw.replicaScaledResource)
-	}
-
-	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
-	}
-
-	soCopy, ok := rswCopy.replicaScaledResource.(*scaledObject)
-	if !ok {
-		return nil, newExpectTypeGotTypeError((*scaledObject)(nil), rswCopy.replicaScaledResource)
-	}
-
-	if so.ScaledObject == nil || soCopy.ScaledObject == nil {
-		return nil, newNilUnderlyingObjectError(so.Kind)
-	}
-
-	diff, err := jsondiff.Compare(so.ScaledObject, soCopy.ScaledObject)
-	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(so.Kind, err)
-	}
-
-	return diff, nil
 }
 
 // scaledObject is a wrapper for scaledobject.v1alpha1.keda.sh to implement the replicaScaledResource interface.
@@ -167,4 +104,47 @@ func (s *scaledObject) Update(clientsets *Clientsets, ctx context.Context) error
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a scaledObject.
+//
+//nolint:ireturn //required for interface-based workflow
+func (s *scaledObject) Copy() (Workload, error) {
+	if s.ScaledObject == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	copied := s.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &scaledObject{
+			ScaledObject: copied,
+		},
+	}, nil
+}
+
+// Compare compares two scaledObject resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (s *scaledObject) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	soCopy, ok := rswCopy.replicaScaledResource.(*scaledObject)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*scaledObject)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if s.ScaledObject == nil || soCopy.ScaledObject == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	diff, err := jsondiff.Compare(s.ScaledObject, soCopy.ScaledObject)
+	if err != nil {
+		return nil, newFailedToCompareWorkloadsError(ScaledObjectKind, err)
+	}
+
+	return diff, nil
 }
