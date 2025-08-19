@@ -61,7 +61,7 @@ func (d *deployment) Reget(clientsets *Clientsets, ctx context.Context) error {
 // getSavedResourcesRequests calculates the total saved resources requests when downscaling the Deployment.
 //
 //nolint:nonamedreturns // using named return values for clarity and to simplify return statements
-func (d *deployment) getSavedResourcesRequests(downscaleReplicas int32) (totalSavedCPU, totalSavedMemory float64) {
+func (d *deployment) getSavedResourcesRequests(diffReplicas int32) (totalSavedCPU, totalSavedMemory float64) {
 	for i := range d.Spec.Template.Spec.Containers {
 		container := &d.Spec.Template.Spec.Containers[i]
 		if container.Resources.Requests != nil {
@@ -70,8 +70,8 @@ func (d *deployment) getSavedResourcesRequests(downscaleReplicas int32) (totalSa
 		}
 	}
 
-	totalSavedCPU *= float64(*d.Spec.Replicas - downscaleReplicas)
-	totalSavedMemory *= float64(*d.Spec.Replicas - downscaleReplicas)
+	totalSavedCPU *= float64(diffReplicas)
+	totalSavedMemory *= float64(diffReplicas)
 
 	return totalSavedCPU, totalSavedMemory
 }

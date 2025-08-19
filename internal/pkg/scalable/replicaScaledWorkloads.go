@@ -19,7 +19,7 @@ type replicaScaledResource interface {
 	// getReplicas gets the replicas of the workload
 	getReplicas() (values.Replicas, error)
 	// getSavedResourcesRequests returns the saved CPU and memory requests for the workload based on the downscale replicas.
-	getSavedResourcesRequests(downscaleReplicas int32) (float64, float64)
+	getSavedResourcesRequests(diffReplicas int32) (float64, float64)
 }
 
 // replicaScaledWorkload is a wrapper for all resources which are scaled by setting the replica count.
@@ -61,32 +61,57 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (totalSavedCPU, totalSavedMemory float64, err error) {
 	downscaleReplicasInt32, err := downscaleReplicas.AsInt32()
 	if err != nil {
-		return totalSavedCPU, totalSavedMemory, fmt.Errorf("failed to convert replicas to int32: %w", err)
+		return 0.0, 0.0, fmt.Errorf("failed to convert replicas to int32: %w", err)
 	}
 
-	originalReplicas, err := r.getReplicas()
+	currentReplicas, err := r.getReplicas()
 	if err != nil {
-		return totalSavedCPU, totalSavedMemory, fmt.Errorf("failed to get original replicas for workload: %w", err)
+		return 0.0, 0.0, fmt.Errorf("failed to get current replicas for workload: %w", err)
 	}
 
-	originalReplicasInt32, err := originalReplicas.AsInt32()
+	currentReplicasInt32, err := currentReplicas.AsInt32()
 	if err != nil {
-		return totalSavedCPU, totalSavedMemory, fmt.Errorf("failed to convert original replicas to int32: %w", err)
+		return 0.0, 0.0, fmt.Errorf("failed to convert current replicas to int32: %w", err)
 	}
 
-	if originalReplicasInt32 == downscaleReplicasInt32 {
+	if currentReplicasInt32 == downscaleReplicasInt32 {
+		var originalReplicas values.Replicas
+
+		originalReplicas, err = getOriginalReplicas(r)
+		if err != nil {
+			var unsetErr *OriginalReplicasUnsetError
+			if errors.As(err, &unsetErr) {
+				slog.Debug("workload is already at target scale down replicas, skipping",
+					"workload", r.GetName(), "namespace", r.GetNamespace())
+
+				return 0.0, 0.0, nil
+			}
+
+			return 0.0, 0.0, fmt.Errorf("failed to get original replicas for workload: %w", err)
+		}
+
+		var originalReplicasInt32 int32
+
+		originalReplicasInt32, err = originalReplicas.AsInt32()
+		if err != nil {
+			return 0.0, 0.0, fmt.Errorf("failed to convert original replicas to int32: %w", err)
+		}
+
+		totalSavedCPU, totalSavedMemory = r.getSavedResourcesRequests(originalReplicasInt32 - downscaleReplicasInt32)
+
 		slog.Debug("workload is already scaled down, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
+
 		return totalSavedCPU, totalSavedMemory, nil
 	}
 
-	totalSavedCPU, totalSavedMemory = r.getSavedResourcesRequests(downscaleReplicasInt32)
+	totalSavedCPU, totalSavedMemory = r.getSavedResourcesRequests(currentReplicasInt32 - downscaleReplicasInt32)
 
 	err = r.setReplicas(downscaleReplicasInt32)
 	if err != nil {
 		return totalSavedCPU, totalSavedMemory, fmt.Errorf("failed to set replicas for workload: %w", err)
 	}
 
-	setOriginalReplicas(originalReplicas, r)
+	setOriginalReplicas(currentReplicas, r)
 
 	return totalSavedCPU, totalSavedMemory, nil
 }
