@@ -123,8 +123,8 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			downtimeReplicas:     values.AbsoluteReplicas(0),
 			wantOriginalReplicas: values.AbsoluteReplicas(5),
 			wantReplicas:         values.AbsoluteReplicas(0),
-			wantSavedCPU:         0.0,
-			wantSavedMemory:      0.0,
+			wantSavedCPU:         0.5,               // 5 replicas × 0.1 cores each
+			wantSavedMemory:      320 * 1024 * 1024, // 5 replicas × 64Mi = 320MiB
 		},
 		{
 			name:                 "original replicas set, but not scaled down",
