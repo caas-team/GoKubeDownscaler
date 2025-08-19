@@ -79,7 +79,7 @@ func (v *MutationHandler) HandleMutation(ctx context.Context, writer http.Respon
 
 // evaluateMutation validates the workload and returns an AdmissionReview.
 //
-//nolint:govet //needed to reassign the error to a new variable
+
 func (v *MutationHandler) evaluateMutation(
 	ctx context.Context,
 	workload scalable.Workload,
@@ -103,11 +103,6 @@ func (v *MutationHandler) evaluateMutation(
 
 	slog.Debug("scanning over workloads matching filters", "amount", len(workloads))
 
-	namespaceAnnotations, err := v.client.GetNamespaceAnnotations(workload.GetNamespace(), ctx)
-	if err != nil {
-		reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to get namespace annotations")
-	}
-
 	slog.Debug(
 		"parsing workload scope from annotations",
 		"workload annotations", workload.GetAnnotations(),
@@ -117,19 +112,18 @@ func (v *MutationHandler) evaluateMutation(
 
 	scopeWorkload := values.NewScope()
 	if err := scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
-		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to get scope from annotations"), err
+		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to get workload scope from annotations"), err
 	}
 
 	slog.Debug(
-		"parsing namespace scope from annotations",
-		"namespace annotations", namespaceAnnotations,
+		"parsing namespace scope from workload",
 		"name", workload.GetName(),
 		"namespace", workload.GetNamespace(),
 	)
 
-	scopeNamespace := values.NewScope()
-	if err := scopeNamespace.GetScopeFromAnnotations(namespaceAnnotations, resourceLogger, ctx); err != nil {
-		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to get scope from annotations"), err
+	scopeNamespace, err := v.client.GetNamespaceScope(workload, ctx)
+	if err != nil {
+		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to get namespace scope from annotations"), err
 	}
 
 	scopes := values.Scopes{scopeWorkload, scopeNamespace, v.scopeCli, v.scopeEnv, v.scopeDefault}

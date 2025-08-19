@@ -29,8 +29,10 @@ const (
 
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
 type Client interface {
-	// GetNamespaceScopes gets the namespace scope from the namespace annotations
-	GetNamespaceScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error)
+	// GetNamespacesScopes gets the namespaces scopes from the namespaces annotations
+	GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error)
+	// GetNamespaceScope gets the namespace scope from its annotations
+	GetNamespaceScope(workload scalable.Workload, ctx context.Context) (*values.Scope, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
 	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
 	// RegetWorkload gets the workload again to ensure the latest state
@@ -41,8 +43,6 @@ type Client interface {
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
 	// CreateLease creates a new lease for the downscaler
 	CreateLease(leaseName string) (*resourcelock.LeaseLock, error)
-	// GetNamespaceAnnotations gets the annotations of the workload's namespace
-	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
 	// addEvent creates a new event on either a workload or a namespace
 	addEvent(eventType, reason, identifier, message string, object *corev1.ObjectReference, ctx context.Context) error
 	// GetChildrenWorkloads gets the children workloads of the specified workload
@@ -103,7 +103,7 @@ type client struct {
 }
 
 // getNamespaceAnnotations gets the annotations of the workload's namespace.
-func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
+func (c client) getNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
 	ns, err := c.clientsets.Kubernetes.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace: %w", err)
@@ -315,8 +315,8 @@ func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
 	return lease, nil
 }
 
-// GetNamespaceScopes gets the namespace scopes from the namespace annotations.
-func (c client) GetNamespaceScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error) {
+// GetNamespacesScopes gets the namespaces scopes from the namespaces annotations.
+func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error) {
 	var waitGroup sync.WaitGroup
 
 	namespaceSet := make(map[string]struct{})
@@ -346,7 +346,7 @@ func (c client) GetNamespaceScopes(workloads []scalable.Workload, ctx context.Co
 
 			slog.Debug("fetching namespace annotations", "namespace", namespace)
 
-			annotations, err := c.GetNamespaceAnnotations(namespace, ctx)
+			annotations, err := c.getNamespaceAnnotations(namespace, ctx)
 			if err != nil {
 				errChan <- fmt.Errorf("failed to get namespace annotations for namespace %s: %w", namespace, err)
 				return
@@ -375,4 +375,30 @@ func (c client) GetNamespaceScopes(workloads []scalable.Workload, ctx context.Co
 	}
 
 	return namespaceScopes, nil
+}
+
+func (c client) GetNamespaceScope(workload scalable.Workload, ctx context.Context) (*values.Scope, error) {
+	nsLogger := NewResourceLoggerForNamespace(c, workload.GetNamespace())
+
+	slog.Debug("fetching namespace annotations", "namespace", workload.GetNamespace())
+
+	annotations, err := c.getNamespaceAnnotations(workload.GetNamespace(), ctx)
+	if err != nil {
+		err = fmt.Errorf("failed to get namespace annotations for namespace %s: %w", workload.GetNamespace(), err)
+		return nil, err
+	}
+
+	namespaceScope := values.NewScope()
+
+	slog.Debug("parsing namespace scope from annotations", "annotations", annotations, "namespace", workload.GetNamespace())
+
+	err = namespaceScope.GetScopeFromAnnotations(annotations, nsLogger, ctx)
+	if err != nil {
+		err = fmt.Errorf("failed to parse scope from annotations for namespace %s: %w", workload.GetNamespace(), err)
+		return nil, err
+	}
+
+	slog.Debug("correctly parsed namespace annotations", "namespace", workload.GetNamespace(), "annotations", annotations)
+
+	return namespaceScope, nil
 }

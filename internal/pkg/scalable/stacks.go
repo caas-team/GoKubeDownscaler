@@ -85,7 +85,7 @@ func (s *stack) Update(clientsets *Clientsets, ctx context.Context) error {
 	return nil
 }
 
-// deepCopyStack creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a stack.
+// Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a stack.
 //
 //nolint:ireturn //required for interface-based workflow
 func (s *stack) Copy() (Workload, error) {
@@ -102,7 +102,7 @@ func (s *stack) Copy() (Workload, error) {
 	}, nil
 }
 
-// compareStacks compares two stack resources and returns the differences as a jsondiff.Patch.
+// Compare compares two stack resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
 func (s *stack) Compare(workloadCopy Workload) (jsondiff.Patch, error) {

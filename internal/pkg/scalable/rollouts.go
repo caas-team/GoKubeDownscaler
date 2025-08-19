@@ -85,7 +85,7 @@ func (r *rollout) Update(clientsets *Clientsets, ctx context.Context) error {
 	return nil
 }
 
-// deepCopyRollout creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a rollout.
+// Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a rollout.
 //
 //nolint:ireturn //required for interface-based workflow
 func (r *rollout) Copy() (Workload, error) {
@@ -102,7 +102,7 @@ func (r *rollout) Copy() (Workload, error) {
 	}, nil
 }
 
-// compareRollouts compares two rollout resources and returns the differences as a jsondiff.Patch.
+// Compare compares two rollout resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
 func (r *rollout) Compare(workloadCopy Workload) (jsondiff.Patch, error) {

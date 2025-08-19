@@ -102,8 +102,6 @@ func (d *daemonSet) Copy() (Workload, error) {
 }
 
 // Compare compares two daemonSet resources and returns the differences as a jsondiff.Patch.
-//
-
 func (d *daemonSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	dsCopy, ok := workloadCopy.(*daemonSet)
 	if !ok {
