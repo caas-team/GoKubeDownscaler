@@ -21,12 +21,13 @@ Also make sure your context is set to the right cluster and namespace where you 
 
 ## Constrained Installation vs Cluster-Wide Installation
 
-As described in the [introduction page](ref:docs-introduction#installation-and-architecture), the GoKubeDownscaler can be installed in two different ways:
+As described in the [introduction page](ref:docs-introduction#installation-and-architecture), the GoKubeDownscaler can be installed in two
+different ways:
 
 - **Constrained Installation**: The GoKubeDownscaler is only allowed to operate on a set of namespaces.
-  This is useful if you don't have the
-  necessary rights to make a cluster-wide installation.
-- **Cluster-Wide Installation**: The GoKubeDownscaler is allowed to operate
+  This is useful if you don't have the necessary rights to make a cluster-wide installation.
+- **Cluster-Wide Installation**: The GoKubeDownscaler is allowed to operate on all namespaces in the cluster.
+  This is useful if you want to scale down workloads across the entire cluster.
 
 In order to install the GoKubeDownscaler in a constrained way you must set the `constrainedNamespaces` value.
 This can be done in two ways:
