@@ -183,7 +183,7 @@ func startScanning(
 		)
 		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 
-		namespaceScopes, err := client.GetNamespaceScopes(workloads, ctx)
+		namespaceScopes, err := client.GetNamespacesScopes(workloads, ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get namespace annotations: %w", err)
 		}
