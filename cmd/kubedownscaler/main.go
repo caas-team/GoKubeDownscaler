@@ -240,7 +240,11 @@ func startScanning(
 
 				defer waitGroup.Done()
 
-				workloadNamespaceMetrics := currentNamespaceToMetrics[workload.GetNamespace()]
+				workloadNamespaceMetrics, ok := currentNamespaceToMetrics[workload.GetNamespace()]
+				if !ok {
+					slog.Error("metrics holder not found for workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+					return
+				}
 
 				err := scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceScopes, workloadNamespaceMetrics, config)
 				if err != nil {

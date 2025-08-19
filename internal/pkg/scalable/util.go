@@ -31,6 +31,12 @@ func FilterExcluded(
 	results := make([]Workload, 0, len(workloads))
 
 	for _, workload := range workloads {
+		_, ok := currentNamespaceToMetrics[workload.GetNamespace()]
+		if !ok {
+			namespaceMetrics := metrics.NewNamespaceMetricsHolder()
+			currentNamespaceToMetrics[workload.GetNamespace()] = namespaceMetrics
+		}
+
 		if !isMatchingLabels(workload, includeLabels) {
 			slog.Debug(
 				"workload is not matching any of the specified labels, excluding it from being scanned",

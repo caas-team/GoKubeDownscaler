@@ -12,6 +12,19 @@ type NamespaceMetricsHolder struct {
 	savedCPUcores             float64
 }
 
+func NewNamespaceMetricsHolder() *NamespaceMetricsHolder {
+	return &NamespaceMetricsHolder{
+		downscaledWorkloads:       0,
+		upscaledWorkloads:         0,
+		excludedWorkloads:         0,
+		invalidScalingValueErrors: 0,
+		conflictErrors:            0,
+		genericErrors:             0,
+		savedMemoryBytes:          0,
+		savedCPUcores:             0,
+	}
+}
+
 func (m *NamespaceMetricsHolder) DownscaledWorkloads() float64 {
 	return m.downscaledWorkloads
 }
