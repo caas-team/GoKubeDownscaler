@@ -75,26 +75,17 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (to
 	}
 
 	if currentReplicasInt32 == downscaleReplicasInt32 {
-		var originalReplicas values.Replicas
+		var originalReplicasInt32 int32
+		var isOriginalReplicasSet bool
 
-		originalReplicas, err = getOriginalReplicas(r)
+		originalReplicasInt32, isOriginalReplicasSet, err = getOriginalReplicasInt32(r)
 		if err != nil {
-			var unsetErr *OriginalReplicasUnsetError
-			if errors.As(err, &unsetErr) {
-				slog.Debug("workload is already at target scale down replicas, skipping",
-					"workload", r.GetName(), "namespace", r.GetNamespace())
-
-				return 0.0, 0.0, nil
-			}
-
-			return 0.0, 0.0, fmt.Errorf("failed to get original replicas for workload: %w", err)
+			return 0.0, 0.0, err
 		}
 
-		var originalReplicasInt32 int32
-
-		originalReplicasInt32, err = originalReplicas.AsInt32()
-		if err != nil {
-			return 0.0, 0.0, fmt.Errorf("failed to convert original replicas to int32: %w", err)
+		if !isOriginalReplicasSet {
+			slog.Debug("workload is already at target scale down replicas, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
+			return 0.0, 0.0, nil
 		}
 
 		totalSavedCPU, totalSavedMemory = r.getSavedResourcesRequests(originalReplicasInt32 - downscaleReplicasInt32)
@@ -114,4 +105,26 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (to
 	setOriginalReplicas(currentReplicas, r)
 
 	return totalSavedCPU, totalSavedMemory, nil
+}
+
+// getOriginalReplicas retrieves the original replicas from the workload.
+//
+//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
+func getOriginalReplicasInt32(r Workload) (originalReplicas int32, originalReplicasSet bool, err error) {
+	original, err := getOriginalReplicas(r)
+	if err != nil {
+		var unsetErr *OriginalReplicasUnsetError
+		if errors.As(err, &unsetErr) {
+			return 0, false, nil
+		}
+
+		return 0, false, fmt.Errorf("failed to get original replicas: %w", err)
+	}
+
+	originalInt32, err := original.AsInt32()
+	if err != nil {
+		return 0, false, fmt.Errorf("failed to convert original replicas to int32: %w", err)
+	}
+
+	return originalInt32, true, nil
 }
