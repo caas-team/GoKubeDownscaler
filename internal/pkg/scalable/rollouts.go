@@ -11,7 +11,6 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
-	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,9 +34,9 @@ func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) 
 // parseRolloutFromAdmissionRequest parses the admission review and returns the rollout.
 //
 //nolint:ireturn // this function should return an interface type
-func parseRolloutFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+func parseRolloutFromAdmissionRequest(rawObject []byte) (Workload, error) {
 	var roll argov1alpha1.Rollout
-	if err := json.Unmarshal(review.Request.Object.Raw, &roll); err != nil {
+	if err := json.Unmarshal(rawObject, &roll); err != nil {
 		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
 	}
 

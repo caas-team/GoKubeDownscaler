@@ -39,9 +39,9 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 // parseHorizontalPodAutoscalerFromAdmissionRequest parses the admission review and returns the horizontalPodAutoscaler.
 //
 //nolint:ireturn // this function should return an interface type
-func parseHorizontalPodAutoscalerFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+func parseHorizontalPodAutoscalerFromAdmissionRequest(rawObject []byte) (Workload, error) {
 	var hpa appsv1.HorizontalPodAutoscaler
-	if err := json.Unmarshal(review.Request.Object.Raw, &hpa); err != nil {
+	if err := json.Unmarshal(rawObject, &hpa); err != nil {
 		return nil, fmt.Errorf("failed to decode horizontalpodautoscaler: %w", err)
 	}
 
