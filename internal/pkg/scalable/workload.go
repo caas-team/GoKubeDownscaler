@@ -54,7 +54,7 @@ type parseWorkloadFunc func(review *admissionv1.AdmissionReview) (Workload, erro
 
 // ParseWorkloadFromAdmissionReview parse the admission review and returns the workloads.
 //
-//nolint:ireturn //required for interface-based factory
+//nolint:ireturn // this function should return an interface type
 func ParseWorkloadFromAdmissionReview(resource string, review *admissionv1.AdmissionReview) (Workload, error) {
 	parseWorkloadFuncMap := map[string]parseWorkloadFunc{
 		"deployment":              parseDeploymentFromAdmissionRequest,

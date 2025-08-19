@@ -35,7 +35,7 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 
 // parseHorizontalPodAutoscalerFromAdmissionRequest parses the admission review and returns the horizontalPodAutoscaler.
 //
-//nolint:ireturn //required for interface-based factory
+//nolint:ireturn // this function should return an interface type
 func parseHorizontalPodAutoscalerFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var hpa appsv1.HorizontalPodAutoscaler
 	if err := json.Unmarshal(review.Request.Object.Raw, &hpa); err != nil {
@@ -100,7 +100,7 @@ func (h *horizontalPodAutoscaler) Update(clientsets *Clientsets, ctx context.Con
 // Copy creates a deep copy of the given Workload,
 // which is expected to be a replicaScaledWorkload wrapping a horizontalPodAutoscaler.
 //
-//nolint:ireturn //required for interface-based workflow
+//nolint:ireturn // this function should return an interface type
 func (h *horizontalPodAutoscaler) Copy() (Workload, error) {
 	if h.HorizontalPodAutoscaler == nil {
 		return nil, newNilUnderlyingObjectError(HorizontalPodAutoscalerKind)

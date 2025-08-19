@@ -121,7 +121,7 @@ func (v *MutationHandler) evaluateMutation(
 		"namespace", workload.GetNamespace(),
 	)
 
-	scopeNamespace, err := v.client.GetNamespaceScope(workload, ctx)
+	scopeNamespace, err := v.client.GetNamespaceScope(workload.GetNamespace(), ctx)
 	if err != nil {
 		return reviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to get namespace scope from annotations"), err
 	}

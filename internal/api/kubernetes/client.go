@@ -32,7 +32,7 @@ type Client interface {
 	// GetNamespacesScopes gets the namespaces scopes from the namespaces annotations
 	GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error)
 	// GetNamespaceScope gets the namespace scope from its annotations
-	GetNamespaceScope(workload scalable.Workload, ctx context.Context) (*values.Scope, error)
+	GetNamespaceScope(namespace string, ctx context.Context) (*values.Scope, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
 	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
 	// RegetWorkload gets the workload again to ensure the latest state
@@ -331,10 +331,7 @@ func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.C
 
 	namespaceScopes := make(map[string]*values.Scope, len(namespaceSet))
 	errChan := make(chan error, len(namespaceSet))
-
-	for namespace := range namespaceSet {
-		namespaceScopes[namespace] = values.NewScope()
-	}
+	resultChan := make(chan map[string]*values.Scope, len(namespaceSet))
 
 	for namespace := range namespaceSet {
 		waitGroup.Add(1)
@@ -342,30 +339,22 @@ func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.C
 		go func(namespace string, ctx context.Context) {
 			defer waitGroup.Done()
 
-			nsLogger := NewResourceLoggerForNamespace(c, namespace)
-
 			slog.Debug("fetching namespace annotations", "namespace", namespace)
 
-			annotations, err := c.getNamespaceAnnotations(namespace, ctx)
+			namespaceScope, err := c.GetNamespaceScope(namespace, ctx)
 			if err != nil {
-				errChan <- fmt.Errorf("failed to get namespace annotations for namespace %s: %w", namespace, err)
+				errChan <- fmt.Errorf("failed to get namespace scope for namespace %s: %w", namespace, err)
 				return
 			}
 
-			slog.Debug("parsing workload scope from annotations", "annotations", annotations, "namespace", namespace)
+			resultChan <- map[string]*values.Scope{namespace: namespaceScope}
 
-			err = namespaceScopes[namespace].GetScopeFromAnnotations(annotations, nsLogger, ctx)
-			if err != nil {
-				errChan <- fmt.Errorf("failed to parse scope from annotations for namespace %s: %w", namespace, err)
-				return
-			}
-
-			slog.Debug("correctly parsed namespace annotations", "namespace", namespace, "annotations", annotations)
+			slog.Debug("correctly parsed annotations and created namespace scope", "namespace", namespace)
 		}(namespace, ctx)
 	}
 
 	waitGroup.Wait()
-
+	close(resultChan)
 	close(errChan)
 
 	for err := range errChan {
@@ -374,31 +363,37 @@ func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.C
 		}
 	}
 
+	for results := range resultChan {
+		for namespace, namespaceScope := range results {
+			namespaceScopes[namespace] = namespaceScope
+		}
+	}
+
 	return namespaceScopes, nil
 }
 
-func (c client) GetNamespaceScope(workload scalable.Workload, ctx context.Context) (*values.Scope, error) {
-	nsLogger := NewResourceLoggerForNamespace(c, workload.GetNamespace())
+func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*values.Scope, error) {
+	nsLogger := NewResourceLoggerForNamespace(c, namespace)
 
-	slog.Debug("fetching namespace annotations", "namespace", workload.GetNamespace())
+	slog.Debug("fetching namespace annotations", "namespace", namespace)
 
-	annotations, err := c.getNamespaceAnnotations(workload.GetNamespace(), ctx)
+	annotations, err := c.getNamespaceAnnotations(namespace, ctx)
 	if err != nil {
-		err = fmt.Errorf("failed to get namespace annotations for namespace %s: %w", workload.GetNamespace(), err)
+		err = fmt.Errorf("failed to get namespace annotations for namespace %s: %w", namespace, err)
 		return nil, err
 	}
 
 	namespaceScope := values.NewScope()
 
-	slog.Debug("parsing namespace scope from annotations", "annotations", annotations, "namespace", workload.GetNamespace())
+	slog.Debug("parsing namespace scope from annotations", "annotations", annotations, "namespace", namespace)
 
 	err = namespaceScope.GetScopeFromAnnotations(annotations, nsLogger, ctx)
 	if err != nil {
-		err = fmt.Errorf("failed to parse scope from annotations for namespace %s: %w", workload.GetNamespace(), err)
+		err = fmt.Errorf("failed to parse scope from annotations for namespace %s: %w", namespace, err)
 		return nil, err
 	}
 
-	slog.Debug("correctly parsed namespace annotations", "namespace", workload.GetNamespace(), "annotations", annotations)
+	slog.Debug("correctly parsed namespace annotations", "namespace", namespace, "annotations", annotations)
 
 	return namespaceScope, nil
 }

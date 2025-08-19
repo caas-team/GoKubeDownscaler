@@ -32,7 +32,7 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 
 // parsePrometheusFromAdmissionRequest parses the admission review and returns the prometheus.
 //
-//nolint:ireturn //required for interface-based factory
+//nolint:ireturn // this function should return an interface type
 func parsePrometheusFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var prom monitoringv1.Prometheus
 	if err := json.Unmarshal(review.Request.Object.Raw, &prom); err != nil {
@@ -87,7 +87,7 @@ func (p *prometheus) Update(clientsets *Clientsets, ctx context.Context) error {
 
 // Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a prometheus.
 //
-//nolint:ireturn //required for interface-based workflow
+//nolint:ireturn // this function should return an interface type
 func (p *prometheus) Copy() (Workload, error) {
 	if p.Prometheus == nil {
 		return nil, newNilUnderlyingObjectError(PrometheusKind)
