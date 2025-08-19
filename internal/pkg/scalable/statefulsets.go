@@ -8,7 +8,6 @@ import (
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
-	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,9 +32,9 @@ func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Conte
 // parseStatefulSetFromAdmissionRequest parses the admission review and returns the statefulset.
 //
 //nolint:ireturn // this function should return an interface type
-func parseStatefulSetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+func parseStatefulSetFromAdmissionRequest(rawObject []byte) (Workload, error) {
 	var sts appsv1.StatefulSet
-	if err := json.Unmarshal(review.Request.Object.Raw, &sts); err != nil {
+	if err := json.Unmarshal(rawObject, &sts); err != nil {
 		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
 	}
 

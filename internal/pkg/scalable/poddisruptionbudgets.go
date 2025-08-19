@@ -10,7 +10,6 @@ import (
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
-	admissionv1 "k8s.io/api/admission/v1"
 	policy "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -35,9 +34,9 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 // parsePodDisruptionBudgetFromAdmissionRequest parses the admission review and returns the podDisruptionBudget wrapped in a Workload.
 //
 //nolint:ireturn //required for interface-based workflow
-func parsePodDisruptionBudgetFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+func parsePodDisruptionBudgetFromAdmissionRequest(rawObject []byte) (Workload, error) {
 	var pdb policy.PodDisruptionBudget
-	if err := json.Unmarshal(review.Request.Object.Raw, &pdb); err != nil {
+	if err := json.Unmarshal(rawObject, &pdb); err != nil {
 		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
 	}
 

@@ -10,7 +10,6 @@ import (
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	"github.com/wI2L/jsondiff"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
-	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -50,12 +49,12 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 }
 
 // parseWorkloadFunc is a function that parses a specific admission review as a Workload.
-type parseWorkloadFunc func(review *admissionv1.AdmissionReview) (Workload, error)
+type parseWorkloadFunc func(rawObject []byte) (Workload, error)
 
 // ParseWorkloadFromAdmissionReview parse the admission review and returns the workloads.
 //
 //nolint:ireturn // this function should return an interface type
-func ParseWorkloadFromAdmissionReview(resource string, review *admissionv1.AdmissionReview) (Workload, error) {
+func ParseWorkloadFromAdmissionReview(resource string, rawObject []byte) (Workload, error) {
 	parseWorkloadFuncMap := map[string]parseWorkloadFunc{
 		"deployment":              parseDeploymentFromAdmissionRequest,
 		"statefulset":             parseStatefulSetFromAdmissionRequest,
@@ -75,7 +74,7 @@ func ParseWorkloadFromAdmissionReview(resource string, review *admissionv1.Admis
 		return nil, newInvalidResourceError(resource)
 	}
 
-	workload, err := parseFunc(review)
+	workload, err := parseFunc(rawObject)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse workloads of type %q: %w from admission request", resource, err)
 	}

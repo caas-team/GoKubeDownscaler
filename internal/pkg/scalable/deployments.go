@@ -8,7 +8,6 @@ import (
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
-	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,9 +32,9 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 // parseDeploymentFromAdmissionRequest parses the admission review and returns the deployment.
 //
 //nolint:ireturn // this function should return an interface type
-func parseDeploymentFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+func parseDeploymentFromAdmissionRequest(rawObject []byte) (Workload, error) {
 	var dep appsv1.Deployment
-	if err := json.Unmarshal(review.Request.Object.Raw, &dep); err != nil {
+	if err := json.Unmarshal(rawObject, &dep); err != nil {
 		return nil, fmt.Errorf("failed to decode deployment: %w", err)
 	}
 

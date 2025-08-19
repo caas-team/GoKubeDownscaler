@@ -9,7 +9,6 @@ import (
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
-	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -36,9 +35,9 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 // parseHorizontalPodAutoscalerFromAdmissionRequest parses the admission review and returns the horizontalPodAutoscaler.
 //
 //nolint:ireturn // this function should return an interface type
-func parseHorizontalPodAutoscalerFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+func parseHorizontalPodAutoscalerFromAdmissionRequest(rawObject []byte) (Workload, error) {
 	var hpa appsv1.HorizontalPodAutoscaler
-	if err := json.Unmarshal(review.Request.Object.Raw, &hpa); err != nil {
+	if err := json.Unmarshal(rawObject, &hpa); err != nil {
 		return nil, fmt.Errorf("failed to decode horizontalpodautoscaler: %w", err)
 	}
 

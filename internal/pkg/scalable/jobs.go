@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/wI2L/jsondiff"
-	admissionv1 "k8s.io/api/admission/v1"
 	batch "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -32,9 +31,9 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 // parseCronJobFromAdmissionRequest parses the admission review and returns the cronjob.
 //
 //nolint:ireturn // this function should return an interface type
-func parseJobFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+func parseJobFromAdmissionRequest(rawObject []byte) (Workload, error) {
 	var j batch.Job
-	if err := json.Unmarshal(review.Request.Object.Raw, &j); err != nil {
+	if err := json.Unmarshal(rawObject, &j); err != nil {
 		return nil, fmt.Errorf("failed to decode job: %w", err)
 	}
 

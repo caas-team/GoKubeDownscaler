@@ -52,7 +52,7 @@ func (v *MutationHandler) HandleMutation(ctx context.Context, writer http.Respon
 		return
 	}
 
-	workload, err := scalable.ParseWorkloadFromAdmissionReview(strings.ToLower(input.Request.Kind.Kind), input)
+	workload, err := scalable.ParseWorkloadFromAdmissionReview(strings.ToLower(input.Request.Kind.Kind), input.Request.Object.Raw)
 	if err != nil {
 		slog.Error("error encountered while parsing the workload", "error", err)
 		http.Error(writer, err.Error(), http.StatusInternalServerError)

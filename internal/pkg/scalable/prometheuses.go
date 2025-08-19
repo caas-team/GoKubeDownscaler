@@ -9,7 +9,6 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/wI2L/jsondiff"
-	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -33,9 +32,9 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 // parsePrometheusFromAdmissionRequest parses the admission review and returns the prometheus.
 //
 //nolint:ireturn // this function should return an interface type
-func parsePrometheusFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+func parsePrometheusFromAdmissionRequest(rawObject []byte) (Workload, error) {
 	var prom monitoringv1.Prometheus
-	if err := json.Unmarshal(review.Request.Object.Raw, &prom); err != nil {
+	if err := json.Unmarshal(rawObject, &prom); err != nil {
 		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
 	}
 

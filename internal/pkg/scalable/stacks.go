@@ -9,7 +9,6 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
 	zalandov1 "github.com/zalando-incubator/stackset-controller/pkg/apis/zalando.org/v1"
-	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -33,9 +32,9 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 // parseStackFromAdmissionRequest parses the admission review and returns the stack.
 //
 //nolint:ireturn // this function should return an interface type
-func parseStackFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
+func parseStackFromAdmissionRequest(rawObject []byte) (Workload, error) {
 	var st zalandov1.Stack
-	if err := json.Unmarshal(review.Request.Object.Raw, &st); err != nil {
+	if err := json.Unmarshal(rawObject, &st); err != nil {
 		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
 	}
 
