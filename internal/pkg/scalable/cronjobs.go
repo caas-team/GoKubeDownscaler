@@ -36,7 +36,7 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 
 // parseCronJobFromAdmissionRequest parses the admission review and returns the cronjob wrapped in a Workload.
 //
-//nolint:ireturn //required for interface-based factory
+//nolint:ireturn // this function should return an interface type
 func parseCronJobFromAdmissionRequest(review *admissionv1.AdmissionReview) (Workload, error) {
 	var cj batch.CronJob
 	if err := json.Unmarshal(review.Request.Object.Raw, &cj); err != nil {
@@ -145,7 +145,7 @@ func (c *cronJob) Update(clientsets *Clientsets, ctx context.Context) error {
 
 // Copy creates a deep copy of the given Workload, which is expected to be a suspendScaledWorkload wrapping a cronJob.
 //
-//nolint:ireturn //required for interface-based workflow
+//nolint:ireturn // this function should return an interface type
 func (c *cronJob) Copy() (Workload, error) {
 	if c.CronJob == nil {
 		return nil, newNilUnderlyingObjectError(CronJobKind)
