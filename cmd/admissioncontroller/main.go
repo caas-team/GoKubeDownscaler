@@ -21,6 +21,11 @@ type serverConfig struct {
 	config       *runtimeConfiguration
 }
 
+const (
+	cert = "/etc/admission-webhook/tls/tls.crt"
+	key  = "/etc/admission-webhook/tls/tls.key"
+)
+
 func main() {
 	config, scopeDefault, scopeCli, scopeEnv := initComponent()
 
@@ -45,7 +50,7 @@ func main() {
 	go func() {
 		httpServer := &http.Server{
 			Addr:         ":8080",
-			Handler:      nil,              // You can set your handler here if needed
+			Handler:      nil,
 			ReadTimeout:  10 * time.Second, // Set read timeout
 			WriteTimeout: 10 * time.Second, // Set write timeout
 			IdleTimeout:  60 * time.Second, // Set idle timeout
@@ -58,13 +63,19 @@ func main() {
 		}
 	}()
 
-	// Start the https server
-	cert := "/etc/admission-webhook/tls/tls.crt"
-	key := "/etc/admission-webhook/tls/tls.key"
+	if _, err = os.Stat(cert); os.IsNotExist(err) {
+		slog.Error("tls.crt file not found", "path", cert)
+		os.Exit(1)
+	}
+
+	if _, err = os.Stat(key); os.IsNotExist(err) {
+		slog.Error("tls.key file not found", "path", key)
+		os.Exit(1)
+	}
 
 	httpsServer := &http.Server{
 		Addr:         ":443",
-		Handler:      nil,              // You can set your handler here if needed
+		Handler:      nil,
 		ReadTimeout:  10 * time.Second, // Set read timeout
 		WriteTimeout: 10 * time.Second, // Set write timeout
 		IdleTimeout:  60 * time.Second, // Set idle timeout
