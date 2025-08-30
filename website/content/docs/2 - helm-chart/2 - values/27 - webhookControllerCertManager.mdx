@@ -1,0 +1,56 @@
+---
+title: webhookControllerCertManager
+id: webhookControllerCertManager
+globalReference: docs-helm-webhook-controller-cert-manager
+description: How to set cert manager for Webhook
+keywords: [webhookControllerCertManager, certManager]
+---
+
+# webhookController.certManager
+
+The `webhookController.certManager` defines all the value needed to configure cert-manager for the Webhook.
+
+:::info
+
+The default values for `webhookController.certManager` are:
+
+```yaml
+certManager:
+  clusterDomain: cluster.local
+  enabled: false
+  duration: 8760h0m0s # 1 year
+  renewBefore: 5840h0m0s # 8 months
+  secretTemplate: {}
+  ca:
+    generate: true
+    ecretName: "kubedownscaler-ca"
+  issuer:
+    generate: true
+    name: foo-org-ca # Required when "issuer.generate: false"
+    kind: ClusterIssuer # Required when "issuer.generate: false"
+    group: cert-manager.io # Required when "issuer.generate: false"
+```
+
+:::
+
+When `webhookController.certManager.enabled` is set to `true` the management of certificates is delegated to cert-manager.
+
+The basic fields to configure cert-manager are:
+
+- `webhookController.certManager.clusterDomain`: The cluster domain of your Kubernetes cluster.
+  Default is `cluster.local`.
+- `webhookController.certManager.duration`: The duration that the certificate is valid for.
+  Default is `8760h0m0s` (1 year).
+- `webhookController.certManager.renewBefore`: The duration before the certificate expires that cert-manager will attempt to renew the
+  certificate.
+  Default is `5840h0m0s` (8 months).
+- `webhookController.certManager.secretTemplate`: additional labels and annotations to the Secret created to store the certificate and
+  key used by the Webhook.
+
+The user can set `webhookController.certManager.ca.generate` to `true` or `false` to choose to have cert-manager create a self-signed CA
+certificate to sign the certificate used by the Webhook or provide its own CA certificate.
+If `false` the user must provide an existing Secret
+containing the CA certificate by setting the `webhookController.certManager.ca.secretName` field
+
+The user can set `webhookController.certManager.issuer.generate` to `true` or `false` to choose to have cert-manager create a self-signed
+CA Issuer or ClusterIssuer to sign the certificate used by the Webhook or provide its own Issuer or ClusterIssuer.

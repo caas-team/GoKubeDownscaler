@@ -82,7 +82,7 @@ configMap:
 # Force pod restart when the configuration changes
 forceRestartOnConfigChange: true
 
-admissionController:
+webhookController:
 
   enabled: false
 
@@ -111,3 +111,27 @@ admissionController:
   tolerations: []
 
   affinity: {}
+
+  certManager:
+
+    clusterDomain: cluster.local
+
+    enabled: false
+
+    duration: 8760h0m0s # 1 year
+
+    renewBefore: 5840h0m0s # 8 months
+
+    secretTemplate: { }
+
+    ca:
+      generate: true
+      secretName: "kubedownscaler-ca"
+
+    # If issuer.generate is true, an Issuer will be created to issue the CA certificate otherwise the user
+    # has to provide an existing Issuer/ClusterIssuer
+    issuer:
+      generate: true
+      name: foo-org-ca       # Required when "issuer.generate: false"
+      kind: ClusterIssuer    # Required when "issuer.generate: false"
+      group: cert-manager.io # Required when "issuer.generate: false"

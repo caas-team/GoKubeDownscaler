@@ -1,21 +1,21 @@
-{{- if .Values.admissionController.enabled }}
+{{- if .Values.webhookController.enabled }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "go-kube-downscaler.admissionController.fullname" . }}
+  name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
   namespace: {{ .Release.Namespace }}
 rules:
-{{ include "go-kube-downscaler.admissionController.permissions" . }}
+{{ include "go-kube-downscaler.webhookController.permissions" . }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ include "go-kube-downscaler.admissionController.fullname" . }}
+  name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
   namespace: {{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ include "go-kube-downscaler.admissionController.fullname" . }}
+  name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
 subjects:
   - kind: ServiceAccount
     name: {{ include "go-kube-downscaler.serviceAccountName" . }}

@@ -62,16 +62,16 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Create admission controller full name
+Create webhook controller full name
 */}}
-{{- define "go-kube-downscaler.admissionController.fullname" -}}
+{{- define "go-kube-downscaler.webhookController.fullname" -}}
 {{ include "go-kube-downscaler.fullname" . }}-webhook
 {{- end }}
 
 {{/*
 Create selector label for the webhook
 */}}
-{{- define "go-kube-downscaler.admissionController.selectorLabels" -}}
+{{- define "go-kube-downscaler.webhookController.selectorLabels" -}}
 {{ include "go-kube-downscaler.selectorLabels" . }}-webhook
 {{- end }}
 
@@ -79,7 +79,7 @@ Create selector label for the webhook
 {{/*
 Create defined permissions for the webhook role
 */}}
-{{- define "go-kube-downscaler.admissionController.permissions" -}}
+{{- define "go-kube-downscaler.webhookController.permissions" -}}
 - apiGroups:
     - ""
   resources:

@@ -1,21 +1,21 @@
 ---
-title: admissionControllerNodeSelector
-id: admissionControllerNodeSelector
-globalReference: docs-helm-admission-controller-node-selector
+title: webhookControllerNodeSelector
+id: webhookControllerNodeSelector
+globalReference: docs-helm-webhook-controller-node-selector
 description: How to set nodeSelector for the GoKubeDownscaler Webhook Deployment
-keywords: [admissionControllerNodeSelector]
+keywords: [webhookControllerNodeSelector]
 ---
 
-# admissionController.nodeSelector
+# webhookController.nodeSelector
 
-The `admissionController.nodeSelector` value defines labels of nodes that you want the deployment to be scheduled on.
+The `webhookController.nodeSelector` value defines labels of nodes that you want the deployment to be scheduled on.
 
 :::info
 
-The default value for `admissionController.nodeSelector` is:
+The default value for `webhookController.nodeSelector` is:
 
 ```yaml
-admissionController:
+webhookController:
   nodeSelector: {}
 ```
 
@@ -29,7 +29,7 @@ determining labels of the node here.
 If you set:
 
 ```yaml
-admissionController:
+webhookController:
   nodeSelector:
     disktype: ssd
     env: production

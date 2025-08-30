@@ -1,27 +1,27 @@
 ---
-title: admissionControllerAffinity
-id: admissionControllerAffinity
-globalReference: docs-helm-admission-controller-affinity
+title: webhookControllerAffinity
+id: webhookControllerAffinity
+globalReference: docs-helm-webhook-controller-affinity
 description: How to set affinity rules for the GoKubeDownscaler Webhook Deployment
-keywords: [admissionControllerAffinity]
+keywords: [webhookControllerAffinity]
 ---
 
-# admissionController.affinity
+# webhookController.affinity
 
-The `admissionController.affinity` value defines rules for node affinity and pod affinity/anti-affinity.
+The `webhookController.affinity` value defines rules for node affinity and pod affinity/anti-affinity.
 
 :::info
 
-The default value for `admissionController.affinity` is:
+The default value for `webhookController.affinity` is:
 
 ```yaml
-admissionController:
+webhookController:
   affinity: {}
 ```
 
 :::
 
-By default the `admissionController.affinity` field is empty.
+By default the `webhookController.affinity` field is empty.
 
 You can add affinity rules to this field that give you a few more options for pod scheduling than [`nodeSelector`](ref:docs-helm-node-selector).
 
@@ -30,7 +30,7 @@ You can add affinity rules to this field that give you a few more options for po
 You can use Node affinity to achieve something very similar to the [`nodeSelector`](ref:docs-helm-node-selector).
 
 ```yaml
-admissionController:
+webhookController:
   affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -51,7 +51,7 @@ has either the value `antarctica-east1` or `antarctica-west1`.
 Pod affinity on the other hand will compare the labels of all **pods** on a Node.
 
 ```yaml
-admissionController:
+webhookController:
   affinity:
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:

@@ -1,21 +1,21 @@
 ---
-title: admissionControllerResources
-id: admissionControllerResources
-globalReference: docs-helm-admission-controller-resources
+title: webhookControllerResources
+id: webhookControllerResources
+globalReference: docs-helm-webhook-controller-resources
 description: How to set resources for the GoKubeDownscaler Webhook Deployment
-keywords: [admissionControllerResources]
+keywords: [webhookControllerResources]
 ---
 
-# admissionController.resources
+# webhookController.resources
 
-The `admissionController.resources` value defines the CPU and memory limits and requests.
+The `webhookController.resources` value defines the CPU and memory limits and requests.
 
 :::info
 
-The default values for `admissionController.resources` are:
+The default values for `webhookController.resources` are:
 
 ```yaml
-admissionController:
+webhookController:
   resources:
     limits:
       cpu: 2000m
