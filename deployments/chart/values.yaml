@@ -126,12 +126,12 @@ webhookController:
 
     ca:
       generate: true
+      # if generate is false, the user must set the `cert-manager.io/allow-direct-injection: "true"` annotation
+      # on the secret containing the CA certificate
       secretName: "kubedownscaler-ca"
 
-    # If issuer.generate is true, an Issuer will be created to issue the CA certificate otherwise the user
-    # has to provide an existing Issuer/ClusterIssuer
     issuer:
       generate: true
-      name: foo-org-ca       # Required when "issuer.generate: false"
-      kind: ClusterIssuer    # Required when "issuer.generate: false"
-      group: cert-manager.io # Required when "issuer.generate: false"
+      name: foo-org-ca       # Required when "issuer.generate: false" (your custom issuer name)
+      kind: ClusterIssuer    # Required when "issuer.generate: false" (your custom issuer kind)
+      group: cert-manager.io # Required when "issuer.generate: false" (your custom issuer group)
