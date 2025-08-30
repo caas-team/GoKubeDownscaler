@@ -49,8 +49,9 @@ The basic fields to configure cert-manager are:
 
 The user can set `webhookController.certManager.ca.generate` to `true` or `false` to choose to have cert-manager create a self-signed CA
 certificate to sign the certificate used by the Webhook or provide its own CA certificate.
-If `false` the user must provide an existing Secret
-containing the CA certificate by setting the `webhookController.certManager.ca.secretName` field
+If `false` the user must provide an existing Secret containing the CA certificate by setting the
+`webhookController.certManager.ca.secretName` field, in this case the secret must be annoted with the
+`cert-manager.io/allow-direct-injection: "true"` annotation
 
 The user can set `webhookController.certManager.issuer.generate` to `true` or `false` to choose to have cert-manager create a self-signed
 CA Issuer or ClusterIssuer to sign the certificate used by the Webhook or provide its own Issuer or ClusterIssuer.
