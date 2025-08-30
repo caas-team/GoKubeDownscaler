@@ -19,6 +19,25 @@ In order to get started installing the GoKubeDownscaler using our Helm Chart you
 
 Also make sure your context is set to the right cluster and namespace where you want to deploy the GoKubeDownscaler.
 
+## Constrained Installation vs Cluster-Wide Installation
+
+As described in the [introduction page](ref:docs-introduction#installation-and-architecture), the GoKubeDownscaler can be installed in two
+different ways:
+
+- **Constrained Installation**: The GoKubeDownscaler is only allowed to operate on a set of namespaces.
+  This is useful if you don't have the necessary rights to make a cluster-wide installation.
+- **Cluster-Wide Installation**: The GoKubeDownscaler is allowed to operate on all namespaces in the cluster.
+  This is useful if you want to scale down workloads across the entire cluster.
+
+In order to install the GoKubeDownscaler in a constrained way you must set the `constrainedNamespaces` value.
+This can be done in two ways:
+
+- by passing the `--set constrainedNamespaces=[namespace1,namespace2,...]` argument to the `helm install` or `helm template` command shown
+  in the next section
+- by setting it in the `values.yaml` file.
+
+[This documentation page](ref:docs-helm-constrained-namespaces) explains how to use this argument and what it does under the hood
+
 ## Install the Chart with Helm
 
 In order to install the chart on your cluster you only need to run one simple command:
