@@ -1,22 +1,22 @@
 ---
-title: admissionControllerTolerations
-id: admissionControllerTolerations
-globalReference: docs-helm-admission-controller-tolerations
+title: webhookControllerTolerations
+id: webhookControllerTolerations
+globalReference: docs-helm-webhook-controller-tolerations
 description: How to set tolerations for the GoKubeDownscaler Webhook Deployment
-keywords: [admissionControllerTolerations]
+keywords: [webhookControllerTolerations]
 ---
 
-# admissionController.tolerations
+# webhookController.tolerations
 
-The `admissionController.tolerations` value adds tolerations to the pods of the deployment to be able to be scheduled on
+The `webhookController.tolerations` value adds tolerations to the pods of the deployment to be able to be scheduled on
 nodes with matching taints.
 
 :::info
 
-The default value for `admissionController.tolerations` is:
+The default value for `webhookController.tolerations` is:
 
 ```yaml
-admissionController:
+webhookController:
   tolerations: []
 ```
 
@@ -28,7 +28,7 @@ If you want to allow the GoKubeDownscaler Webhook pods to schedule on a Node wit
 can set:
 
 ```yaml
-admissionController:
+webhookController:
   tolerations:
     - key: "key1"
       operator: "Equal"

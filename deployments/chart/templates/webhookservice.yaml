@@ -1,8 +1,8 @@
-{{- if .Values.admissionController.enabled }}
+{{- if .Values.webhookController.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "go-kube-downscaler.admissionController.fullname" . }}
+  name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
   labels:
     {{- include "go-kube-downscaler.labels" . | nindent 4 }}
 spec:

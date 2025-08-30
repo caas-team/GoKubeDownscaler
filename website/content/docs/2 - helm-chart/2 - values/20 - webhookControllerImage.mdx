@@ -1,14 +1,14 @@
 ---
-title: admissionControllerImage
-id: admissionControllerImage
-globalReference: docs-helm-admission-controller-image
+title: webhookControllerImage
+id: webhookControllerImage
+globalReference: docs-helm-webhook-controller-image
 description: How to specify a custom image for the GoKubeDownscaler Webhook Deployment
-keywords: [admissionControllerImage]
+keywords: [webhookControllerImage]
 ---
 
-# admissionController.image
+# webhookController.image
 
-The `admissionController.image` value contains the three fields `repository`, `pullPolicy` and `tag`:
+The `webhookController.image` value contains the three fields `repository`, `pullPolicy` and `tag`:
 
 - `repository` is the repository URL where the image versions of the GoKubeDownscaler are located
 - `pullPolicy` specifies when the image should be pulled
@@ -16,10 +16,10 @@ The `admissionController.image` value contains the three fields `repository`, `p
 
 :::info
 
-The default values for `admissionController.image` are:
+The default values for `webhookController.image` are:
 
 ```yaml
-admissionController:
+webhookController:
   image:
     repository: ghcr.io/caas-team/gokubedownscaler-webhook
     pullPolicy: IfNotPresent

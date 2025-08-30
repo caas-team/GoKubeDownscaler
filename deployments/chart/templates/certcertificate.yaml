@@ -1,0 +1,42 @@
+{{- if .Values.webhookController.certManager.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "go-kube-downscaler.webhookController.fullname" . }}-tls-certificates
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "go-kube-downscaler.labels" . | nindent 4 }}
+spec:
+  commonName: {{ include "go-kube-downscaler.webhookController.fullname" . }}
+  dnsNames:
+    - {{ include "go-kube-downscaler.webhookController.fullname" . }}.{{ .Release.Namespace }}
+    - {{ include "go-kube-downscaler.webhookController.fullname" . }}.{{ .Release.Namespace }}.svc
+    - {{ include "go-kube-downscaler.webhookController.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.webhookController.certManager.clusterDomain }}
+  secretName: {{ include "go-kube-downscaler.webhookController.fullname" . }}
+  secretTemplate:
+    {{- toYaml .Values.webhookController.certManager.secretTemplate | nindent 4 }}
+  usages:
+    - server auth
+    - client auth
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  duration: {{ .Values.webhookController.certManager.duration }}
+  renewBefore: {{ .Values.webhookController.certManager.renewBefore }}
+  issuerRef:
+    {{- if .Values.webhookController.certManager.issuer.generate }}
+    name: {{ include "go-kube-downscaler.webhookController.fullname" . }}-issuer
+    kind: Issuer
+    group: cert-manager.io
+    {{- else }}
+    {{- if .Values.webhookController.certManager.issuer.name }}
+    name: {{ .Values.webhookController.certManager.issuer.name }}
+    {{- end }}
+    {{- if .Values.webhookController.certManager.issuer.kind }}
+    kind: {{ .Values.webhookController.certManager.issuer.kind }}
+    {{- end }}
+    {{- if .Values.webhookController.certManager.issuer.group }}
+    group: {{ .Values.webhookController.certManager.issuer.group }}
+    {{- end }}
+    {{- end }}
+{{- end }}

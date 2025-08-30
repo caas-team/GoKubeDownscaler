@@ -1,8 +1,16 @@
-{{- if .Values.admissionController.enabled }}
+{{- if .Values.webhookController.enabled }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: webhook.kube-downscaler.k8s
+  {{- if .Values.webhookController.certManager.enabled }}
+  annotations:
+    {{- if and (not .Values.webhookController.certManager.ca.generate) .Values.webhookController.certManager.issuer.generate }}
+    cert-manager.io/inject-ca-from-secret: {{ .Release.Namespace }}/{{ .Values.webhookController.certManager.ca.secretName }}
+    {{- else }}
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "go-kube-downscaler.webhookController.fullname" . }}-tls-certificates
+    {{- end }}
+  {{- end }}
 webhooks:
   - name: webhook.kube-downscaler.k8s
     rules:
@@ -19,7 +27,9 @@ webhooks:
         name: {{ include "go-kube-downscaler.fullname" . }}-webhook
         path: /validate-workloads
         port: 443
-      caBundle: {{ .Values.admissionController.certs.caBundle }}
+    {{- if (not .Values.webhookController.certManager.enabled) }}
+      caBundle: {{ .Values.webhookController.certs.caBundle }}
+    {{- end }}
     matchConditions:
       - name: 'exclude-downscaler-origin'
         expression: 'request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}"'

@@ -22,8 +22,8 @@ type serverConfig struct {
 }
 
 const (
-	cert = "/etc/admission-webhook/tls/tls.crt"
-	key  = "/etc/admission-webhook/tls/tls.key"
+	cert = "/etc/webhook/tls/tls.crt"
+	key  = "/etc/webhook/tls/tls.key"
 )
 
 func main() {
