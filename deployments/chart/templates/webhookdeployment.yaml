@@ -15,18 +15,24 @@ spec:
       labels:
         {{- include "go-kube-downscaler.webhookController.selectorLabels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ include "go-kube-downscaler.serviceAccountName" . }}
+      serviceAccountName: {{ include "go-kube-downscaler.webhookController.fullname" . }}
       containers:
         - name: {{ .Chart.Name }}-webhook
           image: "{{ .Values.webhookController.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           args:
             - --include-resources={{ join "," .Values.includedResources }}
-          {{- with .Values.arguments }}
-          {{- toYaml . | nindent 10 }}
-          {{- end }}
+            {{- if (not .Values.webhookController.certManager.enabled) }}
+            - --internal-cert-rotation
+            - --service-name={{ include "go-kube-downscaler.webhookController.fullname" . }}
+            - --cluster-domain={{ .Values.webhookController.clusterDomain }}
+            - --tls-secret-name={{ include "go-kube-downscaler.webhookController.fullname" . }}
+            {{- end }}
           {{- if .Values.constrainedNamespaces }}
             - --namespace={{ join "," .Values.constrainedNamespaces }}
           {{- end }}
+          ports:
+            - containerPort: 443
+            - containerPort: 8080
           envFrom:
             - configMapRef:
                 name: {{ .Values.configMap.name }}
@@ -39,18 +45,31 @@ spec:
             - name: tls
               mountPath: "/etc/webhook/tls"
               readOnly: true
+          {{- if .Values.webhookController.healthProbes.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            failureThreshold: {{ .Values.webhookController.healthProbes.readinessProbe.failureThreshold }}
+            initialDelaySeconds: {{ .Values.webhookController.healthProbes.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.webhookController.healthProbes.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.webhookController.healthProbes.readinessProbe.timeoutSeconds }}
+          {{- end }}
+          {{- if .Values.webhookController.healthProbes.readinessProbe.enabled }}
           livenessProbe:
             httpGet:
               path: /healthz
               port: 8080
-            failureThreshold: 3
-            initialDelaySeconds: 5
-            periodSeconds: 3
-            timeoutSeconds: 2
+            failureThreshold: {{ .Values.webhookController.healthProbes.livenessProbe.failureThreshold }}
+            initialDelaySeconds: {{ .Values.webhookController.healthProbes.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.webhookController.healthProbes.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.webhookController.healthProbes.livenessProbe.timeoutSeconds }}
+          {{- end }}
       volumes:
         - name: tls
           secret:
             secretName: {{ include "go-kube-downscaler.webhookController.fullname" . }}
+            optional: true
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
     {{- with .Values.nodeSelector }}

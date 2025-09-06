@@ -7,10 +7,11 @@ metadata:
     {{- include "go-kube-downscaler.labels" . | nindent 4 }}
 spec:
   selector:
-    {{- include "go-kube-downscaler.selectorLabels" . | nindent 6 }}-webhook
+    {{- include "go-kube-downscaler.webhookController.selectorLabels" . | nindent 6 }}
   type: ClusterIP
   ports:
     - port: 443
+      name: https
       protocol: TCP
       targetPort: 443
 {{- end }}
