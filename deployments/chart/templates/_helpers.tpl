@@ -79,7 +79,7 @@ Create selector label for the webhook
 {{/*
 Create defined permissions for the webhook role
 */}}
-{{- define "go-kube-downscaler.webhookController.permissions" -}}
+{{- define "go-kube-downscaler.webhookController.namespace.permissions" -}}
 - apiGroups:
     - ""
   resources:
@@ -87,9 +87,54 @@ Create defined permissions for the webhook role
   resourceNames:
     - {{ include "go-kube-downscaler.fullname" . }}-webhook
   verbs:
+    - create
+    - update
+    - patch
     - get
     - watch
     - list
+- apiGroups:
+    - coordination.k8s.io
+  resources:
+    - leases
+  verbs:
+    - get
+    - create
+    - watch
+    - list
+    - update
+    - delete
+{{- end }}
+
+{{/*
+Create defined permissions for the webhook clusterrole
+*/}}
+{{- define "go-kube-downscaler.webhookController.clusterwide-and-webhook.permissions" -}}
+- apiGroups:
+    - ""
+  resources:
+    - namespaces
+  verbs:
+    - get
+- apiGroups:
+    - admissionregistration.k8s.io
+  resources:
+    - mutatingwebhookconfigurations
+  resourceNames:
+    - webhook.kube-downscaler.k8s
+  verbs:
+    - get
+    - watch
+    - patch
+    - update
+{{- end }}
+{{- define "go-kube-downscaler.webhookController.clusterwide.permissions" -}}
+- apiGroups:
+    - ""
+  resources:
+    - namespaces
+  verbs:
+    - get
 {{- end }}
 
 {{/*

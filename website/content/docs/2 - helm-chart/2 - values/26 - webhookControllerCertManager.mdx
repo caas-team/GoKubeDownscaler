@@ -37,8 +37,6 @@ When `webhookController.certManager.enabled` is set to `true` the management of 
 
 The basic fields to configure cert-manager are:
 
-- `webhookController.certManager.clusterDomain`: The cluster domain of your Kubernetes cluster.
-  Default is `cluster.local`.
 - `webhookController.certManager.duration`: The duration that the certificate is valid for.
   Default is `8760h0m0s` (1 year).
 - `webhookController.certManager.renewBefore`: The duration before the certificate expires that cert-manager will attempt to renew the
