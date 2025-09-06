@@ -17,6 +17,7 @@ import (
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
@@ -41,6 +42,8 @@ type Client interface {
 	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context) error
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
+	// ensureSecret ensures that the secret used for storing TLS certificates exists
+	ensureSecret(namespace, secretName string, ctx context.Context) (bool, error)
 	// CreateLease creates a new lease for the downscaler
 	CreateLease(leaseName string) (*resourcelock.LeaseLock, error)
 	// addEvent creates a new event on either a workload or a namespace
@@ -396,4 +399,42 @@ func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*value
 	slog.Debug("correctly parsed namespace annotations", "namespace", namespace, "annotations", annotations)
 
 	return namespaceScope, nil
+}
+
+// ensureSecret ensures that the secret used for storing TLS certificates exists.
+func (c client) ensureSecret(namespace, secretName string, ctx context.Context) (bool, error) {
+	isPresent := false
+
+	_, err := c.clientsets.Kubernetes.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			isPresent = false
+		} else {
+			return isPresent, fmt.Errorf("unable to check secret: %w", err)
+		}
+	} else {
+		isPresent = true
+	}
+
+	if !isPresent {
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      secretName,
+				Namespace: namespace,
+				Labels: map[string]string{
+					"app.kubernetes.io/managed-by": "kube-downscaler",
+					"app.kubernetes.io/part-of":    "kube-downscaler",
+				},
+			},
+		}
+
+		_, err = c.clientsets.Kubernetes.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
+		if err != nil {
+			return isPresent, fmt.Errorf("unable to create certificates secret: %w", err)
+		}
+
+		slog.Info(fmt.Sprintf("created the secret %s to store kube downscaler certificates", secretName), "namespace", namespace)
+	}
+
+	return isPresent, nil
 }

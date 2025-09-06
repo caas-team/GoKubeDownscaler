@@ -91,12 +91,22 @@ webhookController:
     pullPolicy: IfNotPresent
     tag: "" # Dynamically set from CI
 
-  certs:
-    tlsCrt: ""
-    tlsKey: ""
-    caBundle: ""
-
   replicaCount: 1
+
+  healthProbes:
+    readinessProbe:
+      enabled: true
+      failureThreshold: 3
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 2
+
+    livenessProbe:
+      enabled: true
+      failureThreshold: 3
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 2
 
   resources:
     limits:
@@ -112,9 +122,14 @@ webhookController:
 
   affinity: {}
 
-  certManager:
+  mutatingWebhookConfiguration:
+    timeoutSeconds: 10
+    failurePolicy: Ignore
 
-    clusterDomain: cluster.local
+
+  clusterDomain: cluster.local
+
+  certManager:
 
     enabled: false
 

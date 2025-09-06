@@ -1,20 +1,23 @@
-{{- if and (.Values.webhookController.enabled) }}
+{{- if .Values.webhookController.enabled }}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
-  namespace: {{ .Release.Namespace }}
 rules:
-{{ include "go-kube-downscaler.webhookController.namespace.permissions" . }}
+{{- if (not .Values.webhookController.certManager.enabled) }}
+{{ include "go-kube-downscaler.webhookController.clusterwide-and-webhook.permissions" . }}
+{{- else }}
+{{ include "go-kube-downscaler.webhookController.clusterwide.permissions" . }}
+{{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
   namespace: {{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
 subjects:
   - kind: ServiceAccount

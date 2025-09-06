@@ -1,103 +1,152 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"crypto/tls"
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 	_ "time/tzdata"
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes/admission"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 type serverConfig struct {
-	client       kubernetes.Client
-	scopeCli     *values.Scope
-	scopeEnv     *values.Scope
-	scopeDefault *values.Scope
-	config       *runtimeConfiguration
+	client         kubernetes.Client
+	clientNoDryRun kubernetes.Client
+	scopeCli       *values.Scope
+	scopeEnv       *values.Scope
+	scopeDefault   *values.Scope
+	config         *runtimeConfiguration
 }
 
 const (
-	cert = "/etc/webhook/tls/tls.crt"
-	key  = "/etc/webhook/tls/tls.key"
+	certDir             = "/etc/webhook/tls"
+	mutatingWebhookName = "webhook.kube-downscaler.k8s"
+	defaultCAName       = "KUBEDOWNSCALER"
+	defaultCAOrg        = "KUBEDOWNSCALERORG"
 )
 
 func main() {
 	config, scopeDefault, scopeCli, scopeEnv := initComponent()
 
-	client, err := kubernetes.NewClient("", config.DryRun)
+	scheme := apimachineryruntime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+
+	client, err := kubernetes.NewClient(config.Kubeconfig, config.DryRun)
+	if err != nil {
+		slog.Error("failed to create new Kubernetes client", "error", err)
+		os.Exit(1)
+	}
+
+	// Create a second client that is not in dry-run mode, for cert rotation which should always be performed
+	// even when other operations are in dry-run mode
+	clientNoDryRun, err := kubernetes.NewClient(config.Kubeconfig, false)
 	if err != nil {
 		slog.Error("failed to create new Kubernetes client", "error", err)
 		os.Exit(1)
 	}
 
 	serverConfig := &serverConfig{
-		client:       client,
-		scopeCli:     scopeCli,
-		scopeEnv:     scopeEnv,
-		scopeDefault: scopeDefault,
-		config:       config,
+		client:         client,
+		clientNoDryRun: clientNoDryRun,
+		scopeCli:       scopeCli,
+		scopeEnv:       scopeEnv,
+		scopeDefault:   scopeDefault,
+		config:         config,
 	}
 
-	http.HandleFunc("/validate-workloads", serverConfig.serveValidateWorkloads)
-	http.HandleFunc("/healthz", serverConfig.serveHealth)
+	opts := setupControllerRuntimeLogEncoding()
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	// Start the http server
-	go func() {
-		httpServer := &http.Server{
-			Addr:         ":8080",
-			Handler:      nil,
-			ReadTimeout:  10 * time.Second, // Set read timeout
-			WriteTimeout: 10 * time.Second, // Set write timeout
-			IdleTimeout:  60 * time.Second, // Set idle timeout
-		}
+	ctx := ctrl.SetupSignalHandler()
+	cfg := setupConfig(config.Kubeconfig)
 
-		slog.Info("Listening on port 8080...")
-
-		if err = httpServer.ListenAndServe(); err != nil {
-			slog.Error("failed to start HTTP server", "error", err)
-		}
-	}()
-
-	if _, err = os.Stat(cert); os.IsNotExist(err) {
-		slog.Error("tls.crt file not found", "path", cert)
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:         scheme,
+		LeaderElection: false,
+		Metrics: server.Options{
+			BindAddress: "0", // metrics disabled
+		},
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port:    443,
+			CertDir: certDir,
+			TLSOpts: []func(tlsConfig *tls.Config){
+				func(tlsConfig *tls.Config) {
+					tlsConfig.MinVersion = tls.VersionTLS12
+				},
+			},
+		}),
+		HealthProbeBindAddress: ":8080",
+	})
+	if err != nil {
+		slog.Error("failed to create controller runtime", "error", err)
 		os.Exit(1)
 	}
 
-	if _, err = os.Stat(key); os.IsNotExist(err) {
-		slog.Error("tls.key file not found", "path", key)
+	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		slog.Error("failed to set up health check", "error", err)
 		os.Exit(1)
 	}
 
-	httpsServer := &http.Server{
-		Addr:         ":443",
-		Handler:      nil,
-		ReadTimeout:  10 * time.Second, // Set read timeout
-		WriteTimeout: 10 * time.Second, // Set write timeout
-		IdleTimeout:  60 * time.Second, // Set idle timeout
+	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		slog.Error("failed to set up ready check", "error", err)
+		os.Exit(1)
 	}
 
-	slog.Info("Listening on port 443...")
+	certReady := make(chan struct{})
 
-	err = httpsServer.ListenAndServeTLS(cert, key)
-	if err != nil {
-		slog.Error("failed to start HTTPS server", "error", err)
+	if config.EnableCertRotation {
+		slog.Info("setting up internal certificates rotation")
+
+		certManager := kubernetes.CertManager{
+			SecretName:          config.CertSecretName,
+			CertDir:             certDir,
+			WebhookService:      config.WebhookServiceName,
+			K8sClusterDomain:    config.ClusterDomain,
+			CAName:              defaultCAName,
+			CAOrganization:      defaultCAOrg,
+			MutatingWebhookName: mutatingWebhookName,
+			Ready:               certReady,
+			Client:              clientNoDryRun,
+		}
+		if err = certManager.AddCertificateRotation(ctx, mgr); err != nil {
+			slog.Error("failed to add certificate rotation", "error", err)
+			os.Exit(1)
+		}
+
+		go startManager(ctx, mgr)
+
+		slog.Info("waiting for TLS certs to be ready")
+		<-certManager.Ready
+		slog.Info("TLS certs are ready")
+	} else {
+		slog.Warn("internal certificates rotation is not enabled, make sure certificate rotation is handled externally")
+		close(certReady)
+
+		go startManager(ctx, mgr)
 	}
+
+	slog.Info("serving webhook server")
+
+	hookServer := mgr.GetWebhookServer()
+	hookServer.Register("/validate-workloads", http.HandlerFunc(serverConfig.serveValidateWorkloads))
+
+	<-ctx.Done()
 }
 
-// ServeHealth returns 200 when things are good.
-func (s *serverConfig) serveHealth(w http.ResponseWriter, _ *http.Request) {
-	_, err := fmt.Fprint(w, "OK")
-	if err != nil {
-		return
-	}
-}
-
-// ServeValidateWorkloads validates an admission request.
+// serveValidateWorkloads validates an admission request.
 func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
@@ -115,4 +164,11 @@ func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, reques
 	admissionHandler.HandleMutation(ctx, writer, request)
 
 	slog.Info("validation request was correctly processed")
+}
+
+func startManager(ctx context.Context, mgr manager.Manager) {
+	if err := mgr.Start(ctx); err != nil {
+		slog.Error("manager exited with error", "error", err)
+		os.Exit(1)
+	}
 }

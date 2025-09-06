@@ -1,0 +1,31 @@
+---
+title: webhookControllerMutatingWebhookConfiguration
+id: webhookControllerMutatingWebhookConfiguration
+globalReference: docs-helm-webhook-controller-mutating-webhook-configuration
+description: How to customize the MutatingWebhookConfiguration used by GoKubeDownscaler Webhook Deployment
+keywords:
+  [webhookControllerMutatingWebhookConfiguration, failurePolicy, timeoutSeconds]
+---
+
+# webhookController.mutatingWebhookConfiguration
+
+The `webhookController.mutatingWebhookConfiguration` defines how some of the MutatingWebhookConfiguration properties should be set.
+
+:::info
+
+```yaml
+webhookController:
+  mutatingWebhookConfiguration:
+    timeoutSeconds: 10
+    failurePolicy: Ignore
+```
+
+:::
+
+The basic fields that can be set are:
+
+- `webhookController.certManager.timeoutSeconds`: The timeout in seconds for the webhook to respond to the API server.
+- `webhookController.certManager.failurePolicy`: Defines how unrecognized errors from the webhook are handled.
+  Possible values are `Ignore` and `Fail`.
+  When set to `Ignore`, the API server ignores the error and allows the request to proceed.
+  When set to `Fail`, the API server rejects the request.

@@ -122,7 +122,8 @@ func (p *podDisruptionBudget) ScaleUp() error {
 }
 
 // ScaleDown scales the resource down.
-// nolint:cyclop // this function is too complex, but it is necessary to handle workload types. We should refactor this in the future.
+//
+//nolint:cyclop // this function is too complex, but it is necessary to handle workload types. We should refactor this in the future.
 func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) error {
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {

@@ -27,14 +27,11 @@ webhooks:
         name: {{ include "go-kube-downscaler.fullname" . }}-webhook
         path: /validate-workloads
         port: 443
-    {{- if (not .Values.webhookController.certManager.enabled) }}
-      caBundle: {{ .Values.webhookController.certs.caBundle }}
-    {{- end }}
     matchConditions:
       - name: 'exclude-downscaler-origin'
         expression: 'request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}"'
     admissionReviewVersions: ["v1"]
     sideEffects: None
-    failurePolicy: Ignore
-    timeoutSeconds: 8
+    failurePolicy: {{ .Values.webhookController.mutatingWebhookConfiguration.failurePolicy }}
+    timeoutSeconds: {{ .Values.webhookController.mutatingWebhookConfiguration.timeoutSeconds }}
 {{- end }}
