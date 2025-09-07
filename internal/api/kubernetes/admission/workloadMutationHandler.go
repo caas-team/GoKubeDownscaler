@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
@@ -20,6 +21,7 @@ type MutationHandler struct {
 	scopeCli          *values.Scope
 	scopeEnv          *values.Scope
 	scopeDefault      *values.Scope
+	includeNamespaces *[]string
 	dryRun            bool
 	includeLabels     *util.RegexList
 	excludeNamespaces *util.RegexList
@@ -31,6 +33,7 @@ func NewMutationHandler(
 	client kubernetes.Client,
 	scopeCli, scopeEnv, scopeDefault *values.Scope,
 	dryRun bool,
+	includeNamespaces *[]string,
 	includeLabels, excludeNamespaces, excludeWorkloads *util.RegexList,
 ) *MutationHandler {
 	return &MutationHandler{
@@ -39,6 +42,7 @@ func NewMutationHandler(
 		scopeEnv:          scopeEnv,
 		scopeDefault:      scopeDefault,
 		dryRun:            dryRun,
+		includeNamespaces: includeNamespaces,
 		includeLabels:     includeLabels,
 		excludeNamespaces: excludeNamespaces,
 		excludeWorkloads:  excludeWorkloads,
@@ -89,6 +93,20 @@ func (v *MutationHandler) evaluateMutation(
 	resourceLogger := kubernetes.NewResourceLoggerForWorkload(v.client, workload)
 
 	slog.Info("evaluating mutation on workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+
+	// check if namespace is included
+	if !slices.Contains(*v.includeNamespaces, workload.GetNamespace()) {
+		slog.Info(
+			"workload namespace is not in the list of included namespaces, excluding it from downscaling",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+			"dryRun", v.dryRun,
+		)
+
+		//nolint: lll // reason: splitting this line would reduce readability
+		return reviewResponse(
+			review.Request.UID, true, http.StatusAccepted, "workload namespace is not in the list of included namespaces, excluding it from downscaling", v.dryRun), nil
+	}
 
 	// check if workload is excluded
 	workloadArray := []scalable.Workload{workload}
