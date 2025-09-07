@@ -157,6 +157,7 @@ func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, reques
 		s.scopeCli,
 		s.scopeEnv,
 		s.scopeDefault,
+		s.config.DryRun,
 		&s.config.IncludeLabels,
 		&s.config.ExcludeNamespaces,
 		&s.config.ExcludeWorkloads,
