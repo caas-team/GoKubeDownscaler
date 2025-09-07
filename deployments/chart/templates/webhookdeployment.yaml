@@ -38,6 +38,9 @@ spec:
           - --cluster-domain={{ .Values.webhookController.clusterDomain }}
           - --tls-secret-name={{ include "go-kube-downscaler.webhookController.fullname" . }}
           {{- end }}
+          {{- if .Values.constrainedNamespaces }}
+          - --namespace={{ join "," .Values.constrainedNamespaces }}
+          {{- end }}
           ports:
             - containerPort: 443
             - containerPort: 8080
