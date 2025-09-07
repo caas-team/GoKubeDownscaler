@@ -150,7 +150,7 @@ func (s *scaledObject) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 
 	diff, err := jsondiff.Compare(s.ScaledObject, soCopy.ScaledObject)
 	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(ScaledObjectKind, err)
+		return nil, fmt.Errorf("failed to compare scaledObjects: %w", err)
 	}
 
 	return diff, nil

@@ -204,7 +204,7 @@ func (p *podDisruptionBudget) Compare(workloadCopy Workload) (jsondiff.Patch, er
 
 	diff, err := jsondiff.Compare(p.PodDisruptionBudget, pdbCopy.PodDisruptionBudget)
 	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(PodDisruptionBudgetKind, err)
+		return nil, fmt.Errorf("failed to compare podDisruptionBudget: %w", err)
 	}
 
 	return diff, nil

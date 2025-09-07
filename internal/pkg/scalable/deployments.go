@@ -142,7 +142,7 @@ func (d *deployment) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 
 	diff, err := jsondiff.Compare(d.Deployment, depCopy.Deployment)
 	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(DeploymentKind, err)
+		return nil, fmt.Errorf("failed to compare deployments: %w", err)
 	}
 
 	return diff, nil

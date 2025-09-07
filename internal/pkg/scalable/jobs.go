@@ -132,7 +132,7 @@ func (j *job) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 
 	diff, err := jsondiff.Compare(j.Job, jCopy.Job)
 	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(JobKind, err)
+		return nil, fmt.Errorf("failed to compare jobs: %w", err)
 	}
 
 	return diff, nil

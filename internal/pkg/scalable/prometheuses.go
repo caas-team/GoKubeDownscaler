@@ -142,7 +142,7 @@ func (p *prometheus) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 
 	diff, err := jsondiff.Compare(p.Prometheus, promCopy.Prometheus)
 	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(PrometheusKind, err)
+		return nil, fmt.Errorf("failed to compare prometheus: %w", err)
 	}
 
 	return diff, nil

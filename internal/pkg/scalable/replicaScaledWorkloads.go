@@ -34,32 +34,6 @@ type replicaScaledWorkload struct {
 	replicaScaledResource
 }
 
-func (r *replicaScaledWorkload) Copy() (Workload, error) {
-	if r.replicaScaledResource == nil {
-		return nil, newNilUnderlyingObjectError("replicaScaledResource")
-	}
-
-	workloadCopy, err := r.replicaScaledResource.Copy()
-	if err != nil {
-		return nil, newFailedToCompareWorkloadsError("failed to copy suspendScaledResource: %w", err)
-	}
-
-	return workloadCopy, nil
-}
-
-func (r *replicaScaledWorkload) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
-	if r.replicaScaledResource == nil {
-		return nil, newNilUnderlyingObjectError("replicaScaledResource")
-	}
-
-	diff, err := r.replicaScaledResource.Compare(workloadCopy)
-	if err != nil {
-		return nil, newFailedToCompareWorkloadsError("failed to compare replicaScaledResource: %w", err)
-	}
-
-	return diff, nil
-}
-
 // ScaleUp scales up the underlying replicaScaledResource.
 func (r *replicaScaledWorkload) ScaleUp() error {
 	originalReplicas, err := getOriginalReplicas(r)

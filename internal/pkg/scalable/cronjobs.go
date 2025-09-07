@@ -180,7 +180,7 @@ func (c *cronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 
 	diff, err := jsondiff.Compare(c.CronJob, cjCopy.CronJob)
 	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(CronJobKind, err)
+		return nil, fmt.Errorf("failed to compare cronJobs: %w", err)
 	}
 
 	return diff, nil

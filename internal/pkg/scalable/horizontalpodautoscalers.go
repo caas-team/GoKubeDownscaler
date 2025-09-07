@@ -143,7 +143,7 @@ func (h *horizontalPodAutoscaler) Compare(workloadCopy Workload) (jsondiff.Patch
 
 	diff, err := jsondiff.Compare(h.HorizontalPodAutoscaler, hpaCopy.HorizontalPodAutoscaler)
 	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(HorizontalPodAutoscalerKind, err)
+		return nil, fmt.Errorf("failed to compare horizontalpodautoscalers: %w", err)
 	}
 
 	return diff, nil

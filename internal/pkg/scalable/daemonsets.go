@@ -138,7 +138,7 @@ func (d *daemonSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 
 	diff, err := jsondiff.Compare(d.DaemonSet, dsCopy.DaemonSet)
 	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(DaemonSetKind, err)
+		return nil, fmt.Errorf("failed to compare daemonsets: %w", err)
 	}
 
 	return diff, nil

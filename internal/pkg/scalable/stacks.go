@@ -146,7 +146,7 @@ func (s *stack) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 
 	diff, err := jsondiff.Compare(s.Stack, stCopy.Stack)
 	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(StackKind, err)
+		return nil, fmt.Errorf("failed to compare stacks: %w", err)
 	}
 
 	return diff, nil

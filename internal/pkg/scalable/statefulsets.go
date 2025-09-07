@@ -142,7 +142,7 @@ func (s *statefulSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 
 	diff, err := jsondiff.Compare(s.StatefulSet, stsCopy.StatefulSet)
 	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(StatefulSetKind, err)
+		return nil, fmt.Errorf("failed to compare statefulsets: %w", err)
 	}
 
 	return diff, nil

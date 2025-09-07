@@ -143,7 +143,7 @@ func (r *rollout) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 
 	diff, err := jsondiff.Compare(r.Rollout, rollCopy.Rollout)
 	if err != nil {
-		return nil, newFailedToCompareWorkloadsError(RolloutKind, err)
+		return nil, fmt.Errorf("failed to compare rollouts: %w", err)
 	}
 
 	return diff, nil
