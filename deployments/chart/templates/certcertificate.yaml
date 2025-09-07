@@ -11,7 +11,7 @@ spec:
   dnsNames:
     - {{ include "go-kube-downscaler.webhookController.fullname" . }}.{{ .Release.Namespace }}
     - {{ include "go-kube-downscaler.webhookController.fullname" . }}.{{ .Release.Namespace }}.svc
-    - {{ include "go-kube-downscaler.webhookController.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.webhookController.certManager.clusterDomain }}
+    - {{ include "go-kube-downscaler.webhookController.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.webhookController.clusterDomain }}
   secretName: {{ include "go-kube-downscaler.webhookController.fullname" . }}
   secretTemplate:
     {{- toYaml .Values.webhookController.certManager.secretTemplate | nindent 4 }}

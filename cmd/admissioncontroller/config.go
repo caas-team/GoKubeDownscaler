@@ -47,7 +47,7 @@ func (c *runtimeConfiguration) parseConfigFlags() {
 	flag.StringVar(
 		&c.WebhookServiceName,
 		"service-name",
-		"",
+		"go-kube-downscaler-webhook",
 		"service name to use for the webhook (default: go-kube-downscaler-webhook)",
 	)
 	flag.StringVar(
@@ -59,7 +59,7 @@ func (c *runtimeConfiguration) parseConfigFlags() {
 	flag.StringVar(
 		&c.CertSecretName,
 		"tls-secret-name",
-		"",
+		"go-kube-downscaler-webhook",
 		"secret name containing the TLS certs for the webhook (default: go-kube-downscaler-webhook)",
 	)
 	flag.StringVar(
@@ -101,9 +101,17 @@ func initComponent() (runtimeConfig *runtimeConfiguration, scopeDefault, scopeCl
 	return runtimeConfig, scopeDefault, scopeCli, scopeEnv
 }
 
-func setupControllerRuntimeLogEncoding() zap.Options {
+func setupControllerRuntimeLogEncoding(runtimeConfig *runtimeConfiguration) zap.Options {
+	var level zapcore.Level
+	if runtimeConfig.Debug || runtimeConfig.DryRun {
+		level = zapcore.DebugLevel
+	} else {
+		level = zapcore.InfoLevel
+	}
+
 	return zap.Options{
 		Development: true,
+		Level:       level,
 		EncoderConfigOptions: []zap.EncoderConfigOption{
 			func(ec *zapcore.EncoderConfig) {
 				ec.NameKey = ""   // remove logger name
