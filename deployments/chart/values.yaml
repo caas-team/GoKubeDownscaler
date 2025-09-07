@@ -93,6 +93,11 @@ webhookController:
 
   replicaCount: 1
 
+  arguments:
+  #  - --interval=60
+
+  podAnnotations: {}
+
   healthProbes:
     readinessProbe:
       enabled: true
@@ -137,7 +142,7 @@ webhookController:
 
     renewBefore: 5840h0m0s # 8 months
 
-    secretTemplate: { }
+    secretTemplate: {}
 
     ca:
       generate: true
