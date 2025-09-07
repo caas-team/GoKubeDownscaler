@@ -29,32 +29,6 @@ type suspendScaledWorkload struct {
 	suspendScaledResource
 }
 
-func (r *suspendScaledWorkload) Copy() (Workload, error) {
-	if r.suspendScaledResource == nil {
-		return nil, newNilUnderlyingObjectError("suspendScaledResource")
-	}
-
-	workloadCopy, err := r.suspendScaledResource.Copy()
-	if err != nil {
-		return nil, newFailedToCompareWorkloadsError("failed to copy suspendScaledResource: %w", err)
-	}
-
-	return workloadCopy, nil
-}
-
-func (r *suspendScaledWorkload) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
-	if r.suspendScaledResource == nil {
-		return nil, newNilUnderlyingObjectError("suspendScaledResource")
-	}
-
-	diff, err := r.suspendScaledResource.Compare(workloadCopy)
-	if err != nil {
-		return nil, newFailedToCompareWorkloadsError("failed to compare suspendScaledResource: %w", err)
-	}
-
-	return diff, nil
-}
-
 // ScaleUp scales up the underlying suspendScaledResource.
 func (r *suspendScaledWorkload) ScaleUp() error {
 	r.setSuspend(false)
