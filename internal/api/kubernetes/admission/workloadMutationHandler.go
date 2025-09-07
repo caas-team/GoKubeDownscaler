@@ -95,7 +95,7 @@ func (v *MutationHandler) evaluateMutation(
 	workloads := scalable.FilterExcluded(workloadArray, *v.includeLabels, *v.excludeNamespaces, *v.excludeWorkloads)
 
 	if len(workloads) == 0 {
-		slog.Debug("workload is excluded from downscaling", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Info("workload is excluded from downscaling", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return reviewResponse(review.Request.UID, true, http.StatusAccepted, "workload is excluded from downscaling, doesn't need mutation"), nil
 	}
 

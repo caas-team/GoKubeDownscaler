@@ -67,7 +67,7 @@ func main() {
 		config:         config,
 	}
 
-	opts := setupControllerRuntimeLogEncoding()
+	opts := setupControllerRuntimeLogEncoding(config)
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	ctx := ctrl.SetupSignalHandler()

@@ -14,21 +14,29 @@ spec:
     metadata:
       labels:
         {{- include "go-kube-downscaler.webhookController.selectorLabels" . | nindent 8 }}
+      {{- if or .Values.webhookController.podAnnotations .Values.forceRestartOnConfigChange }}
+      annotations:
+        {{- if .Values.forceRestartOnConfigChange }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.webhookController.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
     spec:
       serviceAccountName: {{ include "go-kube-downscaler.webhookController.fullname" . }}
       containers:
         - name: {{ .Chart.Name }}-webhook
           image: "{{ .Values.webhookController.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           args:
-            - --include-resources={{ join "," .Values.includedResources }}
-            {{- if (not .Values.webhookController.certManager.enabled) }}
-            - --internal-cert-rotation
-            - --service-name={{ include "go-kube-downscaler.webhookController.fullname" . }}
-            - --cluster-domain={{ .Values.webhookController.clusterDomain }}
-            - --tls-secret-name={{ include "go-kube-downscaler.webhookController.fullname" . }}
-            {{- end }}
-          {{- if .Values.constrainedNamespaces }}
-            - --namespace={{ join "," .Values.constrainedNamespaces }}
+          {{- with .Values.webhookController.arguments }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- if (not .Values.webhookController.certManager.enabled) }}
+          - --internal-cert-rotation
+          - --service-name={{ include "go-kube-downscaler.webhookController.fullname" . }}
+          - --cluster-domain={{ .Values.webhookController.clusterDomain }}
+          - --tls-secret-name={{ include "go-kube-downscaler.webhookController.fullname" . }}
           {{- end }}
           ports:
             - containerPort: 443
@@ -72,15 +80,15 @@ spec:
             optional: true
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-    {{- with .Values.nodeSelector }}
+    {{- with .Values.webhookController.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- with .Values.affinity }}
+    {{- with .Values.webhookController.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.webhookController.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
