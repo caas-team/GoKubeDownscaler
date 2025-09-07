@@ -30,6 +30,7 @@ const (
 )
 
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
+// nolint: interfacebloat // this interface is meant to represent a high-level client with multiple functions
 type Client interface {
 	// GetNamespacesScopes gets the namespaces scopes from the namespaces annotations
 	GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error)
@@ -389,7 +390,7 @@ func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*value
 
 	slog.Debug("fetching namespace annotations", "namespace", namespace)
 
-	annotations, err := c.getNamespaceAnnotations(namespace, ctx)
+	annotations, err := c.GetNamespaceAnnotations(namespace, ctx)
 	if err != nil {
 		err = fmt.Errorf("failed to get namespace annotations for namespace %s: %w", namespace, err)
 		return nil, err
