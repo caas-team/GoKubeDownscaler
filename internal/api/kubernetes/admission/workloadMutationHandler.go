@@ -95,7 +95,7 @@ func (v *MutationHandler) evaluateMutation(
 	slog.Info("evaluating mutation on workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 	// check if namespace is included
-	if !slices.Contains(*v.includeNamespaces, workload.GetNamespace()) {
+	if v.includeNamespaces != nil && len(*v.includeNamespaces) > 0 && !slices.Contains(*v.includeNamespaces, workload.GetNamespace()) {
 		slog.Info(
 			"workload namespace is not in the list of included namespaces, excluding it from downscaling",
 			"workload", workload.GetName(),
