@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"sync"
 
-	admissionv1 "k8s.io/api/admission/v1"
-
 	"github.com/wI2L/jsondiff"
 	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"

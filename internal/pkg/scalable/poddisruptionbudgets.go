@@ -1,4 +1,3 @@
-//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -119,7 +118,7 @@ func (p *podDisruptionBudget) ScaleUp() error {
 
 // ScaleDown scales the resource down.
 //
-//nolint:cyclop // this function is too complex, but it is necessary to handle workload types. We should refactor this in the future.
+
 func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) error {
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {
@@ -187,7 +186,7 @@ func (p *podDisruptionBudget) Copy() (Workload, error) {
 
 // Compare compares two podDisruptionBudget resources and returns the differences as a jsondiff.Patch.
 //
-//nolint:varnamelen //required for interface-based workflow
+
 func (p *podDisruptionBudget) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	pdbCopy, ok := workloadCopy.(*podDisruptionBudget)
 	if !ok {

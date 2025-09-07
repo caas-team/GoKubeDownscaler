@@ -6,7 +6,7 @@ COPY ../../go.mod /tmp/kubedownscaler/go.mod
 
 RUN go mod download
 
-COPY ../../../.. /tmp/kubedownscaler
+COPY ../.. /tmp/kubedownscaler
 
 RUN CGO_ENABLED=0 go build -o bin/admissioncontroller ./cmd/admissioncontroller
 
