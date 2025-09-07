@@ -11,12 +11,11 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/wI2L/jsondiff v0.7.0
 	github.com/zalando-incubator/stackset-controller v1.4.115
+	go.uber.org/zap v1.27.0
 	k8s.io/api v0.34.0
 	k8s.io/apimachinery v0.34.0
 	k8s.io/apiserver v0.34.0
 	k8s.io/client-go v0.34.0
-	github.com/wI2L/jsondiff v0.7.0
-	go.uber.org/zap v1.27.0
 	sigs.k8s.io/controller-runtime v0.21.0
 )
 
