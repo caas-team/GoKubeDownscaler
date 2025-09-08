@@ -54,7 +54,9 @@ if they are both set.
 ## Runtime Configuration
 
 At the CLI Scope, the following [runtime configurations](ref:docs-runtime-configuration) can be configured using arguments
-to set and control various behavioral aspects of the Downscaler (e.g. scan interval, retries, debug mode, ...)
+to set and control various behavioral aspects of the Downscaler (e.g. scan interval, retries, debug mode, ...).
+Arguments flagged with an asterisk (\*) cannot be set inside the Wehook while arguments flagged with an hashtag (#) can only be set inside the
+Wehook.
 
 - [--dry-run](ref:docs-runtime-configuration#dry-run)
 - [--debug](ref:docs-runtime-configuration#debug)
@@ -66,8 +68,12 @@ to set and control various behavioral aspects of the Downscaler (e.g. scan inter
 - [--exclude-deployments](ref:docs-runtime-configuration#exclude-deployments)
 - [--matching-labels](ref:docs-runtime-configuration#matching-labels)
 - [--deployment-time-annotation](ref:docs-runtime-configuration#time-annotation)
-- [--leader-election](ref:docs-runtime-configuration#leader-election)
-- [--max-retries-on-conflict](ref:docs-runtime-configuration#max-retries-on-conflict)
+- [--leader-election](ref:docs-runtime-configuration#leader-election) (\*)
+- [--max-retries-on-conflict](ref:docs-runtime-configuration#max-retries-on-conflict) (\*)
+- [--internal-cert-rotation](ref:docs-values#internal-cert-rotation) (#)
+- [--webhook-service-name](ref:docs-values#webhook-service-name) (#)
+- [--cluster-domain](ref:docs-values#cluster-domain) (#)
+- [--tls-secret-name](ref:docs-values#tls-secret-name) (#)
 - [-k](ref:docs-runtime-configuration#kubeconfig) (kubeconfig)
 
 :::warning

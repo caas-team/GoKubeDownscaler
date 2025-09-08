@@ -83,16 +83,9 @@ When the admission algorithm is enabled, a MutatingWebhookConfiguration intercep
 deployed (or updated) in the cluster.
 It then reviews the workload and determines whether it should be downscaled immediately based on the exact same scaling
 algorithm described in the main section above.
-If the workload is set to be downscaled, the admission algorithm will apply the scaling decisions
-immediately, without waiting for the main GoKubeDownscaler deployment to run its cycle.
-
-This feature avoids triggering unnecessary node provisioning and deprovisioning when all the cluster is already downscaled, allowing to
-save extra resources and costs.
-It is also useful in a Platform-based environment where the organization wants to ensure that all targeted
-workloads are immediately compliant with the scaling policies defined by the organization
 
 :::info[Enabling the Admission Algorithm]
 
-The admission algorithm can be enabled by setting the `admissionController.enabled` value to `true` in the [Helm Chart](ref:docs-helm-admission-controller-enabled)
+The admission algorithm can be enabled by setting the `webhookController.enabled` value to `true` in the [Helm Chart](ref:docs-helm-webhook-controller-enabled)
 
 :::
