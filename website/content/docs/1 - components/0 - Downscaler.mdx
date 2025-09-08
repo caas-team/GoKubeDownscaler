@@ -1,0 +1,30 @@
+---
+title: KubeDownscaler
+id: components-kube-downcsaler
+globalReference: docs-components-kube-downscaler
+description: Learn about the main component of GoKubeDownscaler and how it works
+keywords: [components, downscaler]
+---
+
+# KubeDownscaler
+
+The **KubeDownscaler** is the main component of GoKubeDownscaler.
+It is responsible for scaling workloads based on the defined schedules and configurations.
+It periodically checks the current time against the defined schedules and scales workloads up or down accordingly.
+
+## How It Works
+
+The Downscaler operates in a loop, performing the following steps:
+
+1. **Scan Namespaces and Workloads**: The Downscaler scans the specified namespaces and workload types to collect resources that should be
+   evaluated.
+2. **Evaluate Each Workload**: Each workload is evaluated against the defined schedules and configurations to determine if it needs to be
+   scaled up or down.
+3. **Scale Workloads**: If a workload needs to be scaled, the Downscaler performs the scaling operation, adjusting the number of replicas
+   as specified in the target configurations.
+4. **Repeat**: The Downscaler repeats the process, continuously monitoring and scaling workloads as needed.
+
+The Downscaler can be installed and operated cluster-wide or restricted to specific namespaces
+
+The details of how the Downscaler evaluates workloads and determines scaling actions are covered in the
+[Scopes And Scaling](ref:docs-scopes-and-scaling) section.
