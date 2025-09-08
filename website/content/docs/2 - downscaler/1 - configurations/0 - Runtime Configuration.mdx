@@ -58,6 +58,7 @@ Here is a list of all the available runtime configurations for the Downscaler.
 - Description: Sets the resources/workload types the downscaler will scan over (restricts the 'cluster-wide' scopes to specific types).
 - Default: `deployments`
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+- Only works for component: KubeDownscaler (the Webhook only considers the workload types configured inside the MutatingWebhookConfiguration)
 
 ### Exclude Namespaces
 
