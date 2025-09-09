@@ -87,11 +87,22 @@ func getExternallyScaled(workloads []Workload) []workloadIdentifier {
 			continue
 		}
 
+		var group, version string
+
+		apiVersion := strings.SplitN(scaledobject.Spec.ScaleTargetRef.APIVersion, "/", 2)
+		if len(apiVersion) != 2 {
+			group = ""
+			version = apiVersion[0]
+		} else {
+			group = apiVersion[0]
+			version = apiVersion[1]
+		}
+
 		externallyScaled = append(externallyScaled, workloadIdentifier{
 			gvk: schema.GroupVersionKind{
 				Kind:    scaledobject.Spec.ScaleTargetRef.Kind,
-				Group:   strings.Split(scaledobject.Spec.ScaleTargetRef.APIVersion, "/")[0],
-				Version: strings.Split(scaledobject.Spec.ScaleTargetRef.APIVersion, "/")[1],
+				Group:   group,
+				Version: version,
 			},
 			name:      scaledobject.Spec.ScaleTargetRef.Name,
 			namespace: scaledobject.Namespace,

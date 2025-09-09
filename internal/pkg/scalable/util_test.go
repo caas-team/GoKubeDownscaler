@@ -125,6 +125,27 @@ func TestFilterExcluded(t *testing.T) {
 			},
 		}}},
 	}
+	ns4 := ns{
+		scaledObject: &replicaScaledWorkload{&scaledObject{
+			ScaledObject: &v1alpha1.ScaledObject{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ScaledSlash",
+					Namespace: "Namespace4",
+				},
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "keda.sh/v1alpha1", // with slash here
+					Kind:       "ScaledObject",
+				},
+				Spec: v1alpha1.ScaledObjectSpec{
+					ScaleTargetRef: &v1alpha1.ScaleTarget{
+						Name:       "ReplicationControllerSlash",
+						APIVersion: "v1", // with slash to trigger that branch
+						Kind:       "ReplicationController",
+					},
+				},
+			},
+		}},
+	}
 
 	tests := []struct {
 		name               string
@@ -141,6 +162,14 @@ func TestFilterExcluded(t *testing.T) {
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
 			want:               []Workload{ns1.deployment1, ns1.deployment2, ns2.deployment1},
+		},
+		{
+			name:               "apiVersion without slash",
+			workloads:          []Workload{ns4.scaledObject},
+			includeLabels:      nil,
+			excludedNamespaces: nil,
+			excludedWorkloads:  nil,
+			want:               []Workload{ns4.scaledObject},
 		},
 		{
 			name:               "includeLabels",
