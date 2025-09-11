@@ -31,7 +31,7 @@ func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Conte
 
 // parseStatefulSetFromAdmissionRequest parses the admission review and returns the statefulset.
 //
-//nolint:ireturn // this function should return an interface type
+// nolint: ireturn // this function should return an interface type
 func parseStatefulSetFromAdmissionRequest(rawObject []byte) (Workload, error) {
 	var sts appsv1.StatefulSet
 	if err := json.Unmarshal(rawObject, &sts); err != nil {
@@ -86,7 +86,7 @@ func (s *statefulSet) Update(clientsets *Clientsets, ctx context.Context) error 
 
 // Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a statefulSet.
 //
-//nolint:ireturn // this function should return an interface type
+// nolint: ireturn // this function should return an interface type
 func (s *statefulSet) Copy() (Workload, error) {
 	if s.StatefulSet == nil {
 		return nil, newNilUnderlyingObjectError(StatefulSetKind)
