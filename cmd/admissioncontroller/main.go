@@ -23,12 +23,13 @@ import (
 )
 
 type serverConfig struct {
-	client         kubernetes.Client
-	clientNoDryRun kubernetes.Client
-	scopeCli       *values.Scope
-	scopeEnv       *values.Scope
-	scopeDefault   *values.Scope
-	config         *runtimeConfiguration
+	client               kubernetes.Client
+	clientNoDryRun       kubernetes.Client
+	scopeCli             *values.Scope
+	scopeEnv             *values.Scope
+	scopeDefault         *values.Scope
+	config               *runtimeConfiguration
+	includedResourcesSet map[string]struct{}
 }
 
 const (
@@ -58,13 +59,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	includedResourcesSet := toSet(config.IncludeResources)
+
 	serverConfig := &serverConfig{
-		client:         client,
-		clientNoDryRun: clientNoDryRun,
-		scopeCli:       scopeCli,
-		scopeEnv:       scopeEnv,
-		scopeDefault:   scopeDefault,
-		config:         config,
+		client:               client,
+		clientNoDryRun:       clientNoDryRun,
+		scopeCli:             scopeCli,
+		scopeEnv:             scopeEnv,
+		scopeDefault:         scopeDefault,
+		config:               config,
+		includedResourcesSet: includedResourcesSet,
 	}
 
 	opts := setupControllerRuntimeLogEncoding(config)
@@ -162,6 +166,7 @@ func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, reques
 		&s.config.IncludeLabels,
 		&s.config.ExcludeNamespaces,
 		&s.config.ExcludeWorkloads,
+		s.includedResourcesSet,
 	)
 	admissionHandler.HandleMutation(ctx, writer, request)
 
@@ -173,4 +178,13 @@ func startManager(ctx context.Context, mgr manager.Manager) {
 		slog.Error("manager exited with error", "error", err)
 		os.Exit(1)
 	}
+}
+
+func toSet(items []string) map[string]struct{} {
+	m := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		m[item] = struct{}{}
+	}
+
+	return m
 }

@@ -75,3 +75,15 @@ func newScalingInvalidError(message string) error {
 func (s *ScalingInvalidError) Error() string {
 	return s.message
 }
+
+type NoExternalScalingError struct {
+	message string
+}
+
+func newNoExternalScalingError() error {
+	return &NoExternalScalingError{message: "no external scaling decision"}
+}
+
+func (s *NoExternalScalingError) Error() string {
+	return s.message
+}

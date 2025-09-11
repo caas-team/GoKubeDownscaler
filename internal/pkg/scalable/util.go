@@ -87,6 +87,11 @@ func FilterExcluded(
 	return slices.Clip(results)
 }
 
+func IsWorkloadExternallyManaged(workload Workload, workloadsManagers []Workload) bool {
+	externallyScaled := getExternallyScaled(workloadsManagers)
+	return isExternallyScaled(workload, externallyScaled)
+}
+
 type workloadIdentifier struct {
 	gvk       schema.GroupVersionKind
 	name      string

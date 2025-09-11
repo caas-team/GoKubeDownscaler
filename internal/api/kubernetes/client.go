@@ -46,6 +46,8 @@ type Client interface {
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
 	// ensureSecret ensures that the secret used for storing TLS certificates exists
 	ensureSecret(namespace, secretName string, ctx context.Context) (bool, error)
+	// GetScaledObjects gets all scaledobjects in the specified namespace
+	GetScaledObjects(namespace string, ctx context.Context) ([]scalable.Workload, error)
 	// CreateLease creates a new lease for the downscaler
 	CreateLease(leaseName string) (*resourcelock.LeaseLock, error)
 	// GetNamespaceAnnotations gets the annotations of the workload's namespace
@@ -409,6 +411,16 @@ func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*value
 	slog.Debug("correctly parsed namespace annotations", "namespace", namespace, "annotations", annotations)
 
 	return namespaceScope, nil
+}
+
+// GetScaledObjects gets all scaledobjects in the specified namespace.
+func (c client) GetScaledObjects(namespace string, ctx context.Context) ([]scalable.Workload, error) {
+	scaledObjects, err := scalable.GetWorkloads("scaledobject", namespace, c.clientsets, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get scaledobjects: %w", err)
+	}
+
+	return scaledObjects, nil
 }
 
 // ensureSecret ensures that the secret used for storing TLS certificates exists.

@@ -3,6 +3,7 @@ package admission
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"slices"
@@ -17,15 +18,16 @@ import (
 
 // MutationHandler is a struct that implements the admissionHandler interface.
 type MutationHandler struct {
-	client            kubernetes.Client
-	scopeCli          *values.Scope
-	scopeEnv          *values.Scope
-	scopeDefault      *values.Scope
-	includeNamespaces *[]string
-	dryRun            bool
-	includeLabels     *util.RegexList
-	excludeNamespaces *util.RegexList
-	excludeWorkloads  *util.RegexList
+	client              kubernetes.Client
+	scopeCli            *values.Scope
+	scopeEnv            *values.Scope
+	scopeDefault        *values.Scope
+	includeNamespaces   *[]string
+	dryRun              bool
+	includeLabels       *util.RegexList
+	excludeNamespaces   *util.RegexList
+	excludeWorkloads    *util.RegexList
+	includeResourcesSet map[string]struct{}
 }
 
 // NewMutationHandler creates a new MutationHandler.
@@ -35,17 +37,19 @@ func NewMutationHandler(
 	dryRun bool,
 	includeNamespaces *[]string,
 	includeLabels, excludeNamespaces, excludeWorkloads *util.RegexList,
+	includeResources map[string]struct{},
 ) *MutationHandler {
 	return &MutationHandler{
-		client:            client,
-		scopeCli:          scopeCli,
-		scopeEnv:          scopeEnv,
-		scopeDefault:      scopeDefault,
-		dryRun:            dryRun,
-		includeNamespaces: includeNamespaces,
-		includeLabels:     includeLabels,
-		excludeNamespaces: excludeNamespaces,
-		excludeWorkloads:  excludeWorkloads,
+		client:              client,
+		scopeCli:            scopeCli,
+		scopeEnv:            scopeEnv,
+		scopeDefault:        scopeDefault,
+		dryRun:              dryRun,
+		includeNamespaces:   includeNamespaces,
+		includeLabels:       includeLabels,
+		excludeNamespaces:   excludeNamespaces,
+		excludeWorkloads:    excludeWorkloads,
+		includeResourcesSet: includeResources,
 	}
 }
 
@@ -108,8 +112,13 @@ func (v *MutationHandler) evaluateMutation(
 			review.Request.UID, true, http.StatusAccepted, "workload namespace is not in the list of included namespaces, excluding it from downscaling", v.dryRun), nil
 	}
 
-	// check if workload is excluded
+	// check if workload is externally managed
 	workloadArray := []scalable.Workload{workload}
+
+	externalScalingReview, err := v.evaluateExternalScalingCondition(ctx, workload, *review)
+	if !errors.Is(err, &NoExternalScalingError{}) {
+		return externalScalingReview, err
+	}
 
 	workloads := scalable.FilterExcluded(workloadArray, *v.includeLabels, *v.excludeNamespaces, *v.excludeWorkloads)
 
@@ -137,7 +146,7 @@ func (v *MutationHandler) evaluateMutation(
 	)
 
 	scopeWorkload := values.NewScope()
-	if err := scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
+	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
 		slog.Debug("failed to parse workload scope from annotations",
 			"error", err,
 			"workload", workload.GetName(),
@@ -321,4 +330,44 @@ func mutateWorkload(
 	}
 
 	return reviewResponse(review.Request.UID, true, http.StatusAccepted, "would have patched workload", dryRun), nil
+}
+
+func (v *MutationHandler) evaluateExternalScalingCondition(
+	ctx context.Context,
+	workload scalable.Workload,
+	review admissionv1.AdmissionReview,
+) (*admissionv1.AdmissionReview, error) {
+	if _, ok := v.includeResourcesSet["scaledobjects"]; !ok {
+		return nil, newNoExternalScalingError()
+	}
+
+	scaledObjects, err := v.client.GetScaledObjects(workload.GetNamespace(), ctx)
+	if err != nil {
+		slog.Error("failed to get scaledobjects from namespace",
+			"error", err,
+			"namespace", workload.GetNamespace(),
+			"workload", workload.GetName(),
+			"dryRun", v.dryRun,
+		)
+
+		return reviewResponse(
+			review.Request.UID,
+			false,
+			http.StatusInternalServerError,
+			"failed to get scaledobjects from namespace",
+			v.dryRun,
+		), err
+	}
+
+	if scalable.IsWorkloadExternallyManaged(workload, scaledObjects) {
+		return reviewResponse(
+			review.Request.UID,
+			true,
+			http.StatusAccepted,
+			"workload is excluded from downscaling, externally managed",
+			v.dryRun,
+		), nil
+	}
+
+	return nil, newNoExternalScalingError()
 }
