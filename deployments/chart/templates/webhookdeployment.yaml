@@ -29,6 +29,9 @@ spec:
         - name: {{ .Chart.Name }}-webhook
           image: "{{ .Values.webhookController.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           args:
+          {{- with .Values.arguments }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
           {{- with .Values.webhookController.arguments }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
