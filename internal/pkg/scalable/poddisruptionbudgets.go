@@ -34,7 +34,7 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 
 // parsePodDisruptionBudgetFromAdmissionRequest parses the admission review and returns the podDisruptionBudget wrapped in a Workload.
 //
-//nolint:ireturn //required for interface-based workflow
+// nolint: ireturn // this function should return an interface type
 func parsePodDisruptionBudgetFromAdmissionRequest(rawObject []byte) (Workload, error) {
 	var pdb policy.PodDisruptionBudget
 	if err := json.Unmarshal(rawObject, &pdb); err != nil {
@@ -174,7 +174,7 @@ func (p *podDisruptionBudget) Update(clientsets *Clientsets, ctx context.Context
 
 // Copy creates a deep copy of the given Workload, which is expected to be a podDisruptionBudget.
 //
-//nolint:ireturn //required for interface-based workflow
+// nolint: ireturn // this function should return an interface type
 func (p *podDisruptionBudget) Copy() (Workload, error) {
 	if p.PodDisruptionBudget == nil {
 		return nil, newNilUnderlyingObjectError(PodDisruptionBudgetKind)

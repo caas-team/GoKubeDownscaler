@@ -36,7 +36,7 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 
 // parseDaemonSetFromAdmissionRequest parses the admission review and returns the daemonset.
 //
-//nolint:ireturn // this function should return an interface type
+// nolint: ireturn // this function should return an interface type
 func parseDaemonSetFromAdmissionRequest(rawObject []byte) (Workload, error) {
 	var ds appsv1.DaemonSet
 	if err := json.Unmarshal(rawObject, &ds); err != nil {
@@ -114,7 +114,7 @@ func (d *daemonSet) Update(clientsets *Clientsets, ctx context.Context) error {
 
 // Copy creates a deep copy of the given Workload, which is expected to be a daemonSet.
 //
-//nolint:ireturn // this function should return an interface type
+// nolint: ireturn // this function should return an interface type
 func (d *daemonSet) Copy() (Workload, error) {
 	if d.DaemonSet == nil {
 		return nil, newNilUnderlyingObjectError(DaemonSetKind)

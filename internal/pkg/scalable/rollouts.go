@@ -33,7 +33,7 @@ func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) 
 
 // parseRolloutFromAdmissionRequest parses the admission review and returns the rollout.
 //
-//nolint:ireturn // this function should return an interface type
+// nolint: ireturn // this function should return an interface type
 func parseRolloutFromAdmissionRequest(rawObject []byte) (Workload, error) {
 	var roll argov1alpha1.Rollout
 	if err := json.Unmarshal(rawObject, &roll); err != nil {
@@ -108,7 +108,7 @@ func (r *rollout) Update(clientsets *Clientsets, ctx context.Context) error {
 
 // Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a rollout.
 //
-//nolint:ireturn // this function should return an interface type
+// nolint: ireturn // this function should return an interface type
 func (r *rollout) Copy() (Workload, error) {
 	if r.Rollout == nil {
 		return nil, newNilUnderlyingObjectError(RolloutKind)

@@ -45,7 +45,7 @@ func (cm *CertManager) AddCertificateRotation(ctx context.Context, mgr manager.M
 	if secretAlreadyPresent {
 		slog.Info("secret already present, skipping creation", "namespace", namespace, "name", cm.SecretName)
 	} else {
-		slog.Info("secret created or already present", "namespace", namespace, "name", cm.SecretName)
+		slog.Info("secret created", "namespace", namespace, "name", cm.SecretName)
 	}
 
 	var extraDNSNames []string
