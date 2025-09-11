@@ -12,6 +12,15 @@ The `arguments` value allows you to set additional [cli arguments](ref:docs-cli-
 
 :::info
 
+When enabled, this field also sets the same arguments for the
+[webhookController](ref:docs-helm-webhook-controller-enabled).
+If you want to set different arguments for the webhook,
+you can do so by using the `webhookController.arguments` field.
+
+:::
+
+:::info
+
 By default the `arguments` field is empty.:
 
 ```yaml
