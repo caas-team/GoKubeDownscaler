@@ -264,8 +264,8 @@ github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.4.1/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
-github.com/zalando-incubator/stackset-controller v1.4.117 h1:QVKbVRJlkfU+aZ9WzAN9bl5IZHpXrVdLKNHNXPFb4Rk=
-github.com/zalando-incubator/stackset-controller v1.4.117/go.mod h1:plSXGDc2UbZjuvgw1TAseA2N74w3dI1Zd4GWAvIOUSg=
+github.com/zalando-incubator/stackset-controller v1.4.118 h1:1IW8iPNqwLARYDLEd1PBwcRDHvqr7JNbtdjG1eAqHu8=
+github.com/zalando-incubator/stackset-controller v1.4.118/go.mod h1:wpaG8Hb9ZiLFfbTbesJS1wmUm+a6oulIrfDbR818mgI=
 go.etcd.io/bbolt v1.4.2 h1:IrUHp260R8c+zYx/Tm8QZr04CX+qWS5PGfPdevhdm1I=
 go.etcd.io/bbolt v1.4.2/go.mod h1:Is8rSHO/b4f3XigBC0lL0+4FwAQv3HXEEIgFMuKHceM=
 go.etcd.io/etcd/api/v3 v3.6.4 h1:7F6N7toCKcV72QmoUKa23yYLiiljMrT4xCeBL9BmXdo=

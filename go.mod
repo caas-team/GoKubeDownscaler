@@ -8,7 +8,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.85.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.85.0
 	github.com/stretchr/testify v1.11.1
-	github.com/zalando-incubator/stackset-controller v1.4.117
+	github.com/zalando-incubator/stackset-controller v1.4.118
 	k8s.io/api v0.34.1
 	k8s.io/apimachinery v0.34.1
 	k8s.io/apiserver v0.34.1
