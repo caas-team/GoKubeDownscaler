@@ -76,12 +76,11 @@ func (s *ScalingInvalidError) Error() string {
 	return s.message
 }
 
+// ErrNoExternalScaling is a sentinel error.
+var ErrNoExternalScaling = &NoExternalScalingError{"no external scaling decision"}
+
 type NoExternalScalingError struct {
 	message string
-}
-
-func newNoExternalScalingError() error {
-	return &NoExternalScalingError{message: "no external scaling decision"}
 }
 
 func (s *NoExternalScalingError) Error() string {
