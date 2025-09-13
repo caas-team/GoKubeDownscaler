@@ -32,9 +32,10 @@ spec:
           {{- with .Values.arguments }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- with .Values.webhookController.arguments }}
+          {{- with .Values.webhookController.extraArguments }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          - --include-resources={{ join "," .Values.includedResources }}
           {{- if (not .Values.webhookController.certManager.enabled) }}
           - --internal-cert-rotation
           - --service-name={{ include "go-kube-downscaler.webhookController.fullname" . }}

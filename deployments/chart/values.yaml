@@ -11,6 +11,8 @@ imagePullSecrets: []
 arguments:
 #  - --interval=60
 
+extraArguments:
+
 includedResources:
   - deployments
 #  - statefulsets
@@ -93,7 +95,7 @@ webhookController:
 
   replicaCount: 1
 
-  arguments:
+  extraArguments:
   #  - --interval=60
 
   podAnnotations: {}
