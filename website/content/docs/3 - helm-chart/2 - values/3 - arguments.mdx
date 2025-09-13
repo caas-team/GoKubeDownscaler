@@ -12,10 +12,14 @@ The `arguments` value allows you to set additional [cli arguments](ref:docs-cli-
 
 :::info
 
-When enabled, this field also sets the same arguments for the
-[webhookController](ref:docs-helm-webhook-controller-enabled).
-If you want to set different arguments for the webhook,
-you can do so by using the `webhookController.arguments` field.
+This field by default sets the same arguments for the main deployment and for the
+[webhookController](ref:docs-helm-webhook-controller-enabled) (if the webhook is enabled).
+By default, the two components are designed to share almost the same set of arguments.
+However, it is possible to use `extraArguments` field and the `webhookController.extraArguments`
+to provide arguments that apply only to one deployment, or add additional arguments on top of the
+shared ones.
+This flexibility makes it possible to configure the two components independently when
+needed; incompatibilities between different arguments on the two deployments must be taken into account
 
 :::
 
