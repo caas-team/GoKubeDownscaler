@@ -116,7 +116,7 @@ func (v *MutationHandler) evaluateMutation(
 	workloadArray := []scalable.Workload{workload}
 
 	externalScalingReview, err := v.evaluateExternalScalingCondition(ctx, workload, *review)
-	if !errors.Is(err, &NoExternalScalingError{}) {
+	if !errors.Is(err, ErrNoExternalScaling) {
 		return externalScalingReview, err
 	}
 
@@ -338,7 +338,7 @@ func (v *MutationHandler) evaluateExternalScalingCondition(
 	review admissionv1.AdmissionReview,
 ) (*admissionv1.AdmissionReview, error) {
 	if _, ok := v.includeResourcesSet["scaledobjects"]; !ok {
-		return nil, newNoExternalScalingError()
+		return nil, ErrNoExternalScaling
 	}
 
 	scaledObjects, err := v.client.GetScaledObjects(workload.GetNamespace(), ctx)
@@ -369,5 +369,5 @@ func (v *MutationHandler) evaluateExternalScalingCondition(
 		), nil
 	}
 
-	return nil, newNoExternalScalingError()
+	return nil, ErrNoExternalScaling
 }
