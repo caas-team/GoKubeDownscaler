@@ -44,8 +44,8 @@ func parseAdmissionReviewFromRequest(request *http.Request) (*admissionv1.Admiss
 	return &admissionReview, nil
 }
 
-// reviewResponse returns an AdmissionReview with the specified UID, allowed, httpCode, and reason.
-func reviewResponse(uid types.UID, allowed bool, httpCode int32, reason string, dryRun bool) *admissionv1.AdmissionReview {
+// newReviewResponse returns an AdmissionReview with the specified UID, allowed, httpCode, and reason.
+func newReviewResponse(uid types.UID, allowed bool, httpCode int32, reason string, dryRun bool) *admissionv1.AdmissionReview {
 	var finalReason string
 
 	if dryRun {
@@ -76,8 +76,8 @@ func reviewResponse(uid types.UID, allowed bool, httpCode int32, reason string, 
 	}
 }
 
-// patchReviewResponse creates an admission review with a JSON patch.
-func patchReviewResponse(uid types.UID, patch []byte) (*admissionv1.AdmissionReview, error) {
+// newPatchReviewResponse creates an admission review with a JSON patch.
+func newPatchReviewResponse(uid types.UID, patch []byte) (*admissionv1.AdmissionReview, error) {
 	patchType := admissionv1.PatchTypeJSONPatch
 
 	return &admissionv1.AdmissionReview{
