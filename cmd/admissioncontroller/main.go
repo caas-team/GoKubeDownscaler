@@ -156,7 +156,7 @@ func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, reques
 
 	slog.Debug("received validation request from uri", "requestURI", request.RequestURI)
 
-	admissionHandler := admission.NewMutationHandler(
+	admissionHandler := admission.NewWorkloadMutationHandler(
 		s.client,
 		s.scopeCli,
 		s.scopeEnv,
@@ -168,7 +168,7 @@ func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, reques
 		&s.config.ExcludeWorkloads,
 		s.includedResourcesSet,
 	)
-	admissionHandler.HandleMutation(ctx, writer, request)
+	admissionHandler.HandleWorkloadMutation(ctx, writer, request)
 
 	slog.Info("validation request was correctly processed")
 }

@@ -119,13 +119,13 @@ func TestReviewResponse(t *testing.T) {
 
 	uid := types.UID("abcd")
 
-	response := reviewResponse(uid, true, 200, "ok", false)
+	response := newReviewResponse(uid, true, 200, "ok", false)
 	if !response.Response.Allowed || response.Response.UID != uid {
 		t.Errorf("unexpected response: %+v", response)
 	}
 
 	// dry-run + denied
-	response = reviewResponse(uid, false, 400, "denied", true)
+	response = newReviewResponse(uid, false, 400, "denied", true)
 	if !response.Response.Allowed {
 		t.Errorf("expected Allowed=true in dry-run mode")
 	}
@@ -141,7 +141,7 @@ func TestPatchReviewResponse(t *testing.T) {
 	uid := types.UID("patchtest")
 	patch := []byte(`[{"op":"add","path":"/metadata/labels/test","value":"true"}]`)
 
-	response, err := patchReviewResponse(uid, patch)
+	response, err := newPatchReviewResponse(uid, patch)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -155,7 +155,7 @@ func TestSendAdmissionReviewResponse(t *testing.T) {
 	t.Parallel()
 
 	responseRecorder := httptest.NewRecorder()
-	resp := reviewResponse("id123", true, 200, "ok", false)
+	resp := newReviewResponse("id123", true, 200, "ok", false)
 
 	sendAdmissionReviewResponse(responseRecorder, resp)
 
@@ -183,7 +183,7 @@ func TestSendAdmissionReviewResponse_WriteError(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(&buf, nil))
 	slog.SetDefault(logger)
 
-	resp := reviewResponse("id456", true, 200, "ok", false)
+	resp := newReviewResponse("id456", true, 200, "ok", false)
 	mockWriter := &errorWriter{}
 	sendAdmissionReviewResponse(mockWriter, resp)
 
