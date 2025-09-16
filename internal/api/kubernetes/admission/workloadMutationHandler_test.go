@@ -102,7 +102,6 @@ func newDeploymentRequestWithLabels(t *testing.T, namespace string) *http.Reques
 	}`))
 }
 
-//nolint:ireturn //interface necessary to realize the test case
 func newDeploymentRequestWithExcludeAnnotationTrue(t *testing.T, namespace string) *http.Request {
 	t.Helper()
 
