@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"regexp"
 	"testing"
 
@@ -104,6 +102,7 @@ func newDeploymentRequestWithLabels(t *testing.T, namespace string) *http.Reques
 	}`))
 }
 
+//nolint:ireturn //interface necessary to realize the test case
 func newDeploymentRequestWithExcludeAnnotationTrue(t *testing.T, namespace string) *http.Request {
 	t.Helper()
 
@@ -168,11 +167,9 @@ func newHandlerWithMocks(mockClient *MockClient) *WorkloadMutationHandler {
 	)
 }
 
-//nolint:dupl,paralleltest // duplication could be improved later, tparallel can't be used as shared state
+//nolint:dupl // duplication could be improved later
 func TestEvaluateMutation(t *testing.T) {
-	slog.SetDefault(slog.New(slog.NewTextHandler(
-		os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug},
-	)))
+	t.Parallel()
 
 	tests := []struct {
 		name         string
@@ -314,6 +311,8 @@ func TestEvaluateMutation(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
 			mockClient := &MockClient{}
 			handler := newHandlerWithMocks(mockClient)
 
@@ -326,8 +325,6 @@ func TestEvaluateMutation(t *testing.T) {
 				tt := testCase
 				tt.setupHandler(handler)
 			}
-
-			t.Parallel()
 
 			req := testCase.request(t)
 			input, _ := parseAdmissionReviewFromRequest(req)
