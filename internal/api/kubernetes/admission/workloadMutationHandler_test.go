@@ -168,7 +168,7 @@ func newHandlerWithMocks(mockClient *MockClient) *WorkloadMutationHandler {
 	)
 }
 
-//nolint:dupl,paralleltest,tparallel // duplication could be improved later, tparallel can't be used as shared state
+//nolint:dupl,paralleltest // duplication could be improved later, tparallel can't be used as shared state
 func TestEvaluateMutation(t *testing.T) {
 	slog.SetDefault(slog.New(slog.NewTextHandler(
 		os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug},
@@ -314,8 +314,6 @@ func TestEvaluateMutation(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			t.Parallel()
-
 			mockClient := &MockClient{}
 			handler := newHandlerWithMocks(mockClient)
 
@@ -328,6 +326,8 @@ func TestEvaluateMutation(t *testing.T) {
 				tt := testCase
 				tt.setupHandler(handler)
 			}
+
+			t.Parallel()
 
 			req := testCase.request(t)
 			input, _ := parseAdmissionReviewFromRequest(req)
