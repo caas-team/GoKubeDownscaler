@@ -81,10 +81,7 @@ func (m *NamespaceMetricsHolder) IncrementGenericErrorsCount() {
 	m.genericErrors++
 }
 
-func (m *NamespaceMetricsHolder) IncrementSavedMemoryBytesCount(value float64) {
-	m.savedMemoryBytes += value
-}
-
-func (m *NamespaceMetricsHolder) IncrementSavedCPUCoresCount(value float64) {
-	m.savedCPUcores += value
+func (m *NamespaceMetricsHolder) IncrementSavedResources(memoryValue, cpuValue float64) {
+	m.savedMemoryBytes += memoryValue
+	m.savedCPUcores += cpuValue
 }

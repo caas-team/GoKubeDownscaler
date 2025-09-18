@@ -178,16 +178,7 @@ func runWithoutLeaderElection(
 ) {
 	slog.Warn("proceeding without leader election; this could cause errors when running with multiple replicas")
 
-	var downscalerMetrics *metrics.Metrics = nil
-
-	if config.MetricsEnabled {
-		go serveMetrics()
-
-		downscalerMetrics = metrics.NewMetrics(config.DryRun)
-		downscalerMetrics.RegisterAll()
-	}
-
-	err := startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config, downscalerMetrics)
+	err := startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
 	if err != nil {
 		slog.Error("an error occurred while scanning workloads, exiting", "error", err)
 		os.Exit(1)
@@ -202,6 +193,8 @@ func startScanning(
 	config *util.RuntimeConfiguration,
 	downscalerMetrics *metrics.Metrics,
 ) error {
+	downscalerMetrics := initMetrics(config)
+
 	slog.Info("started downscaler")
 
 	previousNamespacesToMetrics := make(map[string]*metrics.NamespaceMetricsHolder)
@@ -470,14 +463,13 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 			return fmt.Errorf("failed to get downscale replicas: %w", err)
 		}
 
-		totalSavedCPU, totalSavedMemory, err := client.DownscaleWorkload(downscaleReplicas, workload, ctx)
+		savedResources, err := client.DownscaleWorkload(downscaleReplicas, workload, ctx)
 		if err != nil {
 			return fmt.Errorf("failed to downscale workload: %w", err)
 		}
 
 		workloadNamespaceMetrics.IncrementDownscaledWorkloadsCount()
-		workloadNamespaceMetrics.IncrementSavedCPUCoresCount(totalSavedCPU)
-		workloadNamespaceMetrics.IncrementSavedMemoryBytesCount(totalSavedMemory)
+		workloadNamespaceMetrics.IncrementSavedResources(savedResources.TotalCPU(), savedResources.TotalMemory())
 	}
 
 	if scaling == values.ScalingUp {
@@ -492,4 +484,18 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	}
 
 	return nil
+}
+
+func initMetrics(config *util.RuntimeConfiguration) *metrics.Metrics {
+	if !config.MetricsEnabled {
+		return nil
+	}
+
+	go serveMetrics()
+
+	m := metrics.NewMetrics(config.DryRun)
+	m.RegisterAll()
+	slog.Info("metrics initialized")
+
+	return m
 }

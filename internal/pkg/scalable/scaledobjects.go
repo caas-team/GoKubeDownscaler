@@ -82,9 +82,9 @@ func (s *scaledObject) Reget(clientsets *Clientsets, ctx context.Context) error 
 
 // getSavedResourcesRequests returns the total saved CPU and memory requests for the scaled object.
 //
-//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
-func (s *scaledObject) getSavedResourcesRequests(_ int32) (totalSavedCPU, totalSavedMemory float64) {
-	return totalSavedCPU, totalSavedMemory
+
+func (s *scaledObject) getSavedResourcesRequests(_ int32) *SavedResources {
+	return NewSavedResources(0, 0)
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

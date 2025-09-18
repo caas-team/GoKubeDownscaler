@@ -59,8 +59,10 @@ func (p *prometheus) Reget(clientsets *Clientsets, ctx context.Context) error {
 
 // getSavedResourcesRequests calculates the total saved resources requests when downscaling the Prometheus.
 //
-//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
-func (p *prometheus) getSavedResourcesRequests(diffReplicas int32) (totalSavedCPU, totalSavedMemory float64) {
+
+func (p *prometheus) getSavedResourcesRequests(diffReplicas int32) *SavedResources {
+	var totalSavedCPU, totalSavedMemory float64
+
 	for i := range p.Spec.Containers {
 		container := &p.Spec.Containers[i] // take pointer to avoid copying
 		if container.Resources.Requests != nil {
@@ -72,7 +74,7 @@ func (p *prometheus) getSavedResourcesRequests(diffReplicas int32) (totalSavedCP
 	totalSavedCPU *= float64(diffReplicas)
 	totalSavedMemory *= float64(diffReplicas)
 
-	return totalSavedCPU, totalSavedMemory
+	return NewSavedResources(totalSavedCPU, totalSavedMemory)
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
