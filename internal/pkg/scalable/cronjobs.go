@@ -90,8 +90,10 @@ func (c *cronJob) Reget(clientsets *Clientsets, ctx context.Context) error {
 
 // getSavedResourcesRequests calculates the total saved resources requests when downscaling the CronJob.
 //
-//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
-func (c *cronJob) getSavedResourcesRequests() (totalSavedCPU, totalSavedMemory float64) {
+
+func (c *cronJob) getSavedResourcesRequests() *SavedResources {
+	var totalSavedCPU, totalSavedMemory float64
+
 	for i := range c.Spec.JobTemplate.Spec.Template.Spec.Containers {
 		container := &c.Spec.JobTemplate.Spec.Template.Spec.Containers[i]
 		if container.Resources.Requests != nil {
@@ -103,7 +105,7 @@ func (c *cronJob) getSavedResourcesRequests() (totalSavedCPU, totalSavedMemory f
 	totalSavedCPU *= float64(*c.Spec.JobTemplate.Spec.Parallelism)
 	totalSavedMemory *= float64(*c.Spec.JobTemplate.Spec.Parallelism)
 
-	return totalSavedCPU, totalSavedMemory
+	return NewSavedResources(totalSavedCPU, totalSavedMemory)
 }
 
 // setSuspend sets the value of the suspend field on the cronJob.

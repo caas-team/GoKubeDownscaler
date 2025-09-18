@@ -14,7 +14,7 @@ type suspendScaledResource interface {
 	// setSuspend sets the value of the suspend field on the workload
 	setSuspend(suspend bool)
 	// getSavedResourcesRequests returns the saved CPU and memory requests for the workload based on the downscale replicas.
-	getSavedResourcesRequests() (float64, float64)
+	getSavedResourcesRequests() *SavedResources
 }
 
 // suspendScaledWorkload is a wrapper for all resources which are scaled by setting a suspend field.
@@ -30,11 +30,11 @@ func (r *suspendScaledWorkload) ScaleUp() error {
 
 // ScaleDown scales down the underlying suspendScaledResource.
 //
-//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
-func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas) (totalSavedCPU, totalSavedMemory float64, err error) {
-	totalSavedCPU, totalSavedMemory = r.getSavedResourcesRequests()
+
+func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas) (*SavedResources, error) {
+	savedResources := r.getSavedResourcesRequests()
 
 	r.setSuspend(true)
 
-	return totalSavedCPU, totalSavedMemory, nil
+	return savedResources, nil
 }

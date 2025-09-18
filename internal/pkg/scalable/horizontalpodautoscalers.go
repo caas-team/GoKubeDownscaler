@@ -68,9 +68,9 @@ func (h *horizontalPodAutoscaler) Reget(clientsets *Clientsets, ctx context.Cont
 
 // getSavedResourcesRequests calculates the total saved resources requests when downscaling the HorizontalPodAutoscaler.
 //
-//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
-func (h *horizontalPodAutoscaler) getSavedResourcesRequests(_ int32) (totalSavedCPU, totalSavedMemory float64) {
-	return totalSavedCPU, totalSavedMemory
+
+func (h *horizontalPodAutoscaler) getSavedResourcesRequests(_ int32) *SavedResources {
+	return NewSavedResources(0, 0)
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

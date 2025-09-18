@@ -26,14 +26,13 @@ func (m *MockClient) GetNamespaceAnnotations(namespace string, ctx context.Conte
 	return args.Get(0).(map[string]string), args.Error(1)
 }
 
-//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
 func (m *MockClient) DownscaleWorkload(
 	replicas values.Replicas,
 	workload scalable.Workload,
 	ctx context.Context,
-) (totalSavedCPU, totalSavedMemory float64, err error) {
+) (*scalable.SavedResources, error) {
 	args := m.Called(replicas, workload, ctx)
-	return args.Get(0).(float64), args.Get(1).(float64), args.Error(2)
+	return args.Get(0).(*scalable.SavedResources), args.Error(1)
 }
 
 func (m *MockClient) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
@@ -98,7 +97,7 @@ func TestScanWorkload(t *testing.T) {
 	mockWorkload.On("GetAnnotations").Return(map[string]string{
 		"downscaler/force-downtime": "true",
 	})
-	mockClient.On("DownscaleWorkload", values.AbsoluteReplicas(0), mockWorkload, ctx).Return(0.0, 0.0, nil)
+	mockClient.On("DownscaleWorkload", values.AbsoluteReplicas(0), mockWorkload, ctx).Return(scalable.NewSavedResources(0, 0), nil)
 	err := scanWorkload(mockWorkload, mockClient, ctx, values.GetDefaultScope(), scopeCli, scopeEnv, namespaceScopes, namespaceMetrics, config)
 
 	require.NoError(t, err)

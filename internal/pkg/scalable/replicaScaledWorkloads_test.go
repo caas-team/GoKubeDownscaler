@@ -175,7 +175,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, workload)
 			}
 
-			totalSavedCPU, totalSavedMemory, err := workload.ScaleDown(test.downtimeReplicas)
+			savedResources, err := workload.ScaleDown(test.downtimeReplicas)
 
 			if test.wantErr != nil {
 				var targetErr *values.InvalidReplicaTypeError
@@ -194,8 +194,8 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, test.wantOriginalReplicas, gotOriginal)
 
-			assert.InDelta(t, test.wantSavedCPU, totalSavedCPU, 0.0001)    // CPU tolerance
-			assert.InDelta(t, test.wantSavedMemory, totalSavedMemory, 1e5) // Memory tolerance
+			assert.InDelta(t, test.wantSavedCPU, savedResources.totalSavedCPU, 0.0001)    // CPU tolerance
+			assert.InDelta(t, test.wantSavedMemory, savedResources.totalSavedMemory, 1e5) // Memory tolerance
 		})
 	}
 }

@@ -47,8 +47,10 @@ func (j *job) Reget(clientsets *Clientsets, ctx context.Context) error {
 
 // getSavedResourcesRequests calculates the total saved resources requests when downscaling the Job.
 //
-//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
-func (j *job) getSavedResourcesRequests() (totalSavedCPU, totalSavedMemory float64) {
+
+func (j *job) getSavedResourcesRequests() *SavedResources {
+	var totalSavedCPU, totalSavedMemory float64
+
 	for i := range j.Spec.Template.Spec.Containers {
 		container := &j.Spec.Template.Spec.Containers[i] // use pointer to avoid copy
 		if container.Resources.Requests != nil {
@@ -60,7 +62,7 @@ func (j *job) getSavedResourcesRequests() (totalSavedCPU, totalSavedMemory float
 	totalSavedCPU *= float64(*j.Spec.Parallelism)
 	totalSavedMemory *= float64(*j.Spec.Parallelism)
 
-	return totalSavedCPU, totalSavedMemory
+	return NewSavedResources(totalSavedCPU, totalSavedMemory)
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

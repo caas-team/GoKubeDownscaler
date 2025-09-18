@@ -122,14 +122,14 @@ func TestDaemonSet_ScaleDown(t *testing.T) {
 				daemonset.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: "true"}
 			}
 
-			totalSavedCPU, totalSavedMemory, err := daemonset.ScaleDown(values.AbsoluteReplicas(0))
+			savedResources, err := daemonset.ScaleDown(values.AbsoluteReplicas(0))
 			require.NoError(t, err)
 
 			_, ok := daemonset.Spec.Template.Spec.NodeSelector[labelMatchNone]
 			assert.Equal(t, test.wantLabelSet, ok)
 
-			assert.InDelta(t, test.wantSavedCPU, totalSavedCPU, 0.0001)
-			assert.InDelta(t, test.wantSavedMemory, totalSavedMemory, 1e5)
+			assert.InDelta(t, test.wantSavedCPU, savedResources.totalSavedCPU, 0.0001)
+			assert.InDelta(t, test.wantSavedMemory, savedResources.totalSavedMemory, 1e5)
 		})
 	}
 }

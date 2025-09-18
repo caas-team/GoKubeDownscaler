@@ -115,12 +115,12 @@ func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 
 			s := suspendScaledWorkload{&cronjob}
 
-			totalSavedCPU, totalSavedMemory, err := s.ScaleDown(nil)
+			savedResources, err := s.ScaleDown(nil)
 			require.NoError(t, err)
 
 			assertBoolPointerEqual(t, test.wantSuspend, cronjob.Spec.Suspend)
-			assert.InDelta(t, test.wantSavedCPU, totalSavedCPU, 0.0001)
-			assert.InDelta(t, test.wantSavedMemory, totalSavedMemory, 1e5)
+			assert.InDelta(t, test.wantSavedCPU, savedResources.totalSavedCPU, 0.0001)
+			assert.InDelta(t, test.wantSavedMemory, savedResources.totalSavedMemory, 1e5)
 		})
 	}
 }

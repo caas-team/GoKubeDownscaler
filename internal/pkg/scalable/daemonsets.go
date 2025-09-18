@@ -41,17 +41,17 @@ func (d *daemonSet) ScaleUp() error {
 
 // ScaleDown scales the resource down.
 //
-//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
-func (d *daemonSet) ScaleDown(_ values.Replicas) (totalSavedCPU, totalSavedMemory float64, err error) {
+
+func (d *daemonSet) ScaleDown(_ values.Replicas) (*SavedResources, error) {
 	if d.Spec.Template.Spec.NodeSelector == nil {
 		d.Spec.Template.Spec.NodeSelector = map[string]string{}
 	}
 
 	d.Spec.Template.Spec.NodeSelector[labelMatchNone] = "true"
 
-	totalSavedCPU, totalSavedMemory = d.getResourcesRequests(d.Status.DesiredNumberScheduled)
+	savedResources := d.getResourcesRequests(d.Status.DesiredNumberScheduled)
 
-	return totalSavedCPU, totalSavedMemory, nil
+	return savedResources, nil
 }
 
 // Reget regets the resource from the Kubernetes API.
@@ -68,8 +68,10 @@ func (d *daemonSet) Reget(clientsets *Clientsets, ctx context.Context) error {
 
 // getResourcesRequests calculates the total saved resources requests when downscaling the DaemonSet.
 //
-//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
-func (d *daemonSet) getResourcesRequests(_ int32) (totalSavedCPU, totalSavedMemory float64) {
+
+func (d *daemonSet) getResourcesRequests(_ int32) *SavedResources {
+	var totalSavedCPU, totalSavedMemory float64
+
 	for i := range d.Spec.Template.Spec.Containers {
 		container := &d.Spec.Template.Spec.Containers[i]
 		if container.Resources.Requests != nil {
@@ -81,7 +83,7 @@ func (d *daemonSet) getResourcesRequests(_ int32) (totalSavedCPU, totalSavedMemo
 	totalSavedCPU *= float64(d.Status.CurrentNumberScheduled)
 	totalSavedMemory *= float64(d.Status.CurrentNumberScheduled)
 
-	return totalSavedCPU, totalSavedMemory
+	return NewSavedResources(totalSavedCPU, totalSavedMemory)
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

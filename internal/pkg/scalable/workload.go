@@ -87,7 +87,7 @@ type Workload interface {
 	// ScaleUp scales up the workload
 	ScaleUp() error
 	// ScaleDown scales down the workload
-	ScaleDown(downscaleReplicas values.Replicas) (float64, float64, error)
+	ScaleDown(downscaleReplicas values.Replicas) (*SavedResources, error)
 }
 
 type Clientsets struct {

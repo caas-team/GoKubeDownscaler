@@ -59,8 +59,10 @@ func (s *statefulSet) Reget(clientsets *Clientsets, ctx context.Context) error {
 
 // getSavedResourcesRequests calculates the total saved resources requests when downscaling the StatefulSet.
 //
-//nolint:nonamedreturns // using named return values for clarity and to simplify return statements
-func (s *statefulSet) getSavedResourcesRequests(diffReplicas int32) (totalSavedCPU, totalSavedMemory float64) {
+
+func (s *statefulSet) getSavedResourcesRequests(diffReplicas int32) *SavedResources {
+	var totalSavedCPU, totalSavedMemory float64
+
 	for i := range s.Spec.Template.Spec.Containers {
 		container := &s.Spec.Template.Spec.Containers[i]
 		if container.Resources.Requests != nil {
@@ -74,7 +76,7 @@ func (s *statefulSet) getSavedResourcesRequests(diffReplicas int32) (totalSavedC
 	totalSavedCPU *= float64(diffReplicas)
 	totalSavedMemory *= float64(diffReplicas)
 
-	return totalSavedCPU, totalSavedMemory
+	return NewSavedResources(totalSavedCPU, totalSavedMemory)
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
