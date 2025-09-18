@@ -15,12 +15,6 @@ The following Kubernetes Objects can be created with our Helm Chart:
 The [deployment.yaml](repo:deployments/chart/templates/deployment.yaml) file creates the main Deployment of the GoKubeDownscaler
 with a reference to the provided ServiceAccount and ConfigMap.
 
-## Service
-
-The [service.yaml](repo:deployments/chart/templates/service.yaml) file creates the main Service of the GoKubeDownscaler.
-This
-Service is created only when [`--metrics`](ref:docs-metrics) are enabled.
-
 ## Serviceaccount
 
 The [serviceaccount.yaml](repo:deployments/chart/templates/serviceaccount.yaml) file creates a ServiceAccount
@@ -46,3 +40,8 @@ for every namespace listed in [`constrainedNamespaces`](ref:docs-helm-constraine
 
 The [leaserole.yaml](repo:deployments/chart/templates/leaserole.yaml) file creates a Role and RoleBinding
 if [`--leader-election`](ref:docs-runtime-configuration#leader-election) is enabled in order to make lease management possible.
+
+## PodMonitor
+
+The [podmonitor.yaml](repo:deployments/chart/templates/leaserole.yaml) file creates a PodMonitor that is able to scrape
+metrics from GoKubeDownscaler main deployment
