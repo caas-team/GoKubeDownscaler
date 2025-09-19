@@ -52,32 +52,34 @@ func NewScope() *Scope {
 
 // Scope represents a value Scope.
 type Scope struct {
-	DownscalePeriod   timeSpans     // periods to downscale in
-	DownTime          timeSpans     // within these timespans workloads will be scaled down, outside of them they will be scaled up
-	UpscalePeriod     timeSpans     // periods to upscale in
-	UpTime            timeSpans     // within these timespans workloads will be scaled up, outside of them they will be scaled down
-	Exclude           timeSpans     // defines when the workload should be excluded
-	ExcludeUntil      *time.Time    // until when the workload should be excluded
-	ForceUptime       timeSpans     // force workload into an uptime state when in one of the timespans
-	ForceDowntime     timeSpans     // force workload into a downtime state when in one of the timespans
-	DownscaleReplicas Replicas      // the replicas to scale down to
-	GracePeriod       time.Duration // grace period until new workloads will be scaled down
-	ScaleChildren     triStateBool  // ownerReference will immediately trigger scaling of children workloads, when applicable
+	DownscalePeriod    timeSpans     // periods to downscale in
+	DownTime           timeSpans     // within these timespans workloads will be scaled down, outside of them they will be scaled up
+	UpscalePeriod      timeSpans     // periods to upscale in
+	UpTime             timeSpans     // within these timespans workloads will be scaled up, outside of them they will be scaled down
+	Exclude            timeSpans     // defines when the workload should be excluded
+	ExcludeUntil       *time.Time    // until when the workload should be excluded
+	ForceUptime        timeSpans     // force workload into an uptime state when in one of the timespans
+	ForceDowntime      timeSpans     // force workload into a downtime state when in one of the timespans
+	DownscaleReplicas  Replicas      // the replicas to scale down to
+	GracePeriod        time.Duration // grace period until new workloads will be scaled down
+	ScaleChildren      triStateBool  // ownerReference will immediately trigger scaling of children workloads, when applicable
+	UpscaleOnExclusion triStateBool  // excluded workloads will be upscaled
 }
 
 func GetDefaultScope() *Scope {
 	return &Scope{
-		DownscalePeriod:   nil,
-		DownTime:          nil,
-		UpscalePeriod:     nil,
-		UpTime:            nil,
-		Exclude:           nil,
-		ExcludeUntil:      nil,
-		ForceUptime:       nil,
-		ForceDowntime:     nil,
-		DownscaleReplicas: AbsoluteReplicas(0),
-		GracePeriod:       15 * time.Minute,
-		ScaleChildren:     triStateBool{isSet: false, value: false},
+		DownscalePeriod:    nil,
+		DownTime:           nil,
+		UpscalePeriod:      nil,
+		UpTime:             nil,
+		Exclude:            nil,
+		ExcludeUntil:       nil,
+		ForceUptime:        nil,
+		ForceDowntime:      nil,
+		DownscaleReplicas:  AbsoluteReplicas(0),
+		GracePeriod:        15 * time.Minute,
+		ScaleChildren:      triStateBool{isSet: false, value: false},
+		UpscaleOnExclusion: triStateBool{isSet: false, value: false},
 	}
 }
 
@@ -223,32 +225,44 @@ func (s Scopes) GetScaleChildren() bool {
 }
 
 // GetExcluded checks if the scopes exclude scaling.
-func (s Scopes) GetExcluded() bool {
+func (s Scopes) GetExcluded() (excluded, upscaleOnExclusion bool) { //nolint: nonamedreturns, cyclop // could be refactored in the future to simplify cyclop
+	upscaleOnExclusion = false
+
 	for _, scope := range s {
+		if scope.UpscaleOnExclusion.isSet && scope.UpscaleOnExclusion.value {
+			upscaleOnExclusion = true
+		}
+
 		if scope.Exclude == nil {
 			continue
 		}
 
-		if scope.Exclude.inTimeSpans() {
-			return true
+		if scope.Exclude.inTimeSpans() && !upscaleOnExclusion {
+			return true, false
 		}
 
 		break
 	}
 
+	upscaleOnExclusion = false
+
 	for _, scope := range s {
+		if scope.UpscaleOnExclusion.isSet && scope.UpscaleOnExclusion.value {
+			upscaleOnExclusion = true
+		}
+
 		if scope.ExcludeUntil == nil {
 			continue
 		}
 
-		if scope.ExcludeUntil.After(time.Now()) {
-			return true
+		if scope.ExcludeUntil.After(time.Now()) && !upscaleOnExclusion {
+			return true, false
 		}
 
 		break
 	}
 
-	return false
+	return false, upscaleOnExclusion
 }
 
 // IsInGracePeriod gets the grace period of the uppermost scope that has it set.
