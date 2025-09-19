@@ -11,7 +11,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-const annotationOriginalReplicas = "downscaler/original-replicas"
+const (
+	annotationOriginalReplicas          = "downscaler/original-replicas"
+	defaultKedaScaleTargetRefApiVersion = "apps/v1"
+	defaultKedaScaleTargetRefKind       = "Deployment"
+)
 
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads.
 func FilterExcluded(
@@ -87,20 +91,30 @@ func getExternallyScaled(workloads []Workload) []workloadIdentifier {
 			continue
 		}
 
-		var group, version string
+		var version, group string
+		apiVersion := scaledobject.Spec.ScaleTargetRef.APIVersion
+		kind := scaledobject.Spec.ScaleTargetRef.Kind
 
-		apiVersion := strings.SplitN(scaledobject.Spec.ScaleTargetRef.APIVersion, "/", 2)
-		if len(apiVersion) != 2 {
+		if apiVersion == "" {
+			apiVersion = defaultKedaScaleTargetRefApiVersion
+		}
+
+		if kind == "" {
+			kind = defaultKedaScaleTargetRefKind
+		}
+
+		apiVersionSlice := strings.SplitN(apiVersion, "/", 2)
+		if len(apiVersionSlice) < 2 {
 			group = ""
-			version = apiVersion[0]
+			version = apiVersionSlice[0]
 		} else {
-			group = apiVersion[0]
-			version = apiVersion[1]
+			group = apiVersionSlice[0]
+			version = apiVersionSlice[1]
 		}
 
 		externallyScaled = append(externallyScaled, workloadIdentifier{
 			gvk: schema.GroupVersionKind{
-				Kind:    scaledobject.Spec.ScaleTargetRef.Kind,
+				Kind:    kind,
 				Group:   group,
 				Version: version,
 			},
