@@ -92,8 +92,9 @@ Excluding a workload now will ignore scaling the workload, instead of forcing it
 This makes the behavior of workload exclusion more intuitive and semantically coherent.
 
 To retain the classic behavior where an excluded workload gets upscaled you must explicitly set the
-[Exclusion Upscale](ref:docs-values#exclusion-upscale) value inside [CLI Scope](ref:docs-cli-scope#values),
-[Namespace Scope](ref:docs-namespace-scope#values) or [Workload Scope](ref:docs-workload-scope#values).
+[Exclusion Upscale](ref:docs-values#exclusion-upscale) value using the [`--exclusion-upscale` cli argument](ref:docs-cli-scope#values)
+or the `downscaler/exclusion-upscale` annotation at [Namespace Scope](ref:docs-namespace-scope#values)
+or [Workload Scope](ref:docs-workload-scope#values).
 The final behavior is always the one specified in the most specific scope as stated in the
 [algorithm documentation](ref:docs-scopes-and-scaling#scaling-algorithm)
 
