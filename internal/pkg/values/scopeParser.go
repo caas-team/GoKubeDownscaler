@@ -89,8 +89,8 @@ func (s *Scope) ParseScopeFlags() {
 	)
 	flag.Var(
 		&s.UpscaleOnExclusion,
-		"upscale-on-exclusion",
-		"if set to true,  (default: false)",
+		"exclusion-upscale",
+		"if set to true, excluded workloads will be processed to be upscaled (default: false)",
 	)
 }
 
