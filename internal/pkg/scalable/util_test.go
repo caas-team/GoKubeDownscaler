@@ -129,7 +129,7 @@ func TestFilterExcluded(t *testing.T) {
 		scaledObject: &replicaScaledWorkload{&scaledObject{
 			ScaledObject: &v1alpha1.ScaledObject{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "ScaledSlash",
+					Name:      "scaledSlash",
 					Namespace: "Namespace4",
 				},
 				TypeMeta: metav1.TypeMeta{
@@ -138,9 +138,28 @@ func TestFilterExcluded(t *testing.T) {
 				},
 				Spec: v1alpha1.ScaledObjectSpec{
 					ScaleTargetRef: &v1alpha1.ScaleTarget{
-						Name:       "ReplicationControllerSlash",
+						Name:       "replicationControllerSlash",
 						APIVersion: "v1", // with slash to trigger that branch
 						Kind:       "ReplicationController",
+					},
+				},
+			},
+		}},
+	}
+	ns5 := ns{
+		scaledObject: &replicaScaledWorkload{&scaledObject{
+			ScaledObject: &v1alpha1.ScaledObject{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "scaledWithNoKindApiVersion",
+					Namespace: "Namespace4",
+				},
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "keda.sh/v1alpha1", // with slash here
+					Kind:       "ScaledObject",
+				},
+				Spec: v1alpha1.ScaledObjectSpec{
+					ScaleTargetRef: &v1alpha1.ScaleTarget{
+						Name: "defaultDeploy",
 					},
 				},
 			},
@@ -170,6 +189,14 @@ func TestFilterExcluded(t *testing.T) {
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
 			want:               []Workload{ns4.scaledObject},
+		},
+		{
+			name:               "apiVersion and kind not specified",
+			workloads:          []Workload{ns5.scaledObject},
+			includeLabels:      nil,
+			excludedNamespaces: nil,
+			excludedWorkloads:  nil,
+			want:               []Workload{ns5.scaledObject},
 		},
 		{
 			name:               "includeLabels",
