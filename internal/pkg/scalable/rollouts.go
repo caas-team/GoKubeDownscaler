@@ -3,12 +3,16 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	argov1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const RolloutKind = "Rollout"
 
 // getRollouts is the getResourceFunc for Argo Rollouts.
 func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -23,6 +27,18 @@ func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) 
 	}
 
 	return results, nil
+}
+
+// parseRolloutFromAdmissionRequest parses the admission review and returns the rollout.
+//
+// nolint: ireturn // this function should return an interface type
+func parseRolloutFromAdmissionRequest(rawObject []byte) (Workload, error) {
+	var roll argov1alpha1.Rollout
+	if err := json.Unmarshal(rawObject, &roll); err != nil {
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
+	}
+
+	return &replicaScaledWorkload{&rollout{&roll}}, nil
 }
 
 // rollout is a wrapper for rollout.v1alpha1.argoproj.io to implement the replicaScaledResource interface.
@@ -66,4 +82,47 @@ func (r *rollout) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a rollout.
+//
+// nolint: ireturn // this function should return an interface type
+func (r *rollout) Copy() (Workload, error) {
+	if r.Rollout == nil {
+		return nil, newNilUnderlyingObjectError(RolloutKind)
+	}
+
+	copied := r.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &rollout{
+			Rollout: copied,
+		},
+	}, nil
+}
+
+// Compare compares two rollout resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (r *rollout) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	rollCopy, ok := rswCopy.replicaScaledResource.(*rollout)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*rollout)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if r.Rollout == nil || rollCopy.Rollout == nil {
+		return nil, newNilUnderlyingObjectError(RolloutKind)
+	}
+
+	diff, err := jsondiff.Compare(r.Rollout, rollCopy.Rollout)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compare rollouts: %w", err)
+	}
+
+	return diff, nil
 }

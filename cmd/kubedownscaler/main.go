@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log/slog"
 	"os"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
-	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/client-go/tools/leaderelection"
@@ -26,43 +24,7 @@ const (
 )
 
 func main() {
-	config := util.GetDefaultConfig()
-	config.ParseConfigFlags()
-
-	err := config.ParseConfigEnvVars()
-	if err != nil {
-		slog.Error("failed to parse env vars for config", "error", err)
-		os.Exit(1)
-	}
-
-	scopeDefault := values.GetDefaultScope()
-	scopeCli := values.NewScope()
-	scopeEnv := values.NewScope()
-
-	err = scopeEnv.GetScopeFromEnv()
-	if err != nil {
-		slog.Error("failed to get scope from env", "error", err)
-		os.Exit(1)
-	}
-
-	scopeCli.ParseScopeFlags()
-
-	flag.Parse()
-
-	if config.Debug || config.DryRun {
-		slog.SetLogLoggerLevel(slog.LevelDebug)
-	}
-
-	if err = scopeCli.CheckForIncompatibleFields(); err != nil {
-		slog.Error("found incompatible fields", "error", err)
-		os.Exit(1)
-	}
-
-	slog.Debug("finished getting startup config",
-		"envScope", scopeEnv,
-		"cliScope", scopeCli,
-		"config", config,
-	)
+	config, scopeDefault, scopeCli, scopeEnv := initComponent()
 
 	slog.Debug("getting client for kubernetes")
 
@@ -90,7 +52,7 @@ func runWithLeaderElection(
 	cancel context.CancelFunc,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) {
 	lease, err := client.CreateLease(leaseName)
 	if err != nil {
@@ -115,6 +77,7 @@ func runWithLeaderElection(
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				slog.Info("started leading")
+
 				err = startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
 				if err != nil {
 					slog.Error("an error occurred while scanning workloads", "error", err)
@@ -137,7 +100,7 @@ func runWithoutLeaderElection(
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) {
 	slog.Warn("proceeding without leader election; this could cause errors when running with multiple replicas")
 
@@ -153,7 +116,7 @@ func startScanning(
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) error {
 	slog.Info("started downscaler")
 
@@ -173,7 +136,7 @@ func startScanning(
 		)
 		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 
-		namespaceScopes, err := client.GetNamespaceScopes(workloads, ctx)
+		namespaceScopes, err := client.GetNamespacesScopes(workloads, ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get namespace annotations: %w", err)
 		}
@@ -219,7 +182,7 @@ func attemptScaling(
 	scaling values.Scaling,
 	workload scalable.Workload,
 	scopes values.Scopes,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) error {
 	for retry := range config.MaxRetriesOnConflict + 1 {
 		err := scaleWorkload(scaling, workload, scopes, client, ctx)
@@ -248,14 +211,14 @@ func attemptScaling(
 	return newMaxRetriesExceeded(config.MaxRetriesOnConflict)
 }
 
-// scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload.
+// scanWorkload runs a scan on the workload, determining the scaling and scaling the workload.
 func scanWorkload(
 	workload scalable.Workload,
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	namespaceScopes map[string]*values.Scope,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) error {
 	resourceLogger := kubernetes.NewResourceLoggerForWorkload(client, workload)
 
@@ -329,7 +292,7 @@ func scaleWorkloads(
 	scopes values.Scopes,
 	client kubernetes.Client,
 	ctx context.Context,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) {
 	for _, workload := range workloads {
 		go func(workload scalable.Workload) {

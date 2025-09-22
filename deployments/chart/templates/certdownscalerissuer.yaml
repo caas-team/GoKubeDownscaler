@@ -1,0 +1,12 @@
+{{- if and .Values.webhookController.certManager.enabled .Values.webhookController.certManager.issuer.generate }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "go-kube-downscaler.webhookController.fullname" . }}-issuer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "go-kube-downscaler.labels" . | nindent 4 }}
+spec:
+  ca:
+    secretName: {{ .Values.webhookController.certManager.ca.secretName }}
+{{- end }}

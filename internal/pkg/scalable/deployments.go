@@ -3,12 +3,16 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/wI2L/jsondiff"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const DeploymentKind = "Deployment"
 
 // getDeployments is the getResourceFunc for Deployments.
 func getDeployments(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -23,6 +27,18 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 	}
 
 	return results, nil
+}
+
+// parseDeploymentFromAdmissionRequest parses the admission review and returns the deployment.
+//
+// nolint: ireturn // this function should return an interface type
+func parseDeploymentFromAdmissionRequest(rawObject []byte) (Workload, error) {
+	var dep appsv1.Deployment
+	if err := json.Unmarshal(rawObject, &dep); err != nil {
+		return nil, fmt.Errorf("failed to decode deployment: %w", err)
+	}
+
+	return &replicaScaledWorkload{&deployment{&dep}}, nil
 }
 
 // deployment is a wrapper for deployment.v1.apps to implement the replicaScaledResource interface.
@@ -66,4 +82,47 @@ func (d *deployment) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a deployment.
+//
+// nolint: ireturn // this function should return an interface type
+func (d *deployment) Copy() (Workload, error) {
+	if d.Deployment == nil {
+		return nil, newNilUnderlyingObjectError(DeploymentKind)
+	}
+
+	copied := d.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &deployment{
+			Deployment: copied,
+		},
+	}, nil
+}
+
+// Compare compares two deployment resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (d *deployment) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	depCopy, ok := rswCopy.replicaScaledResource.(*deployment)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*deployment)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if d.Deployment == nil || depCopy.Deployment == nil {
+		return nil, newNilUnderlyingObjectError(DeploymentKind)
+	}
+
+	diff, err := jsondiff.Compare(d.Deployment, depCopy.Deployment)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compare deployments: %w", err)
+	}
+
+	return diff, nil
 }

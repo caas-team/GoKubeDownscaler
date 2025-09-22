@@ -2,14 +2,18 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/wI2L/jsondiff"
 	policy "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const PodDisruptionBudgetKind = "PodDisruptionBudget"
 
 // getPodDisruptionBudgets is the getResourceFunc for podDisruptionBudget.
 func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
@@ -24,6 +28,18 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 	}
 
 	return results, nil
+}
+
+// parsePodDisruptionBudgetFromAdmissionRequest parses the admission review and returns the podDisruptionBudget wrapped in a Workload.
+//
+// nolint: ireturn // this function should return an interface type
+func parsePodDisruptionBudgetFromAdmissionRequest(rawObject []byte) (Workload, error) {
+	var pdb policy.PodDisruptionBudget
+	if err := json.Unmarshal(rawObject, &pdb); err != nil {
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
+	}
+
+	return &podDisruptionBudget{&pdb}, nil
 }
 
 // podDisruptionBudget is a wrapper for poddisruptionbudget.v1.policy to implement the Workload interface.
@@ -151,4 +167,36 @@ func (p *podDisruptionBudget) Update(clientsets *Clientsets, ctx context.Context
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload, which is expected to be a podDisruptionBudget.
+//
+// nolint: ireturn // this function should return an interface type
+func (p *podDisruptionBudget) Copy() (Workload, error) {
+	if p.PodDisruptionBudget == nil {
+		return nil, newNilUnderlyingObjectError(PodDisruptionBudgetKind)
+	}
+
+	copied := p.DeepCopy()
+
+	return &podDisruptionBudget{PodDisruptionBudget: copied}, nil
+}
+
+// Compare compares two podDisruptionBudget resources and returns the differences as a jsondiff.Patch.
+func (p *podDisruptionBudget) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	pdbCopy, ok := workloadCopy.(*podDisruptionBudget)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*podDisruptionBudget)(nil), workloadCopy)
+	}
+
+	if p.PodDisruptionBudget == nil || pdbCopy.PodDisruptionBudget == nil {
+		return nil, newNilUnderlyingObjectError(PodDisruptionBudgetKind)
+	}
+
+	diff, err := jsondiff.Compare(p.PodDisruptionBudget, pdbCopy.PodDisruptionBudget)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compare podDisruptionBudget: %w", err)
+	}
+
+	return diff, nil
 }
