@@ -30,12 +30,15 @@ func TestParseAdmissionReviewFromRequest(t *testing.T) {
 				obj := &admissionv1.AdmissionReview{
 					Request: &admissionv1.AdmissionRequest{UID: "1234"},
 				}
+
 				body, err := json.Marshal(obj)
 				if err != nil {
 					t.Fatalf("failed to marshal admission review: %v", err)
 				}
+
 				req := httptest.NewRequest(http.MethodPost, "/validate-workloads", bytes.NewReader(body))
 				req.Header.Set("Content-Type", "application/json")
+
 				return req
 			},
 			expectError: false,
@@ -46,12 +49,15 @@ func TestParseAdmissionReviewFromRequest(t *testing.T) {
 				obj := &admissionv1.AdmissionReview{
 					Request: &admissionv1.AdmissionRequest{UID: "1234"},
 				}
+
 				body, err := json.Marshal(obj)
 				if err != nil {
 					t.Fatalf("failed to marshal admission review: %v", err)
 				}
+
 				req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
 				req.Header.Set("Content-Type", "text/plain")
+
 				return req
 			},
 			expectError: true,
@@ -61,6 +67,7 @@ func TestParseAdmissionReviewFromRequest(t *testing.T) {
 			reqBuilder: func() *http.Request {
 				req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(nil))
 				req.Header.Set("Content-Type", "application/json")
+
 				return req
 			},
 			expectError: true,
@@ -70,6 +77,7 @@ func TestParseAdmissionReviewFromRequest(t *testing.T) {
 			reqBuilder: func() *http.Request {
 				req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader([]byte("{bad json")))
 				req.Header.Set("Content-Type", "application/json")
+
 				return req
 			},
 			expectError: true,
@@ -78,12 +86,15 @@ func TestParseAdmissionReviewFromRequest(t *testing.T) {
 			name: "missing Request field",
 			reqBuilder: func() *http.Request {
 				obj := &admissionv1.AdmissionReview{}
+
 				body, err := json.Marshal(obj)
 				if err != nil {
 					t.Fatalf("failed to marshal admission review: %v", err)
 				}
+
 				req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
 				req.Header.Set("Content-Type", "application/json")
+
 				return req
 			},
 			expectError: true,
