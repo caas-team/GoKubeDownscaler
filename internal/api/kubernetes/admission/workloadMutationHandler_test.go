@@ -179,13 +179,13 @@ func TestEvaluateMutation(t *testing.T) {
 	}{
 		{
 			name: "Workload excluded because uptime",
-			setupMocks: func(m *MockClient) {
+			setupMocks: func(mockClient *MockClient) {
 				scope := values.NewScope()
 				scope.DownscaleReplicas = values.AbsoluteReplicas(0)
 				_ = scope.ForceUptime.Set("always")
 
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
-				m.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"}; h.dryRun = true },
 			request: func(t *testing.T) *http.Request {
@@ -196,13 +196,13 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload mutated because downtime",
-			setupMocks: func(m *MockClient) {
+			setupMocks: func(mockClient *MockClient) {
 				scope := values.NewScope()
 				scope.DownscaleReplicas = values.AbsoluteReplicas(0)
 				_ = scope.ForceDowntime.Set("always")
 
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
-				m.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"}; h.dryRun = true },
 			request: func(t *testing.T) *http.Request {
