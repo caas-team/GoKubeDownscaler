@@ -183,6 +183,7 @@ func TestEvaluateMutation(t *testing.T) {
 				scope := values.NewScope()
 				scope.DownscaleReplicas = values.AbsoluteReplicas(0)
 				_ = scope.ForceUptime.Set("always")
+
 				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 				m.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
 			},
@@ -199,6 +200,7 @@ func TestEvaluateMutation(t *testing.T) {
 				scope := values.NewScope()
 				scope.DownscaleReplicas = values.AbsoluteReplicas(0)
 				_ = scope.ForceDowntime.Set("always")
+
 				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 				m.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
 			},
@@ -213,6 +215,7 @@ func TestEvaluateMutation(t *testing.T) {
 			name: "Workload excluded by annotation",
 			setupMocks: func(m *MockClient) {
 				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+
 				scope := values.GetDefaultScope()
 				m.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
 			},
@@ -228,6 +231,7 @@ func TestEvaluateMutation(t *testing.T) {
 			setupMocks: func(m *MockClient) {
 				scope := values.GetDefaultScope()
 				_ = scope.Exclude.Set("true")
+
 				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 				m.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
 			},
@@ -280,6 +284,7 @@ func TestEvaluateMutation(t *testing.T) {
 			name: "Workload excluded because missing labels",
 			setupMocks: func(m *MockClient) {
 				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+
 				scope := values.GetDefaultScope()
 				m.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
 			},
