@@ -117,8 +117,6 @@ func (p *podDisruptionBudget) ScaleUp() error {
 }
 
 // ScaleDown scales the resource down.
-//
-
 func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) error {
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {
@@ -185,8 +183,6 @@ func (p *podDisruptionBudget) Copy() (Workload, error) {
 }
 
 // Compare compares two podDisruptionBudget resources and returns the differences as a jsondiff.Patch.
-//
-
 func (p *podDisruptionBudget) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	pdbCopy, ok := workloadCopy.(*podDisruptionBudget)
 	if !ok {
