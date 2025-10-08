@@ -30,7 +30,6 @@ const config: Config = {
   trailingSlash: false,
 
   onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "throw",
   onBrokenAnchors: "throw",
 
   i18n: {
@@ -231,6 +230,9 @@ const config: Config = {
   markdown: {
     mermaid: true,
     parseFrontMatter: globalRefParseFrontMatter,
+    hooks: {
+      onBrokenMarkdownLinks: "throw",
+    },
   },
 };
 
