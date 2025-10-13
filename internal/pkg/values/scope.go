@@ -225,44 +225,43 @@ func (s Scopes) GetScaleChildren() bool {
 }
 
 // GetExcluded checks if the scopes exclude scaling.
-func (s Scopes) GetExcluded() (excluded, upscaleOnExclusion bool) { //nolint: nonamedreturns, cyclop // could be refactored in the future to simplify cyclop
-	upscaleOnExclusion = false
-
+func (s Scopes) GetExcluded() bool {
 	for _, scope := range s {
-		if scope.UpscaleExcluded.isSet && scope.UpscaleExcluded.value {
-			upscaleOnExclusion = true
-		}
-
 		if scope.Exclude == nil {
 			continue
 		}
 
-		if scope.Exclude.inTimeSpans() && !upscaleOnExclusion {
-			return true, false
+		if scope.Exclude.inTimeSpans() {
+			return true
 		}
 
 		break
 	}
 
-	upscaleOnExclusion = false
-
 	for _, scope := range s {
-		if scope.UpscaleExcluded.isSet && scope.UpscaleExcluded.value {
-			upscaleOnExclusion = true
-		}
-
 		if scope.ExcludeUntil == nil {
 			continue
 		}
 
-		if scope.ExcludeUntil.After(time.Now()) && !upscaleOnExclusion {
-			return true, false
+		if scope.ExcludeUntil.After(time.Now()) {
+			return true
 		}
 
 		break
 	}
 
-	return false, upscaleOnExclusion
+	return false
+}
+
+// GetUpscaleExcluded check if the scopes upscale excluded workloads.
+func (s Scopes) GetUpscaleExcluded() bool {
+	for _, scope := range s {
+		if scope.UpscaleExcluded.isSet && scope.UpscaleExcluded.value {
+			return true
+		}
+	}
+
+	return false
 }
 
 // IsInGracePeriod gets the grace period of the uppermost scope that has it set.

@@ -299,14 +299,15 @@ func scanWorkload(
 		return nil
 	}
 
-	excluded, upscaleOnExclusion := scopes.GetExcluded()
+	excluded := scopes.GetExcluded()
+	upscaleOnExclusion := scopes.GetUpscaleExcluded()
 
 	if excluded && !upscaleOnExclusion {
 		slog.Debug("workload is excluded, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		return nil
 	}
 
-	scaling := getCurrentScaling(workload, upscaleOnExclusion, &scopes)
+	scaling := getCurrentScaling(workload, excluded, upscaleOnExclusion, &scopes)
 
 	err = attemptScaling(client, ctx, scaling, workload, scopes, config)
 	if err != nil {
@@ -325,10 +326,10 @@ func scanWorkload(
 	return nil
 }
 
-func getCurrentScaling(workload scalable.Workload, upscaleOnExclusion bool, scopes *values.Scopes) values.Scaling {
+func getCurrentScaling(workload scalable.Workload, excluded, upscaleOnExclusion bool, scopes *values.Scopes) values.Scaling {
 	var scaling values.Scaling
 
-	if upscaleOnExclusion {
+	if upscaleOnExclusion && excluded {
 		slog.Debug("upscaling excluded workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 		scaling = values.ScalingUp

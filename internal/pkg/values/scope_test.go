@@ -483,7 +483,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{ExcludeUntil: &timeUntilTrue},
 				&Scope{},
 			},
-			wantExcluded:         false,
+			wantExcluded:         true,
 			wantUpscaleExclusion: true,
 		},
 		{
@@ -496,7 +496,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{UpscaleExcluded: triStateBool{isSet: true, value: true}},
 			},
 			wantExcluded:         true,
-			wantUpscaleExclusion: false,
+			wantUpscaleExclusion: true,
 		},
 	}
 
@@ -504,7 +504,8 @@ func TestScopes_GetExcluded(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			gotExcluded, gotUpscaleExclusion := test.scopes.GetExcluded()
+			gotExcluded := test.scopes.GetExcluded()
+			gotUpscaleExclusion := test.scopes.GetUpscaleExcluded()
 			assert.Equal(t, test.wantExcluded, gotExcluded)
 			assert.Equal(t, test.wantUpscaleExclusion, gotUpscaleExclusion)
 		})
