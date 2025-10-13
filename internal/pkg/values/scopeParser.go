@@ -21,7 +21,7 @@ const (
 	annotationDownscaleReplicas = "downscaler/downscale-replicas"
 	annotationGracePeriod       = "downscaler/grace-period"
 	annotationScaleChildren     = "downscaler/scale-children"
-	annotationExclusionUpscale  = "downscaler/exclusion-upscale"
+	annotationExclusionUpscale  = "downscaler/upscale-excluded"
 
 	envUpscalePeriod   = "UPSCALE_PERIOD"
 	envUptime          = "DEFAULT_UPTIME"
@@ -88,8 +88,8 @@ func (s *Scope) ParseScopeFlags() {
 		"if set to true, the ownerReference will immediately trigger scaling of children workloads when applicable (default: false)",
 	)
 	flag.Var(
-		&s.UpscaleOnExclusion,
-		"exclusion-upscale",
+		&s.UpscaleExcluded,
+		"upscale-excluded",
 		"if set to true, excluded workloads will be processed to be upscaled (default: false)",
 	)
 }
@@ -249,7 +249,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 	}
 
 	if upscaleOnExclusion, ok := annotations[annotationExclusionUpscale]; ok {
-		err = s.UpscaleOnExclusion.Set(upscaleOnExclusion)
+		err = s.UpscaleExcluded.Set(upscaleOnExclusion)
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationExclusionUpscale, err)
 			logEvent.ErrorInvalidAnnotation(annotationExclusionUpscale, err.Error(), ctx)

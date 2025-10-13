@@ -479,7 +479,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			scopes: Scopes{
 				&Scope{},
 				&Scope{},
-				&Scope{UpscaleOnExclusion: triStateBool{isSet: true, value: true}},
+				&Scope{UpscaleExcluded: triStateBool{isSet: true, value: true}},
 				&Scope{ExcludeUntil: &timeUntilTrue},
 				&Scope{},
 			},
@@ -493,7 +493,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{},
 				&Scope{},
 				&Scope{ExcludeUntil: &timeUntilTrue},
-				&Scope{UpscaleOnExclusion: triStateBool{isSet: true, value: true}},
+				&Scope{UpscaleExcluded: triStateBool{isSet: true, value: true}},
 			},
 			wantExcluded:         true,
 			wantUpscaleExclusion: false,

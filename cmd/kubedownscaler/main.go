@@ -115,6 +115,7 @@ func runWithLeaderElection(
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				slog.Info("started leading")
+
 				err = startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
 				if err != nil {
 					slog.Error("an error occurred while scanning workloads", "error", err)
