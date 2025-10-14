@@ -327,17 +327,13 @@ func scanWorkload(
 }
 
 func getCurrentScaling(workload scalable.Workload, excluded, upscaleOnExclusion bool, scopes *values.Scopes) values.Scaling {
-	var scaling values.Scaling
-
 	if upscaleOnExclusion && excluded {
 		slog.Debug("upscaling excluded workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-		scaling = values.ScalingUp
-	} else {
-		scaling = scopes.GetCurrentScaling()
+		return values.ScalingUp
 	}
 
-	return scaling
+	return scopes.GetCurrentScaling()
 }
 
 // scaleWorkloads scales the given workloads to the specified scaling asynchronously.

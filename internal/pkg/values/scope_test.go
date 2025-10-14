@@ -318,7 +318,7 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 	}
 }
 
-func TestScopes_GetExcluded(t *testing.T) {
+func TestScopes_GetUpscaleExcluded(t *testing.T) {
 	t.Parallel()
 
 	timeUntilTrue := time.Now().AddDate(1, 0, 0)
@@ -327,7 +327,6 @@ func TestScopes_GetExcluded(t *testing.T) {
 	tests := []struct {
 		name                 string
 		scopes               Scopes
-		wantExcluded         bool
 		wantUpscaleExclusion bool
 	}{
 		{
@@ -339,7 +338,6 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{},
 				&Scope{},
 			},
-			wantExcluded:         false,
 			wantUpscaleExclusion: false,
 		},
 		{
@@ -351,7 +349,6 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{},
 				&Scope{Exclude: timeSpans{booleanTimeSpan(false)}},
 			},
-			wantExcluded:         true,
 			wantUpscaleExclusion: false,
 		},
 		{
@@ -363,7 +360,6 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{},
 				&Scope{Exclude: timeSpans{booleanTimeSpan(false)}},
 			},
-			wantExcluded:         false,
 			wantUpscaleExclusion: false,
 		},
 		{
@@ -375,7 +371,6 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{},
 				&Scope{},
 			},
-			wantExcluded:         true,
 			wantUpscaleExclusion: false,
 		},
 		{
@@ -387,7 +382,6 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{},
 				&Scope{},
 			},
-			wantExcluded:         false,
 			wantUpscaleExclusion: false,
 		},
 		{
@@ -399,7 +393,6 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{},
 				&Scope{},
 			},
-			wantExcluded:         false,
 			wantUpscaleExclusion: false,
 		},
 		{
@@ -411,7 +404,6 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{},
 				&Scope{},
 			},
-			wantExcluded:         true,
 			wantUpscaleExclusion: false,
 		},
 		{
@@ -423,7 +415,6 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{},
 				&Scope{},
 			},
-			wantExcluded:         true,
 			wantUpscaleExclusion: false,
 		},
 		{
@@ -435,7 +426,6 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{},
 				&Scope{},
 			},
-			wantExcluded:         true,
 			wantUpscaleExclusion: false,
 		},
 		{
@@ -447,7 +437,6 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{},
 				&Scope{},
 			},
-			wantExcluded:         true,
 			wantUpscaleExclusion: false,
 		},
 		{
@@ -459,7 +448,6 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{ExcludeUntil: &timeUntilFalse},
 				&Scope{},
 			},
-			wantExcluded:         true,
 			wantUpscaleExclusion: false,
 		},
 		{
@@ -471,8 +459,162 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{ExcludeUntil: &timeUntilTrue},
 				&Scope{},
 			},
-			wantExcluded:         true,
 			wantUpscaleExclusion: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			gotUpscaleExclusion := test.scopes.GetUpscaleExcluded()
+			assert.Equal(t, test.wantUpscaleExclusion, gotUpscaleExclusion)
+		})
+	}
+}
+
+func TestScopes_GetExcluded(t *testing.T) {
+	t.Parallel()
+
+	timeUntilTrue := time.Now().AddDate(1, 0, 0)
+	timeUntilFalse := time.Now().AddDate(-1, 0, 0)
+
+	tests := []struct {
+		name         string
+		scopes       Scopes
+		wantExcluded bool
+	}{
+		{
+			name: "none set",
+			scopes: Scopes{
+				&Scope{},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+			},
+			wantExcluded: false,
+		},
+		{
+			name: "explicit include",
+			scopes: Scopes{
+				&Scope{},
+				&Scope{},
+				&Scope{Exclude: timeSpans{booleanTimeSpan(true)}},
+				&Scope{},
+				&Scope{Exclude: timeSpans{booleanTimeSpan(false)}},
+			},
+			wantExcluded: true,
+		},
+		{
+			name: "explicit include",
+			scopes: Scopes{
+				&Scope{Exclude: timeSpans{booleanTimeSpan(false)}},
+				&Scope{},
+				&Scope{Exclude: timeSpans{booleanTimeSpan(true)}},
+				&Scope{},
+				&Scope{Exclude: timeSpans{booleanTimeSpan(false)}},
+			},
+			wantExcluded: false,
+		},
+		{
+			name: "exclude until true",
+			scopes: Scopes{
+				&Scope{ExcludeUntil: &timeUntilTrue},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+			},
+			wantExcluded: true,
+		},
+		{
+			name: "exclude until false",
+			scopes: Scopes{
+				&Scope{ExcludeUntil: &timeUntilFalse},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+			},
+			wantExcluded: false,
+		},
+		{
+			name: "exclude until and exclude same scope false",
+			scopes: Scopes{
+				&Scope{ExcludeUntil: &timeUntilFalse, Exclude: timeSpans{booleanTimeSpan(false)}},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+			},
+			wantExcluded: false,
+		},
+		{
+			name: "exclude until and exclude true same scope",
+			scopes: Scopes{
+				&Scope{ExcludeUntil: &timeUntilFalse, Exclude: timeSpans{booleanTimeSpan(true)}},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+			},
+			wantExcluded: true,
+		},
+		{
+			name: "exclude until true and exclude same scope",
+			scopes: Scopes{
+				&Scope{ExcludeUntil: &timeUntilTrue, Exclude: timeSpans{booleanTimeSpan(false)}},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+			},
+			wantExcluded: true,
+		},
+		{
+			name: "exclude until and exclude true different scopes",
+			scopes: Scopes{
+				&Scope{ExcludeUntil: &timeUntilFalse},
+				&Scope{},
+				&Scope{Exclude: timeSpans{booleanTimeSpan(true)}},
+				&Scope{},
+				&Scope{},
+			},
+			wantExcluded: true,
+		},
+		{
+			name: "exclude until true and exclude different scopes",
+			scopes: Scopes{
+				&Scope{ExcludeUntil: &timeUntilTrue},
+				&Scope{},
+				&Scope{Exclude: timeSpans{booleanTimeSpan(false)}},
+				&Scope{},
+				&Scope{},
+			},
+			wantExcluded: true,
+		},
+		{
+			name: "exclude and exclude until different scopes",
+			scopes: Scopes{
+				&Scope{},
+				&Scope{},
+				&Scope{Exclude: timeSpans{booleanTimeSpan(true)}},
+				&Scope{ExcludeUntil: &timeUntilFalse},
+				&Scope{},
+			},
+			wantExcluded: true,
+		},
+		{
+			name: "exclude and exclude until different scopes",
+			scopes: Scopes{
+				&Scope{},
+				&Scope{Exclude: timeSpans{booleanTimeSpan(false)}},
+				&Scope{},
+				&Scope{ExcludeUntil: &timeUntilTrue},
+				&Scope{},
+			},
+			wantExcluded: true,
 		},
 		{
 			name: "excluded and upscaleOnExclusion set on previous layer",
@@ -483,8 +625,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{ExcludeUntil: &timeUntilTrue},
 				&Scope{},
 			},
-			wantExcluded:         true,
-			wantUpscaleExclusion: true,
+			wantExcluded: true,
 		},
 		{
 			name: "excluded and upscaleOnExclusion set on next layer",
@@ -495,8 +636,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 				&Scope{ExcludeUntil: &timeUntilTrue},
 				&Scope{UpscaleExcluded: triStateBool{isSet: true, value: true}},
 			},
-			wantExcluded:         true,
-			wantUpscaleExclusion: true,
+			wantExcluded: true,
 		},
 	}
 
@@ -505,9 +645,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			t.Parallel()
 
 			gotExcluded := test.scopes.GetExcluded()
-			gotUpscaleExclusion := test.scopes.GetUpscaleExcluded()
 			assert.Equal(t, test.wantExcluded, gotExcluded)
-			assert.Equal(t, test.wantUpscaleExclusion, gotUpscaleExclusion)
 		})
 	}
 }
