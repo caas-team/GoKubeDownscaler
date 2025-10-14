@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	policy "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -103,34 +104,34 @@ func (p *podDisruptionBudget) ScaleUp() error {
 // ScaleDown scales the resource down.
 //
 
-func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (*SavedResources, error) {
+func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, error) {
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {
 		if maxUnavailable.String() == downscaleReplicas.String() {
 			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
-			return NewSavedResources(0, 0), nil
+			return metrics.NewSavedResources(0, 0), nil
 		}
 
 		p.setMaxUnavailable(downscaleReplicas)
 		setOriginalReplicas(maxUnavailable, p)
 
-		return NewSavedResources(0, 0), nil
+		return metrics.NewSavedResources(0, 0), nil
 	}
 
 	minAvailable := p.getMinAvailable()
 	if minAvailable != nil {
 		if minAvailable.String() == downscaleReplicas.String() {
 			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
-			return NewSavedResources(0, 0), nil
+			return metrics.NewSavedResources(0, 0), nil
 		}
 
 		p.setMinAvailable(downscaleReplicas)
 		setOriginalReplicas(minAvailable, p)
 
-		return NewSavedResources(0, 0), nil
+		return metrics.NewSavedResources(0, 0), nil
 	}
 
-	return NewSavedResources(0, 0), nil
+	return metrics.NewSavedResources(0, 0), nil
 }
 
 // Reget regets the resource from the Kubernetes API.

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	argov1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -61,7 +62,7 @@ func (r *rollout) Reget(clientsets *Clientsets, ctx context.Context) error {
 // getSavedResourcesRequests calculates the total saved resources requests when downscaling the Rollout.
 //
 
-func (r *rollout) getSavedResourcesRequests(diffReplicas int32) *SavedResources {
+func (r *rollout) getSavedResourcesRequests(diffReplicas int32) *metrics.SavedResources {
 	var totalSavedCPU, totalSavedMemory float64
 
 	for i := range r.Spec.Template.Spec.Containers {
@@ -75,7 +76,7 @@ func (r *rollout) getSavedResourcesRequests(diffReplicas int32) *SavedResources 
 	totalSavedCPU *= float64(diffReplicas)
 	totalSavedMemory *= float64(diffReplicas)
 
-	return NewSavedResources(totalSavedCPU, totalSavedMemory)
+	return metrics.NewSavedResources(totalSavedCPU, totalSavedMemory)
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

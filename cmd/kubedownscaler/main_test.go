@@ -30,9 +30,9 @@ func (m *MockClient) DownscaleWorkload(
 	replicas values.Replicas,
 	workload scalable.Workload,
 	ctx context.Context,
-) (*scalable.SavedResources, error) {
+) (*metrics.SavedResources, error) {
 	args := m.Called(replicas, workload, ctx)
-	return args.Get(0).(*scalable.SavedResources), args.Error(1)
+	return args.Get(0).(*metrics.SavedResources), args.Error(1)
 }
 
 func (m *MockClient) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
@@ -97,7 +97,7 @@ func TestScanWorkload(t *testing.T) {
 	mockWorkload.On("GetAnnotations").Return(map[string]string{
 		"downscaler/force-downtime": "true",
 	})
-	mockClient.On("DownscaleWorkload", values.AbsoluteReplicas(0), mockWorkload, ctx).Return(scalable.NewSavedResources(0, 0), nil)
+	mockClient.On("DownscaleWorkload", values.AbsoluteReplicas(0), mockWorkload, ctx).Return(metrics.NewSavedResources(0, 0), nil)
 	err := scanWorkload(mockWorkload, mockClient, ctx, values.GetDefaultScope(), scopeCli, scopeEnv, namespaceScopes, namespaceMetrics, config)
 
 	require.NoError(t, err)

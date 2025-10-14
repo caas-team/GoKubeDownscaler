@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,7 +61,7 @@ func (p *prometheus) Reget(clientsets *Clientsets, ctx context.Context) error {
 // getSavedResourcesRequests calculates the total saved resources requests when downscaling the Prometheus.
 //
 
-func (p *prometheus) getSavedResourcesRequests(diffReplicas int32) *SavedResources {
+func (p *prometheus) getSavedResourcesRequests(diffReplicas int32) *metrics.SavedResources {
 	var totalSavedCPU, totalSavedMemory float64
 
 	for i := range p.Spec.Containers {
@@ -74,7 +75,7 @@ func (p *prometheus) getSavedResourcesRequests(diffReplicas int32) *SavedResourc
 	totalSavedCPU *= float64(diffReplicas)
 	totalSavedMemory *= float64(diffReplicas)
 
-	return NewSavedResources(totalSavedCPU, totalSavedMemory)
+	return metrics.NewSavedResources(totalSavedCPU, totalSavedMemory)
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

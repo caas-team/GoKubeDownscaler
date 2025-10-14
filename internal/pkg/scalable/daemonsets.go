@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,7 +43,7 @@ func (d *daemonSet) ScaleUp() error {
 // ScaleDown scales the resource down.
 //
 
-func (d *daemonSet) ScaleDown(_ values.Replicas) (*SavedResources, error) {
+func (d *daemonSet) ScaleDown(_ values.Replicas) (*metrics.SavedResources, error) {
 	if d.Spec.Template.Spec.NodeSelector == nil {
 		d.Spec.Template.Spec.NodeSelector = map[string]string{}
 	}
@@ -69,7 +70,7 @@ func (d *daemonSet) Reget(clientsets *Clientsets, ctx context.Context) error {
 // getResourcesRequests calculates the total saved resources requests when downscaling the DaemonSet.
 //
 
-func (d *daemonSet) getResourcesRequests(_ int32) *SavedResources {
+func (d *daemonSet) getResourcesRequests(_ int32) *metrics.SavedResources {
 	var totalSavedCPU, totalSavedMemory float64
 
 	for i := range d.Spec.Template.Spec.Containers {
@@ -83,7 +84,7 @@ func (d *daemonSet) getResourcesRequests(_ int32) *SavedResources {
 	totalSavedCPU *= float64(d.Status.CurrentNumberScheduled)
 	totalSavedMemory *= float64(d.Status.CurrentNumberScheduled)
 
-	return NewSavedResources(totalSavedCPU, totalSavedMemory)
+	return metrics.NewSavedResources(totalSavedCPU, totalSavedMemory)
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

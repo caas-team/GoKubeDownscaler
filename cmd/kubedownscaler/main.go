@@ -469,7 +469,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 		}
 
 		workloadNamespaceMetrics.IncrementDownscaledWorkloadsCount()
-		workloadNamespaceMetrics.IncrementSavedResources(savedResources.TotalCPU(), savedResources.TotalMemory())
+		workloadNamespaceMetrics.IncrementSavedResources(savedResources)
 	}
 
 	if scaling == values.ScalingUp {

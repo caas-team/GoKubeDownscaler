@@ -128,8 +128,8 @@ func TestDaemonSet_ScaleDown(t *testing.T) {
 			_, ok := daemonset.Spec.Template.Spec.NodeSelector[labelMatchNone]
 			assert.Equal(t, test.wantLabelSet, ok)
 
-			assert.InDelta(t, test.wantSavedCPU, savedResources.totalSavedCPU, 0.0001)
-			assert.InDelta(t, test.wantSavedMemory, savedResources.totalSavedMemory, 1e5)
+			assert.InDelta(t, test.wantSavedCPU, savedResources.TotalCPU(), 0.0001)
+			assert.InDelta(t, test.wantSavedMemory, savedResources.TotalMemory(), 1e5)
 		})
 	}
 }

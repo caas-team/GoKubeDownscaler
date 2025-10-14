@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	appsv1 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,8 +70,8 @@ func (h *horizontalPodAutoscaler) Reget(clientsets *Clientsets, ctx context.Cont
 // getSavedResourcesRequests calculates the total saved resources requests when downscaling the HorizontalPodAutoscaler.
 //
 
-func (h *horizontalPodAutoscaler) getSavedResourcesRequests(_ int32) *SavedResources {
-	return NewSavedResources(0, 0)
+func (h *horizontalPodAutoscaler) getSavedResourcesRequests(_ int32) *metrics.SavedResources {
+	return metrics.NewSavedResources(0, 0)
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
