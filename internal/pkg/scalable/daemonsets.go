@@ -16,7 +16,6 @@ import (
 
 const (
 	labelMatchNone = "downscaler/match-none"
-	DaemonSetKind  = "DaemonSet"
 )
 
 // getDaemonSets is the getResourceFunc for DaemonSets.
@@ -34,10 +33,10 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 	return results, nil
 }
 
-// parseDaemonSetFromAdmissionRequest parses the admission review and returns the daemonset.
+// parseDaemonSetFromBytes parses the admission review and returns the daemonset.
 //
 // nolint: ireturn // this function should return an interface type
-func parseDaemonSetFromAdmissionRequest(rawObject []byte) (Workload, error) {
+func parseDaemonSetFromBytes(rawObject []byte) (Workload, error) {
 	var ds appsv1.DaemonSet
 	if err := json.Unmarshal(rawObject, &ds); err != nil {
 		return nil, fmt.Errorf("failed to decode daemonset: %w", err)
@@ -117,7 +116,7 @@ func (d *daemonSet) Update(clientsets *Clientsets, ctx context.Context) error {
 // nolint: ireturn // this function should return an interface type
 func (d *daemonSet) Copy() (Workload, error) {
 	if d.DaemonSet == nil {
-		return nil, newNilUnderlyingObjectError(DaemonSetKind)
+		return nil, newNilUnderlyingObjectError(d.Kind)
 	}
 
 	copied := d.DeepCopy()
@@ -133,7 +132,7 @@ func (d *daemonSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	if d.DaemonSet == nil || dsCopy.DaemonSet == nil {
-		return nil, newNilUnderlyingObjectError(DaemonSetKind)
+		return nil, newNilUnderlyingObjectError(d.Kind)
 	}
 
 	diff, err := jsondiff.Compare(d.DaemonSet, dsCopy.DaemonSet)

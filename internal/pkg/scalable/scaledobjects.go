@@ -16,7 +16,6 @@ import (
 
 const (
 	annotationKedaPausedReplicas = "autoscaling.keda.sh/paused-replicas"
-	ScaledObjectKind             = "ScaledObject"
 )
 
 // getScaledObjects is the getResourceFunc for Keda ScaledObjects.
@@ -34,10 +33,10 @@ func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Cont
 	return results, nil
 }
 
-// parseScaledObjectFromAdmissionRequest parses the admission review and returns the scaledObject.
+// parseScaledObjectFromBytes parses the admission review and returns the scaledObject.
 //
 // nolint: ireturn // this function should return an interface type
-func parseScaledObjectFromAdmissionRequest(rawObject []byte) (Workload, error) {
+func parseScaledObjectFromBytes(rawObject []byte) (Workload, error) {
 	var so kedav1alpha1.ScaledObject
 	if err := json.Unmarshal(rawObject, &so); err != nil {
 		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
@@ -132,7 +131,7 @@ func (s *scaledObject) Copy() (Workload, error) {
 
 // Compare compares two scaledObject resources and returns the differences as a jsondiff.Patch.
 //
-//nolint:varnamelen //required for interface-based workflow
+//nolint:varnamelen, dupl //required for interface-based workflow
 func (s *scaledObject) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {

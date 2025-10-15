@@ -15,8 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const PodDisruptionBudgetKind = "PodDisruptionBudget"
-
 // getPodDisruptionBudgets is the getResourceFunc for podDisruptionBudget.
 func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	poddisruptionbudgets, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(namespace).List(ctx, metav1.ListOptions{})
@@ -32,10 +30,10 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 	return results, nil
 }
 
-// parsePodDisruptionBudgetFromAdmissionRequest parses the admission review and returns the podDisruptionBudget wrapped in a Workload.
+// parsePodDisruptionBudgetFromBytes parses the admission review and returns the podDisruptionBudget wrapped in a Workload.
 //
 // nolint: ireturn // this function should return an interface type
-func parsePodDisruptionBudgetFromAdmissionRequest(rawObject []byte) (Workload, error) {
+func parsePodDisruptionBudgetFromBytes(rawObject []byte) (Workload, error) {
 	var pdb policy.PodDisruptionBudget
 	if err := json.Unmarshal(rawObject, &pdb); err != nil {
 		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
@@ -177,7 +175,7 @@ func (p *podDisruptionBudget) Update(clientsets *Clientsets, ctx context.Context
 // nolint: ireturn // this function should return an interface type
 func (p *podDisruptionBudget) Copy() (Workload, error) {
 	if p.PodDisruptionBudget == nil {
-		return nil, newNilUnderlyingObjectError(PodDisruptionBudgetKind)
+		return nil, newNilUnderlyingObjectError(p.Kind)
 	}
 
 	copied := p.DeepCopy()
@@ -195,7 +193,7 @@ func (p *podDisruptionBudget) Compare(workloadCopy Workload) (jsondiff.Patch, er
 	}
 
 	if p.PodDisruptionBudget == nil || pdbCopy.PodDisruptionBudget == nil {
-		return nil, newNilUnderlyingObjectError(PodDisruptionBudgetKind)
+		return nil, newNilUnderlyingObjectError(p.Kind)
 	}
 
 	diff, err := jsondiff.Compare(p.PodDisruptionBudget, pdbCopy.PodDisruptionBudget)

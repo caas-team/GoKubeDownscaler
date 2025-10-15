@@ -57,17 +57,17 @@ type parseWorkloadFunc func(rawObject []byte) (Workload, error)
 //nolint:ireturn // this function should return an interface type
 func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, error) {
 	parseWorkloadFuncMap := map[string]parseWorkloadFunc{
-		"deployment":              parseDeploymentFromAdmissionRequest,
-		"statefulset":             parseStatefulSetFromAdmissionRequest,
-		"cronjob":                 parseCronJobFromAdmissionRequest,
-		"job":                     parseJobFromAdmissionRequest,
-		"daemonset":               parseDaemonSetFromAdmissionRequest,
-		"poddisruptionbudget":     parsePodDisruptionBudgetFromAdmissionRequest,
-		"horizontalpodautoscaler": parseHorizontalPodAutoscalerFromAdmissionRequest,
-		"scaledobject":            parseScaledObjectFromAdmissionRequest,
-		"rollout":                 parseRolloutFromAdmissionRequest,
-		"stack":                   parseStackFromAdmissionRequest,
-		"prometheus":              parsePrometheusFromAdmissionRequest,
+		"deployment":              parseDeploymentFromBytes,
+		"statefulset":             parseStatefulSetFromBytes,
+		"cronjob":                 parseCronJobFromBytes,
+		"job":                     parseJobFromBytes,
+		"daemonset":               parseDaemonSetFromBytes,
+		"poddisruptionbudget":     parsePodDisruptionBudgetFromBytes,
+		"horizontalpodautoscaler": parseHorizontalPodAutoscalerFromBytes,
+		"scaledobject":            parseScaledObjectFromBytes,
+		"rollout":                 parseRolloutFromBytes,
+		"stack":                   parseStackFromBytes,
+		"prometheus":              parsePrometheusFromBytes,
 	}
 
 	parseFunc, exists := parseWorkloadFuncMap[resource]

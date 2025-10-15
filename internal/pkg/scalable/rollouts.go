@@ -14,8 +14,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const RolloutKind = "Rollout"
-
 // getRollouts is the getResourceFunc for Argo Rollouts.
 func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	rollouts, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(namespace).List(ctx, metav1.ListOptions{})
@@ -31,10 +29,10 @@ func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) 
 	return results, nil
 }
 
-// parseRolloutFromAdmissionRequest parses the admission review and returns the rollout.
+// parseRolloutFromBytes parses the admission review and returns the rollout.
 //
 // nolint: ireturn // this function should return an interface type
-func parseRolloutFromAdmissionRequest(rawObject []byte) (Workload, error) {
+func parseRolloutFromBytes(rawObject []byte) (Workload, error) {
 	var roll argov1alpha1.Rollout
 	if err := json.Unmarshal(rawObject, &roll); err != nil {
 		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
@@ -111,7 +109,7 @@ func (r *rollout) Update(clientsets *Clientsets, ctx context.Context) error {
 // nolint: ireturn // this function should return an interface type
 func (r *rollout) Copy() (Workload, error) {
 	if r.Rollout == nil {
-		return nil, newNilUnderlyingObjectError(RolloutKind)
+		return nil, newNilUnderlyingObjectError(r.Kind)
 	}
 
 	copied := r.DeepCopy()
@@ -138,7 +136,7 @@ func (r *rollout) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	if r.Rollout == nil || rollCopy.Rollout == nil {
-		return nil, newNilUnderlyingObjectError(RolloutKind)
+		return nil, newNilUnderlyingObjectError(r.Kind)
 	}
 
 	diff, err := jsondiff.Compare(r.Rollout, rollCopy.Rollout)

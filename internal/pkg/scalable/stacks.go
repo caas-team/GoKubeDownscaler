@@ -17,8 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const StackKind = "Stack"
-
 // getStacks is the getResourceFunc for Zalando Stacks.
 func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	stacks, err := clientsets.Zalando.ZalandoV1().Stacks(namespace).List(ctx, metav1.ListOptions{})
@@ -34,10 +32,10 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 	return results, nil
 }
 
-// parseStackFromAdmissionRequest parses the admission review and returns the stack.
+// parseStackFromBytes parses the admission review and returns the stack.
 //
 // nolint: ireturn // this function should return an interface type
-func parseStackFromAdmissionRequest(rawObject []byte) (Workload, error) {
+func parseStackFromBytes(rawObject []byte) (Workload, error) {
 	var st zalandov1.Stack
 	if err := json.Unmarshal(rawObject, &st); err != nil {
 		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
@@ -114,7 +112,7 @@ func (s *stack) Update(clientsets *Clientsets, ctx context.Context) error {
 // nolint: ireturn // this function should return an interface type
 func (s *stack) Copy() (Workload, error) {
 	if s.Stack == nil {
-		return nil, newNilUnderlyingObjectError(StackKind)
+		return nil, newNilUnderlyingObjectError(s.Kind)
 	}
 
 	copied := s.DeepCopy()
@@ -141,7 +139,7 @@ func (s *stack) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	if s.Stack == nil || stCopy.Stack == nil {
-		return nil, newNilUnderlyingObjectError(StackKind)
+		return nil, newNilUnderlyingObjectError(s.Kind)
 	}
 
 	diff, err := jsondiff.Compare(s.Stack, stCopy.Stack)

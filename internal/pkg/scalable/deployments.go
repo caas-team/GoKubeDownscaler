@@ -13,8 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const DeploymentKind = "Deployment"
-
 // getDeployments is the getResourceFunc for Deployments.
 func getDeployments(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	deployments, err := clientsets.Kubernetes.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
@@ -30,10 +28,10 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 	return results, nil
 }
 
-// parseDeploymentFromAdmissionRequest parses the admission review and returns the deployment.
+// parseDeploymentFromBytes parses the admission review and returns the deployment.
 //
 // nolint: ireturn // this function should return an interface type
-func parseDeploymentFromAdmissionRequest(rawObject []byte) (Workload, error) {
+func parseDeploymentFromBytes(rawObject []byte) (Workload, error) {
 	var dep appsv1.Deployment
 	if err := json.Unmarshal(rawObject, &dep); err != nil {
 		return nil, fmt.Errorf("failed to decode deployment: %w", err)
@@ -110,7 +108,7 @@ func (d *deployment) Update(clientsets *Clientsets, ctx context.Context) error {
 // nolint: ireturn // this function should return an interface type
 func (d *deployment) Copy() (Workload, error) {
 	if d.Deployment == nil {
-		return nil, newNilUnderlyingObjectError(DeploymentKind)
+		return nil, newNilUnderlyingObjectError(d.Kind)
 	}
 
 	copied := d.DeepCopy()
@@ -137,7 +135,7 @@ func (d *deployment) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	if d.Deployment == nil || depCopy.Deployment == nil {
-		return nil, newNilUnderlyingObjectError(DeploymentKind)
+		return nil, newNilUnderlyingObjectError(d.Kind)
 	}
 
 	diff, err := jsondiff.Compare(d.Deployment, depCopy.Deployment)

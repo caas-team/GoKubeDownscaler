@@ -13,8 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const StatefulSetKind = "StatefulSet"
-
 // getStatefulSets is the getResourceFunc for StatefulSets.
 func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	statefulsets, err := clientsets.Kubernetes.AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{})
@@ -30,10 +28,10 @@ func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Conte
 	return results, nil
 }
 
-// parseStatefulSetFromAdmissionRequest parses the admission review and returns the statefulset.
+// parseStatefulSetFromBytes parses the admission review and returns the statefulset.
 //
 // nolint: ireturn // this function should return an interface type
-func parseStatefulSetFromAdmissionRequest(rawObject []byte) (Workload, error) {
+func parseStatefulSetFromBytes(rawObject []byte) (Workload, error) {
 	var sts appsv1.StatefulSet
 	if err := json.Unmarshal(rawObject, &sts); err != nil {
 		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
@@ -110,7 +108,7 @@ func (s *statefulSet) Update(clientsets *Clientsets, ctx context.Context) error 
 // nolint: ireturn // this function should return an interface type
 func (s *statefulSet) Copy() (Workload, error) {
 	if s.StatefulSet == nil {
-		return nil, newNilUnderlyingObjectError(StatefulSetKind)
+		return nil, newNilUnderlyingObjectError(s.Kind)
 	}
 
 	copied := s.DeepCopy()
@@ -137,7 +135,7 @@ func (s *statefulSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	if s.StatefulSet == nil || stsCopy.StatefulSet == nil {
-		return nil, newNilUnderlyingObjectError(StatefulSetKind)
+		return nil, newNilUnderlyingObjectError(s.Kind)
 	}
 
 	diff, err := jsondiff.Compare(s.StatefulSet, stsCopy.StatefulSet)

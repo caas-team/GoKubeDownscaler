@@ -17,8 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const CronJobKind = "CronJob"
-
 // getCronJobs is the getResourceFunc for CronJobs.
 func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	cronjobs, err := clientsets.Kubernetes.BatchV1().CronJobs(namespace).List(ctx, metav1.ListOptions{})
@@ -34,10 +32,10 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 	return results, nil
 }
 
-// parseCronJobFromAdmissionRequest parses the admission review and returns the cronjob wrapped in a Workload.
+// parseCronJobFromBytes parses the admission review and returns the cronjob wrapped in a Workload.
 //
 // nolint: ireturn // this function should return an interface type
-func parseCronJobFromAdmissionRequest(rawObject []byte) (Workload, error) {
+func parseCronJobFromBytes(rawObject []byte) (Workload, error) {
 	var cj batch.CronJob
 	if err := json.Unmarshal(rawObject, &cj); err != nil {
 		return nil, fmt.Errorf("failed to decode cronjob: %w", err)
@@ -148,7 +146,7 @@ func (c *cronJob) Update(clientsets *Clientsets, ctx context.Context) error {
 // nolint: ireturn // this function should return an interface type
 func (c *cronJob) Copy() (Workload, error) {
 	if c.CronJob == nil {
-		return nil, newNilUnderlyingObjectError(CronJobKind)
+		return nil, newNilUnderlyingObjectError(c.Kind)
 	}
 
 	copied := c.DeepCopy()
@@ -175,7 +173,7 @@ func (c *cronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	if c.CronJob == nil || cjCopy.CronJob == nil {
-		return nil, newNilUnderlyingObjectError(CronJobKind)
+		return nil, newNilUnderlyingObjectError(c.Kind)
 	}
 
 	diff, err := jsondiff.Compare(c.CronJob, cjCopy.CronJob)

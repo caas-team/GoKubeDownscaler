@@ -13,8 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const PrometheusKind = "Prometheus"
-
 // getPrometheuses is the getResourceFunc for Prometheuses.
 func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	prometheuses, err := clientsets.Monitoring.MonitoringV1().Prometheuses(namespace).List(ctx, metav1.ListOptions{})
@@ -30,10 +28,10 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 	return results, nil
 }
 
-// parsePrometheusFromAdmissionRequest parses the admission review and returns the prometheus.
+// parsePrometheusFromBytes parses the admission review and returns the prometheus.
 //
 // nolint: ireturn // this function should return an interface type
-func parsePrometheusFromAdmissionRequest(rawObject []byte) (Workload, error) {
+func parsePrometheusFromBytes(rawObject []byte) (Workload, error) {
 	var prom monitoringv1.Prometheus
 	if err := json.Unmarshal(rawObject, &prom); err != nil {
 		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
@@ -110,7 +108,7 @@ func (p *prometheus) Update(clientsets *Clientsets, ctx context.Context) error {
 // nolint: ireturn // this function should return an interface type
 func (p *prometheus) Copy() (Workload, error) {
 	if p.Prometheus == nil {
-		return nil, newNilUnderlyingObjectError(PrometheusKind)
+		return nil, newNilUnderlyingObjectError(p.Kind)
 	}
 
 	copied := p.DeepCopy()
@@ -137,7 +135,7 @@ func (p *prometheus) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	if p.Prometheus == nil || promCopy.Prometheus == nil {
-		return nil, newNilUnderlyingObjectError(PrometheusKind)
+		return nil, newNilUnderlyingObjectError(p.Kind)
 	}
 
 	diff, err := jsondiff.Compare(p.Prometheus, promCopy.Prometheus)

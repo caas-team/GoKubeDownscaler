@@ -32,7 +32,6 @@ type runtimeConfiguration struct {
 func getDefaultConfig() *runtimeConfiguration {
 	return &runtimeConfiguration{
 		CommonRuntimeConfiguration: *util.GetDefaultConfig(),
-		Kubeconfig:                 "",
 	}
 }
 
@@ -137,15 +136,17 @@ func setupConfig(kubeconfig string) *rest.Config {
 		}
 
 		slog.Info("using provided kubeconfig", "path", kubeconfig)
-	} else {
-		cfg, err = config.GetConfig()
-		if err != nil {
-			slog.Error("failed to get Kubernetes config", "error", err)
-			os.Exit(1)
-		}
 
-		slog.Info("using in-cluster or default kubeconfig")
+		return cfg
 	}
+
+	cfg, err = config.GetConfig()
+	if err != nil {
+		slog.Error("failed to get Kubernetes config", "error", err)
+		os.Exit(1)
+	}
+
+	slog.Info("using in-cluster or default kubeconfig")
 
 	return cfg
 }

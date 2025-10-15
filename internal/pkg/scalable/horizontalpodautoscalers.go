@@ -17,8 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const HorizontalPodAutoscalerKind = "HorizontalPodAutoscaler"
-
 var errMinReplicasBoundsExceeded = errors.New("error: an HPAs minReplicas can only be set to int32 values larger than 1")
 
 // getHorizontalPodAutoscalers is the getResourceFunc for horizontalPodAutoscalers.
@@ -36,10 +34,10 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 	return results, nil
 }
 
-// parseHorizontalPodAutoscalerFromAdmissionRequest parses the admission review and returns the horizontalPodAutoscaler.
+// parseHorizontalPodAutoscalerFromBytes parses the admission review and returns the horizontalPodAutoscaler.
 //
 // nolint: ireturn // this function should return an interface type
-func parseHorizontalPodAutoscalerFromAdmissionRequest(rawObject []byte) (Workload, error) {
+func parseHorizontalPodAutoscalerFromBytes(rawObject []byte) (Workload, error) {
 	var hpa appsv1.HorizontalPodAutoscaler
 	if err := json.Unmarshal(rawObject, &hpa); err != nil {
 		return nil, fmt.Errorf("failed to decode horizontalpodautoscaler: %w", err)
@@ -111,7 +109,7 @@ func (h *horizontalPodAutoscaler) Update(clientsets *Clientsets, ctx context.Con
 // nolint: ireturn // this function should return an interface type
 func (h *horizontalPodAutoscaler) Copy() (Workload, error) {
 	if h.HorizontalPodAutoscaler == nil {
-		return nil, newNilUnderlyingObjectError(HorizontalPodAutoscalerKind)
+		return nil, newNilUnderlyingObjectError(h.Kind)
 	}
 
 	copied := h.DeepCopy()
@@ -138,7 +136,7 @@ func (h *horizontalPodAutoscaler) Compare(workloadCopy Workload) (jsondiff.Patch
 	}
 
 	if h.HorizontalPodAutoscaler == nil || hpaCopy.HorizontalPodAutoscaler == nil {
-		return nil, newNilUnderlyingObjectError(HorizontalPodAutoscalerKind)
+		return nil, newNilUnderlyingObjectError(h.Kind)
 	}
 
 	diff, err := jsondiff.Compare(h.HorizontalPodAutoscaler, hpaCopy.HorizontalPodAutoscaler)

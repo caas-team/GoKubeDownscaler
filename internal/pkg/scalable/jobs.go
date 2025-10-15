@@ -14,8 +14,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const JobKind = "Job"
-
 // getDeployments is the getResourceFunc for Jobs.
 func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	jobs, err := clientsets.Kubernetes.BatchV1().Jobs(namespace).List(ctx, metav1.ListOptions{})
@@ -31,10 +29,10 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 	return results, nil
 }
 
-// parseCronJobFromAdmissionRequest parses the admission review and returns the cronjob.
+// parseCronJobFromBytes parses the admission review and returns the cronjob.
 //
 // nolint: ireturn // this function should return an interface type
-func parseJobFromAdmissionRequest(rawObject []byte) (Workload, error) {
+func parseJobFromBytes(rawObject []byte) (Workload, error) {
 	var j batch.Job
 	if err := json.Unmarshal(rawObject, &j); err != nil {
 		return nil, fmt.Errorf("failed to decode job: %w", err)
@@ -100,7 +98,7 @@ func (j *job) Update(clientsets *Clientsets, ctx context.Context) error {
 // nolint: ireturn // this function should return an interface type
 func (j *job) Copy() (Workload, error) {
 	if j.Job == nil {
-		return nil, newNilUnderlyingObjectError(JobKind)
+		return nil, newNilUnderlyingObjectError(j.Kind)
 	}
 
 	copied := j.DeepCopy()
@@ -127,7 +125,7 @@ func (j *job) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	if j.Job == nil || jCopy.Job == nil {
-		return nil, newNilUnderlyingObjectError(JobKind)
+		return nil, newNilUnderlyingObjectError(j.Kind)
 	}
 
 	diff, err := jsondiff.Compare(j.Job, jCopy.Job)
