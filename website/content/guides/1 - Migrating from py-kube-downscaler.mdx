@@ -89,7 +89,14 @@ This is a faster and less verbose way of matching the opposite of an up/downtime
 ### Actual Exclusion
 
 Excluding a workload now will ignore scaling the workload, instead of forcing it into uptime.
-This means that what happens when excluding a workload is more intuitive.
+This makes the behavior of workload exclusion more intuitive and semantically coherent.
+
+To retain the classic behavior where an excluded workload gets upscaled you must explicitly set the
+[Exclusion Upscale](ref:docs-values#upscale-excluded) value using the [`--upscale-excluded` cli argument](ref:docs-cli-scope#values)
+or the `downscaler/upscale-excluded` annotation at [Namespace Scope](ref:docs-namespace-scope#values)
+or [Workload Scope](ref:docs-workload-scope#values).
+The final behavior is always the one specified in the most specific scope as stated in the
+[algorithm documentation](ref:docs-scopes-and-scaling#scaling-algorithm)
 
 See the [breaking changes entry](#from-features) for more information.
 
@@ -133,12 +140,12 @@ this allows for more controlled time-based exclusion.
 
 This is a collection of breaking changes caused by a feature:
 
-| Feature                                   | Breaking Changes                                     | Severity                                              |
-| ----------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------- |
-| [Incompatibility](#incompatibility)       | Will now error out and skip scaling if misconfigured | low - might cause some workloads not to be scaled     |
-| [Actual Exclusion](#actual-exclusion)     | Excluded workloads will no longer be scaled up       | low - if you relied on this quirk                     |
-| [Scopes](#scopes)                         | Scaling value order is now consistent                | medium - could result in other values setting scaling |
-| [Uniform Timestamps](#uniform-timestamps) | RFC3339 timestamps are now used exclusively          | medium - some workloads might need to be updated      |
+| Feature                                   | Breaking Changes                                     | Severity                                                                                                                                         |
+| ----------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Incompatibility](#incompatibility)       | Will now error out and skip scaling if misconfigured | low - might cause some workloads not to be scaled                                                                                                |
+| [Actual Exclusion](#actual-exclusion)     | Excluded workloads will no longer be scaled up       | low - if you relied on this quirk, the classic behavior can always be restored using [Exclusion Upscale](ref:docs-values#upscale-excluded) value |
+| [Scopes](#scopes)                         | Scaling value order is now consistent                | medium - could result in other values setting scaling                                                                                            |
+| [Uniform Timestamps](#uniform-timestamps) | RFC3339 timestamps are now used exclusively          | medium - some workloads might need to be updated                                                                                                 |
 
 ### New Structure of values.yaml
 
