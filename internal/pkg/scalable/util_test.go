@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestFilterExcluded(t *testing.T) {
+func TestFilterExcluded(t *testing.T) { //nolint: maintidx// fine to read and understand
 	t.Parallel()
 
 	// define some example objects to use
@@ -195,7 +195,12 @@ func TestFilterExcluded(t *testing.T) {
 			includeLabels:      nil,
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
-			want:               []Workload{ns4.scaledObject},
+			currentNamespaceToMetrics: map[string]*metrics.NamespaceMetricsHolder{
+				"Namespace1": {},
+				"Namespace2": {},
+				"Namespace3": {},
+			},
+			want: []Workload{ns4.scaledObject},
 		},
 		{
 			name:               "apiVersion and kind not specified",
@@ -203,7 +208,12 @@ func TestFilterExcluded(t *testing.T) {
 			includeLabels:      nil,
 			excludedNamespaces: nil,
 			excludedWorkloads:  nil,
-			want:               []Workload{ns5.scaledObject},
+			currentNamespaceToMetrics: map[string]*metrics.NamespaceMetricsHolder{
+				"Namespace1": {},
+				"Namespace2": {},
+				"Namespace3": {},
+			},
+			want: []Workload{ns5.scaledObject},
 		},
 		{
 			name:               "includeLabels",

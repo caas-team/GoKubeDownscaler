@@ -144,15 +144,18 @@ func runWithLeaderElection(
 		RetryPeriod:     5 * time.Second,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
-				var downscalerMetrics *metrics.Metrics = nil
+				var downscalerMetrics *metrics.Metrics
+
 				if config.MetricsEnabled {
 					go serveMetrics()
+
 					downscalerMetrics = metrics.NewMetrics(config.DryRun)
 					downscalerMetrics.RegisterAll()
 				}
+
 				slog.Info("started leading")
 
-				err = startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config, downscalerMetrics)
+				err = startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
 				if err != nil {
 					slog.Error("an error occurred while scanning workloads", "error", err)
 					cancel()
@@ -191,7 +194,6 @@ func startScanning(
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *util.RuntimeConfiguration,
-	downscalerMetrics *metrics.Metrics,
 ) error {
 	downscalerMetrics := initMetrics(config)
 
