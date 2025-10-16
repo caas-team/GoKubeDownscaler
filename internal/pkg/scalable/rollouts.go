@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	admissionv1 "k8s.io/api/admission/v1"
-
 	argov1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
