@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
@@ -87,7 +88,7 @@ type Workload interface {
 	// ScaleUp scales up the workload
 	ScaleUp() error
 	// ScaleDown scales down the workload
-	ScaleDown(downscaleReplicas values.Replicas) error
+	ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, error)
 }
 
 type Clientsets struct {

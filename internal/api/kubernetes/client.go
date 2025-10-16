@@ -11,6 +11,7 @@ import (
 	"time"
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
@@ -36,7 +37,7 @@ type Client interface {
 	// RegetWorkload gets the workload again to ensure the latest state
 	RegetWorkload(workload scalable.Workload, ctx context.Context) error
 	// DownscaleWorkload downscales the workload to the specified replicas
-	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context) error
+	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context) (*metrics.SavedResources, error)
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
 	// CreateLease creates a new lease for the downscaler
@@ -176,10 +177,16 @@ func (c client) RegetWorkload(workload scalable.Workload, ctx context.Context) e
 }
 
 // DownscaleWorkload downscales the workload to the specified replicas.
-func (c client) DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context) error {
-	err := workload.ScaleDown(replicas)
+//
+
+func (c client) DownscaleWorkload(
+	replicas values.Replicas,
+	workload scalable.Workload,
+	ctx context.Context,
+) (*metrics.SavedResources, error) {
+	savedResources, err := workload.ScaleDown(replicas)
 	if err != nil {
-		return fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
+		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
 	}
 
 	if c.dryRun {
@@ -189,17 +196,17 @@ func (c client) DownscaleWorkload(replicas values.Replicas, workload scalable.Wo
 			"namespace", workload.GetNamespace(),
 		)
 
-		return nil
+		return metrics.NewSavedResources(0, 0), nil
 	}
 
 	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
-		return fmt.Errorf("failed to update the workload: %w", err)
+		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to update the workload: %w", err)
 	}
 
 	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-	return nil
+	return savedResources, nil
 }
 
 // UpscaleWorkload upscales the workload to the original replicas.

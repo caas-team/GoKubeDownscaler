@@ -279,7 +279,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, pdb)
 			}
 
-			err := pdb.ScaleDown(values.AbsoluteReplicas(0))
+			_, err := pdb.ScaleDown(values.AbsoluteReplicas(0))
 			require.NoError(t, err)
 
 			if test.wantMaxUnavailable != nil {

@@ -1,10 +1,10 @@
-//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,6 +56,28 @@ func (s *statefulSet) Reget(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// getSavedResourcesRequests calculates the total saved resources requests when downscaling the StatefulSet.
+//
+
+func (s *statefulSet) getSavedResourcesRequests(diffReplicas int32) *metrics.SavedResources {
+	var totalSavedCPU, totalSavedMemory float64
+
+	for i := range s.Spec.Template.Spec.Containers {
+		container := &s.Spec.Template.Spec.Containers[i]
+		if container.Resources.Requests != nil {
+			cpu := container.Resources.Requests.Cpu().AsApproximateFloat64()
+			memory := container.Resources.Requests.Memory().AsApproximateFloat64()
+			totalSavedCPU += cpu
+			totalSavedMemory += memory
+		}
+	}
+
+	totalSavedCPU *= float64(diffReplicas)
+	totalSavedMemory *= float64(diffReplicas)
+
+	return metrics.NewSavedResources(totalSavedCPU, totalSavedMemory)
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

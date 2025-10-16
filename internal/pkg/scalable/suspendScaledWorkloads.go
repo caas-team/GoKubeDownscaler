@@ -3,6 +3,7 @@ package scalable
 import (
 	"context"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 )
 
@@ -13,6 +14,8 @@ type suspendScaledResource interface {
 	Update(clientsets *Clientsets, ctx context.Context) error
 	// setSuspend sets the value of the suspend field on the workload
 	setSuspend(suspend bool)
+	// getSavedResourcesRequests returns the saved CPU and memory requests for the workload based on the downscale replicas.
+	getSavedResourcesRequests() *metrics.SavedResources
 }
 
 // suspendScaledWorkload is a wrapper for all resources which are scaled by setting a suspend field.
@@ -27,7 +30,12 @@ func (r *suspendScaledWorkload) ScaleUp() error {
 }
 
 // ScaleDown scales down the underlying suspendScaledResource.
-func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas) error {
+//
+
+func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas) (*metrics.SavedResources, error) {
+	savedResources := r.getSavedResourcesRequests()
+
 	r.setSuspend(true)
-	return nil
+
+	return savedResources, nil
 }

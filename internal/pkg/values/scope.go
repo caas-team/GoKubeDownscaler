@@ -63,6 +63,7 @@ type Scope struct {
 	DownscaleReplicas Replicas      // the replicas to scale down to
 	GracePeriod       time.Duration // grace period until new workloads will be scaled down
 	ScaleChildren     triStateBool  // ownerReference will immediately trigger scaling of children workloads, when applicable
+	MetricsEnabled    bool          // whether Prometheus metrics are enabled
 	UpscaleExcluded   triStateBool  // excluded workloads will be upscaled
 }
 
@@ -80,6 +81,7 @@ func GetDefaultScope() *Scope {
 		GracePeriod:       15 * time.Minute,
 		ScaleChildren:     triStateBool{isSet: false, value: false},
 		UpscaleExcluded:   triStateBool{isSet: false, value: false},
+		MetricsEnabled:    false,
 	}
 }
 

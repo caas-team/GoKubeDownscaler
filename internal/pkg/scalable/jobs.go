@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	batch "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -43,6 +44,26 @@ func (j *job) Reget(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// getSavedResourcesRequests calculates the total saved resources requests when downscaling the Job.
+//
+
+func (j *job) getSavedResourcesRequests() *metrics.SavedResources {
+	var totalSavedCPU, totalSavedMemory float64
+
+	for i := range j.Spec.Template.Spec.Containers {
+		container := &j.Spec.Template.Spec.Containers[i] // use pointer to avoid copy
+		if container.Resources.Requests != nil {
+			totalSavedCPU += container.Resources.Requests.Cpu().AsApproximateFloat64()
+			totalSavedMemory += container.Resources.Requests.Memory().AsApproximateFloat64()
+		}
+	}
+
+	totalSavedCPU *= float64(*j.Spec.Parallelism)
+	totalSavedMemory *= float64(*j.Spec.Parallelism)
+
+	return metrics.NewSavedResources(totalSavedCPU, totalSavedMemory)
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.

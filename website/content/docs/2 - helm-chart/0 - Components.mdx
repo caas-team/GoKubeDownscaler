@@ -40,3 +40,8 @@ for every namespace listed in [`constrainedNamespaces`](ref:docs-helm-constraine
 
 The [leaserole.yaml](repo:deployments/chart/templates/leaserole.yaml) file creates a Role and RoleBinding
 if [`--leader-election`](ref:docs-runtime-configuration#leader-election) is enabled in order to make lease management possible.
+
+## PodMonitor
+
+The [podmonitor.yaml](repo:deployments/chart/templates/leaserole.yaml) file creates a PodMonitor that is able to scrape
+metrics from GoKubeDownscaler main deployment

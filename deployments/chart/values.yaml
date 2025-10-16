@@ -81,3 +81,15 @@ configMap:
 
 # Force pod restart when the configuration changes
 forceRestartOnConfigChange: true
+
+podMonitor:
+  enabled: false
+  interval: "1m"
+  scrapeTimeout: "10s"
+  namespace: "default"
+  additionalLabels: {}
+  relabelings: []
+  metricRelabelings: []
+
+metrics:
+  enabled: false

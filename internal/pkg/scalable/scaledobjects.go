@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
@@ -78,6 +79,13 @@ func (s *scaledObject) Reget(clientsets *Clientsets, ctx context.Context) error 
 	}
 
 	return nil
+}
+
+// getSavedResourcesRequests returns the total saved CPU and memory requests for the scaled object.
+//
+
+func (s *scaledObject) getSavedResourcesRequests(_ int32) *metrics.SavedResources {
+	return metrics.NewSavedResources(0, 0)
 }
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
