@@ -94,12 +94,6 @@ func (s *Scope) ParseScopeFlags() {
 		"upscale-excluded",
 		"if set to true, excluded workloads will be processed to be upscaled (default: false)",
 	)
-	flag.BoolVar(
-		&s.MetricsEnabled,
-		"metrics",
-		false,
-		"if set to true, the downscaler will serve Prometheus metrics on port 8085 (default: false)",
-	)
 }
 
 // GetScopeFromEnv fills l with all values from environment variables and checks for compatibility.

@@ -241,8 +241,8 @@ func attemptScaling(
 	scaling values.Scaling,
 	workload scalable.Workload,
 	scopes values.Scopes,
-	config *runtimeConfiguration,
 	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
+	config *runtimeConfiguration,
 ) error {
 	for retry := range config.MaxRetriesOnConflict + 1 {
 		err := scaleWorkload(scaling, workload, scopes, workloadNamespaceMetrics, client, ctx)
@@ -280,8 +280,8 @@ func scanWorkload(
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	namespaceScopes map[string]*values.Scope,
-	config *runtimeConfiguration,
 	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
+	config *runtimeConfiguration,
 ) error {
 	resourceLogger := kubernetes.NewResourceLoggerForWorkload(client, workload)
 
@@ -450,7 +450,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	return nil
 }
 
-func initMetrics(config *util.RuntimeConfiguration) *metrics.Metrics {
+func initMetrics(config *runtimeConfiguration) *metrics.Metrics {
 	if !config.MetricsEnabled {
 		return nil
 	}

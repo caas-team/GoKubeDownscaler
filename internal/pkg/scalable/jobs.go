@@ -6,10 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/wI2L/jsondiff"
-	admissionv1 "k8s.io/api/admission/v1"
-
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
+	"github.com/wI2L/jsondiff"
 	batch "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

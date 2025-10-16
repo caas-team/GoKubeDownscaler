@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -127,7 +128,8 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 
 	slog.Debug("checking labels, excluded namespaces and excluded workloads")
 
-	workloads := scalable.FilterExcluded(workloadArray, *v.includeLabels, *v.excludeNamespaces, *v.excludeWorkloads)
+	currentNamespaceToMetrics := make(map[string]*metrics.NamespaceMetricsHolder)
+	workloads := scalable.FilterExcluded(workloadArray, *v.includeLabels, *v.excludeNamespaces, *v.excludeWorkloads, currentNamespaceToMetrics)
 
 	if len(workloads) == 0 {
 		slog.Info(
@@ -354,7 +356,7 @@ func mutateWorkload(
 		return newReviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to deep copy workload", dryRun), err
 	}
 
-	err = workloadCopy.ScaleDown(downscaleReplicas)
+	_, err = workloadCopy.ScaleDown(downscaleReplicas)
 	if err != nil {
 		return newReviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to scale down workload", dryRun), err
 	}

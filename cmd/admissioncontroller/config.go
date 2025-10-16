@@ -25,8 +25,6 @@ type runtimeConfiguration struct {
 	CertSecretName string
 	// EnableCertRotation sets if cert rotation should be enabled.
 	EnableCertRotation bool
-	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
-	Kubeconfig string
 }
 
 func getDefaultConfig() *runtimeConfiguration {
@@ -60,12 +58,6 @@ func (c *runtimeConfiguration) parseConfigFlags() {
 		"tls-secret-name",
 		"go-kube-downscaler-webhook",
 		"secret name containing the TLS certs for the webhook (default: go-kube-downscaler-webhook)",
-	)
-	flag.StringVar(
-		&c.Kubeconfig,
-		"k",
-		"",
-		"kubeconfig to use instead of the in-cluster config (optional)",
 	)
 }
 

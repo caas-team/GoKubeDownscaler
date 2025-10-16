@@ -22,6 +22,12 @@ type CommonRuntimeConfiguration struct {
 	ExcludeWorkloads RegexList
 	// IncludeLabels sets the list of labels workloads have to match one of to be scaled.
 	IncludeLabels RegexList
+	// TimeAnnotation sets the annotation used for grace-period instead of creation time.
+	TimeAnnotation string
+	// MetricsEnabled sets if Prometheus metrics should be exposed.
+	MetricsEnabled bool
+	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
+	Kubeconfig string
 }
 
 func GetDefaultConfig() *CommonRuntimeConfiguration {
@@ -33,6 +39,9 @@ func GetDefaultConfig() *CommonRuntimeConfiguration {
 		ExcludeNamespaces: RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
 		ExcludeWorkloads:  nil,
 		IncludeLabels:     nil,
+		TimeAnnotation:    "",
+		Kubeconfig:        "",
+		MetricsEnabled:    false,
 	}
 }
 
@@ -73,6 +82,24 @@ func (c *CommonRuntimeConfiguration) ParseCommonFlags() {
 		&c.IncludeLabels,
 		"matching-labels",
 		"restricts the downscaler to workloads with these labels (default: all)",
+	)
+	flag.StringVar(
+		&c.TimeAnnotation,
+		"deployment-time-annotation",
+		"",
+		"the annotation to use instead of creation time for grace period (optional)",
+	)
+	flag.BoolVar(
+		&c.MetricsEnabled,
+		"metrics",
+		false,
+		"expose Prometheus metrics (default: false)",
+	)
+	flag.StringVar(
+		&c.Kubeconfig,
+		"k",
+		"",
+		"kubeconfig to use instead of the in-cluster config (optional)",
 	)
 }
 

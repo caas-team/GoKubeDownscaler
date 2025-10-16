@@ -19,12 +19,8 @@ type runtimeConfiguration struct {
 	LeaderElection bool
 	// Interval sets how long to wait between scans.
 	Interval time.Duration
-	// TimeAnnotation sets the annotation used for grace-period instead of creation time.
-	TimeAnnotation string
 	// MaxRetriesOnConflict sets the maximum number of retries on 409 errors.
 	MaxRetriesOnConflict int
-	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
-	Kubeconfig string
 }
 
 func getDefaultConfig() *runtimeConfiguration {
@@ -32,8 +28,6 @@ func getDefaultConfig() *runtimeConfiguration {
 		CommonRuntimeConfiguration: *util.GetDefaultConfig(),
 		Once:                       false,
 		Interval:                   30 * time.Second,
-		TimeAnnotation:             "",
-		Kubeconfig:                 "",
 	}
 }
 
@@ -56,18 +50,6 @@ func (c *runtimeConfiguration) parseConfigFlags() {
 		(*util.DurationValue)(&c.Interval),
 		"interval",
 		"time between scans (default: 30s)",
-	)
-	flag.StringVar(
-		&c.Kubeconfig,
-		"k",
-		"",
-		"kubeconfig to use instead of the in-cluster config (optional)",
-	)
-	flag.StringVar(
-		&c.TimeAnnotation,
-		"deployment-time-annotation",
-		"",
-		"the annotation to use instead of creation time for grace period (optional)",
 	)
 	flag.IntVar(
 		&c.MaxRetriesOnConflict,

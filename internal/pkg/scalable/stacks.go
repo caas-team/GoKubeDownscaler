@@ -6,10 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
-	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
-	admissionv1 "k8s.io/api/admission/v1"
-
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"

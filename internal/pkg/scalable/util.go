@@ -43,7 +43,7 @@ func FilterExcluded(
 				"workload", workload.GetName(),
 				"namespace", workload.GetNamespace(),
 			)
-			currentNamespaceToMetrics[workload.GetNamespace()].IncrementDownscaledWorkloadsCount()
+			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}
