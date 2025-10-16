@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,6 +87,26 @@ func (c *cronJob) Reget(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// getSavedResourcesRequests calculates the total saved resources requests when downscaling the CronJob.
+//
+
+func (c *cronJob) getSavedResourcesRequests() *metrics.SavedResources {
+	var totalSavedCPU, totalSavedMemory float64
+
+	for i := range c.Spec.JobTemplate.Spec.Template.Spec.Containers {
+		container := &c.Spec.JobTemplate.Spec.Template.Spec.Containers[i]
+		if container.Resources.Requests != nil {
+			totalSavedCPU += container.Resources.Requests.Cpu().AsApproximateFloat64()
+			totalSavedMemory += container.Resources.Requests.Memory().AsApproximateFloat64()
+		}
+	}
+
+	totalSavedCPU *= float64(*c.Spec.JobTemplate.Spec.Parallelism)
+	totalSavedMemory *= float64(*c.Spec.JobTemplate.Spec.Parallelism)
+
+	return metrics.NewSavedResources(totalSavedCPU, totalSavedMemory)
 }
 
 // setSuspend sets the value of the suspend field on the cronJob.

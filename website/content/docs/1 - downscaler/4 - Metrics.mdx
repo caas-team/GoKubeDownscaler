@@ -1,0 +1,126 @@
+---
+title: Metrics
+id: metrics
+globalReference: docs-metrics
+description: Explain all the metrics exposed by the GoKubeDownscaler and how they can be used to monitor the Downscaler's activity.
+keywords: [metrics]
+---
+
+# Metrics
+
+GoKubeDownscaler exposes a set of Prometheus metrics that can be used to monitor its activity and performance.
+These metrics provide insights into the
+targets, scaling operations, performance and general statistics and can be used to set up alerts or dashboards.
+
+The metrics are available at the `/metrics` endpoint of the GoKubeDownscaler, which is exposed on port `8085`.
+
+Metrics are divided into three main categories:
+
+- **Dry-Run Metrics**: A set of metrics that are exposed only when the GoKubeDownscaler is run in dry-run mode.
+  They are useful to monitor the potential.
+  impact of configurations and the potential economic savings in terms of saved CPU and memory.
+  They provide a great aid in the adoption phase of the GoKubeDownscaler.
+- **Production Metrics**: A set of metrics that are exposed when the GoKubeDownscaler is run in the standard mode.
+  They provide insights into the actual.
+  scaling operations, performance and real economic savings of the Downscaler.
+- **Common Metrics**: A set of metrics that are always exposed, regardless of the mode the GoKubeDownscaler is running in.
+  These metrics provide general
+  statistics and performance information.
+
+:::tip
+
+We recommend to set up alerts only for production metrics, as the dry-run metrics are not meant to be used
+in a production environment.
+
+:::
+
+## List of Metrics
+
+Here is a list of all the metrics currently exposed by the GoKubeDownscaler, divided into dry-run and production metrics.
+
+### Dry-Run Metrics
+
+- **metric_name**: `kubedownscaler_potential_downscaled_workloads`
+  - type: gauge
+  - dimensions: namespace
+  - description: Number of potential downscaled workloads managed by KubeDownscaler broken down by namespace.
+
+- **metric_name**: `kubedownscaler_potential_upscaled_workloads`
+  - type: gauge
+  - dimensions: namespace
+  - description: Number of potential upscaled workloads managed by KubeDownscaler broken down by namespace.
+
+- **metric_name**: `kubedownscaler_potential_excluded_workloads`
+  - type: gauge
+  - dimensions: namespace
+  - description: Number of potential workloads excluded from kubedownscaler management broken down by namespace.
+
+- **metric_name**: `kubedownscaler_potential_current_saved_memory_bytes`
+  - type: gauge
+  - dimensions: namespace
+  - description: Number of potential bytes of memory saved by KubeDownscaler downscaling actions.
+    Workloads managed by
+    Keda ScaledObjects are not included in this metric.
+
+- **metric_name**: `kubedownscaler_potential_current_saved_cpu_cores`
+  - type: gauge
+  - dimensions: namespace
+  - description: Number of potential cores of cpu saved by KubeDownscaler downscaling actions.
+    Workloads managed by
+    Keda ScaledObjects are not included in this metric.
+
+### Production Metrics
+
+- **metric_name**: `kubedownscaler_downscaled_workloads`
+  - type: gauge
+  - dimensions: namespace
+  - description: Number of downscaled workloads managed by KubeDownscaler broken down by namespace.
+
+- **metric_name**: `kubedownscaler_upscaled_workloads`
+  - type: gauge
+  - dimensions: namespace
+  - description: Number of upscaled workloads managed by KubeDownscaler broken down by namespace.
+
+- **metric_name**: `kubedownscaler_excluded_workloads`
+  - type: gauge
+  - dimensions: namespace
+  - description: Number of workloads excluded from KubeDownscaler management broken down by namespace.
+
+- **metric_name**: `kubedownscaler_current_saved_memory_bytes`
+  - type: gauge
+  - dimensions: namespace
+  - description: Number of bytes of memory saved by KubeDownscaler downscaling actions.
+    Workloads managed by
+    Keda ScaledObjects are not included in this metric.
+
+- **metric_name**: `kubedownscaler_current_saved_cpu_cores`
+  - type: gauge
+  - dimensions: namespace
+  - description: Number of cores of cpu saved by KubeDownscaler downscaling actions.
+    Workloads managed by
+    Keda ScaledObjects are not included in this metric.
+
+### Common Metrics
+
+- **metric_name**: `kubedownscaler_scaling_errors`
+  - type: gauge
+  - dimensions: namespace, type
+  - description: Number of scaling errors encountered during the scale process.
+
+- **metric_name**: `kubedownscaler_cycle_duration_seconds`
+  - type: gauge
+  - description: Duration of kubedownscaler cycle in seconds.
+
+- **metric_name**: `kubedownscaler_cycle_executions_total`
+  - type: counter
+  - description: Number of cycles completed by KubeDownscaler since being instantiated.
+
+:::tip
+
+When `kubedownscaler_cycle_duration_seconds` has a high value, it could be useful to review the resource requests and limits of
+the downscaler to ensure it has enough resources to operate efficiently.
+Another option is to [enable concurrency](ref:guides-concurrency)
+If these options aren’t viable, we recommend setting the [`--max-retries-on-conflict flag`](ref:docs-runtime-configuration#max-retries-on-conflict)
+This helps handle cases where the resource is modified by another component between the time it's fetched and updated by the downscaler.
+
+:::

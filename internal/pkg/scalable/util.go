@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -23,18 +24,26 @@ func FilterExcluded(
 	includeLabels,
 	excludedNamespaces,
 	excludedWorkloads util.RegexList,
+	currentNamespaceToMetrics map[string]*metrics.NamespaceMetricsHolder,
 ) []Workload {
 	externallyScaled := getExternallyScaled(workloads)
 
 	results := make([]Workload, 0, len(workloads))
 
 	for _, workload := range workloads {
+		_, ok := currentNamespaceToMetrics[workload.GetNamespace()]
+		if !ok {
+			namespaceMetrics := metrics.NewNamespaceMetricsHolder()
+			currentNamespaceToMetrics[workload.GetNamespace()] = namespaceMetrics
+		}
+
 		if !isMatchingLabels(workload, includeLabels) {
 			slog.Debug(
 				"workload is not matching any of the specified labels, excluding it from being scanned",
 				"workload", workload.GetName(),
 				"namespace", workload.GetNamespace(),
 			)
+			currentNamespaceToMetrics[workload.GetNamespace()].IncrementDownscaledWorkloadsCount()
 
 			continue
 		}
@@ -45,6 +54,7 @@ func FilterExcluded(
 				"workload", workload.GetName(),
 				"namespace", workload.GetNamespace(),
 			)
+			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}
@@ -55,6 +65,7 @@ func FilterExcluded(
 				"workload", workload.GetName(),
 				"namespace", workload.GetNamespace(),
 			)
+			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}
@@ -65,6 +76,7 @@ func FilterExcluded(
 				"workload", workload.GetName(),
 				"namespace", workload.GetNamespace(),
 			)
+			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}
