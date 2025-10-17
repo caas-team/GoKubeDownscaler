@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -161,13 +162,13 @@ func startScanning(
 
 	slog.Info("started downscaler")
 
-	previousNamespacesToMetrics := make(map[string]*metrics.NamespaceMetricsHolder)
+	previousNamespacesToMetrics := newNamespaceToMetrics(config)
 
 	for {
 		slog.Info("scanning workloads")
 
 		start := time.Now()
-		currentNamespaceToMetrics := make(map[string]*metrics.NamespaceMetricsHolder)
+		currentNamespaceToMetrics := newNamespaceToMetrics(config)
 
 		workloads, err := client.GetWorkloads(config.IncludeNamespaces, config.IncludeResources, ctx)
 		if err != nil {
@@ -197,13 +198,13 @@ func startScanning(
 
 				defer waitGroup.Done()
 
-				workloadNamespaceMetrics, ok := currentNamespaceToMetrics[workload.GetNamespace()]
-				if !ok {
-					slog.Error("metrics holder not found for workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+				workloadNamespaceMetrics, err := getWorkloadNamespaceMetrics(config, workload, currentNamespaceToMetrics)
+				if err != nil && !errors.Is(err, ErrMetricsDisabled) {
+					slog.Error("failed to get namespace metrics", "error", err, "namespace", workload.GetNamespace())
 					return
 				}
 
-				err := scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceScopes, workloadNamespaceMetrics, config)
+				err = scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceScopes, workloadNamespaceMetrics, config)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
@@ -216,13 +217,16 @@ func startScanning(
 		waitGroup.Wait()
 		slog.Info("successfully scanned all workloads")
 
+		downscalerMetrics.UpdateMetrics(
+			config.MetricsEnabled,
+			currentNamespaceToMetrics,
+			previousNamespacesToMetrics,
+			time.Since(start).Seconds(),
+		)
+
 		if config.Once {
 			slog.Debug("once is set to true, exiting")
 			break
-		}
-
-		if config.MetricsEnabled && downscalerMetrics != nil {
-			downscalerMetrics.UpdateMetrics(currentNamespaceToMetrics, previousNamespacesToMetrics, time.Since(start).Seconds())
 		}
 
 		previousNamespacesToMetrics = currentNamespaceToMetrics
@@ -462,4 +466,31 @@ func initMetrics(config *runtimeConfiguration) *metrics.Metrics {
 	slog.Info("metrics initialized")
 
 	return m
+}
+
+// getWorkloadNamespaceMetrics retrieves the metrics holder for the workload's namespace.
+func getWorkloadNamespaceMetrics(
+	config *runtimeConfiguration,
+	workload scalable.Workload,
+	currentNamespaceToMetrics map[string]*metrics.NamespaceMetricsHolder,
+) (*metrics.NamespaceMetricsHolder, error) {
+	if !config.MetricsEnabled {
+		return nil, ErrMetricsDisabled
+	}
+
+	workloadNamespaceMetrics, ok := currentNamespaceToMetrics[workload.GetNamespace()]
+	if !ok {
+		return nil, NewMetricHolderNotFoundError(workload.GetNamespace())
+	}
+
+	return workloadNamespaceMetrics, nil
+}
+
+// newNamespaceToMetrics creates a new map for namespace to metrics holder if metrics are enabled.
+func newNamespaceToMetrics(config *runtimeConfiguration) map[string]*metrics.NamespaceMetricsHolder {
+	if config.MetricsEnabled {
+		return make(map[string]*metrics.NamespaceMetricsHolder)
+	}
+
+	return nil
 }

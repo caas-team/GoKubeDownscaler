@@ -109,10 +109,15 @@ func (m *Metrics) RegisterAll() {
 }
 
 func (m *Metrics) UpdateMetrics(
+	metricsEnabled bool,
 	currentNamespaceToMetrics map[string]*NamespaceMetricsHolder,
 	previousNamespacesToMetrics map[string]*NamespaceMetricsHolder,
 	cycleDuration float64,
 ) {
+	if !metricsEnabled {
+		return
+	}
+
 	// delete metrics for namespaces that are no longer present in the cluster
 	for previousNamespace := range previousNamespacesToMetrics {
 		if _, exists := currentNamespaceToMetrics[previousNamespace]; exists {

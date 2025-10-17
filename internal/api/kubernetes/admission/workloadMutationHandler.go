@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
-	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -128,8 +127,7 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 
 	slog.Debug("checking labels, excluded namespaces and excluded workloads")
 
-	currentNamespaceToMetrics := make(map[string]*metrics.NamespaceMetricsHolder)
-	workloads := scalable.FilterExcluded(workloadArray, *v.includeLabels, *v.excludeNamespaces, *v.excludeWorkloads, currentNamespaceToMetrics)
+	workloads := scalable.FilterExcluded(workloadArray, *v.includeLabels, *v.excludeNamespaces, *v.excludeWorkloads, nil)
 
 	if len(workloads) == 0 {
 		slog.Info(
