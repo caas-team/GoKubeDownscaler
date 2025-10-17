@@ -94,6 +94,8 @@ func (m *NamespaceMetricsHolder) IncrementGenericErrorsCount() {
 }
 
 func (m *NamespaceMetricsHolder) IncrementSavedResources(savedResources *SavedResources) {
-	m.savedMemoryBytes += savedResources.TotalMemory()
-	m.savedCPUcores += savedResources.TotalCPU()
+	if m != nil {
+		m.savedMemoryBytes += savedResources.TotalMemory()
+		m.savedCPUcores += savedResources.TotalCPU()
+	}
 }
