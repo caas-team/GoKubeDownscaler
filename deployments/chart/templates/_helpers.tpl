@@ -135,6 +135,7 @@ Create defined permissions for the webhook clusterrole
     - namespaces
   verbs:
     - get
+    - list
 {{- end }}
 
 {{/*
