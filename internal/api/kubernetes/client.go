@@ -32,6 +32,8 @@ const (
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
 // nolint: interfacebloat // this interface is meant to represent a high-level client with multiple functions
 type Client interface {
+	// GetNamespacesAsSet gets all namespaces or a specific list of namespace
+	GetNamespacesAsSet() (map[string]struct{}, error)
 	// GetNamespacesScopes gets the namespaces scopes from the namespaces annotations
 	GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error)
 	// GetNamespaceScope gets the namespace scope from its annotations
@@ -328,6 +330,22 @@ func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
 	}
 
 	return lease, nil
+}
+
+// GetNamespacesAsSet returns all namespaces as a set (map[string]struct{}).
+func (c client) GetNamespacesAsSet() (map[string]struct{}, error) {
+	namespaceList, err := c.clientsets.Kubernetes.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list namespaces: %w", err)
+	}
+
+	namespaceSet := make(map[string]struct{}, len(namespaceList.Items))
+	for i := range namespaceList.Items {
+		ns := &namespaceList.Items[i]
+		namespaceSet[ns.Name] = struct{}{}
+	}
+
+	return namespaceSet, nil
 }
 
 // GetNamespacesScopes gets the namespaces scopes from the namespaces annotations.

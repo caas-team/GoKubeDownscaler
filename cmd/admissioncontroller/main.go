@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -36,13 +37,14 @@ type serverConfig struct {
 }
 
 const (
-	certDir             = "/etc/webhook/tls"
-	mutatingWebhookName = "webhook.kube-downscaler.k8s"
-	defaultCAName       = "KUBEDOWNSCALER"
-	defaultCAOrg        = "KUBEDOWNSCALERORG"
-	probeAddress        = ":8080"
-	healthCheckName     = "healthz"
-	readyCheckName      = "readyz"
+	certDir                  = "/etc/webhook/tls"
+	mutatingWebhookName      = "webhook.kube-downscaler.k8s"
+	defaultCAName            = "KUBEDOWNSCALER"
+	defaultCAOrg             = "KUBEDOWNSCALERORG"
+	probeAddress             = ":8080"
+	healthCheckName          = "healthz"
+	readyCheckName           = "readyz"
+	NamespaceCleanupInterval = 20 * time.Minute
 )
 
 func main() {
@@ -83,7 +85,8 @@ func main() {
 	opts := setupControllerRuntimeLogEncoding(config)
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	ctx := ctrl.SetupSignalHandler()
+	baseCtx := ctrl.SetupSignalHandler()
+	ctx, cancel := context.WithCancel(baseCtx)
 	cfg := setupConfig(config.Kubeconfig)
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -155,13 +158,13 @@ func main() {
 
 	hookServer := mgr.GetWebhookServer()
 	hookServer.Register("/validate-workloads", http.HandlerFunc(serverConfig.serveValidateWorkloads))
+	startNamespaceCleanup(ctx, serverConfig, client, cancel, config.MetricsEnabled)
 
 	<-ctx.Done()
 }
 
 // serveValidateWorkloads validates an admission request.
 func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, request *http.Request) {
-	start := time.Now()
 	ctx := request.Context()
 
 	slog.Debug("received validation request from uri", "requestURI", request.RequestURI)
@@ -182,10 +185,7 @@ func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, reques
 	)
 	admissionHandler.HandleWorkloadMutation(ctx, writer, request)
 
-	duration := time.Since(start).Seconds()
-
 	slog.Info("validation request was correctly processed")
-	s.admissionMetrics.UpdateAdmissionRequestDurationSecondsHistogram(s.config.MetricsEnabled, duration)
 }
 
 func startManager(ctx context.Context, mgr manager.Manager) {
@@ -203,9 +203,70 @@ func initAdmissionMetrics(config *runtimeConfiguration) (admissionMetrics *metri
 
 	m := metrics.NewAdmissionMetrics(config.DryRun)
 	m.RegisterAll()
-	slog.Info("metrics initialized")
+	slog.Info("metrics configuration gathered")
 
-	return m, "8085"
+	return m, ":8085"
+}
+
+func startNamespaceCleanup(
+	ctx context.Context,
+	cfg *serverConfig,
+	client kubernetes.Client,
+	cancel context.CancelFunc,
+	metricsEnabled bool,
+) {
+	if metricsEnabled {
+		slog.Debug("starting routine for deleted namespace metrics cleanup")
+
+		errCh := make(chan error)
+
+		go cleanDeletedNamespaceMetrics(ctx, cfg, client, errCh)
+
+		go func() {
+			for err := range errCh {
+				slog.Error("webhook controller was not able to clean metrics for unused namespace", "error", err)
+				cancel()
+
+				return
+			}
+		}()
+	}
+}
+
+func cleanDeletedNamespaceMetrics(ctx context.Context, config *serverConfig, client kubernetes.Client, errCh chan<- error) {
+	var previousNamespace, currentNamespace map[string]struct{}
+	var err error
+
+	previousNamespace, err = client.GetNamespacesAsSet()
+	if err != nil {
+		errCh <- fmt.Errorf("failed to get namespaces on startup: %w", err)
+		return
+	}
+
+	ticker := time.NewTicker(NamespaceCleanupInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			currentNamespace, err = client.GetNamespacesAsSet()
+			if err != nil {
+				errCh <- fmt.Errorf("failed to get namespaces during cleanup: %w", err)
+				continue
+			}
+
+			for namespace := range previousNamespace {
+				if _, exists := currentNamespace[namespace]; !exists {
+					config.admissionMetrics.DeleteNamespaceMetrics(namespace)
+				}
+			}
+
+			previousNamespace = currentNamespace
+
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func toSet(items []string) map[string]struct{} {

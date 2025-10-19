@@ -224,12 +224,12 @@ func startScanning(
 			time.Since(start).Seconds(),
 		)
 
+		previousNamespacesToMetrics = currentNamespaceToMetrics
+
 		if config.Once {
 			slog.Debug("once is set to true, exiting")
 			break
 		}
-
-		previousNamespacesToMetrics = currentNamespaceToMetrics
 
 		slog.Debug("waiting until next scan", "interval", config.Interval.String())
 		time.Sleep(config.Interval)
