@@ -40,6 +40,9 @@ const (
 	mutatingWebhookName = "webhook.kube-downscaler.k8s"
 	defaultCAName       = "KUBEDOWNSCALER"
 	defaultCAOrg        = "KUBEDOWNSCALERORG"
+	probeAddress        = ":8080"
+	healthCheckName     = "healthz"
+	readyCheckName      = "readyz"
 )
 
 func main() {
@@ -98,19 +101,19 @@ func main() {
 				},
 			},
 		}),
-		HealthProbeBindAddress: ":8080",
+		HealthProbeBindAddress: probeAddress,
 	})
 	if err != nil {
 		slog.Error("failed to create controller runtime", "error", err)
 		os.Exit(1)
 	}
 
-	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+	if err = mgr.AddHealthzCheck(healthCheckName, healthz.Ping); err != nil {
 		slog.Error("failed to set up health check", "error", err)
 		os.Exit(1)
 	}
 
-	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+	if err = mgr.AddReadyzCheck(readyCheckName, healthz.Ping); err != nil {
 		slog.Error("failed to set up ready check", "error", err)
 		os.Exit(1)
 	}
