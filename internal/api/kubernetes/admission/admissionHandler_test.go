@@ -141,7 +141,7 @@ func TestReviewResponse(t *testing.T) {
 		t.Errorf("expected Allowed=true in dry-run mode")
 	}
 
-	if response.Response.Result.Message != "denied (was allowed only for dry-run mode)" {
+	if response.Response.Result.Message != "denied (dry-run mode)" {
 		t.Errorf("unexpected dry-run message: %s", response.Response.Result.Message)
 	}
 }

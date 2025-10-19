@@ -162,7 +162,8 @@ func newHandlerWithMocks(mockClient *MockClient) *WorkloadMutationHandler {
 		mockClient,
 		values.NewScope(), values.NewScope(), values.GetDefaultScope(),
 		false, nil, &util.RegexList{regexp.MustCompile(".*")}, &util.RegexList{}, &util.RegexList{},
-		map[string]struct{}{"deployments": {}, "scaledobjects": {}},
+		map[string]struct{}{"deployments": {}, "scaledobjects": {}}, false,
+		nil,
 	)
 }
 
@@ -334,7 +335,7 @@ func TestEvaluateMutation(t *testing.T) {
 			input, _ := parseAdmissionReviewFromRequest(req)
 			workload, _ := scalable.ParseWorkloadFromRawObject("deployment", input.Request.Object.Raw)
 
-			resp, err := handler.evaluateWorkloadMutation(context.Background(), workload, input)
+			resp, err := handler.evaluateWorkloadMutation(context.Background(), workload, input, false)
 			require.NoError(t, err)
 			require.Contains(t, resp.Response.Result.Message, testCase.expectedMsg)
 		})

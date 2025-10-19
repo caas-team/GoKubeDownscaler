@@ -45,9 +45,15 @@ spec:
           {{- if .Values.constrainedNamespaces }}
           - --namespace={{ join "," .Values.constrainedNamespaces }}
           {{- end }}
+          {{- if .Values.metrics.enabled }}
+          - --metrics
+          {{- end }}
           ports:
             - containerPort: 443
             - containerPort: 8080
+          {{- if .Values.metrics.enabled }}
+            - containerPort: 8085
+          {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ .Values.configMap.name }}

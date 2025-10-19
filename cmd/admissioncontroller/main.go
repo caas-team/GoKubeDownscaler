@@ -6,10 +6,12 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 	_ "time/tzdata"
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes/admission"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -30,6 +32,7 @@ type serverConfig struct {
 	scopeDefault         *values.Scope
 	config               *runtimeConfiguration
 	includedResourcesSet map[string]struct{}
+	admissionMetrics     *metrics.AdmissionMetrics
 }
 
 const (
@@ -59,6 +62,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	admissionMetrics, bindAddress := initAdmissionMetrics(config)
+
 	includedResourcesSet := toSet(config.IncludeResources)
 
 	serverConfig := &serverConfig{
@@ -69,6 +74,7 @@ func main() {
 		scopeDefault:         scopeDefault,
 		config:               config,
 		includedResourcesSet: includedResourcesSet,
+		admissionMetrics:     admissionMetrics,
 	}
 
 	opts := setupControllerRuntimeLogEncoding(config)
@@ -81,7 +87,7 @@ func main() {
 		Scheme:         scheme,
 		LeaderElection: false,
 		Metrics: server.Options{
-			BindAddress: "0", // metrics disabled
+			BindAddress: bindAddress,
 		},
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    443,
@@ -152,6 +158,7 @@ func main() {
 
 // serveValidateWorkloads validates an admission request.
 func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, request *http.Request) {
+	start := time.Now()
 	ctx := request.Context()
 
 	slog.Debug("received validation request from uri", "requestURI", request.RequestURI)
@@ -167,10 +174,15 @@ func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, reques
 		&s.config.ExcludeNamespaces,
 		&s.config.ExcludeWorkloads,
 		s.includedResourcesSet,
+		s.config.MetricsEnabled,
+		s.admissionMetrics,
 	)
 	admissionHandler.HandleWorkloadMutation(ctx, writer, request)
 
+	duration := time.Since(start).Seconds()
+
 	slog.Info("validation request was correctly processed")
+	s.admissionMetrics.UpdateAdmissionRequestDurationSecondsHistogram(s.config.MetricsEnabled, duration)
 }
 
 func startManager(ctx context.Context, mgr manager.Manager) {
@@ -178,6 +190,19 @@ func startManager(ctx context.Context, mgr manager.Manager) {
 		slog.Error("manager exited with error", "error", err)
 		os.Exit(1)
 	}
+}
+
+//nolint:nonamedreturns //required for function clarity
+func initAdmissionMetrics(config *runtimeConfiguration) (admissionMetrics *metrics.AdmissionMetrics, bindingPort string) {
+	if !config.MetricsEnabled {
+		return nil, "0"
+	}
+
+	m := metrics.NewAdmissionMetrics(config.DryRun)
+	m.RegisterAll()
+	slog.Info("metrics initialized")
+
+	return m, "8085"
 }
 
 func toSet(items []string) map[string]struct{} {

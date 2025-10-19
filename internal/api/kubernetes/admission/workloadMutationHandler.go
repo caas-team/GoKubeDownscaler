@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -28,6 +29,8 @@ type WorkloadMutationHandler struct {
 	excludeNamespaces   *util.RegexList
 	excludeWorkloads    *util.RegexList
 	includeResourcesSet map[string]struct{}
+	metricsEnabled      bool
+	admissionMetrics    *metrics.AdmissionMetrics
 }
 
 // NewWorkloadMutationHandler creates a new WorkloadMutationHandler.
@@ -38,6 +41,8 @@ func NewWorkloadMutationHandler(
 	includeNamespaces *[]string,
 	includeLabels, excludeNamespaces, excludeWorkloads *util.RegexList,
 	includeResources map[string]struct{},
+	metricsEnabled bool,
+	admissionMetrics *metrics.AdmissionMetrics,
 ) *WorkloadMutationHandler {
 	return &WorkloadMutationHandler{
 		client:              client,
@@ -50,6 +55,8 @@ func NewWorkloadMutationHandler(
 		excludeNamespaces:   excludeNamespaces,
 		excludeWorkloads:    excludeWorkloads,
 		includeResourcesSet: includeResources,
+		metricsEnabled:      metricsEnabled,
+		admissionMetrics:    admissionMetrics,
 	}
 }
 
@@ -77,7 +84,7 @@ func (v *WorkloadMutationHandler) HandleWorkloadMutation(ctx context.Context, wr
 		"kind", workload.GroupVersionKind().Kind,
 	)
 
-	out, err := v.evaluateWorkloadMutation(ctx, workload, input)
+	out, err := v.evaluateWorkloadMutation(ctx, workload, input, v.metricsEnabled)
 	if err != nil {
 		slog.Error("error encountered while validating workload", "error", err)
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -93,6 +100,7 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 	ctx context.Context,
 	workload scalable.Workload,
 	review *admissionv1.AdmissionReview,
+	metricsEnabled bool,
 ) (*admissionv1.AdmissionReview, error) {
 	resourceLogger := kubernetes.NewResourceLoggerForWorkload(v.client, workload)
 
@@ -109,9 +117,13 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 			"dryRun", v.dryRun,
 		)
 
-		//nolint: lll // reason: splitting this line would reduce readability
+		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
+
 		return newReviewResponse(
-			review.Request.UID, true, http.StatusAccepted, "workload namespace is not in the list of included namespaces, excluding it from downscaling", v.dryRun), nil
+			review.Request.UID, true,
+			http.StatusAccepted,
+			"workload namespace is not in the list of included namespaces, excluding it from downscaling",
+			v.dryRun), nil
 	}
 
 	// check if workload is externally managed
@@ -122,6 +134,8 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 	externalScalingReview, err := v.evaluateWorkloadExternalScalingCondition(ctx, workload, *review)
 	if !errors.Is(err, ErrNoExternalScaling) {
 		slog.Info("workload is controlled by keda scaledobjects, excluding it")
+		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
+
 		return externalScalingReview, err
 	}
 
@@ -136,6 +150,8 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 			"namespace", workload.GetNamespace(),
 			"dryRun", v.dryRun,
 		)
+
+		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
 
 		return newReviewResponse(
 			review.Request.UID, true, http.StatusAccepted, "workload is excluded from downscaling, doesn't need mutation", v.dryRun), nil
@@ -161,8 +177,14 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 			"dryRun", v.dryRun,
 		)
 
-		//nolint: lll // reason: splitting this line would reduce readability
-		return newReviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to get workload scope from annotations", v.dryRun), err
+		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
+
+		return newReviewResponse(
+			review.Request.UID,
+			false,
+			http.StatusInternalServerError,
+			"failed to get workload scope from annotations",
+			v.dryRun), err
 	}
 
 	slog.Debug(
@@ -180,8 +202,14 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 			"dryRun", v.dryRun,
 		)
 
-		//nolint: lll // reason: splitting this line would reduce readability
-		return newReviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to get namespace scope from annotations", v.dryRun), err
+		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
+
+		return newReviewResponse(
+			review.Request.UID,
+			false,
+			http.StatusInternalServerError,
+			"failed to get namespace scope from annotations",
+			v.dryRun), err
 	}
 
 	scopes := values.Scopes{scopeWorkload, scopeNamespace, v.scopeCli, v.scopeEnv, v.scopeDefault}
@@ -194,13 +222,19 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 			"namespace", workload.GetNamespace(),
 			"dryRun", v.dryRun)
 
-		//nolint: lll // reason: splitting this line would reduce readability
-		return newReviewResponse(review.Request.UID, true, http.StatusAccepted, "workload is excluded from downscaling, doesn't need mutation", v.dryRun), nil
+		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
+
+		return newReviewResponse(
+			review.Request.UID,
+			true,
+			http.StatusAccepted,
+			"workload is excluded from downscaling, doesn't need mutation",
+			v.dryRun), nil
 	}
 
 	scaling := scopes.GetCurrentScaling()
 
-	response, err := evaluateWorkloadScalingConditions(scaling, workload, scopes, review, v.dryRun)
+	response, err := evaluateWorkloadScalingConditions(scaling, workload, scopes, review, v.dryRun, metricsEnabled, v.admissionMetrics)
 	if err != nil {
 		return response, err
 	}
@@ -215,6 +249,8 @@ func evaluateWorkloadScalingConditions(
 	scopes values.Scopes,
 	review *admissionv1.AdmissionReview,
 	dryRun bool,
+	metricsEnabled bool,
+	admissionMetrics *metrics.AdmissionMetrics,
 ) (*admissionv1.AdmissionReview, error) {
 	if scaling == values.ScalingNone {
 		slog.Debug("scaling is not set by any scope, skipping",
@@ -222,6 +258,8 @@ func evaluateWorkloadScalingConditions(
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun,
 		)
+
+		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
 
 		return newReviewResponse(review.Request.UID, true, http.StatusAccepted, "scaling configuration is not set for workload", dryRun), nil
 	}
@@ -232,6 +270,8 @@ func evaluateWorkloadScalingConditions(
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun,
 		)
+
+		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
 
 		return newReviewResponse(review.Request.UID, true, http.StatusAccepted, "scaling configuration is ignored for workload", dryRun), nil
 	}
@@ -248,6 +288,8 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun,
 		)
+
+		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
 
 		return newReviewResponse(review.Request.UID, false, http.StatusAccepted, "scaling configuration is invalid for workload", dryRun), err
 	}
@@ -267,10 +309,12 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 				"namespace", workload.GetNamespace(),
 				"dryRun", dryRun)
 
+			admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
+
 			return newReviewResponse(review.Request.UID, false, http.StatusAccepted, "failed to get downscaleReplicas", dryRun), err
 		}
 
-		response, err := mutateWorkload(workload, review, downscaleReplicas, dryRun)
+		response, err := mutateWorkload(workload, review, downscaleReplicas, dryRun, metricsEnabled, admissionMetrics)
 		if err != nil {
 			return response, err
 		}
@@ -295,6 +339,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	return newReviewResponse(review.Request.UID, true, http.StatusAccepted, "workload doesn't match any scaling condition", dryRun), nil
 }
 
+// evaluateWorkloadExternalScalingCondition checks if the workload is externally managed.
 func (v *WorkloadMutationHandler) evaluateWorkloadExternalScalingCondition(
 	ctx context.Context,
 	workload scalable.Workload,
@@ -341,6 +386,8 @@ func mutateWorkload(
 	review *admissionv1.AdmissionReview,
 	downscaleReplicas values.Replicas,
 	dryRun bool,
+	metricsEnabled bool,
+	admissionMetrics *metrics.AdmissionMetrics,
 ) (*admissionv1.AdmissionReview, error) {
 	// generate a deep copy of the workload to be able to generate a comparison patch
 	workloadCopy, err := workload.Copy()
@@ -351,16 +398,20 @@ func mutateWorkload(
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun)
 
+		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
+
 		return newReviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to deep copy workload", dryRun), err
 	}
 
 	_, err = workloadCopy.ScaleDown(downscaleReplicas)
 	if err != nil {
+		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
 		return newReviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to scale down workload", dryRun), err
 	}
 
 	patch, err := workload.Compare(workloadCopy)
 	if err != nil {
+		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
 		return newReviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to compare workload", dryRun), err
 	}
 
@@ -369,12 +420,16 @@ func mutateWorkload(
 	// convert the patch into JSON format
 	jsonPatch, err := json.Marshal(patch)
 	if err != nil {
+		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
 		return newReviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to marshal patch", dryRun), err
 	}
 
 	if !dryRun {
+		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, true, false, workload.GetNamespace())
 		return newPatchReviewResponse(review.Request.UID, jsonPatch)
 	}
+
+	admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
 
 	return newReviewResponse(review.Request.UID, true, http.StatusAccepted, "would have patched workload", dryRun), nil
 }

@@ -46,18 +46,10 @@ func parseAdmissionReviewFromRequest(request *http.Request) (*admissionv1.Admiss
 
 // newReviewResponse returns an AdmissionReview with the specified UID, allowed, httpCode, and reason.
 func newReviewResponse(uid types.UID, allowed bool, httpCode int32, reason string, dryRun bool) *admissionv1.AdmissionReview {
-	var finalReason string
-
 	if dryRun {
-		if !allowed {
-			finalReason = reason + " (was allowed only for dry-run mode)"
-		} else {
-			finalReason = reason + " (dry-run mode)"
-		}
+		reason += " (dry-run mode)"
 
 		allowed = true
-	} else {
-		finalReason = reason
 	}
 
 	return &admissionv1.AdmissionReview{
@@ -70,7 +62,7 @@ func newReviewResponse(uid types.UID, allowed bool, httpCode int32, reason strin
 			Allowed: allowed,
 			Result: &metav1.Status{
 				Code:    httpCode,
-				Message: finalReason,
+				Message: reason,
 			},
 		},
 	}
