@@ -134,7 +134,7 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 	externalScalingReview, err := v.evaluateWorkloadExternalScalingCondition(ctx, workload, *review)
 	if !errors.Is(err, ErrNoExternalScaling) {
 		slog.Info("workload is controlled by keda scaledobjects, excluding it")
-		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
+		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
 
 		return externalScalingReview, err
 	}
@@ -183,7 +183,7 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 			review.Request.UID,
 			false,
 			http.StatusInternalServerError,
-			"failed to get workload scope from annotations",
+			"failed to parse workload scope from annotations",
 			v.dryRun), err
 	}
 
@@ -311,7 +311,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 
 			admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
 
-			return newReviewResponse(review.Request.UID, false, http.StatusAccepted, "failed to get downscaleReplicas", dryRun), err
+			return newReviewResponse(review.Request.UID, false, http.StatusInternalServerError, "failed to get downscaleReplicas", dryRun), err
 		}
 
 		response, err := mutateWorkload(workload, review, downscaleReplicas, dryRun, metricsEnabled, admissionMetrics)

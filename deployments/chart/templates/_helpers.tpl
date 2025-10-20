@@ -136,6 +136,14 @@ Create defined permissions for the webhook clusterrole
   verbs:
     - get
     - list
+- apiGroups:
+    - ""
+  resources:
+    - events
+  verbs:
+    - get
+    - create
+    - update
 {{- end }}
 
 {{/*

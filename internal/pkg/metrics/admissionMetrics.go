@@ -1,8 +1,6 @@
 package metrics
 
 import (
-	"log/slog"
-
 	"github.com/prometheus/client_golang/prometheus"
 	_ "k8s.io/component-base/metrics/prometheus/restclient"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
@@ -40,28 +38,19 @@ func (m *AdmissionMetrics) UpdateValidateWorkloadAdmissionRequestsTotal(
 	err bool,
 	namespace string,
 ) {
-	slog.Info("updating validateWorkloadAdmissionRequestsTotal metric",
-		"namespace", namespace,
-		"mutated", mutated,
-		"error", err,
-	)
-
 	if !metricsEnabled {
 		return
 	}
 
 	if m != nil && err {
-		slog.Info("called with error, incrementing error label")
 		m.validateWorkloadAdmissionRequestsTotal.WithLabelValues(namespace, errorLabel).Inc()
 	}
 
 	if m != nil && mutated {
-		slog.Info("called with mutation, incrementing mutated label")
 		m.validateWorkloadAdmissionRequestsTotal.WithLabelValues(namespace, mutatedLabel).Inc()
 	}
 
 	if m != nil && !mutated {
-		slog.Info("called without mutation, incrementing not mutated label")
 		m.validateWorkloadAdmissionRequestsTotal.WithLabelValues(namespace, notMutatedLabel).Inc()
 	}
 }
