@@ -37,6 +37,16 @@ The Webhook can only be installed cluster-wide, since it operates at the API ser
 The details of how the Downscaler evaluates workloads and determines scaling actions are covered in the
 [Scopes And Scaling](ref:docs-scopes-and-scaling) section.
 
+:::tip
+
+We designed the `MutatingWebhookConfiguration` process so that it does not block the creation or update of workloads in case of errors,
+however, during the evaluation process, unexpected errors may occur that are not related to our component, but could instead be caused by Kubernetes.
+We recommend keeping the `failurePolicy` field of the `MutatingWebhookConfiguration` resource set to `Ignore` (the default value we provided)
+you can read more inside the Helm Chart documentation and more specifically in this section
+([in this section](ref:docs-helm-webhook-controller-mutating-webhook-configuration)).
+
+:::
+
 ## When to Use the Webhook
 
 There are a couple of scenarios where using the Webhook is beneficial:

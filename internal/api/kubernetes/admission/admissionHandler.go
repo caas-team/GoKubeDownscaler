@@ -45,11 +45,29 @@ func parseAdmissionReviewFromRequest(request *http.Request) (*admissionv1.Admiss
 }
 
 // newReviewResponse returns an AdmissionReview with the specified UID, allowed, httpCode, and reason.
-func newReviewResponse(uid types.UID, allowed bool, httpCode int32, reason string, dryRun bool) *admissionv1.AdmissionReview {
+func newReviewResponse(uid types.UID, allowed bool, httpCode int32, reason string, warn, dryRun bool) *admissionv1.AdmissionReview {
 	if dryRun {
 		reason += " (dry-run mode)"
 
 		allowed = true
+	}
+
+	if warn {
+		return &admissionv1.AdmissionReview{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "AdmissionReview",
+				APIVersion: "admission.k8s.io/v1",
+			},
+			Response: &admissionv1.AdmissionResponse{
+				UID:     uid,
+				Allowed: allowed,
+				Result: &metav1.Status{
+					Code:    httpCode,
+					Message: reason,
+				},
+				Warnings: []string{reason},
+			},
+		}
 	}
 
 	return &admissionv1.AdmissionReview{

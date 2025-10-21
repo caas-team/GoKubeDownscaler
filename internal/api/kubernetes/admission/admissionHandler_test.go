@@ -130,13 +130,13 @@ func TestReviewResponse(t *testing.T) {
 
 	uid := types.UID("abcd")
 
-	response := newReviewResponse(uid, true, 200, "ok", false)
+	response := newReviewResponse(uid, true, 200, "ok", false, false)
 	if !response.Response.Allowed || response.Response.UID != uid {
 		t.Errorf("unexpected response: %+v", response)
 	}
 
 	// dry-run + denied
-	response = newReviewResponse(uid, false, 400, "denied", true)
+	response = newReviewResponse(uid, false, 400, "denied", false, true)
 	if !response.Response.Allowed {
 		t.Errorf("expected Allowed=true in dry-run mode")
 	}
@@ -166,7 +166,7 @@ func TestSendAdmissionReviewResponse(t *testing.T) {
 	t.Parallel()
 
 	responseRecorder := httptest.NewRecorder()
-	resp := newReviewResponse("id123", true, 200, "ok", false)
+	resp := newReviewResponse("id123", true, 200, "ok", false, false)
 
 	sendAdmissionReviewResponse(responseRecorder, resp)
 
@@ -194,7 +194,7 @@ func TestSendAdmissionReviewResponse_WriteError(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(&buf, nil))
 	slog.SetDefault(logger)
 
-	resp := newReviewResponse("id456", true, 200, "ok", false)
+	resp := newReviewResponse("id456", true, 200, "ok", false, false)
 	mockWriter := &errorWriter{}
 	sendAdmissionReviewResponse(mockWriter, resp)
 
