@@ -171,11 +171,12 @@ func TestEvaluateMutation(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name         string
-		setupMocks   func(*MockClient)
-		setupHandler func(*WorkloadMutationHandler)
-		request      func(*testing.T) *http.Request
-		expectedMsg  string
+		name            string
+		setupMocks      func(*MockClient)
+		setupHandler    func(*WorkloadMutationHandler)
+		request         func(*testing.T) *http.Request
+		expectedMessage string
+		expectedCode    int32
 	}{
 		{
 			name: "Workload excluded because uptime",
@@ -192,7 +193,8 @@ func TestEvaluateMutation(t *testing.T) {
 				t.Helper()
 				return newDeploymentRequestWithLabels(t, "default")
 			},
-			expectedMsg: "workload matches scaling up conditions",
+			expectedMessage: "workload matches scaling up conditions",
+			expectedCode:    http.StatusAccepted,
 		},
 		{
 			name: "Workload mutated because downtime",
@@ -209,7 +211,8 @@ func TestEvaluateMutation(t *testing.T) {
 				t.Helper()
 				return newDeploymentRequestWithLabels(t, "default")
 			},
-			expectedMsg: "would have patched",
+			expectedMessage: "would have patched",
+			expectedCode:    http.StatusAccepted,
 		},
 		{
 			name: "Workload excluded by annotation",
@@ -224,7 +227,8 @@ func TestEvaluateMutation(t *testing.T) {
 				t.Helper()
 				return newDeploymentRequestWithExcludeAnnotationTrue(t, "default")
 			},
-			expectedMsg: "workload is excluded from downscaling",
+			expectedMessage: "workload is excluded from downscaling",
+			expectedCode:    http.StatusAccepted,
 		},
 		{
 			name: "Workload excluded by namespace scope",
@@ -240,7 +244,8 @@ func TestEvaluateMutation(t *testing.T) {
 				t.Helper()
 				return newDeploymentRequestWithLabels(t, "default")
 			},
-			expectedMsg: "workload is excluded from downscaling",
+			expectedMessage: "workload is excluded from downscaling",
+			expectedCode:    http.StatusAccepted,
 		},
 		{
 			name: "Workload excluded by exclude list",
@@ -255,7 +260,8 @@ func TestEvaluateMutation(t *testing.T) {
 				t.Helper()
 				return newDeploymentRequestWithLabels(t, "default")
 			},
-			expectedMsg: "workload is excluded from downscaling",
+			expectedMessage: "workload is excluded from downscaling",
+			expectedCode:    http.StatusAccepted,
 		},
 		{
 			name: "Workload excluded by external scaling (keda)",
@@ -268,7 +274,8 @@ func TestEvaluateMutation(t *testing.T) {
 				t.Helper()
 				return newDeploymentRequestWithLabels(t, "default")
 			},
-			expectedMsg: "workload is excluded from downscaling",
+			expectedMessage: "workload is excluded from downscaling",
+			expectedCode:    http.StatusAccepted,
 		},
 		{
 			name:         "Workload ignored because namespace not included",
@@ -278,7 +285,8 @@ func TestEvaluateMutation(t *testing.T) {
 				t.Helper()
 				return newDeploymentRequestWithLabels(t, "default")
 			},
-			expectedMsg: "not in the list of included namespaces",
+			expectedMessage: "not in the list of included namespaces",
+			expectedCode:    http.StatusAccepted,
 		},
 		{
 			name: "Workload excluded because missing labels",
@@ -293,7 +301,8 @@ func TestEvaluateMutation(t *testing.T) {
 				t.Helper()
 				return newDeploymentRequestWithoutLabels(t, "default")
 			},
-			expectedMsg: "workload is excluded from downscaling",
+			expectedMessage: "workload is excluded from downscaling",
+			expectedCode:    http.StatusAccepted,
 		},
 		{
 			name: "Workload excluded by exclude list (explicit workload)",
@@ -309,7 +318,8 @@ func TestEvaluateMutation(t *testing.T) {
 				t.Helper()
 				return newDeploymentRequestWithLabels(t, "default")
 			},
-			expectedMsg: "workload is excluded from downscaling",
+			expectedMessage: "workload is excluded from downscaling",
+			expectedCode:    http.StatusAccepted,
 		},
 	}
 
@@ -336,7 +346,8 @@ func TestEvaluateMutation(t *testing.T) {
 
 			resp, err := handler.evaluateWorkloadMutation(context.Background(), workload, input, false)
 			require.NoError(t, err)
-			require.Contains(t, resp.Response.Result.Message, testCase.expectedMsg)
+			require.Equal(t, testCase.expectedCode, resp.Response.Result.Code)
+			require.Contains(t, resp.Response.Result.Message, testCase.expectedMessage)
 		})
 	}
 }
