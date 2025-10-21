@@ -24,10 +24,10 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
-If replicaCount is greater than 1 leader election is enabled by default.
+If replicaCount is greater than 1, leader election is enabled by default.
 */}}
 {{- define "go-kube-downscaler.leaderElection" -}}
-{{- if gt (.Values.replicaCount | int) 1 }}true{{- end }}
+{{- if gt (.Values.replicaCount | int) 1 -}}true{{- else -}}false{{- end -}}
 {{- end }}
 
 {{/*
@@ -49,6 +49,7 @@ Selector labels
 application: {{ include "go-kube-downscaler.fullname" . }}
 {{- end }}
 
+
 {{/*
 Create the name of the service account to use
 */}}
@@ -58,6 +59,91 @@ Create the name of the service account to use
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
+{{- end }}
+
+{{/*
+Create webhook controller full name
+*/}}
+{{- define "go-kube-downscaler.webhookController.fullname" -}}
+{{ include "go-kube-downscaler.fullname" . }}-webhook
+{{- end }}
+
+{{/*
+Create selector label for the webhook
+*/}}
+{{- define "go-kube-downscaler.webhookController.selectorLabels" -}}
+{{ include "go-kube-downscaler.selectorLabels" . }}-webhook
+{{- end }}
+
+
+{{/*
+Create defined permissions for the webhook role
+*/}}
+{{- define "go-kube-downscaler.webhookController.namespace.permissions" -}}
+- apiGroups:
+    - ""
+  resources:
+    - secrets
+  resourceNames:
+    - {{ include "go-kube-downscaler.fullname" . }}-webhook
+  verbs:
+    - create
+    - update
+    - patch
+    - get
+    - watch
+    - list
+- apiGroups:
+    - coordination.k8s.io
+  resources:
+    - leases
+  verbs:
+    - get
+    - create
+    - watch
+    - list
+    - update
+    - delete
+{{- end }}
+
+{{/*
+Create defined permissions for the webhook clusterrole
+*/}}
+{{- define "go-kube-downscaler.webhookController.clusterwide-and-webhook.permissions" -}}
+- apiGroups:
+    - ""
+  resources:
+    - namespaces
+  verbs:
+    - get
+- apiGroups:
+    - admissionregistration.k8s.io
+  resources:
+    - mutatingwebhookconfigurations
+  resourceNames:
+    - webhook.kube-downscaler.k8s
+  verbs:
+    - get
+    - watch
+    - patch
+    - update
+{{- end }}
+{{- define "go-kube-downscaler.webhookController.clusterwide.permissions" -}}
+- apiGroups:
+    - ""
+  resources:
+    - namespaces
+  verbs:
+    - get
+    - list
+- apiGroups:
+    - ""
+  resources:
+    - events
+  verbs:
+    - get
+    - create
+    - update
 {{- end }}
 
 {{/*
@@ -190,4 +276,133 @@ Create defined permissions for roles
     - update
 {{- end }}
 {{- end }}
+{{- end }}
+
+{{/*
+Create webhook resources
+*/}}
+{{- define "go-kube-downscaler.webhookresources" -}}
+{{- range $resource := .Values.includedResources -}}
+{{ if eq $resource "deployments" -}}
+- apiGroups:
+    - apps
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - deployments
+{{ end -}}
+{{ if eq $resource "statefulsets" -}}
+- apiGroups:
+    - apps
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - statefulsets
+{{ end -}}
+{{ if eq $resource "daemonsets" -}}
+- apiGroups:
+    - apps
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - daemonsets
+{{ end -}}
+{{ if eq $resource "rollouts" -}}
+- apiGroups:
+    - argoproj.io
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - rollouts
+{{ end -}}
+{{ if eq $resource "horizontalpodautoscalers" -}}
+- apiGroups:
+    - autoscaling
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - horizontalpodautoscalers
+{{ end -}}
+{{ if eq $resource "jobs" -}}
+- apiGroups:
+    - batch
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - jobs
+{{ end -}}
+{{ if eq $resource "cronjobs" -}}
+- apiGroups:
+    - batch
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - cronjobs
+{{ end -}}
+{{ if eq $resource "scaledobjects" -}}
+- apiGroups:
+    - keda.sh
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - scaledobjects
+{{ end -}}
+{{ if eq $resource "stacks" -}}
+- apiGroups:
+    - zalando.org
+  resources:
+    - stacks
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+{{ end -}}
+{{ if eq $resource "prometheuses" -}}
+- apiGroups:
+    - monitoring.coreos.com
+  resources:
+    - prometheuses
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+{{ end -}}
+{{ if eq $resource "poddisruptionbudgets" -}}
+- apiGroups:
+    - policy
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - poddisruptionbudgets
+{{ end -}}
+{{ end -}}
 {{- end }}

@@ -37,3 +37,23 @@ func newScalingInvalidError(message string) error {
 func (s *ScalingInvalidError) Error() string {
 	return s.message
 }
+
+type MetricHolderNotFoundError struct {
+	namespace string
+}
+
+func NewMetricHolderNotFoundError(namespace string) error {
+	return &MetricHolderNotFoundError{namespace: namespace}
+}
+
+func (m *MetricHolderNotFoundError) Error() string {
+	return "metric holder not found for namespace: " + m.namespace
+}
+
+var ErrMetricsDisabled = &MetricsDisabledError{}
+
+type MetricsDisabledError struct{}
+
+func (e *MetricsDisabledError) Error() string {
+	return "metrics are disabled"
+}

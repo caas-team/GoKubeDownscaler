@@ -9,6 +9,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
+	"github.com/wI2L/jsondiff"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -46,6 +47,40 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 	}
 
 	return workloads, nil
+}
+
+// parseWorkloadFunc is a function that parses a specific admission review as a Workload.
+type parseWorkloadFunc func(rawObject []byte) (Workload, error)
+
+// ParseWorkloadFromRawObject parse the admission review and returns the workloads.
+//
+//nolint:ireturn // this function should return an interface type
+func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, error) {
+	parseWorkloadFuncMap := map[string]parseWorkloadFunc{
+		"deployment":              parseDeploymentFromBytes,
+		"statefulset":             parseStatefulSetFromBytes,
+		"cronjob":                 parseCronJobFromBytes,
+		"job":                     parseJobFromBytes,
+		"daemonset":               parseDaemonSetFromBytes,
+		"poddisruptionbudget":     parsePodDisruptionBudgetFromBytes,
+		"horizontalpodautoscaler": parseHorizontalPodAutoscalerFromBytes,
+		"scaledobject":            parseScaledObjectFromBytes,
+		"rollout":                 parseRolloutFromBytes,
+		"stack":                   parseStackFromBytes,
+		"prometheus":              parsePrometheusFromBytes,
+	}
+
+	parseFunc, exists := parseWorkloadFuncMap[resource]
+	if !exists {
+		return nil, newInvalidResourceError(resource)
+	}
+
+	workload, err := parseFunc(rawObject)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse workloads of type %q: %w from admission request", resource, err)
+	}
+
+	return workload, nil
 }
 
 type ParentWorkload interface {
@@ -89,6 +124,10 @@ type Workload interface {
 	ScaleUp() error
 	// ScaleDown scales down the workload
 	ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, error)
+	// Copy creates a deep copy of the workload
+	Copy() (Workload, error)
+	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
+	Compare(workloadCopy Workload) (jsondiff.Patch, error)
 }
 
 type Clientsets struct {

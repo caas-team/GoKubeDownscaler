@@ -255,6 +255,15 @@ func TestFilterExcluded(t *testing.T) { //nolint: maintidx// fine to read and un
 			want: []Workload{ns1.deployment2},
 		},
 		{
+			name:                      "excludeWorkloads with metrics disabled",
+			workloads:                 []Workload{ns1.deployment1, ns1.deployment2, ns2.deployment1},
+			includeLabels:             nil,
+			excludedNamespaces:        nil,
+			excludedWorkloads:         util.RegexList{regexp.MustCompile("Deployment1")}, // exclude Deployment1
+			currentNamespaceToMetrics: nil,
+			want:                      []Workload{ns1.deployment2},
+		},
+		{
 			name:               "exclude scaled object scaled",
 			workloads:          []Workload{ns3.deployment1, ns3.deployment2, ns3.scaledObject, ns1.deployment1, ns1.deployment2, ns2.deployment1},
 			includeLabels:      nil,
