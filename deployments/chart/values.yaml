@@ -160,6 +160,16 @@ webhookController:
       kind: ClusterIssuer    # Required when "issuer.generate: false" (your custom issuer kind)
       group: cert-manager.io # Required when "issuer.generate: false" (your custom issuer group)
 
+  podMonitor:
+    enabled: false
+    interval: "1m"
+    scrapeTimeout: "10s"
+    namespace: "default"
+    additionalLabels: { }
+    relabelings: [ ]
+    metricRelabelings: [ ]
+
+
 podMonitor:
   enabled: false
   interval: "1m"
