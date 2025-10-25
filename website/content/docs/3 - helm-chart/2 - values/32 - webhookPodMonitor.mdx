@@ -1,0 +1,43 @@
+---
+title: webhookPodMonitor
+id: webhookPodMonitor
+globalReference: docs-webhook-pod-monitor
+description: How to enable and use Webhook PodMonitor to fetch metrics
+keywords: [webhookPodMonitor]
+---
+
+# webhookPodMonitor
+
+A `PodMonitor` is a custom resource used by Prometheus Operator to discover and scrape metrics from Kubernetes pods.
+It defines how Prometheus should find pods, which endpoints to scrape, and what labels or relabeling rules to apply.
+The downscaler chart is able to automatically deploy a PodMonitor when requested
+
+The following fields could be customized:
+
+- `enable` indicates whether the PodMonitor resource should be created.
+- `interval` specifies the scraping interval of the main deployment.
+- `scrapeTimeout` specifies scrape timeout of the main deployment.
+- `namespace` specifies the namespace where the PodMonitor is deployed (where Prometheus Operator is running).
+- `additionalLabels` specifies extra labels to attach to the PodMonitor resource.
+- `relabelings` specifies relabeling configs applied to target labels before scraping.
+- `metricRelabelings` specifies relabeling configs applied to metrics after scraping.
+
+:::info
+
+The default values for `webhookController.podMonitor` are:
+
+```yaml
+webhookController:
+  podMonitor:
+    enabled: false
+    interval: "1m"
+    scrapeTimeout: "10s"
+    namespace: ""
+    additionalLabels: {}
+    relabelings: []
+    metricRelabelings: []
+```
+
+User must take care of configuring this object
+
+:::

@@ -25,23 +25,6 @@ type Metrics struct {
 	downscalerExecutionsTotal      *k8smetrics.Counter
 }
 
-// metricName returns the name of the metric based on the base name and whether it's a dry run.
-func metricName(base string, dryRun bool) string {
-	if dryRun {
-		return "kubedownscaler_potential_" + base
-	}
-
-	return "kubedownscaler_" + base
-}
-
-func helperDescription(base string, dryRun bool) string {
-	if dryRun {
-		return "Number of potential " + base
-	}
-
-	return "Number of " + base
-}
-
 func NewMetrics(dryRun bool) *Metrics {
 	return &Metrics{
 		downscaledWorkloadGauge: k8smetrics.NewGaugeVec(
@@ -109,10 +92,15 @@ func (m *Metrics) RegisterAll() {
 }
 
 func (m *Metrics) UpdateMetrics(
+	metricsEnabled bool,
 	currentNamespaceToMetrics map[string]*NamespaceMetricsHolder,
 	previousNamespacesToMetrics map[string]*NamespaceMetricsHolder,
 	cycleDuration float64,
 ) {
+	if !metricsEnabled {
+		return
+	}
+
 	// delete metrics for namespaces that are no longer present in the cluster
 	for previousNamespace := range previousNamespacesToMetrics {
 		if _, exists := currentNamespaceToMetrics[previousNamespace]; exists {

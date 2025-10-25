@@ -2,10 +2,12 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/wI2L/jsondiff"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,6 +31,18 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 	return results, nil
 }
 
+// parseDaemonSetFromBytes parses the admission review and returns the daemonset.
+//
+// nolint: ireturn // this function should return an interface type
+func parseDaemonSetFromBytes(rawObject []byte) (Workload, error) {
+	var ds appsv1.DaemonSet
+	if err := json.Unmarshal(rawObject, &ds); err != nil {
+		return nil, fmt.Errorf("failed to decode daemonset: %w", err)
+	}
+
+	return &daemonSet{&ds}, nil
+}
+
 // daemonSet is a wrapper for daemonset.v1.apps to implement the Workload interface.
 type daemonSet struct {
 	*appsv1.DaemonSet
@@ -41,8 +55,6 @@ func (d *daemonSet) ScaleUp() error {
 }
 
 // ScaleDown scales the resource down.
-//
-
 func (d *daemonSet) ScaleDown(_ values.Replicas) (*metrics.SavedResources, error) {
 	if d.Spec.Template.Spec.NodeSelector == nil {
 		d.Spec.Template.Spec.NodeSelector = map[string]string{}
@@ -95,4 +107,36 @@ func (d *daemonSet) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload, which is expected to be a daemonSet.
+//
+// nolint: ireturn // this function should return an interface type
+func (d *daemonSet) Copy() (Workload, error) {
+	if d.DaemonSet == nil {
+		return nil, newNilUnderlyingObjectError(d.Kind)
+	}
+
+	copied := d.DeepCopy()
+
+	return &daemonSet{DaemonSet: copied}, nil
+}
+
+// Compare compares two daemonSet resources and returns the differences as a jsondiff.Patch.
+func (d *daemonSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	dsCopy, ok := workloadCopy.(*daemonSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*daemonSet)(nil), workloadCopy)
+	}
+
+	if d.DaemonSet == nil || dsCopy.DaemonSet == nil {
+		return nil, newNilUnderlyingObjectError(d.Kind)
+	}
+
+	diff, err := jsondiff.Compare(d.DaemonSet, dsCopy.DaemonSet)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compare daemonsets: %w", err)
+	}
+
+	return diff, nil
 }

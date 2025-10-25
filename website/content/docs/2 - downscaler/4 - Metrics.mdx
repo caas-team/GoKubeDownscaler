@@ -34,11 +34,15 @@ in a production environment.
 
 :::
 
-## List of Metrics
+In the next section, we provide a detailed list of all the metrics exposed by the GoKubeDownscaler main component
+and by the GoKubeDownscaler Webhook
+
+## List of GoKubeDownscaler Metrics
 
 Here is a list of all the metrics currently exposed by the GoKubeDownscaler, divided into dry-run and production metrics.
+Common metrics are listed at the end, as they are always present.
 
-### Dry-Run Metrics
+### GoKubeDownscaler Dry-Run Metrics
 
 - **metric_name**: `kubedownscaler_potential_downscaled_workloads`
   - type: gauge
@@ -69,7 +73,7 @@ Here is a list of all the metrics currently exposed by the GoKubeDownscaler, div
     Workloads managed by
     Keda ScaledObjects are not included in this metric.
 
-### Production Metrics
+### GoKubeDownscaler Production Metrics
 
 - **metric_name**: `kubedownscaler_downscaled_workloads`
   - type: gauge
@@ -100,7 +104,7 @@ Here is a list of all the metrics currently exposed by the GoKubeDownscaler, div
     Workloads managed by
     Keda ScaledObjects are not included in this metric.
 
-### Common Metrics
+### GoKubeDownscaler Common Metrics
 
 - **metric_name**: `kubedownscaler_scaling_errors`
   - type: gauge
@@ -124,3 +128,39 @@ If these options aren’t viable, we recommend setting the [`--max-retries-on-co
 This helps handle cases where the resource is modified by another component between the time it's fetched and updated by the downscaler.
 
 :::
+
+## List of GoKubeDownscaler Webhook Metrics
+
+Here is a list of all the metrics currently exposed by the GoKubeDownscaler Webhook, divided into dry-run and production metrics.
+Common metrics are listed at the end, as they are always present.
+
+### Webhook Dry-Run Metrics
+
+- **metric_name**: `kubedownscaler_potential_validate_workload_admission_requests_total`
+- type: counter
+- dimensions: namespace, result
+- description: Number of workloads intercepted by kubedownscaler webhook broken down by namespace and result of mutating review.
+
+### Webhook Production Metrics
+
+- **metric_name**: `kubedownscaler_validate_workload_admission_requests_total`
+- type: counter
+- dimensions: namespace, result
+- description: Number of workloads intercepted by kubedownscaler webhook broken down by namespace and result of mutating review.
+
+### Webhook Common Metrics
+
+- **metric_name**: `controller_runtime_webhook_latency_seconds`
+- type: histogram
+- dimensions: webhook
+- description: Measures the latency of processing admission webhook requests broken down by webhook path.
+
+- **metric_name**: `controller_runtime_webhook_requests_in_flight`
+- type: counter
+- dimensions: webhook
+- description: Measures the webhook requests currently being processed broken down by webhook path.
+
+- **metric_name**: `controller_runtime_webhook_requests_total`
+- type: counter
+- dimensions: code, webhook
+- description: Measures the total number of webhook requests received broken down by http code webhook path.

@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"flag"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -17,7 +17,6 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
-	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/server/mux"
@@ -30,43 +29,7 @@ const (
 )
 
 func main() {
-	config := util.GetDefaultConfig()
-	config.ParseConfigFlags()
-
-	err := config.ParseConfigEnvVars()
-	if err != nil {
-		slog.Error("failed to parse env vars for config", "error", err)
-		os.Exit(1)
-	}
-
-	scopeDefault := values.GetDefaultScope()
-	scopeCli := values.NewScope()
-	scopeEnv := values.NewScope()
-
-	err = scopeEnv.GetScopeFromEnv()
-	if err != nil {
-		slog.Error("failed to get scope from env", "error", err)
-		os.Exit(1)
-	}
-
-	scopeCli.ParseScopeFlags()
-
-	flag.Parse()
-
-	if config.Debug || config.DryRun {
-		slog.SetLogLoggerLevel(slog.LevelDebug)
-	}
-
-	if err = scopeCli.CheckForIncompatibleFields(); err != nil {
-		slog.Error("found incompatible fields", "error", err)
-		os.Exit(1)
-	}
-
-	slog.Debug("finished getting startup config",
-		"envScope", scopeEnv,
-		"cliScope", scopeCli,
-		"config", config,
-	)
+	config, scopeDefault, scopeCli, scopeEnv := initComponent()
 
 	slog.Debug("getting client for kubernetes")
 
@@ -120,7 +83,7 @@ func runWithLeaderElection(
 	cancel context.CancelFunc,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) {
 	lease, err := client.CreateLease(leaseName)
 	if err != nil {
@@ -177,7 +140,7 @@ func runWithoutLeaderElection(
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) {
 	slog.Warn("proceeding without leader election; this could cause errors when running with multiple replicas")
 
@@ -193,19 +156,19 @@ func startScanning(
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) error {
 	downscalerMetrics := initMetrics(config)
 
 	slog.Info("started downscaler")
 
-	previousNamespacesToMetrics := make(map[string]*metrics.NamespaceMetricsHolder)
+	previousNamespacesToMetrics := newNamespaceToMetrics(config)
 
 	for {
 		slog.Info("scanning workloads")
 
 		start := time.Now()
-		currentNamespaceToMetrics := make(map[string]*metrics.NamespaceMetricsHolder)
+		currentNamespaceToMetrics := newNamespaceToMetrics(config)
 
 		workloads, err := client.GetWorkloads(config.IncludeNamespaces, config.IncludeResources, ctx)
 		if err != nil {
@@ -221,7 +184,7 @@ func startScanning(
 		)
 		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 
-		namespaceScopes, err := client.GetNamespaceScopes(workloads, ctx)
+		namespaceScopes, err := client.GetNamespacesScopes(workloads, ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get namespace annotations: %w", err)
 		}
@@ -235,13 +198,13 @@ func startScanning(
 
 				defer waitGroup.Done()
 
-				workloadNamespaceMetrics, ok := currentNamespaceToMetrics[workload.GetNamespace()]
-				if !ok {
-					slog.Error("metrics holder not found for workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+				workloadNamespaceMetrics, err := getWorkloadNamespaceMetrics(config, workload, currentNamespaceToMetrics)
+				if err != nil && !errors.Is(err, ErrMetricsDisabled) {
+					slog.Error("failed to get namespace metrics", "error", err, "namespace", workload.GetNamespace())
 					return
 				}
 
-				err := scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceScopes, workloadNamespaceMetrics, config)
+				err = scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceScopes, workloadNamespaceMetrics, config)
 				if err != nil {
 					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 					return
@@ -254,16 +217,19 @@ func startScanning(
 		waitGroup.Wait()
 		slog.Info("successfully scanned all workloads")
 
+		downscalerMetrics.UpdateMetrics(
+			config.MetricsEnabled,
+			currentNamespaceToMetrics,
+			previousNamespacesToMetrics,
+			time.Since(start).Seconds(),
+		)
+
+		previousNamespacesToMetrics = currentNamespaceToMetrics
+
 		if config.Once {
 			slog.Debug("once is set to true, exiting")
 			break
 		}
-
-		if config.MetricsEnabled && downscalerMetrics != nil {
-			downscalerMetrics.UpdateMetrics(currentNamespaceToMetrics, previousNamespacesToMetrics, time.Since(start).Seconds())
-		}
-
-		previousNamespacesToMetrics = currentNamespaceToMetrics
 
 		slog.Debug("waiting until next scan", "interval", config.Interval.String())
 		time.Sleep(config.Interval)
@@ -280,7 +246,7 @@ func attemptScaling(
 	workload scalable.Workload,
 	scopes values.Scopes,
 	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) error {
 	for retry := range config.MaxRetriesOnConflict + 1 {
 		err := scaleWorkload(scaling, workload, scopes, workloadNamespaceMetrics, client, ctx)
@@ -311,7 +277,7 @@ func attemptScaling(
 	return newMaxRetriesExceeded(config.MaxRetriesOnConflict)
 }
 
-// scanWorkload runs a scan on the worklod, determining the scaling and scaling the workload.
+// scanWorkload runs a scan on the workload, determining the scaling and scaling the workload.
 func scanWorkload(
 	workload scalable.Workload,
 	client kubernetes.Client,
@@ -319,7 +285,7 @@ func scanWorkload(
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	namespaceScopes map[string]*values.Scope,
 	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) error {
 	resourceLogger := kubernetes.NewResourceLoggerForWorkload(client, workload)
 
@@ -412,7 +378,7 @@ func scaleWorkloads(
 	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
 	client kubernetes.Client,
 	ctx context.Context,
-	config *util.RuntimeConfiguration,
+	config *runtimeConfiguration,
 ) {
 	for _, workload := range workloads {
 		go func(workload scalable.Workload) {
@@ -488,7 +454,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	return nil
 }
 
-func initMetrics(config *util.RuntimeConfiguration) *metrics.Metrics {
+func initMetrics(config *runtimeConfiguration) *metrics.Metrics {
 	if !config.MetricsEnabled {
 		return nil
 	}
@@ -500,4 +466,31 @@ func initMetrics(config *util.RuntimeConfiguration) *metrics.Metrics {
 	slog.Info("metrics initialized")
 
 	return m
+}
+
+// getWorkloadNamespaceMetrics retrieves the metrics holder for the workload's namespace.
+func getWorkloadNamespaceMetrics(
+	config *runtimeConfiguration,
+	workload scalable.Workload,
+	currentNamespaceToMetrics map[string]*metrics.NamespaceMetricsHolder,
+) (*metrics.NamespaceMetricsHolder, error) {
+	if !config.MetricsEnabled {
+		return nil, ErrMetricsDisabled
+	}
+
+	workloadNamespaceMetrics, ok := currentNamespaceToMetrics[workload.GetNamespace()]
+	if !ok {
+		return nil, NewMetricHolderNotFoundError(workload.GetNamespace())
+	}
+
+	return workloadNamespaceMetrics, nil
+}
+
+// newNamespaceToMetrics creates a new map for namespace to metrics holder if metrics are enabled.
+func newNamespaceToMetrics(config *runtimeConfiguration) map[string]*metrics.NamespaceMetricsHolder {
+	if config.MetricsEnabled {
+		return make(map[string]*metrics.NamespaceMetricsHolder)
+	}
+
+	return nil
 }

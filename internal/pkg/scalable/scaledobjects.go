@@ -2,6 +2,7 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
+	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,6 +31,18 @@ func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Cont
 	}
 
 	return results, nil
+}
+
+// parseScaledObjectFromBytes parses the admission review and returns the scaledObject.
+//
+// nolint: ireturn // this function should return an interface type
+func parseScaledObjectFromBytes(rawObject []byte) (Workload, error) {
+	var so kedav1alpha1.ScaledObject
+	if err := json.Unmarshal(rawObject, &so); err != nil {
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
+	}
+
+	return &replicaScaledWorkload{&scaledObject{&so}}, nil
 }
 
 // scaledObject is a wrapper for scaledobject.v1alpha1.keda.sh to implement the replicaScaledResource interface.
@@ -96,4 +110,47 @@ func (s *scaledObject) Update(clientsets *Clientsets, ctx context.Context) error
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a scaledObject.
+//
+// nolint: ireturn // this function should return an interface type
+func (s *scaledObject) Copy() (Workload, error) {
+	if s.ScaledObject == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	copied := s.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &scaledObject{
+			ScaledObject: copied,
+		},
+	}, nil
+}
+
+// Compare compares two scaledObject resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen, dupl //required for interface-based workflow
+func (s *scaledObject) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	soCopy, ok := rswCopy.replicaScaledResource.(*scaledObject)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*scaledObject)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if s.ScaledObject == nil || soCopy.ScaledObject == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	diff, err := jsondiff.Compare(s.ScaledObject, soCopy.ScaledObject)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compare scaledObjects: %w", err)
+	}
+
+	return diff, nil
 }

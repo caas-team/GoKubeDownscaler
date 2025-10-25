@@ -18,6 +18,7 @@ import (
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
@@ -29,9 +30,14 @@ const (
 )
 
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
+// nolint: interfacebloat // this interface is meant to represent a high-level client with multiple functions
 type Client interface {
-	// GetNamespaceScopes gets the namespace scope from the namespace annotations
-	GetNamespaceScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error)
+	// GetNamespacesAsSet gets all namespaces or a specific list of namespace
+	GetNamespacesAsSet() (map[string]struct{}, error)
+	// GetNamespacesScopes gets the namespaces scopes from the namespaces annotations
+	GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error)
+	// GetNamespaceScope gets the namespace scope from its annotations
+	GetNamespaceScope(namespace string, ctx context.Context) (*values.Scope, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
 	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
 	// RegetWorkload gets the workload again to ensure the latest state
@@ -40,8 +46,14 @@ type Client interface {
 	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context) (*metrics.SavedResources, error)
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
+	// ensureSecret ensures that the secret used for storing TLS certificates exists
+	ensureSecret(namespace, secretName string, ctx context.Context) (bool, error)
+	// GetScaledObjects gets all scaledobjects in the specified namespace
+	GetScaledObjects(namespace string, ctx context.Context) ([]scalable.Workload, error)
 	// CreateLease creates a new lease for the downscaler
 	CreateLease(leaseName string) (*resourcelock.LeaseLock, error)
+	// GetNamespaceAnnotations gets the annotations of the workload's namespace
+	GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error)
 	// addEvent creates a new event on either a workload or a namespace
 	addEvent(eventType, reason, identifier, message string, object *corev1.ObjectReference, ctx context.Context) error
 	// GetChildrenWorkloads gets the children workloads of the specified workload
@@ -102,7 +114,7 @@ type client struct {
 }
 
 // getNamespaceAnnotations gets the annotations of the workload's namespace.
-func (c client) getNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
+func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
 	ns, err := c.clientsets.Kubernetes.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace: %w", err)
@@ -320,8 +332,24 @@ func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
 	return lease, nil
 }
 
-// GetNamespaceScopes gets the namespace scopes from the namespace annotations.
-func (c client) GetNamespaceScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error) {
+// GetNamespacesAsSet returns all namespaces as a set (map[string]struct{}).
+func (c client) GetNamespacesAsSet() (map[string]struct{}, error) {
+	namespaceList, err := c.clientsets.Kubernetes.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list namespaces: %w", err)
+	}
+
+	namespaceSet := make(map[string]struct{}, len(namespaceList.Items))
+	for i := range namespaceList.Items {
+		ns := &namespaceList.Items[i]
+		namespaceSet[ns.Name] = struct{}{}
+	}
+
+	return namespaceSet, nil
+}
+
+// GetNamespacesScopes gets the namespaces scopes from the namespaces annotations.
+func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error) {
 	var waitGroup sync.WaitGroup
 
 	namespaceSet := make(map[string]struct{})
@@ -336,10 +364,7 @@ func (c client) GetNamespaceScopes(workloads []scalable.Workload, ctx context.Co
 
 	namespaceScopes := make(map[string]*values.Scope, len(namespaceSet))
 	errChan := make(chan error, len(namespaceSet))
-
-	for namespace := range namespaceSet {
-		namespaceScopes[namespace] = values.NewScope()
-	}
+	resultChan := make(chan map[string]*values.Scope, len(namespaceSet))
 
 	for namespace := range namespaceSet {
 		waitGroup.Add(1)
@@ -347,30 +372,22 @@ func (c client) GetNamespaceScopes(workloads []scalable.Workload, ctx context.Co
 		go func(namespace string, ctx context.Context) {
 			defer waitGroup.Done()
 
-			nsLogger := NewResourceLoggerForNamespace(c, namespace)
-
 			slog.Debug("fetching namespace annotations", "namespace", namespace)
 
-			annotations, err := c.getNamespaceAnnotations(namespace, ctx)
+			namespaceScope, err := c.GetNamespaceScope(namespace, ctx)
 			if err != nil {
-				errChan <- fmt.Errorf("failed to get namespace annotations for namespace %s: %w", namespace, err)
+				errChan <- fmt.Errorf("failed to get namespace scope for namespace %s: %w", namespace, err)
 				return
 			}
 
-			slog.Debug("parsing workload scope from annotations", "annotations", annotations, "namespace", namespace)
+			resultChan <- map[string]*values.Scope{namespace: namespaceScope}
 
-			err = namespaceScopes[namespace].GetScopeFromAnnotations(annotations, nsLogger, ctx)
-			if err != nil {
-				errChan <- fmt.Errorf("failed to parse scope from annotations for namespace %s: %w", namespace, err)
-				return
-			}
-
-			slog.Debug("correctly parsed namespace annotations", "namespace", namespace, "annotations", annotations)
+			slog.Debug("correctly parsed annotations and created namespace scope", "namespace", namespace)
 		}(namespace, ctx)
 	}
 
 	waitGroup.Wait()
-
+	close(resultChan)
 	close(errChan)
 
 	for err := range errChan {
@@ -379,5 +396,85 @@ func (c client) GetNamespaceScopes(workloads []scalable.Workload, ctx context.Co
 		}
 	}
 
+	for results := range resultChan {
+		for namespace, namespaceScope := range results {
+			namespaceScopes[namespace] = namespaceScope
+		}
+	}
+
 	return namespaceScopes, nil
+}
+
+func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*values.Scope, error) {
+	nsLogger := NewResourceLoggerForNamespace(c, namespace)
+
+	slog.Debug("fetching namespace annotations", "namespace", namespace)
+
+	annotations, err := c.GetNamespaceAnnotations(namespace, ctx)
+	if err != nil {
+		err = fmt.Errorf("failed to get namespace annotations for namespace %s: %w", namespace, err)
+		return nil, err
+	}
+
+	namespaceScope := values.NewScope()
+
+	slog.Debug("parsing namespace scope from annotations", "annotations", annotations, "namespace", namespace)
+
+	err = namespaceScope.GetScopeFromAnnotations(annotations, nsLogger, ctx)
+	if err != nil {
+		err = fmt.Errorf("failed to parse scope from annotations for namespace %s: %w", namespace, err)
+		return nil, err
+	}
+
+	slog.Debug("correctly parsed namespace annotations", "namespace", namespace, "annotations", annotations)
+
+	return namespaceScope, nil
+}
+
+// GetScaledObjects gets all scaledobjects in the specified namespace.
+func (c client) GetScaledObjects(namespace string, ctx context.Context) ([]scalable.Workload, error) {
+	scaledObjects, err := scalable.GetWorkloads("scaledobject", namespace, c.clientsets, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get scaledobjects: %w", err)
+	}
+
+	return scaledObjects, nil
+}
+
+// ensureSecret ensures that the secret used for storing TLS certificates exists.
+func (c client) ensureSecret(namespace, secretName string, ctx context.Context) (bool, error) {
+	isPresent := false
+
+	_, err := c.clientsets.Kubernetes.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			isPresent = false
+		} else {
+			return isPresent, fmt.Errorf("unable to check secret: %w", err)
+		}
+	} else {
+		isPresent = true
+	}
+
+	if !isPresent {
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      secretName,
+				Namespace: namespace,
+				Labels: map[string]string{
+					"app.kubernetes.io/managed-by": "kube-downscaler",
+					"app.kubernetes.io/part-of":    "kube-downscaler",
+				},
+			},
+		}
+
+		_, err = c.clientsets.Kubernetes.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
+		if err != nil {
+			return isPresent, fmt.Errorf("unable to create certificates secret: %w", err)
+		}
+
+		slog.Info(fmt.Sprintf("created the secret %s to store kube downscaler certificates", secretName), "namespace", namespace)
+	}
+
+	return isPresent, nil
 }
