@@ -4,17 +4,17 @@ go 1.24.7
 
 require (
 	github.com/argoproj/argo-rollouts v1.8.3
-	github.com/kedacore/keda/v2 v2.18.0
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.86.1
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.86.1
+	github.com/kedacore/keda/v2 v2.18.1
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.86.2
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.86.2
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
 	github.com/zalando-incubator/stackset-controller v1.4.119
-	k8s.io/api v0.34.1
-	k8s.io/apimachinery v0.34.1
-	k8s.io/apiserver v0.34.1
-	k8s.io/client-go v0.34.1
-	k8s.io/component-base v0.34.1
+	k8s.io/api v0.34.2
+	k8s.io/apimachinery v0.34.2
+	k8s.io/apiserver v0.34.2
+	k8s.io/client-go v0.34.2
+	k8s.io/component-base v0.34.2
 )
 
 require (
