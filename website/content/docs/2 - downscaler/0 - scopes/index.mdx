@@ -73,3 +73,19 @@ In the diagram above the downtime period is taken from the workload scope, howev
 since the namespace Scope has the exclude value set to true.
 
 :::
+
+### Admission Algorithm
+
+The admission algorithm is an optional feature of the GoKubeDownscaler that allows it to determine whether a workload should be downscaled
+straight-away when it is created or updated.
+
+When the admission algorithm is enabled, a MutatingWebhookConfiguration intercepts the creation and update of every targeted workload
+deployed (or updated) in the cluster.
+It then reviews the workload and determines whether it should be downscaled immediately based on the exact same scaling
+algorithm described in the main section above.
+
+:::info[Enabling the Admission Algorithm]
+
+The admission algorithm can be enabled by setting the `webhookController.enabled` value to `true` in the [Helm Chart](ref:docs-helm-webhook-controller-enabled)
+
+:::

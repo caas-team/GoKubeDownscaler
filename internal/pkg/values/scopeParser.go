@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log/slog"
+	"os"
 	"time"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
@@ -91,12 +93,6 @@ func (s *Scope) ParseScopeFlags() {
 		&s.UpscaleExcluded,
 		"upscale-excluded",
 		"if set to true, excluded workloads will be processed to be upscaled (default: false)",
-	)
-	flag.BoolVar(
-		&s.MetricsEnabled,
-		"metrics",
-		false,
-		"if set to true, the downscaler will serve Prometheus metrics on port 8085 (default: false)",
 	)
 }
 
@@ -270,4 +266,23 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 	}
 
 	return nil
+}
+
+//nolint:nonamedreturns //required for function clarity
+func InitScopes() (scopeDefault, scopeCli, scopeEnv *Scope) {
+	scopeDefault = GetDefaultScope()
+	scopeCli = NewScope()
+	scopeEnv = NewScope()
+
+	err := scopeEnv.GetScopeFromEnv()
+	if err != nil {
+		slog.Error("failed to get scope from env", "error", err)
+		os.Exit(1)
+	}
+
+	scopeCli.ParseScopeFlags()
+
+	flag.Parse()
+
+	return scopeDefault, scopeCli, scopeEnv
 }

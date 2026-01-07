@@ -1,0 +1,27 @@
+---
+title: webhookControllerReplicaCount
+id: webhookControllerReplicaCount
+globalReference: docs-helm-webhook-controller-replica-count
+description: How to set replicas for the GoKubeDownscaler Webhook Deployment
+keywords: [webhookControllerReplicaCount]
+---
+
+# webhookController.replicaCount
+
+The `webhookController.replicaCount` value adjusts the number of replicas that the GoKubeDownscaler deployment will
+have.
+
+:::info
+
+The default value of `webhookController.replicaCount` is:
+
+```yaml
+webhookController:
+  replicaCount: 1
+```
+
+:::
+
+Changing this to a different integer value will result in the deployment of the provided number of pods.
+Using more
+than one replica could be useful for high availability and to balance the load of incoming requests.

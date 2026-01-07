@@ -11,6 +11,8 @@ imagePullSecrets: []
 arguments:
 #  - --interval=60
 
+extraArguments:
+
 includedResources:
   - deployments
 #  - statefulsets
@@ -81,6 +83,92 @@ configMap:
 
 # Force pod restart when the configuration changes
 forceRestartOnConfigChange: true
+
+webhookController:
+
+  enabled: false
+
+  image:
+    repository: ghcr.io/caas-team/gokubedownscaler-webhook
+    pullPolicy: IfNotPresent
+    tag: "" # Dynamically set from CI
+
+  replicaCount: 1
+
+  extraArguments:
+  #  - --interval=60
+
+  podAnnotations: {}
+
+  healthProbes:
+    readinessProbe:
+      enabled: true
+      failureThreshold: 3
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 2
+
+    livenessProbe:
+      enabled: true
+      failureThreshold: 3
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 2
+
+  resources:
+    limits:
+      cpu: 150m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+  mutatingWebhookConfiguration:
+    timeoutSeconds: 10
+    failurePolicy: Ignore
+
+
+  clusterDomain: cluster.local
+
+  certManager:
+
+    enabled: false
+
+    duration: 8760h0m0s # 1 year
+
+    renewBefore: 5840h0m0s # 8 months
+
+    secretTemplate: {}
+
+    ca:
+      generate: true
+      # if generate is false, the user must set the `cert-manager.io/allow-direct-injection: "true"` annotation
+      # on the secret containing the CA certificate
+      secretName: "kubedownscaler-ca"
+
+    # If issuer.generate is true, an Issuer will be created to issue the CA certificate otherwise the user
+    # has to provide an existing Issuer/ClusterIssuer
+    issuer:
+      generate: true
+      name: foo-org-ca       # Required when "issuer.generate: false" (your custom issuer name)
+      kind: ClusterIssuer    # Required when "issuer.generate: false" (your custom issuer kind)
+      group: cert-manager.io # Required when "issuer.generate: false" (your custom issuer group)
+
+  podMonitor:
+    enabled: false
+    interval: "1m"
+    scrapeTimeout: "10s"
+    namespace: "default"
+    additionalLabels: { }
+    relabelings: [ ]
+    metricRelabelings: [ ]
+
 
 podMonitor:
   enabled: false

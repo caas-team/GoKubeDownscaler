@@ -1,0 +1,24 @@
+{{- if and .Values.webhookController.certManager.enabled .Values.webhookController.certManager.ca.generate .Values.webhookController.certManager.issuer.generate }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "go-kube-downscaler.webhookController.fullname" . }}-ca
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "go-kube-downscaler.labels" . | nindent 4 }}
+spec:
+  isCA: true
+  commonName: {{ include "go-kube-downscaler.webhookController.fullname" . }}
+  secretName: {{ .Values.webhookController.certManager.ca.secretName }}
+  secretTemplate:
+    {{- toYaml .Values.webhookController.certManager.secretTemplate | nindent 4 }}
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  duration: 43800h0m0s     # 5 years
+  renewBefore: 14600h0m0s  # 1.6 year equivalent to 1/3rd of the duration
+  issuerRef:
+    name: {{ include "go-kube-downscaler.webhookController.fullname" . }}-selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
+{{- end }}

@@ -1,3 +1,4 @@
+// nolint: ireturn // required for interface-based workflow
 package scalable
 
 import (
@@ -8,6 +9,7 @@ import (
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/wI2L/jsondiff"
 )
 
 // replicaScaledResource provides all the functions needed to scale a resource which is scaled by setting the replica count.
@@ -21,6 +23,10 @@ type replicaScaledResource interface {
 	getReplicas() (values.Replicas, error)
 	// getSavedResourcesRequests returns the saved CPU and memory requests for the workload based on the downscale replicas.
 	getSavedResourcesRequests(diffReplicas int32) *metrics.SavedResources
+	// Copy creates a deep copy of the workload
+	Copy() (Workload, error)
+	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
+	Compare(workloadCopy Workload) (jsondiff.Patch, error)
 }
 
 // replicaScaledWorkload is a wrapper for all resources which are scaled by setting the replica count.
