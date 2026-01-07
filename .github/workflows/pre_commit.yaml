@@ -11,7 +11,7 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup Go environment
         uses: actions/setup-go@v6.1.0
         with:
