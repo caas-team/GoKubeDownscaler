@@ -9,5 +9,5 @@ config:
   no-space-in-emphasis: false # disabled, since it messes up mdx' jsx comments
   code-block-style: false # disabled because it doesn't work with indented html tags
 customRules:
-  - sentences-per-line
+  - markdownlint-sentences-per-line
   - "@jonathan-mayer/markdownlint-rule-titlecase"
