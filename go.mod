@@ -4,7 +4,7 @@ go 1.24.1
 
 require (
 	github.com/argoproj/argo-rollouts v1.8.3
-	github.com/kedacore/keda/v2 v2.17.2
+	github.com/kedacore/keda/v2 v2.17.3
 	github.com/open-policy-agent/cert-controller v0.12.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.85.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.85.0
