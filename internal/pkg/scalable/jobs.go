@@ -28,8 +28,6 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 }
 
 // parseCronJobFromBytes parses the admission review and returns the cronjob.
-//
-// nolint: ireturn // this function should return an interface type
 func parseJobFromBytes(rawObject []byte) (Workload, error) {
 	var j batch.Job
 	if err := json.Unmarshal(rawObject, &j); err != nil {
@@ -92,8 +90,6 @@ func (j *job) Update(clientsets *Clientsets, ctx context.Context) error {
 }
 
 // Copy creates a deep copy of the job resource and returns it as a Workload.
-//
-// nolint: ireturn // this function should return an interface type
 func (j *job) Copy() (Workload, error) {
 	if j.Job == nil {
 		return nil, newNilUnderlyingObjectError(j.Kind)

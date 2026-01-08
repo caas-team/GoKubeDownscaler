@@ -1,4 +1,3 @@
-// nolint: ireturn // required for interface-based workflow
 package scalable
 
 import (

@@ -29,8 +29,6 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 }
 
 // parseDeploymentFromBytes parses the admission review and returns the deployment.
-//
-// nolint: ireturn // this function should return an interface type
 func parseDeploymentFromBytes(rawObject []byte) (Workload, error) {
 	var dep appsv1.Deployment
 	if err := json.Unmarshal(rawObject, &dep); err != nil {
@@ -104,8 +102,6 @@ func (d *deployment) Update(clientsets *Clientsets, ctx context.Context) error {
 }
 
 // Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a deployment.
-//
-// nolint: ireturn // this function should return an interface type
 func (d *deployment) Copy() (Workload, error) {
 	if d.Deployment == nil {
 		return nil, newNilUnderlyingObjectError(d.Kind)

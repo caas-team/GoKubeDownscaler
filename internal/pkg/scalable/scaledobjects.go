@@ -34,8 +34,6 @@ func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Cont
 }
 
 // parseScaledObjectFromBytes parses the admission review and returns the scaledObject.
-//
-// nolint: ireturn // this function should return an interface type
 func parseScaledObjectFromBytes(rawObject []byte) (Workload, error) {
 	var so kedav1alpha1.ScaledObject
 	if err := json.Unmarshal(rawObject, &so); err != nil {
@@ -113,8 +111,6 @@ func (s *scaledObject) Update(clientsets *Clientsets, ctx context.Context) error
 }
 
 // Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a scaledObject.
-//
-// nolint: ireturn // this function should return an interface type
 func (s *scaledObject) Copy() (Workload, error) {
 	if s.ScaledObject == nil {
 		return nil, newNilUnderlyingObjectError(s.Kind)

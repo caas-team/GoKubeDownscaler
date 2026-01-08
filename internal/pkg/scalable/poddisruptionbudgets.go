@@ -1,4 +1,3 @@
-//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -31,8 +30,6 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 }
 
 // parsePodDisruptionBudgetFromBytes parses the admission review and returns the podDisruptionBudget wrapped in a Workload.
-//
-// nolint: ireturn // this function should return an interface type
 func parsePodDisruptionBudgetFromBytes(rawObject []byte) (Workload, error) {
 	var pdb policy.PodDisruptionBudget
 	if err := json.Unmarshal(rawObject, &pdb); err != nil {
@@ -117,7 +114,8 @@ func (p *podDisruptionBudget) ScaleUp() error {
 }
 
 // ScaleDown scales the resource down.
-// nolint:cyclop // this function is too complex, but it is necessary to handle workload types. We should refactor this in the future.
+//
+
 func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, error) {
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {
@@ -171,8 +169,6 @@ func (p *podDisruptionBudget) Update(clientsets *Clientsets, ctx context.Context
 }
 
 // Copy creates a deep copy of the given Workload, which is expected to be a podDisruptionBudget.
-//
-// nolint: ireturn // this function should return an interface type
 func (p *podDisruptionBudget) Copy() (Workload, error) {
 	if p.PodDisruptionBudget == nil {
 		return nil, newNilUnderlyingObjectError(p.Kind)
@@ -185,7 +181,7 @@ func (p *podDisruptionBudget) Copy() (Workload, error) {
 
 // Compare compares two podDisruptionBudget resources and returns the differences as a jsondiff.Patch.
 //
-//nolint:varnamelen //required for interface-based workflow
+
 func (p *podDisruptionBudget) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	pdbCopy, ok := workloadCopy.(*podDisruptionBudget)
 	if !ok {
