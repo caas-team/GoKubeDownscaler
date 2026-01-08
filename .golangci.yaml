@@ -54,7 +54,6 @@ linters:
     - ineffassign
     - interfacebloat
     - intrange
-    - ireturn
     - lll
     - loggercheck
     - maintidx
@@ -112,10 +111,6 @@ linters:
       branch-max-lines: 2
       disable:
         - decl
-    ireturn:
-      allow:
-        - Replicas
-        - error
     depguard:
       rules:
         logger:

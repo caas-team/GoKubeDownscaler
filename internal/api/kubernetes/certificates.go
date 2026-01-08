@@ -48,8 +48,7 @@ func (cm *CertManager) AddCertificateRotation(ctx context.Context, mgr manager.M
 		slog.Info("secret created", "namespace", namespace, "name", cm.SecretName)
 	}
 
-	var extraDNSNames []string
-	extraDNSNames = append(extraDNSNames, getDNSNames(namespace, cm.WebhookService, cm.K8sClusterDomain)...)
+	extraDNSNames := getDNSNames(namespace, cm.WebhookService, cm.K8sClusterDomain)
 
 	slog.Info("preparing certificates rotation")
 

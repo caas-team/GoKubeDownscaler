@@ -29,8 +29,6 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 }
 
 // parseStackFromBytes parses the admission review and returns the stack.
-//
-// nolint: ireturn // this function should return an interface type
 func parseStackFromBytes(rawObject []byte) (Workload, error) {
 	var st zalandov1.Stack
 	if err := json.Unmarshal(rawObject, &st); err != nil {
@@ -104,8 +102,6 @@ func (s *stack) Update(clientsets *Clientsets, ctx context.Context) error {
 }
 
 // Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a stack.
-//
-// nolint: ireturn // this function should return an interface type
 func (s *stack) Copy() (Workload, error) {
 	if s.Stack == nil {
 		return nil, newNilUnderlyingObjectError(s.Kind)

@@ -126,7 +126,6 @@ func newDeploymentRequestWithExcludeAnnotationTrue(t *testing.T, namespace strin
 }
 
 // buildScaledObjectFromBytes returns a scalable.Workload from raw JSON bytes for tests.
-// nolint: ireturn //interface necessary to realize the test case
 func buildScaledObjectFromBytes(t *testing.T, namespace string) scalable.Workload {
 	t.Helper()
 
