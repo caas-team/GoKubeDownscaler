@@ -58,30 +58,44 @@ func (m *NamespaceMetricsHolder) SavedCPUCores() float64 {
 }
 
 func (m *NamespaceMetricsHolder) IncrementDownscaledWorkloadsCount() {
-	m.downscaledWorkloads++
+	if m != nil {
+		m.downscaledWorkloads++
+	}
 }
 
 func (m *NamespaceMetricsHolder) IncrementUpscaledWorkloadsCount() {
-	m.upscaledWorkloads++
+	if m != nil {
+		m.upscaledWorkloads++
+	}
 }
 
 func (m *NamespaceMetricsHolder) IncrementExcludedWorkloadsCount() {
-	m.excludedWorkloads++
+	if m != nil {
+		m.excludedWorkloads++
+	}
 }
 
 func (m *NamespaceMetricsHolder) IncrementInvalidScalingValueErrorsCount() {
-	m.invalidScalingValueErrors++
+	if m != nil {
+		m.invalidScalingValueErrors++
+	}
 }
 
 func (m *NamespaceMetricsHolder) IncrementConflictErrorsCount() {
-	m.conflictErrors++
+	if m != nil {
+		m.conflictErrors++
+	}
 }
 
 func (m *NamespaceMetricsHolder) IncrementGenericErrorsCount() {
-	m.genericErrors++
+	if m != nil {
+		m.genericErrors++
+	}
 }
 
 func (m *NamespaceMetricsHolder) IncrementSavedResources(savedResources *SavedResources) {
-	m.savedMemoryBytes += savedResources.TotalMemory()
-	m.savedCPUcores += savedResources.TotalCPU()
+	if m != nil {
+		m.savedMemoryBytes += savedResources.TotalMemory()
+		m.savedCPUcores += savedResources.TotalCPU()
+	}
 }

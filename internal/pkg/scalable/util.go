@@ -31,10 +31,12 @@ func FilterExcluded(
 	results := make([]Workload, 0, len(workloads))
 
 	for _, workload := range workloads {
-		_, ok := currentNamespaceToMetrics[workload.GetNamespace()]
-		if !ok {
-			namespaceMetrics := metrics.NewNamespaceMetricsHolder()
-			currentNamespaceToMetrics[workload.GetNamespace()] = namespaceMetrics
+		if currentNamespaceToMetrics != nil {
+			_, ok := currentNamespaceToMetrics[workload.GetNamespace()]
+			if !ok {
+				namespaceMetrics := metrics.NewNamespaceMetricsHolder()
+				currentNamespaceToMetrics[workload.GetNamespace()] = namespaceMetrics
+			}
 		}
 
 		if !isMatchingLabels(workload, includeLabels) {
@@ -43,7 +45,7 @@ func FilterExcluded(
 				"workload", workload.GetName(),
 				"namespace", workload.GetNamespace(),
 			)
-			currentNamespaceToMetrics[workload.GetNamespace()].IncrementDownscaledWorkloadsCount()
+			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}
@@ -85,6 +87,11 @@ func FilterExcluded(
 	}
 
 	return slices.Clip(results)
+}
+
+func IsWorkloadExternallyManaged(workload Workload, workloadsManagers []Workload) bool {
+	externallyScaled := getExternallyScaled(workloadsManagers)
+	return isExternallyScaled(workload, externallyScaled)
 }
 
 type workloadIdentifier struct {

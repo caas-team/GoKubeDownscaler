@@ -1,12 +1,15 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
+	"github.com/wI2L/jsondiff"
 	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,6 +28,16 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 	}
 
 	return results, nil
+}
+
+// parseCronJobFromBytes parses the admission review and returns the cronjob wrapped in a Workload.
+func parseCronJobFromBytes(rawObject []byte) (Workload, error) {
+	var cj batch.CronJob
+	if err := json.Unmarshal(rawObject, &cj); err != nil {
+		return nil, fmt.Errorf("failed to decode cronjob: %w", err)
+	}
+
+	return &suspendScaledWorkload{&cronJob{&cj}}, nil
 }
 
 // cronJob is a wrapper for cronjob.v1.batch to implement the suspendScaledResource interface.
@@ -122,4 +135,45 @@ func (c *cronJob) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload, which is expected to be a suspendScaledWorkload wrapping a cronJob.
+func (c *cronJob) Copy() (Workload, error) {
+	if c.CronJob == nil {
+		return nil, newNilUnderlyingObjectError(c.Kind)
+	}
+
+	copied := c.DeepCopy()
+
+	return &suspendScaledWorkload{
+		suspendScaledResource: &cronJob{
+			CronJob: copied,
+		},
+	}, nil
+}
+
+// Compare compares two cronJob resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (c *cronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
+	}
+
+	cjCopy, ok := sswCopy.suspendScaledResource.(*cronJob)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*cronJob)(nil), sswCopy.suspendScaledResource)
+	}
+
+	if c.CronJob == nil || cjCopy.CronJob == nil {
+		return nil, newNilUnderlyingObjectError(c.Kind)
+	}
+
+	diff, err := jsondiff.Compare(c.CronJob, cjCopy.CronJob)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compare cronJobs: %w", err)
+	}
+
+	return diff, nil
 }

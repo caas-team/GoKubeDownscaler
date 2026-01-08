@@ -1,12 +1,15 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -23,6 +26,16 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 	}
 
 	return results, nil
+}
+
+// parsePrometheusFromBytes parses the admission review and returns the prometheus.
+func parsePrometheusFromBytes(rawObject []byte) (Workload, error) {
+	var prom monitoringv1.Prometheus
+	if err := json.Unmarshal(rawObject, &prom); err != nil {
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
+	}
+
+	return &replicaScaledWorkload{&prometheus{&prom}}, nil
 }
 
 // prometheus is a wrapper for prometheus.v1.monitoring.coreos.com to implement the replicaScaledResource interface.
@@ -86,4 +99,45 @@ func (p *prometheus) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a prometheus.
+func (p *prometheus) Copy() (Workload, error) {
+	if p.Prometheus == nil {
+		return nil, newNilUnderlyingObjectError(p.Kind)
+	}
+
+	copied := p.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &prometheus{
+			Prometheus: copied,
+		},
+	}, nil
+}
+
+// Compare compares two prometheus resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (p *prometheus) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	promCopy, ok := rswCopy.replicaScaledResource.(*prometheus)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*prometheus)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if p.Prometheus == nil || promCopy.Prometheus == nil {
+		return nil, newNilUnderlyingObjectError(p.Kind)
+	}
+
+	diff, err := jsondiff.Compare(p.Prometheus, promCopy.Prometheus)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compare prometheus: %w", err)
+	}
+
+	return diff, nil
 }

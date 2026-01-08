@@ -58,6 +58,8 @@ Here is a list of all the available runtime configurations for the Downscaler.
 - Description: Sets the resources/workload types the downscaler will scan over (restricts the 'cluster-wide' scopes to specific types).
 - Default: `deployments`
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+- works for components: KubeDownscaler (you can still specify this argument inside the Webhook but types configured inside the
+  MutatingWebhookConfiguration takes precedence)
 
 ### Exclude Namespaces
 
@@ -104,6 +106,7 @@ Here is a list of all the available runtime configurations for the Downscaler.
   to ensure only one instance of the GoKubeDownscaler is active at any given time to avoid conflicts.
 - Default: false
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+- Only works for component: KubeDownscaler
 
 ### Max Retries on Conflict
 
@@ -112,6 +115,7 @@ Here is a list of all the available runtime configurations for the Downscaler.
   which occur when another entity modifies a resource that the downscaler is currently processing.
 - Default: 0
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+- Only works for component: KubeDownscaler
 
 :::tip
 
@@ -119,6 +123,44 @@ We recommend setting this to a value greater than 0 when [once](#once) is enable
 Since, in that case, the downscaler will only run once, you might want to perform retries if such conflicts occurs.
 
 :::
+
+### Internal Cert Rotation
+
+- Type: boolean
+- Description: Enables automatic rotation of the TLS certificates used by the webhook server.
+- Default: false
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+- Only works for component: Webhook
+
+### Webhook Service Name
+
+- Type: string
+- Description: Sets the name of the Kubernetes Service that exposes the webhook server.
+  It is needed to ensure the correct
+  functioning of the webhook when [internal certificate rotation](#internal-cert-rotation) is enabled.
+- Default: `gokube-downscaler-webhook`
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+- Only works for component: Webhook
+
+### Cluster Domain
+
+- Type: string
+- Description: Sets the cluster domain used to construct the webhook service URL.
+  It is needed to ensure the correct
+  functioning of the webhook when [internal certificate rotation](#internal-cert-rotation) is enabled.
+- Default: `cluster.local`
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+- Only works for component: Webhook
+
+### TLS Secret Name
+
+- Type: string
+- Description: Sets the name of the Kubernetes Secret that contains the TLS certificates for the webhook server.
+  It is needed
+  to ensure the correct functioning of the webhook when [internal certificate rotation](#internal-cert-rotation) is enabled.
+- Default: `gokube-downscaler-webhook`
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+- Only works for component: Webhook
 
 ### Kubeconfig
 

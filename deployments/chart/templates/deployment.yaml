@@ -30,6 +30,9 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           args:
           - --include-resources={{ join "," .Values.includedResources }}
+          {{- with .Values.extraArguments }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
           {{- with .Values.arguments }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

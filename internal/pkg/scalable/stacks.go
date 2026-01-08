@@ -3,10 +3,12 @@ package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"github.com/wI2L/jsondiff"
 	zalandov1 "github.com/zalando-incubator/stackset-controller/pkg/apis/zalando.org/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,6 +26,16 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 	}
 
 	return results, nil
+}
+
+// parseStackFromBytes parses the admission review and returns the stack.
+func parseStackFromBytes(rawObject []byte) (Workload, error) {
+	var st zalandov1.Stack
+	if err := json.Unmarshal(rawObject, &st); err != nil {
+		return nil, fmt.Errorf("failed to decode Deployment: %w", err)
+	}
+
+	return &replicaScaledWorkload{&stack{&st}}, nil
 }
 
 // stack is a wrapper for stack.v1.zalando.org to implement the replicaScaledResource interface.
@@ -87,4 +99,45 @@ func (s *stack) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a stack.
+func (s *stack) Copy() (Workload, error) {
+	if s.Stack == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	copied := s.DeepCopy()
+
+	return &replicaScaledWorkload{
+		replicaScaledResource: &stack{
+			Stack: copied,
+		},
+	}, nil
+}
+
+// Compare compares two stack resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (s *stack) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	stCopy, ok := rswCopy.replicaScaledResource.(*stack)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*stack)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if s.Stack == nil || stCopy.Stack == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	diff, err := jsondiff.Compare(s.Stack, stCopy.Stack)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compare stacks: %w", err)
+	}
+
+	return diff, nil
 }

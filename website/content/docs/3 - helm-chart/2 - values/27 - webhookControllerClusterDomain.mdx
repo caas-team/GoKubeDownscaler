@@ -1,0 +1,24 @@
+---
+title: webhookControllerClusterDomain
+id: webhookControllerClusterDomain
+globalReference: docs-helm-webhook-controller-cluster-domain
+description: How to set cluster domain for the webhook deployment
+keywords: [webhookControllerClusterDomain, cluster domain]
+---
+
+# webhookController.clusterDomain
+
+The `webhookController.clusterDomain` defines the cluster domain of your Kubernetes cluster.
+This value should be set
+when the cluster domain is different from the default `cluster.local` value.
+
+:::info
+
+```yaml
+webhookController:
+  clusterDomain: cluster.local
+```
+
+:::
+
+It is possible to choose a different cluster domain by setting the `webhookController.clusterDomain` field to the desired value.

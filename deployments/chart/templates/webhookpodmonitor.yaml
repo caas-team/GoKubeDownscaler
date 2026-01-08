@@ -1,0 +1,35 @@
+{{- if and .Values.metrics.enabled .Values.webhookController.podMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
+  labels:
+    {{- include "go-kube-downscaler.labels" . | nindent 4 }}
+  {{- with .Values.webhookController.podMonitor.namespace }}
+  namespace: {{ . }}
+  {{- end }}
+spec:
+  podMetricsEndpoints:
+    - port: 8085
+      path: /metrics
+    {{- with .Values.webhookController.podMonitor.interval }}
+      interval: {{ . }}
+    {{- end }}
+    {{- with .Values.webhookController.podMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+    {{- end }}
+    {{- with .Values.webhookController.podMonitor.relabelings }}
+      relabelings:
+{{ toYaml . | indent 4 }}
+    {{- end }}
+    {{- with .Values.webhookController.podMonitor.metricRelabelings }}
+      metricRelabelings:
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "go-kube-downscaler.webhookController.selectorLabels" . | nindent 6 }}
+{{- end }}

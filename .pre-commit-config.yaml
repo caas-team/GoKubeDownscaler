@@ -9,7 +9,7 @@ repos:
       - id: no-commit-to-branch
         args: [--branch, main]
   - repo: https://github.com/tekwizely/pre-commit-golang
-    rev: v1.0.0-rc.2
+    rev: v1.0.0-rc.4
     hooks:
       - id: go-mod-tidy-repo
       - id: go-test-repo-mod
@@ -24,17 +24,17 @@ repos:
     hooks:
       - id: go-deadcode
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.6.2
+    rev: v3.7.4
     hooks:
       - id: prettier
         files: \.(md|mdx)$
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.18.1
+    rev: v0.20.0
     hooks:
       - id: markdownlint-cli2
         args: [--fix]
         additional_dependencies:
-          - sentences-per-line
+          - markdownlint-sentences-per-line
           - "@jonathan-mayer/markdownlint-rule-titlecase"
         files: \.(md|mdx)$
         types_or: [markdown, mdx]

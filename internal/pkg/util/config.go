@@ -4,21 +4,14 @@ import (
 	"flag"
 	"fmt"
 	"regexp"
-	"time"
 )
 
-// RuntimeConfiguration represents the runtime configuration for the downscaler.
-type RuntimeConfiguration struct {
+// CommonRuntimeConfiguration contains fields shared among different runtime configurations.
+type CommonRuntimeConfiguration struct {
 	// DryRun sets if the downscaler should take actions or just print them out.
 	DryRun bool
 	// Debug sets if debug information should be printed.
 	Debug bool
-	// Once sets if the scan should only run once.
-	Once bool
-	// LeaderElection sets if leader election should be performed.
-	LeaderElection bool
-	// Interval sets how long to wait between scans.
-	Interval time.Duration
 	// IncludeNamespaces sets the list of namespaces to restrict the downscaler to.
 	IncludeNamespaces []string
 	// IncludeResources sets the list of resources to restrict the downscaler to.
@@ -31,20 +24,16 @@ type RuntimeConfiguration struct {
 	IncludeLabels RegexList
 	// TimeAnnotation sets the annotation used for grace-period instead of creation time.
 	TimeAnnotation string
-	// MaxRetriesOnError sets the maximum number of retries when encountering Kubernetes HTTP 409 conflict error.
-	MaxRetriesOnConflict int
-	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
-	Kubeconfig string
 	// MetricsEnabled sets if Prometheus metrics should be exposed.
 	MetricsEnabled bool
+	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
+	Kubeconfig string
 }
 
-func GetDefaultConfig() *RuntimeConfiguration {
-	return &RuntimeConfiguration{
+func GetDefaultConfig() *CommonRuntimeConfiguration {
+	return &CommonRuntimeConfiguration{
 		DryRun:            false,
 		Debug:             false,
-		Once:              false,
-		Interval:          30 * time.Second,
 		IncludeNamespaces: nil,
 		IncludeResources:  []string{"deployments"},
 		ExcludeNamespaces: RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
@@ -56,8 +45,7 @@ func GetDefaultConfig() *RuntimeConfiguration {
 	}
 }
 
-// ParseConfigFlags sets all cli flags required for the runtime configuration.
-func (c *RuntimeConfiguration) ParseConfigFlags() {
+func (c *CommonRuntimeConfiguration) ParseCommonFlags() {
 	flag.BoolVar(
 		&c.DryRun,
 		"dry-run",
@@ -69,23 +57,6 @@ func (c *RuntimeConfiguration) ParseConfigFlags() {
 		"debug",
 		false,
 		"print more debug information (default: false)",
-	)
-	flag.BoolVar(
-		&c.Once,
-		"once",
-		false,
-		"run scan only once (default: false)",
-	)
-	flag.BoolVar(
-		&c.LeaderElection,
-		"leader-election",
-		false,
-		"enables leader election (default: false)",
-	)
-	flag.Var(
-		(*DurationValue)(&c.Interval),
-		"interval",
-		"time between scans (default: 30s)",
 	)
 	flag.Var(
 		(*StringListValue)(&c.IncludeNamespaces),
@@ -113,21 +84,9 @@ func (c *RuntimeConfiguration) ParseConfigFlags() {
 		"restricts the downscaler to workloads with these labels (default: all)",
 	)
 	flag.StringVar(
-		&c.Kubeconfig,
-		"k",
-		"",
-		"kubeconfig to use instead of the in-cluster config (optional)",
-	)
-	flag.StringVar(
 		&c.TimeAnnotation,
 		"deployment-time-annotation",
 		"",
-		"the annotation to use instead of creation time for grace period (optional)",
-	)
-	flag.IntVar(
-		&c.MaxRetriesOnConflict,
-		"max-retries-on-conflict",
-		0,
 		"the annotation to use instead of creation time for grace period (optional)",
 	)
 	flag.BoolVar(
@@ -136,17 +95,20 @@ func (c *RuntimeConfiguration) ParseConfigFlags() {
 		false,
 		"expose Prometheus metrics (default: false)",
 	)
+	flag.StringVar(
+		&c.Kubeconfig,
+		"k",
+		"",
+		"kubeconfig to use instead of the in-cluster config (optional)",
+	)
 }
 
-// ParseConfigEnvVars parses all environment variables for the runtime configuration.
-func (c *RuntimeConfiguration) ParseConfigEnvVars() error {
-	err := GetEnvValue("EXCLUDE_NAMESPACES", &c.ExcludeNamespaces)
-	if err != nil {
+func (c *CommonRuntimeConfiguration) ParseConfigEnvVars() error {
+	if err := GetEnvValue("EXCLUDE_NAMESPACES", &c.ExcludeNamespaces); err != nil {
 		return fmt.Errorf("error while getting EXCLUDE_NAMESPACES environment variable: %w", err)
 	}
 
-	err = GetEnvValue("EXCLUDE_DEPLOYMENTS", &c.ExcludeWorkloads)
-	if err != nil {
+	if err := GetEnvValue("EXCLUDE_DEPLOYMENTS", &c.ExcludeWorkloads); err != nil {
 		return fmt.Errorf("error while getting EXCLUDE_DEPLOYMENTS environment variable: %w", err)
 	}
 

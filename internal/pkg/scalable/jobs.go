@@ -1,10 +1,13 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
+	"github.com/wI2L/jsondiff"
 	batch "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -22,6 +25,16 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 	}
 
 	return results, nil
+}
+
+// parseCronJobFromBytes parses the admission review and returns the cronjob.
+func parseJobFromBytes(rawObject []byte) (Workload, error) {
+	var j batch.Job
+	if err := json.Unmarshal(rawObject, &j); err != nil {
+		return nil, fmt.Errorf("failed to decode job: %w", err)
+	}
+
+	return &suspendScaledWorkload{&job{&j}}, nil
 }
 
 // job is a wrapper for job.v1.batch to implement the suspendScaledResource interface.
@@ -74,4 +87,45 @@ func (j *job) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Copy creates a deep copy of the job resource and returns it as a Workload.
+func (j *job) Copy() (Workload, error) {
+	if j.Job == nil {
+		return nil, newNilUnderlyingObjectError(j.Kind)
+	}
+
+	copied := j.DeepCopy()
+
+	return &suspendScaledWorkload{
+		suspendScaledResource: &job{
+			Job: copied,
+		},
+	}, nil
+}
+
+// Compare compares two Job resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (j *job) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
+	}
+
+	jCopy, ok := sswCopy.suspendScaledResource.(*job)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*job)(nil), sswCopy.suspendScaledResource)
+	}
+
+	if j.Job == nil || jCopy.Job == nil {
+		return nil, newNilUnderlyingObjectError(j.Kind)
+	}
+
+	diff, err := jsondiff.Compare(j.Job, jCopy.Job)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compare jobs: %w", err)
+	}
+
+	return diff, nil
 }
