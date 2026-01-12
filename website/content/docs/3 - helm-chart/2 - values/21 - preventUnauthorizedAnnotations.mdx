@@ -1,0 +1,98 @@
+---
+title: preventUnauthorizedAnnotations
+id: preventUnauthorizedAnnotations
+globalReference: docs-prevent-unauthorized-annotations
+description: How to prevent users from deploying reserved annotations
+keywords: [preventUnauthorizedAnnotations]
+---
+
+# preventUnauthorizedAnnotations
+
+The `preventUnauthorizedAnnotations` section of the chart allows cluster administrators to set a configuration that prevents
+users from deploying the downscaler reserved annotations on their workloads.
+This is particularly useful in a multi-tenant
+environment where users should not have the ability to control the downscaler behavior of their workloads (i.e. administrator
+set up a custom automation strategy that involves the use of annotations, therefore the user must not be able to set or override
+annotation values).
+This feature uses a Kubernetes ValidatingMutationPolicy or MutatingAdmissionPolicy depending on the configuration
+chosen; only requests from authorized users or service accounts will be allowed to set downscaler annotations.
+
+The following values can be configured:
+
+- `enable` indicates whether the preventUnauthorizedAnnotations should be enabled.
+- `mutateUnauthorizedAnnotations` indicates a mutation policy will be applied to remove any unauthorized downscaler annotations found on user
+  workloads.
+  If this is false a blocking policy that prevent the resource creation/update will be applied instead.
+- `validationActions` array that indicates the type of actions to take when an unauthorized annotation is found.
+  Possible values are
+  `Audit`, `Warn`, and `Deny`.
+  This only applies when `mutateUnauthorizedAnnotations` is false.
+- `authorizedNamespacesToServiceAccountsRegex` map contains key-value pairs where the key is a namespace regex and the value is a regex
+  that matches service accounts in that namespace that are authorized to set downscaler annotations.
+- `authorizedUsersRegex` array of regex strings that match users that are authorized to set downscaler annotations.
+
+The default values for `podMonitor` are:
+
+```yaml
+preventUnauthorizedAnnotations:
+  enabled: false
+  mutateUnauthorizedAnnotations: false
+  validationActions: [Deny]
+  authorizedNamespacesToServiceAccountsRegex: {}
+  authorizedUsersRegex: []
+```
+
+User must take care of configuring this section according to their needs.
+
+The expressions that will be used to evaluate the authorized service accounts and users are these, the mutation
+happens when all expressions evaluate to true:
+
+```shell
+object.metadata.annotations.exists(l, l.startsWith("downscaler/")) &&
+(oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) &&
+request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}")
+```
+
+```shell
+object.metadata.annotations.exists(l, l.startsWith("downscaler/")) &&
+(oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) &&
+!request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")
+```
+
+```shell
+object.metadata.annotations.exists(l, l.startsWith("downscaler/")) &&
+(oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) &&
+!request.userInfo.username.matches("{{ $userRegex }}")
+```
+
+This is an example of how to configure the `preventUnauthorizedAnnotations` object:
+
+```yaml
+preventUnauthorizedAnnotations:
+  enabled: true
+  authorizedNamespacesToServiceAccountsRegex:
+    namespace1:
+      - sa1
+  authorizedUsersRegex:
+    - "^user1.*"
+```
+
+Would generate the following expressions (the first one is always generated to exclude the downscaler service account):
+
+```shell
+object.metadata.annotations.exists(l, l.startsWith("downscaler/")) &&
+(oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) &&
+!request.userInfo.username.matches("^system:serviceaccount:go-kube-downscaler:go-kube-downscaler")
+```
+
+```shell
+object.metadata.annotations.exists(l, l.startsWith("downscaler/")) &&
+(oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) &&
+!request.userInfo.username.matches("^system:serviceaccount:namespace1:sa1")
+```
+
+```shell
+object.metadata.annotations.exists(l, l.startsWith("downscaler/")) &&
+(oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) &&
+!request.userInfo.username.matches("^user1.*")
+```
