@@ -1,0 +1,49 @@
+{{- if and .Values.preventUnauthorizedAnnotations.enabled (not (semverCompare ">=1.30.0" .Capabilities.KubeVersion.Version)) }}
+{{- fail "preventUnauthorizedAnnotations using ValidatingAdmissionPolicy requires Kubernetes >= 1.30.0 (ValidatingAdmissionPolicy/v1)" }}
+{{- end }}
+{{- if and .Values.preventUnauthorizedAnnotations.enabled (semverCompare ">=1.30.0" .Capabilities.KubeVersion.Version) (not .Values.preventUnauthorizedAnnotations.mutateUnauthorizedAnnotations) }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: block-downscaler-reserved-annotations
+spec:
+  matchConstraints:
+    resourceRules:
+{{- include "go-kube-downscaler.preventUnauthorizedResources" . | trim | nindent 6 }}
+  matchConditions:
+    - name: request-not-from-kube-downscaler-sa
+      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}")'
+    {{- if .Values.preventUnauthorizedAnnotations.authorizedNamespacesToServiceAccountsRegex }}
+    {{- $nameIndex := 0 }}
+    {{- range $namespaceRegex, $serviceAccounts := .Values.preventUnauthorizedAnnotations.authorizedNamespacesToServiceAccountsRegex }}
+    {{- range $index, $saRegex := $serviceAccounts }}
+    {{- $nameIndex = add $nameIndex 1 }}
+    - name: request-not-from-authorized-sa-has-a-kubedownscaler-reserved-annotation-{{$nameIndex}}
+      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && !request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")'
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.preventUnauthorizedAnnotations.authorizedUsersRegex }}
+    {{- range $index, $userRegex := .Values.preventUnauthorizedAnnotations.authorizedUsersRegex }}
+    - name: request-not-from-authorized-user-has-a-kubedownscaler-reserved-annotation-{{$index}}
+      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && !request.userInfo.username.matches("{{ $userRegex }}")'
+    {{- end }}
+    {{- end }}
+  validations:
+    - message: 'The use of annotations starting with "downscaler/" is prohibited.'
+      reason: Forbidden
+      expression: '!object.metadata.annotations.exists(l, l.startsWith("downscaler/"))'
+  failurePolicy: Ignore
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: block-downscaler-reserved-annotations-binding
+spec:
+  policyName: block-downscaler-reserved-annotations
+  matchResources:
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: Exists
+{{- end }}

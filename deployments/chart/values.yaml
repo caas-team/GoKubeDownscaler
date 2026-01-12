@@ -84,6 +84,13 @@ configMap:
 # Force pod restart when the configuration changes
 forceRestartOnConfigChange: true
 
+preventUnauthorizedAnnotations:
+  enabled: false
+  mutateUnauthorizedAnnotations: false
+  validationActions: [Deny]
+  authorizedNamespacesToServiceAccountsRegex: {}
+  authorizedUsersRegex: []
+
 webhookController:
 
   enabled: false
