@@ -406,3 +406,133 @@ Create webhook resources
 {{ end -}}
 {{ end -}}
 {{- end }}
+
+
+{{/*
+resources include in preventUnauthorizedResources
+*/}}
+{{- define "go-kube-downscaler.preventUnauthorizedResources" -}}
+{{- range $resource := .Values.includedResources -}}
+{{ if eq $resource "deployments" -}}
+- apiGroups:
+    - apps
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - deployments
+{{ end -}}
+{{ if eq $resource "statefulsets" -}}
+- apiGroups:
+    - apps
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - statefulsets
+{{ end -}}
+{{ if eq $resource "daemonsets" -}}
+- apiGroups:
+    - apps
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - daemonsets
+{{ end -}}
+{{ if eq $resource "rollouts" -}}
+- apiGroups:
+    - argoproj.io
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - rollouts
+{{ end -}}
+{{ if eq $resource "horizontalpodautoscalers" -}}
+- apiGroups:
+    - autoscaling
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - horizontalpodautoscalers
+{{ end -}}
+{{ if eq $resource "jobs" -}}
+- apiGroups:
+    - batch
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - jobs
+{{ end -}}
+{{ if eq $resource "cronjobs" -}}
+- apiGroups:
+    - batch
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - cronjobs
+{{ end -}}
+{{ if eq $resource "scaledobjects" -}}
+- apiGroups:
+    - keda.sh
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - scaledobjects
+{{ end -}}
+{{ if eq $resource "stacks" -}}
+- apiGroups:
+    - zalando.org
+  resources:
+    - stacks
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+{{ end -}}
+{{ if eq $resource "prometheuses" -}}
+- apiGroups:
+    - monitoring.coreos.com
+  resources:
+    - prometheuses
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+{{ end -}}
+{{ if eq $resource "poddisruptionbudgets" -}}
+- apiGroups:
+    - policy
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - poddisruptionbudgets
+{{ end -}}
+{{ end -}}
+{{- end }}
