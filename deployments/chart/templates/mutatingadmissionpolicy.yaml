@@ -1,7 +1,7 @@
 {{- if and .Values.preventUnauthorizedAnnotations.enabled (not (semverCompare ">=1.34.0" .Capabilities.KubeVersion.Version)) }}
 {{- fail "preventUnauthorizedAnnotations using MutatingAdmissionPolicy requires Kubernetes >= 1.34.0 (MutatingAdmissionPolicy/v1beta1)" }}
 {{- end }}
-{{- if and .Values.preventUnauthorizedAnnotations.enabled (semverCompare ">=1.34.0" .Capabilities.KubeVersion.Version) .Values.preventUnauthorizedAnnotations.mutateUnauthorizedAnnotations }}
+{{- if and (or .Values.preventUnauthorizedAnnotations.onWorkloads.enabled .Values.preventUnauthorizedAnnotations.onNamespace.enabled) (semverCompare ">=1.34.0" .Capabilities.KubeVersion.Version) .Values.preventUnauthorizedAnnotations.mutateUnauthorizedAnnotationsAddition }}
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: MutatingAdmissionPolicy
 metadata:
@@ -9,24 +9,37 @@ metadata:
 spec:
   matchConstraints:
     resourceRules:
+    {{- if .Values.preventUnauthorizedAnnotations.onNamespace.enabled }}
+      - apiGroups:
+          - ""
+        apiVersions:
+          - "*"
+        operations:
+          - "CREATE"
+          - "UPDATE"
+        resources:
+          - namespaces
+    {{- end }}
+    {{- if .Values.preventUnauthorizedAnnotations.onWorkloads.enabled }}
 {{- include "go-kube-downscaler.preventUnauthorizedResources" . | trim | nindent 6 }}
+    {{- end }}
   matchConditions:
     - name: request-not-from-kube-downscaler-sa
-      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}")'
+      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !has(oldObject.metadata.annotations) || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}")'
     {{- if .Values.preventUnauthorizedAnnotations.authorizedNamespacesToServiceAccountsRegex }}
     {{- $nameIndex := 0 }}
     {{- range $namespaceRegex, $serviceAccounts := .Values.preventUnauthorizedAnnotations.authorizedNamespacesToServiceAccountsRegex }}
     {{- range $index, $saRegex := $serviceAccounts }}
     {{- $nameIndex = add $nameIndex 1 }}
     - name: request-not-from-authorized-sa-has-a-kubedownscaler-reserved-annotation-{{$nameIndex}}
-      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && !request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")'
+      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !has(oldObject.metadata.annotations) || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && !request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")'
     {{- end }}
     {{- end }}
     {{- end }}
     {{- if .Values.preventUnauthorizedAnnotations.authorizedUsersRegex }}
     {{- range $index, $userRegex := .Values.preventUnauthorizedAnnotations.authorizedUsersRegex }}
     - name: request-not-from-authorized-user-has-a-kubedownscaler-reserved-annotation-{{$index}}
-      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && !request.userInfo.username.matches("{{ $userRegex }}")'
+      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !has(oldObject.metadata.annotations) || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && !request.userInfo.username.matches("{{ $userRegex }}")'
     {{- end }}
     {{- end }}
   failurePolicy: Ignore

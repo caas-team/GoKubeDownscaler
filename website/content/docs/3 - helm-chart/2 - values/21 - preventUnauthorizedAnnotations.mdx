@@ -9,67 +9,185 @@ keywords: [preventUnauthorizedAnnotations]
 # preventUnauthorizedAnnotations
 
 The `preventUnauthorizedAnnotations` section of the chart allows cluster administrators to set a configuration that prevents
-users from deploying the downscaler reserved annotations on their workloads.
-This is particularly useful in a multi-tenant
-environment where users should not have the ability to control the downscaler behavior of their workloads (i.e. administrator
-set up a custom automation strategy that involves the use of annotations, therefore the user must not be able to set or override
-annotation values).
-This feature uses a Kubernetes ValidatingMutationPolicy or MutatingAdmissionPolicy depending on the configuration
-chosen; only requests from authorized users or service accounts will be allowed to set downscaler annotations.
+users from deploying downscaler annotations on Kubernetes objects, thus restricting their ability to control the downscaler behavior.
+The ability to block the addition or removal of downscaler annotations can be crucial for maintaining consistent
+downscaling policies across multi-tenant environments, ensuring that only authorized users can alter global settings.
+
+Let's say an administrator wants to enforce a specific downscaling strategy across all namespaces in the cluster using
+annotations.
+By configuring the `preventUnauthorizedAnnotations` section, the administrator can ensure that regular users
+cannot add downscaler annotations on their workloads that bypass the established strategy
+
+This feature uses a Kubernetes ValidatingAdmissionPolicy or MutatingAdmissionPolicy depending on the configuration
+chosen; only requests from authorized users or service accounts will be allowed to set downscaler annotations:
+
+- `MutatingAdmissionPolicy`: will remove any unauthorized downscaler annotations found on user workloads upon creation or update, unless
+  the user or service account is authorized to set downscaler annotations.
+- `ValidatingAdmissionPolicy`: will block the creation or update of user workloads that contain unauthorized downscaler annotations, unless
+  the user or service account is authorized to set downscaler annotations.
+
+Additionally, it is also possible to deploy a ValidatingAdmissionPolicy that prevents the removal of downscaler annotations
+from Namespace resources.
+In this case only a ValidatingAdmissionPolicy is used since the goal is only to block the removal of annotations.
 
 The following values can be configured:
 
-- `enable` indicates whether the preventUnauthorizedAnnotations should be enabled.
-- `mutateUnauthorizedAnnotations` indicates a mutation policy will be applied to remove any unauthorized downscaler annotations found on user
-  workloads.
-  If this is false a blocking policy that prevent the resource creation/update will be applied instead.
+- `mutateUnauthorizedAnnotationsAddition` indicates whether to use a MutatingAdmissionPolicy to remove unauthorized downscaler annotations
+  from workloads upon creation or update.
+  If set to false, a ValidatingAdmissionPolicy will be used instead to block the creation or update of workloads
+  with unauthorized downscaler annotations.
 - `validationActions` array that indicates the type of actions to take when an unauthorized annotation is found.
   Possible values are
   `Audit`, `Warn`, and `Deny`.
-  This only applies when `mutateUnauthorizedAnnotations` is false.
+  This only applies when `mutateUnauthorizedAnnotationsAddition` is false.
 - `authorizedNamespacesToServiceAccountsRegex` map contains key-value pairs where the key is a namespace regex and the value is a regex
   that matches service accounts in that namespace that are authorized to set downscaler annotations.
 - `authorizedUsersRegex` array of regex strings that match users that are authorized to set downscaler annotations.
+- `onWorkloads.enabled` indicates whether the policy should be applied to workloads (Deployments, StatefulSets, etc.).
+- `onNamespace.enabled` indicates whether the policy should be applied to Namespace resources.
+- `onNamespace.blockRemoval` indicates whether to deploy a separate ValidatingAdmissionPolicy to block the removal
+  of downscaler annotations from Namespace resources.
+  This policy can be deployed even if `onNamespace.enabled` is false.
 
-The default values for `podMonitor` are:
+The default values for `preventUnauthorizedAnnotations` are:
 
 ```yaml
 preventUnauthorizedAnnotations:
-  enabled: false
-  mutateUnauthorizedAnnotations: false
+  mutateUnauthorizedAnnotationsAddition: false
   validationActions: [Deny]
   authorizedNamespacesToServiceAccountsRegex: {}
   authorizedUsersRegex: []
+  onWorkloads:
+    enabled: false
+  onNamespace:
+    enabled: false
+    blockRemoval: false
 ```
 
-User must take care of configuring this section according to their needs.
+Administrators must take care of configuring this section according to their needs.
 
 The expressions that will be used to evaluate the authorized service accounts and users are these, the mutation
 happens when all expressions evaluate to true:
 
+When `onWorkloads.enabled` and/or `onNamespace.enabled`, the following expressions are evaluated to prevent
+the addition of unauthorized downscaler annotations:
+
 ```shell
 object.metadata.annotations.exists(l, l.startsWith("downscaler/")) &&
-(oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) &&
-request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}")
+(
+  oldObject == null ||
+  !has(oldObject.metadata.annotations) ||
+  !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))
+) &&
+request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include \"go-kube-downscaler.serviceAccountName\" . }}"
 ```
 
 ```shell
 object.metadata.annotations.exists(l, l.startsWith("downscaler/")) &&
-(oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) &&
+(
+  oldObject == null ||
+  !has(oldObject.metadata.annotations) ||
+  !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))
+) &&
 !request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")
 ```
 
 ```shell
 object.metadata.annotations.exists(l, l.startsWith("downscaler/")) &&
-(oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) &&
+(
+  oldObject == null ||
+  !has(oldObject.metadata.annotations) ||
+  !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))
+) &&
 !request.userInfo.username.matches("{{ $userRegex }}")
 ```
+
+To summarize, the mutation or validation will occur if:
+
+1. The object being created or updated contains downscaler annotations.
+2. The object did not previously have downscaler annotations (in case of an update).
+3. The user making the request is not the downscaler service account.
+4. The user making the request does not match any of the authorized service accounts or users defined in the configuration.
+
+When `onNamespace.blockRemoval` is true, the following expression is evaluated to prevent the removal of downscaler
+annotations from Namespace resources:
+
+```shell
+oldObject != null &&
+has(oldObject.metadata.annotations) &&
+oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) &&
+object != null &&
+(
+  !has(object.metadata.annotations) ||
+  !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) ||
+  oldObject.metadata.annotations.exists(
+    l,
+    l.startsWith("downscaler/") &&
+    (
+      !(l in object.metadata.annotations) ||
+      object.metadata.annotations[l] != oldObject.metadata.annotations[l]
+    )
+  )
+) &&
+request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include \"go-kube-downscaler.serviceAccountName\" . }}"
+```
+
+```shell
+oldObject != null &&
+has(oldObject.metadata.annotations) &&
+oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) &&
+object != null &&
+(
+  !has(object.metadata.annotations) ||
+  !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) ||
+  oldObject.metadata.annotations.exists(
+    l,
+    l.startsWith("downscaler/") &&
+    (
+      !(l in object.metadata.annotations) ||
+      object.metadata.annotations[l] != oldObject.metadata.annotations[l]
+    )
+  )
+) &&
+!request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")
+```
+
+```shell
+oldObject != null &&
+has(oldObject.metadata.annotations) &&
+oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) &&
+object != null &&
+(
+  !has(object.metadata.annotations) ||
+  !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) ||
+  oldObject.metadata.annotations.exists(
+    l,
+    l.startsWith("downscaler/") &&
+    (
+      !(l in object.metadata.annotations) ||
+      object.metadata.annotations[l] != oldObject.metadata.annotations[l]
+    )
+  )
+) &&
+!request.userInfo.username.matches("{{ $userRegex }}")
+```
+
+To summarize, the validation will occur if:
+
+1. The object being updated is a Namespace that previously had downscaler annotations.
+2. The updated object either does not have downscaler annotations or has modified/removed downscaler annotations.
+3. The user making the request is not the downscaler service account.
+4. The user making the request does not match any of the authorized service accounts or users defined in the configuration.
 
 This is an example of how to configure the `preventUnauthorizedAnnotations` object:
 
 ```yaml
 preventUnauthorizedAnnotations:
-  enabled: true
+  onWorkloads:
+    enabled: true
+  onNamespace:
+    enabled: false
+    blockRemoval: false
   authorizedNamespacesToServiceAccountsRegex:
     namespace1:
       - sa1

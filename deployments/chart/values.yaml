@@ -85,11 +85,15 @@ configMap:
 forceRestartOnConfigChange: true
 
 preventUnauthorizedAnnotations:
-  enabled: false
-  mutateUnauthorizedAnnotations: false
+  mutateUnauthorizedAnnotationsAddition: false
   validationActions: [Deny]
-  authorizedNamespacesToServiceAccountsRegex: {}
-  authorizedUsersRegex: []
+  authorizedNamespacesToServiceAccountsRegex: { }
+  authorizedUsersRegex: [ ]
+  onWorkloads:
+    enabled: false
+  onNamespace:
+    enabled: false
+    blockRemoval: false
 
 webhookController:
 

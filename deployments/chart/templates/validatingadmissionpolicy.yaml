@@ -1,7 +1,7 @@
-{{- if and .Values.preventUnauthorizedAnnotations.enabled (not (semverCompare ">=1.30.0" .Capabilities.KubeVersion.Version)) }}
+{{- if and (or .Values.preventUnauthorizedAnnotations.onWorkloads.enabled .Values.preventUnauthorizedAnnotations.onNamespace.enabled) (not (semverCompare ">=1.30.0" .Capabilities.KubeVersion.Version)) }}
 {{- fail "preventUnauthorizedAnnotations using ValidatingAdmissionPolicy requires Kubernetes >= 1.30.0 (ValidatingAdmissionPolicy/v1)" }}
 {{- end }}
-{{- if and .Values.preventUnauthorizedAnnotations.enabled (semverCompare ">=1.30.0" .Capabilities.KubeVersion.Version) (not .Values.preventUnauthorizedAnnotations.mutateUnauthorizedAnnotations) }}
+{{- if and (or .Values.preventUnauthorizedAnnotations.onWorkloads.enabled .Values.preventUnauthorizedAnnotations.onNamespace.enabled) (semverCompare ">=1.30.0" .Capabilities.KubeVersion.Version) (not .Values.preventUnauthorizedAnnotations.mutateUnauthorizedAnnotationsAddition) }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicy
 metadata:
@@ -9,28 +9,41 @@ metadata:
 spec:
   matchConstraints:
     resourceRules:
+    {{- if .Values.preventUnauthorizedAnnotations.onNamespace.enabled }}
+      - apiGroups:
+          - ""
+        apiVersions:
+          - "*"
+        operations:
+          - "CREATE"
+          - "UPDATE"
+        resources:
+          - namespaces
+    {{- end }}
+    {{- if .Values.preventUnauthorizedAnnotations.onWorkloads.enabled }}
 {{- include "go-kube-downscaler.preventUnauthorizedResources" . | trim | nindent 6 }}
+    {{- end }}
   matchConditions:
     - name: request-not-from-kube-downscaler-sa
-      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}")'
+      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !has(oldObject.metadata.annotations) || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}")'
     {{- if .Values.preventUnauthorizedAnnotations.authorizedNamespacesToServiceAccountsRegex }}
     {{- $nameIndex := 0 }}
     {{- range $namespaceRegex, $serviceAccounts := .Values.preventUnauthorizedAnnotations.authorizedNamespacesToServiceAccountsRegex }}
     {{- range $index, $saRegex := $serviceAccounts }}
     {{- $nameIndex = add $nameIndex 1 }}
-    - name: request-not-from-authorized-sa-has-a-kubedownscaler-reserved-annotation-{{$nameIndex}}
-      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && !request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")'
+    - name: sa-request-has-reserved-annotation-{{$nameIndex}}
+      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !has(oldObject.metadata.annotations) || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && !request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")'
     {{- end }}
     {{- end }}
     {{- end }}
     {{- if .Values.preventUnauthorizedAnnotations.authorizedUsersRegex }}
     {{- range $index, $userRegex := .Values.preventUnauthorizedAnnotations.authorizedUsersRegex }}
-    - name: request-not-from-authorized-user-has-a-kubedownscaler-reserved-annotation-{{$index}}
-      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && !request.userInfo.username.matches("{{ $userRegex }}")'
+    - name: user-request-has-reserved-annotation-{{$index}}
+      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !has(oldObject.metadata.annotations) || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && !request.userInfo.username.matches("{{ $userRegex }}")'
     {{- end }}
     {{- end }}
   validations:
-    - message: 'The use of annotations starting with "downscaler/" is prohibited.'
+    - messageExpression: '"The use of annotations starting with \"downscaler/\" is prohibited for user: " + request.userInfo.username'
       reason: Forbidden
       expression: '!object.metadata.annotations.exists(l, l.startsWith("downscaler/"))'
   failurePolicy: Ignore
@@ -41,6 +54,7 @@ metadata:
   name: block-downscaler-reserved-annotations-binding
 spec:
   policyName: block-downscaler-reserved-annotations
+  validationActions: {{ .Values.preventUnauthorizedAnnotations.validationActions }}
   matchResources:
     namespaceSelector:
       matchExpressions:
