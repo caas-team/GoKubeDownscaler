@@ -72,3 +72,24 @@ is deployed and from requests originated by the main Deployment of the GoKubeDow
 
 The [podmonitor.yaml](repo:deployments/chart/templates/leaserole.yaml) file creates a PodMonitor that is able to scrape
 metrics from GoKubeDownscaler main deployment
+
+## Mutatingadmissionpolicy
+
+The [mutatingadmissionpolicy.yaml](repo:deployments/chart/templates/mutatingadmissionpolicy.yaml) file creates a
+MutatingAdmissionPolicy that modifies objects on create/update, removing annotations that start with `downscaler/`
+if they were deployed by unauthorized users or service accounts.
+If deployed, the policy is bound to every namespace.
+
+## Validatingadmissionpolicy
+
+The [validatingadmissionpolicy.yaml](repo:deployments/chart/templates/validatingadmissionpolicy.yaml) file creates a
+ValidatingAdmissionPolicy that blocks objects on create/update with `downscaler/` annotations if these annotations were deployed by
+unauthorized users or service accounts.
+If deployed, the policy is bound to every namespace.
+
+## Validatingadmissionpolicyremoval
+
+The [validatingadmissionpolicyremoval.yaml](repo:deployments/chart/templates/validatingadmissionpolicyremoval.yaml) file creates a
+ValidatingAdmissionPolicyRemoval that blocks editing and removal of `downscaler/` annotations in namespaces
+by unauthorized users or service accounts.
+If deployed, the policy is bound to every namespace.
