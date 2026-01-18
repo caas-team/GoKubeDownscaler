@@ -25,9 +25,9 @@ spec:
     {{- end }}
   matchConditions:
     - name: kube-downscaler-webhook-sa
-      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !has(oldObject.metadata.annotations) || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.webhookController.fullname" . }}")'
+      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !has(oldObject.metadata.annotations) || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.webhookController.fullname" . }}"'
     - name: kube-downscaler-sa
-      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !has(oldObject.metadata.annotations) || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}")'
+      expression: 'object.metadata.annotations.exists(l, l.startsWith("downscaler/")) && (oldObject == null || !has(oldObject.metadata.annotations) || !oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/"))) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}"'
     {{- if .Values.preventUnauthorizedAnnotations.authorizedNamespacesToServiceAccountsRegex }}
     {{- $nameIndex := 0 }}
     {{- range $namespaceRegex, $serviceAccounts := .Values.preventUnauthorizedAnnotations.authorizedNamespacesToServiceAccountsRegex }}
