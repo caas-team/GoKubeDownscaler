@@ -74,6 +74,11 @@ func initComponent() (runtimeConfig *runtimeConfiguration, scopeDefault, scopeCl
 
 	scopeDefault, scopeCli, scopeEnv = values.InitScopes()
 
+	if runtimeConfig.JsonLogs {
+		jsonLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+		slog.SetDefault(jsonLogger)
+	}
+
 	if runtimeConfig.Debug || runtimeConfig.DryRun {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
@@ -100,8 +105,10 @@ func setupControllerRuntimeLogEncoding(runtimeConfig *runtimeConfiguration) zap.
 		level = zapcore.InfoLevel
 	}
 
+	development := !runtimeConfig.JsonLogs
+
 	return zap.Options{
-		Development: true,
+		Development: development,
 		Level:       level,
 		EncoderConfigOptions: []zap.EncoderConfigOption{
 			func(ec *zapcore.EncoderConfig) {
