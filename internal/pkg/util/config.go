@@ -26,6 +26,8 @@ type CommonRuntimeConfiguration struct {
 	TimeAnnotation string
 	// MetricsEnabled sets if Prometheus metrics should be exposed.
 	MetricsEnabled bool
+	// JsonLogs sets logs in json format
+	JsonLogs bool
 	// Qps sets the maximum QPS to use while communicating with the Kubernetes API.
 	Qps float64
 	// Burst sets the maximum burst to use while communicating with the Kubernetes API.
@@ -46,6 +48,7 @@ func GetDefaultConfig() *CommonRuntimeConfiguration {
 		TimeAnnotation:    "",
 		Kubeconfig:        "",
 		MetricsEnabled:    false,
+		JsonLogs:          false,
 	}
 }
 
@@ -110,6 +113,12 @@ func (c *CommonRuntimeConfiguration) ParseCommonFlags() {
 		"burst",
 		1000, //nolint:mnd // downscaler default for burst
 		"maximum burst to use while communicating with the Kubernetes API (default: 1000)",
+	)
+	flag.BoolVar(
+		&c.JsonLogs,
+		"json-logs",
+		false,
+		"sets logs in json format (default: false)",
 	)
 	flag.StringVar(
 		&c.Kubeconfig,
