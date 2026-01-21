@@ -77,19 +77,27 @@ metrics from GoKubeDownscaler main deployment
 
 The [mutatingadmissionpolicy.yaml](repo:deployments/chart/templates/mutatingadmissionpolicy.yaml) file creates a
 MutatingAdmissionPolicy that modifies objects on create/update, removing annotations that start with `downscaler/`
-if they were deployed by unauthorized users or service accounts.
-If deployed, the policy is bound to every namespace.
+if they were deployed by unauthorized users or service accounts, or preventing editing their value if they were deployed by
+authorized users or service account.
+When deployed, the policy is bound to every namespace.
+
+## Mutatingadmissionpolicyremoval
+
+The [mutatingadmissionpolicyremoval.yaml](repo:deployments/chart/templates/validatingadmissionpolicyremoval.yaml) file creates a
+MutatingAdmissionPolicyRemoval that re-adds removed `downscaler/` annotations in namespaces or workloads
+if unauthorized users or service accounts removed them.
+When deployed, the policy is bound to every namespace.
 
 ## Validatingadmissionpolicy
 
 The [validatingadmissionpolicy.yaml](repo:deployments/chart/templates/validatingadmissionpolicy.yaml) file creates a
-ValidatingAdmissionPolicy that blocks objects on create/update with `downscaler/` annotations if these annotations were deployed by
-unauthorized users or service accounts.
-If deployed, the policy is bound to every namespace.
+ValidatingAdmissionPolicy that blocks the creation of namespaces or workloads with any `downscaler/` annotations if deployed by
+unauthorized users or service accounts, and prevents editing these annotations if deployed by authorized users or service accounts.
+When deployed, the policy is bound to every namespace.
 
 ## Validatingadmissionpolicyremoval
 
 The [validatingadmissionpolicyremoval.yaml](repo:deployments/chart/templates/validatingadmissionpolicyremoval.yaml) file creates a
-ValidatingAdmissionPolicyRemoval that blocks editing and removal of `downscaler/` annotations in namespaces
-by unauthorized users or service accounts.
-If deployed, the policy is bound to every namespace.
+ValidatingAdmissionPolicy that blocks the removal of any `downscaler/` annotations from namespaces or workloads
+if unauthorized users or service accounts tried removing them.
+When deployed, the policy is bound to every namespace.

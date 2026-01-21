@@ -409,9 +409,10 @@ Create webhook resources
 
 
 {{/*
-resources include in preventUnauthorizedResources
+resources include in annotationsCompliance
 */}}
-{{- define "go-kube-downscaler.preventUnauthorizedResources" -}}
+{{- define "go-kube-downscaler.annotationsCompliance" -}}
+{{- $preventRemoval := default false .preventRemoval -}}
 {{- range $resource := .Values.includedResources -}}
 {{ if eq $resource "deployments" -}}
 - apiGroups:
@@ -419,7 +420,9 @@ resources include in preventUnauthorizedResources
   apiVersions:
     - "*"
   operations:
+  {{- if not $preventRemoval }}
     - "CREATE"
+  {{ end -}}
     - "UPDATE"
   resources:
     - deployments
@@ -430,7 +433,9 @@ resources include in preventUnauthorizedResources
   apiVersions:
     - "*"
   operations:
+  {{- if not $preventRemoval }}
     - "CREATE"
+  {{ end -}}
     - "UPDATE"
   resources:
     - statefulsets
@@ -441,7 +446,9 @@ resources include in preventUnauthorizedResources
   apiVersions:
     - "*"
   operations:
+  {{- if not $preventRemoval }}
     - "CREATE"
+  {{ end -}}
     - "UPDATE"
   resources:
     - daemonsets
@@ -452,7 +459,9 @@ resources include in preventUnauthorizedResources
   apiVersions:
     - "*"
   operations:
+  {{- if not $preventRemoval }}
     - "CREATE"
+  {{ end -}}
     - "UPDATE"
   resources:
     - rollouts
@@ -463,7 +472,9 @@ resources include in preventUnauthorizedResources
   apiVersions:
     - "*"
   operations:
+  {{- if not $preventRemoval }}
     - "CREATE"
+  {{ end -}}
     - "UPDATE"
   resources:
     - horizontalpodautoscalers
@@ -474,7 +485,9 @@ resources include in preventUnauthorizedResources
   apiVersions:
     - "*"
   operations:
+  {{- if not $preventRemoval }}
     - "CREATE"
+  {{ end -}}
     - "UPDATE"
   resources:
     - jobs
@@ -485,7 +498,9 @@ resources include in preventUnauthorizedResources
   apiVersions:
     - "*"
   operations:
+  {{- if not $preventRemoval }}
     - "CREATE"
+  {{ end -}}
     - "UPDATE"
   resources:
     - cronjobs
@@ -496,7 +511,9 @@ resources include in preventUnauthorizedResources
   apiVersions:
     - "*"
   operations:
+  {{- if not $preventRemoval }}
     - "CREATE"
+  {{ end -}}
     - "UPDATE"
   resources:
     - scaledobjects
@@ -509,7 +526,9 @@ resources include in preventUnauthorizedResources
   apiVersions:
     - "*"
   operations:
+  {{- if not $preventRemoval }}
     - "CREATE"
+  {{ end -}}
     - "UPDATE"
 {{ end -}}
 {{ if eq $resource "prometheuses" -}}
@@ -520,7 +539,9 @@ resources include in preventUnauthorizedResources
   apiVersions:
     - "*"
   operations:
+  {{- if not $preventRemoval }}
     - "CREATE"
+  {{ end -}}
     - "UPDATE"
 {{ end -}}
 {{ if eq $resource "poddisruptionbudgets" -}}
@@ -529,7 +550,9 @@ resources include in preventUnauthorizedResources
   apiVersions:
     - "*"
   operations:
+  {{- if not $preventRemoval }}
     - "CREATE"
+  {{ end -}}
     - "UPDATE"
   resources:
     - poddisruptionbudgets

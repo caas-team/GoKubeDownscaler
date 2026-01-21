@@ -1,11 +1,11 @@
-{{- if and (or .Values.annotationsCompliance.onWorkloads.enabled .Values.annotationsCompliance.onNamespace.enabled) (not (semverCompare ">=1.30.0" .Capabilities.KubeVersion.Version)) }}
-{{- fail "annotationsCompliance using ValidatingAdmissionPolicy requires Kubernetes >= 1.30.0 (ValidatingAdmissionPolicy/v1)" }}
+{{- if and (or .Values.annotationsCompliance.onWorkloads.enabled .Values.annotationsCompliance.onNamespace.enabled) (not (semverCompare ">=1.34.0" .Capabilities.KubeVersion.Version)) }}
+{{- fail "annotationsCompliance using MutatingAdmissionPolicy requires Kubernetes >= 1.34.0 (MutatingAdmissionPolicy/v1beta1)" }}
 {{- end }}
-{{- if and .Values.annotationsCompliance.onNamespace.blockRemoval (semverCompare ">=1.30.0" .Capabilities.KubeVersion.Version) }}
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingAdmissionPolicy
+{{- if and (or .Values.annotationsCompliance.onWorkloads.enabled .Values.annotationsCompliance.onNamespace.enabled) (semverCompare ">=1.34.0" .Capabilities.KubeVersion.Version) .Values.annotationsCompliance.mutateUnauthorizedAnnotationsAddition }}
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingAdmissionPolicy
 metadata:
-  name: block-removal-downscaler-reserved-annotations
+  name: prevent-remove-downscaler-reserved-annotations
 spec:
   matchConstraints:
     resourceRules:
@@ -32,7 +32,7 @@ spec:
     {{- range $namespaceRegex, $serviceAccounts := .Values.annotationsCompliance.authorizedNamespacesToServiceAccountsRegex }}
     {{- range $index, $saRegex := $serviceAccounts }}
     {{- $nameIndex = add $nameIndex 1 }}
-    - name: authorized-sa-pattern-{{$nameIndex}}
+    - name: authorized-user-pattern-{{$index}}
       expression: 'oldObject != null && has(oldObject.metadata.annotations) && oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) && object != null && (!has(object.metadata.annotations) || !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) || oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/") && (!(l in object.metadata.annotations)))) && !request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")'
     {{- end }}
     {{- end }}
@@ -43,19 +43,38 @@ spec:
       expression: 'oldObject != null && has(oldObject.metadata.annotations) && oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) && object != null && (!has(object.metadata.annotations) || !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) || oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/") && (!(l in object.metadata.annotations)))) && !request.userInfo.username.matches("{{ $userRegex }}")'
     {{- end }}
     {{- end }}
-  validations:
-    - messageExpression: '"The removal of annotations starting with \"downscaler/\" from namespace " + request.name + " is prohibited for user: " + request.userInfo.username'
-      reason: Forbidden
-      expression: 'has(object.metadata.annotations) && oldObject.metadata.annotations.all(l, !l.startsWith("downscaler/") || (l in object.metadata.annotations))'
   failurePolicy: Ignore
+  reinvocationPolicy: IfNeeded
+  mutations:
+  - patchType: JSONPatch
+    jsonPatch:
+      expression: >
+          has(oldObject) && has(oldObject.metadata.annotations) ?
+            oldObject.metadata.annotations
+              .filter(
+                k,
+                k.startsWith("downscaler/") &&
+                (
+                  !has(object.metadata.annotations) ||
+                  !(k in object.metadata.annotations)
+                )
+              )
+              .map(
+                k,
+                JSONPatch{
+                  op: "add",
+                  path: "/metadata/annotations/" + k.replace("/", "~1"),
+                  value: oldObject.metadata.annotations[k]
+                }
+              )
+            : []
 ---
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingAdmissionPolicyBinding
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingAdmissionPolicyBinding
 metadata:
-  name: block-removal-downscaler-reserved-annotations-binding
+  name: prevent-remove-downscaler-reserved-annotations-binding
 spec:
-  policyName: block-removal-downscaler-reserved-annotations
-  validationActions: {{ .Values.annotationsCompliance.validationActions }}
+  policyName: prevent-remove-downscaler-reserved-annotations
   matchResources:
     namespaceSelector:
       matchExpressions:
