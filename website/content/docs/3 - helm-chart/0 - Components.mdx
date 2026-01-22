@@ -72,3 +72,32 @@ is deployed and from requests originated by the main Deployment of the GoKubeDow
 
 The [podmonitor.yaml](repo:deployments/chart/templates/leaserole.yaml) file creates a PodMonitor that is able to scrape
 metrics from GoKubeDownscaler main deployment
+
+## Mutatingadmissionpolicy
+
+The [mutatingadmissionpolicy.yaml](repo:deployments/chart/templates/mutatingadmissionpolicy.yaml) file creates a
+MutatingAdmissionPolicy that modifies objects on create/update, removing annotations that start with `downscaler/`
+if they were deployed by unauthorized users or service accounts, or preventing editing their value if they were deployed by
+authorized users or service account.
+When deployed, the policy is bound to every namespace.
+
+## Mutatingadmissionpolicyremoval
+
+The [mutatingadmissionpolicyremoval.yaml](repo:deployments/chart/templates/validatingadmissionpolicyremoval.yaml) file creates a
+MutatingAdmissionPolicyRemoval that re-adds removed `downscaler/` annotations in namespaces or workloads
+if unauthorized users or service accounts removed them.
+When deployed, the policy is bound to every namespace.
+
+## Validatingadmissionpolicy
+
+The [validatingadmissionpolicy.yaml](repo:deployments/chart/templates/validatingadmissionpolicy.yaml) file creates a
+ValidatingAdmissionPolicy that blocks the creation of namespaces or workloads with any `downscaler/` annotations if deployed by
+unauthorized users or service accounts, and prevents editing these annotations if deployed by authorized users or service accounts.
+When deployed, the policy is bound to every namespace.
+
+## Validatingadmissionpolicyremoval
+
+The [validatingadmissionpolicyremoval.yaml](repo:deployments/chart/templates/validatingadmissionpolicyremoval.yaml) file creates a
+ValidatingAdmissionPolicy that blocks the removal of any `downscaler/` annotations from namespaces or workloads
+if unauthorized users or service accounts tried removing them.
+When deployed, the policy is bound to every namespace.
