@@ -32,15 +32,15 @@ spec:
     {{- range $namespaceRegex, $serviceAccounts := .Values.annotationsCompliance.authorizedNamespacesToServiceAccountsRegex }}
     {{- range $index, $saRegex := $serviceAccounts }}
     {{- $nameIndex = add $nameIndex 1 }}
-    - name: authorized-user-pattern-{{$nameIndex}}
+    - name: authorized-sa-pattern-{{index}}-{{$nameIndex}}
       expression: 'oldObject != null && has(oldObject.metadata.annotations) && oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) && object != null && (!has(object.metadata.annotations) || !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) || oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/") && (!(l in object.metadata.annotations)))) && !request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")'
     {{- end }}
     {{- end }}
     {{- end }}
     {{- if .Values.annotationsCompliance.authorizedUsersRegex }}
-    {{- range $index, $userRegex := .Values.annotationsCompliance.authorizedUsersRegex }}
-    - name: authorized-user-pattern-{{$index}}
-      expression: 'oldObject != null && has(oldObject.metadata.annotations) && oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) && object != null && (!has(object.metadata.annotations) || !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) || oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/") && (!(l in object.metadata.annotations)))) && !request.userInfo.username.matches("{{ $userRegex }}")'
+    {{- range $index, $groupRegex := .Values.annotationsCompliance.authorizedUsersRegex }}
+    - name: authorized-group-pattern-{{$index}}
+      expression: 'oldObject != null && has(oldObject.metadata.annotations) && oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) && object != null && (!has(object.metadata.annotations) || !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) || oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/") && (!(l in object.metadata.annotations)))) && !request.userInfo.groups.exists(g, g.matches("{{ $groupRegex }}"))'
     {{- end }}
     {{- end }}
   failurePolicy: Ignore

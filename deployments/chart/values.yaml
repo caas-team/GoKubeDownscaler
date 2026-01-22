@@ -89,6 +89,7 @@ annotationsCompliance:
   validationActions: [Deny]
   authorizedNamespacesToServiceAccountsRegex: { }
   authorizedUsersRegex: [ ]
+  authorizedGroupsRegex: [ ]
   onWorkloads:
     enabled: false
     preventRemoval: false

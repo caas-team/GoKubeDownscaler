@@ -43,6 +43,12 @@ spec:
       expression: 'oldObject != null && has(oldObject.metadata.annotations) && oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) && object != null && (!has(object.metadata.annotations) || !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) || oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/") && (!(l in object.metadata.annotations)))) && !request.userInfo.username.matches("{{ $userRegex }}")'
     {{- end }}
     {{- end }}
+    {{- if .Values.annotationsCompliance.authorizedUsersRegex }}
+    {{- range $index, $groupRegex := .Values.annotationsCompliance.authorizedUsersRegex }}
+    - name: authorized-group-pattern-{{$index}}
+      expression: 'oldObject != null && has(oldObject.metadata.annotations) && oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) && object != null && (!has(object.metadata.annotations) || !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) || oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/") && (!(l in object.metadata.annotations)))) && !request.userInfo.groups.exists(g, g.matches("{{ $groupRegex }}"))'
+    {{- end }}
+    {{- end }}
   validations:
     - messageExpression: '"The removal of annotations starting with \"downscaler/\" from namespace " + request.name + " is prohibited for user: " + request.userInfo.username'
       reason: Forbidden

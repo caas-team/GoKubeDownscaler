@@ -11,11 +11,12 @@ keywords: [annotationsCompliance]
 The `annotationsCompliance` section of the chart allows cluster administrators to set a configuration that prevents
 users from deploying downscaler annotations on Kubernetes objects, thus restricting their ability to control the downscaler behavior.
 The ability to block the addition, editing or removal of downscaler annotations can be crucial for maintaining consistent
-downscaling policies across multi-tenant environments, ensuring that only authorized users can alter global settings.
+downscaling policies across multi-tenant environments, ensuring that only authorized users, groups or service accounts can alter
+global settings.
 
 Let's say an administrator wants to enforce a specific downscaling strategy across all namespaces in the cluster using
 annotations.
-By configuring the `annotationsCompliance` section, the administrator can ensure that regular users
+By configuring the `annotationsCompliance` section, the administrator can ensure that non-privileged users, groups or service accounts
 cannot add/edit/remove downscaler annotations on their workloads that bypass the established strategy
 
 This feature uses a Kubernetes ValidatingAdmissionPolicy or MutatingAdmissionPolicy depending on the configuration
@@ -43,7 +44,7 @@ The following values can be configured:
   that matches service accounts in that namespace that are authorized to set downscaler annotations.
 - `authorizedUsersRegex` array of regex strings that match users that are authorized to set downscaler annotations.
 - `onWorkloads.enabled` indicates whether the policy should be applied to workloads (Deployments, StatefulSets, etc.).
-- `onWorkloads.preventRemoval` ndicates whether to deploy a separate MutatingAdmissionPolicy to prevent the removal of downscaler
+- `onWorkloads.preventRemoval` indicates whether to deploy a separate MutatingAdmissionPolicy to prevent the removal of downscaler
   annotations from workloads.
 - `onNamespace.enabled` indicates whether the policy should be applied to Namespace resources.
 - `onNamespace.preventRemoval` indicates whether to deploy a separate ValidatingAdmissionPolicy to block the removal
@@ -58,6 +59,7 @@ annotationsCompliance:
   validationActions: [Deny]
   authorizedNamespacesToServiceAccountsRegex: {}
   authorizedUsersRegex: []
+  authorizedGroupsRegex: []
   onWorkloads:
     enabled: false
     preventRemoval: false
@@ -68,7 +70,7 @@ annotationsCompliance:
 
 Administrators must take care of configuring this section according to their needs.
 
-The expressions that will be used to evaluate the authorized service accounts and users are these, the mutation
+The expressions that will be used to evaluate the authorized service accounts, groups or users are listed below; the mutation
 happens when all expressions evaluate to true:
 
 When `onWorkloads.enabled` and/or `onNamespace.enabled`, the following expressions are evaluated to prevent
@@ -138,16 +140,16 @@ To summarize, the mutation or validation will occur if:
 1. The object being created or updated contains downscaler annotations.
 2. The object did not previously have downscaler annotations (in case of an update) or the annotation value has changed.
 3. The user making the request is not a kube downscaler service account (webhook or main deployment).
-4. The user making the request does not match any of the authorized service accounts or users defined in the configuration
-   (via regex patterns for namespaces/service accounts or specific users).
+4. The user making the request does not match any of the authorized service accounts, groups or users defined in the configuration
+   (via regex patterns for namespaces/service accounts, groups or specific users).
 
 :::note
-If the user has the permission to update the object, the removal of downscaler annotations is always permitted.
+If the non-privileged user has the permission to update the object, the removal of downscaler annotations is always permitted.
 The next
 paragraph explains how to prevent the removal of downscaler annotations.
 :::
 
-When `onWorkloads.preventRemoval` and/or `onNamespace.preventRemoval` is true, the following expression is evaluated
+When `onWorkloads.preventRemoval` and/or `onNamespace.preventRemoval` is true, the following expressions are evaluated
 to prevent the removal of downscaler annotations from Namespace resources:
 
 ```cel
@@ -243,12 +245,12 @@ To summarize, the validation will occur if:
 1. The object being updated previously contained downscaler annotations.
 2. The object being updated no longer contains downscaler annotations (annotations were removed).
 3. The user making the request is not a kube downscaler service account (webhook or main deployment).
-4. The user making the request does not match any of the authorized service accounts or users defined in the configuration
-   (via regex patterns for namespaces/service accounts or specific users).
+4. The user making the request does not match any of the authorized service accounts, groups or users defined in the configuration
+   (via regex patterns for namespaces/service accounts, groups or specific users).
 
 :::note
-If the user has the permission to delete the entire resource (e.g., Namespace or Deployment), they can still delete the entire resource
-even if they are not authorized to remove the downscaler annotations.
+If the non-privileged user has the permission to delete the entire resource (e.g., Namespace or Deployment),
+they can still delete the entire resource even if they are not authorized to remove the downscaler annotations.
 :::note
 
 This is an example of how to configure the `annotationsCompliance` object:
@@ -262,6 +264,7 @@ annotationsCompliance:
       - sa1
   authorizedUsersRegex:
     - "^user1.*"
+  authorizedGroupsRegex: []
   onWorkloads:
     enabled: true
     preventRemoval: false
@@ -273,12 +276,13 @@ annotationsCompliance:
 :::warning
 If a **ValidatingAdmissionPolicy** is used to prevent editing or removal of downscaler annotations, exercise caution.
 
-Users and administrators must ensure that workload templates comply with the required annotations.
-Only an authorized user is permitted
-to modify or remove these annotations.
-Failure to do so may result in blocked updates or removal of the annotations.
-For this reason,
-we suggest to use a **MutatingAdmissionPolicy** or a **ValidatingAdmissionPolicy** without **Deny** action when possible.
+Non-privileged users and administrators must ensure that workload templates comply with the required annotations.
+Only an authorized user is permitted to modify or remove these annotations.
+Failure to do so may result in blocked updates
+or removal of the annotations.
+
+For this reason, we suggest to use a **MutatingAdmissionPolicy** or a **ValidatingAdmissionPolicy**
+without **Deny** action when possible.
 
 Let's consider the following example:
 
