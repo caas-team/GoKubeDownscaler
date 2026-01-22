@@ -412,7 +412,7 @@ Create webhook resources
 resources include in annotationsCompliance
 */}}
 {{- define "go-kube-downscaler.annotationsCompliance" -}}
-{{- $preventRemoval := default false .preventRemoval -}}
+{{- $createUpdate := .createUpdate | default false }}
 {{- range $resource := .Values.includedResources -}}
 {{ if eq $resource "deployments" -}}
 - apiGroups:
@@ -420,9 +420,9 @@ resources include in annotationsCompliance
   apiVersions:
     - "*"
   operations:
-  {{- if not $preventRemoval }}
+  {{- if $createUpdate }}
     - "CREATE"
-  {{ end -}}
+  {{- end }}
     - "UPDATE"
   resources:
     - deployments
@@ -433,9 +433,9 @@ resources include in annotationsCompliance
   apiVersions:
     - "*"
   operations:
-  {{- if not $preventRemoval }}
+  {{- if $createUpdate }}
     - "CREATE"
-  {{ end -}}
+  {{- end }}
     - "UPDATE"
   resources:
     - statefulsets
@@ -446,9 +446,9 @@ resources include in annotationsCompliance
   apiVersions:
     - "*"
   operations:
-  {{- if not $preventRemoval }}
+  {{- if $createUpdate }}
     - "CREATE"
-  {{ end -}}
+  {{- end }}
     - "UPDATE"
   resources:
     - daemonsets
@@ -459,9 +459,9 @@ resources include in annotationsCompliance
   apiVersions:
     - "*"
   operations:
-  {{- if not $preventRemoval }}
+  {{- if $createUpdate }}
     - "CREATE"
-  {{ end -}}
+  {{- end }}
     - "UPDATE"
   resources:
     - rollouts
@@ -472,9 +472,9 @@ resources include in annotationsCompliance
   apiVersions:
     - "*"
   operations:
-  {{- if not $preventRemoval }}
+  {{- if $createUpdate }}
     - "CREATE"
-  {{ end -}}
+  {{- end }}
     - "UPDATE"
   resources:
     - horizontalpodautoscalers
@@ -485,9 +485,9 @@ resources include in annotationsCompliance
   apiVersions:
     - "*"
   operations:
-  {{- if not $preventRemoval }}
+  {{- if $createUpdate }}
     - "CREATE"
-  {{ end -}}
+  {{- end }}
     - "UPDATE"
   resources:
     - jobs
@@ -498,9 +498,9 @@ resources include in annotationsCompliance
   apiVersions:
     - "*"
   operations:
-  {{- if not $preventRemoval }}
+  {{- if $createUpdate }}
     - "CREATE"
-  {{ end -}}
+  {{- end }}
     - "UPDATE"
   resources:
     - cronjobs
@@ -511,9 +511,9 @@ resources include in annotationsCompliance
   apiVersions:
     - "*"
   operations:
-  {{- if not $preventRemoval }}
+  {{- if $createUpdate }}
     - "CREATE"
-  {{ end -}}
+  {{- end }}
     - "UPDATE"
   resources:
     - scaledobjects
@@ -526,9 +526,9 @@ resources include in annotationsCompliance
   apiVersions:
     - "*"
   operations:
-  {{- if not $preventRemoval }}
+  {{- if $createUpdate }}
     - "CREATE"
-  {{ end -}}
+  {{- end }}
     - "UPDATE"
 {{ end -}}
 {{ if eq $resource "prometheuses" -}}
@@ -539,9 +539,9 @@ resources include in annotationsCompliance
   apiVersions:
     - "*"
   operations:
-  {{- if not $preventRemoval }}
+  {{- if $createUpdate }}
     - "CREATE"
-  {{ end -}}
+  {{- end }}
     - "UPDATE"
 {{ end -}}
 {{ if eq $resource "poddisruptionbudgets" -}}
@@ -550,9 +550,9 @@ resources include in annotationsCompliance
   apiVersions:
     - "*"
   operations:
-  {{- if not $preventRemoval }}
+  {{- if $createUpdate }}
     - "CREATE"
-  {{ end -}}
+  {{- end }}
     - "UPDATE"
   resources:
     - poddisruptionbudgets

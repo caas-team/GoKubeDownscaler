@@ -20,7 +20,7 @@ spec:
           - namespaces
     {{- end }}
     {{- if .Values.annotationsCompliance.onWorkloads.enabled }}
-{{- include "go-kube-downscaler.annotationsCompliance" (dict "preventRemoval" true) | trim | nindent 6 }}
+{{- include "go-kube-downscaler.annotationsCompliance" | trim | nindent 6 }}
     {{- end }}
   matchConditions:
     - name: kube-downscaler-webhook-sa

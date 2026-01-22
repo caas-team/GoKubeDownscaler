@@ -21,7 +21,7 @@ spec:
           - namespaces
     {{- end }}
     {{- if .Values.annotationsCompliance.onWorkloads.enabled }}
-{{- include "go-kube-downscaler.annotationsCompliance" . | trim | nindent 6 }}
+{{- include "go-kube-downscaler.annotationsCompliance" (merge . (dict "createUpdate" true)) | trim | nindent 6 }}
     {{- end }}
   matchConditions:
     - name: kube-downscaler-webhook-sa
@@ -33,7 +33,7 @@ spec:
     {{- range $namespaceRegex, $serviceAccounts := .Values.annotationsCompliance.authorizedNamespacesToServiceAccountsRegex }}
     {{- range $index, $saRegex := $serviceAccounts }}
     {{- $nameIndex = add $nameIndex 1 }}
-    - name: authorized-user-pattern-{{$index}}
+    - name: authorized-user-pattern-{{$nameIndex}}
       expression: 'has(object.metadata.annotations) && object.metadata.annotations.exists(l, l.startsWith("downscaler/") && (oldObject != null || !has(oldObject.metadata.annotations) || !(l in oldObject.metadata.annotations) || object.metadata.annotations[l] != oldObject.metadata.annotations[l])) && !request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")'
     {{- end }}
     {{- end }}
