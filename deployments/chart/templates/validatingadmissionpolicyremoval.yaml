@@ -1,7 +1,7 @@
 {{- if and (or .Values.annotationsCompliance.onWorkloads.enabled .Values.annotationsCompliance.onNamespace.enabled) (not (semverCompare ">=1.30.0" .Capabilities.KubeVersion.Version)) }}
 {{- fail "annotationsCompliance using ValidatingAdmissionPolicy requires Kubernetes >= 1.30.0 (ValidatingAdmissionPolicy/v1)" }}
 {{- end }}
-{{- if and .Values.annotationsCompliance.onNamespace.blockRemoval (semverCompare ">=1.30.0" .Capabilities.KubeVersion.Version) }}
+{{- if and (or .Values.annotationsCompliance.onWorkloads.preventRemoval .Values.annotationsCompliance.onNamespace.preventRemoval)  (semverCompare ">=1.30.0" .Capabilities.KubeVersion.Version) }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicy
 metadata:
@@ -20,7 +20,7 @@ spec:
           - namespaces
     {{- end }}
     {{- if .Values.annotationsCompliance.onWorkloads.enabled }}
-{{- include "go-kube-downscaler.annotationsCompliance" | trim | nindent 6 }}
+{{- include "go-kube-downscaler.annotationsCompliance" (merge . (dict "createUpdate" true)) | trim | nindent 6 }}
     {{- end }}
   matchConditions:
     - name: kube-downscaler-webhook-sa

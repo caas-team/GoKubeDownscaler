@@ -41,7 +41,7 @@ spec:
     {{- if .Values.annotationsCompliance.authorizedUsersRegex }}
     {{- range $index, $userRegex := .Values.annotationsCompliance.authorizedUsersRegex }}
     - name: authorized-user-pattern-{{$index}}
-      expression: 'has(object.metadata.annotations) && object.metadata.annotations.exists(l, l.startsWith("downscaler/") && (oldObject != null || !has(oldObject.metadata.annotations) || !(l in oldObject.metadata.annotations) || object.metadata.annotations[l] != oldObject.metadata.annotations[l]) && !request.userInfo.username.matches("{{ $userRegex }}")'
+      expression: 'has(object.metadata.annotations) && object.metadata.annotations.exists(l, l.startsWith("downscaler/") && (oldObject != null || !has(oldObject.metadata.annotations) || !(l in oldObject.metadata.annotations) || object.metadata.annotations[l] != oldObject.metadata.annotations[l])) && !request.userInfo.username.matches("{{ $userRegex }}")'
     {{- end }}
     {{- end }}
   failurePolicy: Ignore
