@@ -72,9 +72,18 @@ func initComponent() (config *runtimeConfiguration, scopeDefault, scopeCli, scop
 
 	scopeDefault, scopeCli, scopeEnv = values.InitScopes()
 
-	var logger *slog.Logger
 	if config.JsonLogs {
-		logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+		opts := &slog.HandlerOptions{
+			ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
+				if a.Key == slog.LevelKey {
+					a.Key = "severity"
+				}
+
+				return a
+			},
+		}
+
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, opts))
 		slog.SetDefault(logger)
 	}
 
