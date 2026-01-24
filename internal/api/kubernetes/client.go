@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"context"
 	"crypto/sha256"
+	stdErrors "errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -29,8 +30,13 @@ const (
 	timeout       = 30 * time.Second
 )
 
+var (
+	ErrNegativeBurst = stdErrors.New("burst argument must be non-negative")
+	ErrNegativeQPS   = stdErrors.New("qps argument must be non-negative")
+)
+
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
-// nolint: interfacebloat // this interface is meant to represent a high-level client with multiple functions
+// nolint: interfacebloat // this interface is meant to represent a high-level client with multiple functions.
 type Client interface {
 	// GetNamespacesAsSet gets all namespaces or a specific list of namespace
 	GetNamespacesAsSet() (map[string]struct{}, error)
@@ -61,7 +67,7 @@ type Client interface {
 }
 
 // NewClient makes a new Client.
-func NewClient(kubeconfig string, dryRun bool) (client, error) {
+func NewClient(kubeconfig string, dryRun bool, qps float64, burst int) (client, error) {
 	var kubeclient client
 
 	var clientsets scalable.Clientsets
@@ -73,9 +79,17 @@ func NewClient(kubeconfig string, dryRun bool) (client, error) {
 		return kubeclient, fmt.Errorf("failed to get config for Kubernetes: %w", err)
 	}
 
+	if qps < 0 {
+		return kubeclient, fmt.Errorf("%w: got %f", ErrNegativeQPS, qps)
+	}
+
+	if burst < 0 {
+		return kubeclient, fmt.Errorf("%w: got %d", ErrNegativeBurst, burst)
+	}
+
 	// set qps and burst rate limiting options. See https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1/
-	config.QPS = 500    // available queries per second, when unused will fill the burst buffer
-	config.Burst = 1000 // the max size of the buffer of queries
+	config.QPS = float32(qps) // available queries per second, when unused will fill the burst buffer
+	config.Burst = burst      // the max size of the buffer of queries
 
 	clientsets.Kubernetes, err = kubernetes.NewForConfig(config)
 	if err != nil {

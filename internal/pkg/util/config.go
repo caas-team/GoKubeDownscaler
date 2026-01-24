@@ -26,6 +26,10 @@ type CommonRuntimeConfiguration struct {
 	TimeAnnotation string
 	// MetricsEnabled sets if Prometheus metrics should be exposed.
 	MetricsEnabled bool
+	// Qps sets the maximum QPS to use while communicating with the Kubernetes API.
+	Qps float64
+	// Burst sets the maximum burst to use while communicating with the Kubernetes API.
+	Burst int
 	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
 	Kubeconfig string
 }
@@ -94,6 +98,18 @@ func (c *CommonRuntimeConfiguration) ParseCommonFlags() {
 		"metrics",
 		false,
 		"expose Prometheus metrics (default: false)",
+	)
+	flag.Float64Var(
+		&c.Qps,
+		"qps",
+		500, //nolint:mnd // downscaler default for qps
+		"maximum QPS to use while communicating with the Kubernetes API (default: 500)",
+	)
+	flag.IntVar(
+		&c.Burst,
+		"burst",
+		1000, //nolint:mnd // downscaler default for burst
+		"maximum burst to use while communicating with the Kubernetes API (default: 1000)",
 	)
 	flag.StringVar(
 		&c.Kubeconfig,

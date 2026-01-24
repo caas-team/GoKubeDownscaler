@@ -99,6 +99,24 @@ Here is a list of all the available runtime configurations for the Downscaler.
 - Default: none (the downscaler will use the creation time of the workload)
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
 
+### QPS
+
+- Type: float64
+- Description: Sets the maximum number of queries per second (QPS) that the downscaler can make to the Kubernetes API server.
+  For more information, refer to the
+  [Kubernets Documentation](https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1)
+- Default: 500
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+## Burst
+
+- Type: int
+- Description: Sets the maximum burst rate the downscaler can use when throttling requests to the Kubernetes API server.
+  For more information, refer to the
+  [Kubernets Documentation](https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1)
+- Default: 1000
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
 ### Leader Election
 
 - Type: boolean
