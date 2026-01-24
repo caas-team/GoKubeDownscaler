@@ -74,6 +74,21 @@ func initComponent() (runtimeConfig *runtimeConfiguration, scopeDefault, scopeCl
 
 	scopeDefault, scopeCli, scopeEnv = values.InitScopes()
 
+	if runtimeConfig.JsonLogs {
+		opts := &slog.HandlerOptions{
+			ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
+				if a.Key == slog.LevelKey {
+					a.Key = "severity"
+				}
+
+				return a
+			},
+		}
+
+		jsonLogger := slog.New(slog.NewJSONHandler(os.Stdout, opts))
+		slog.SetDefault(jsonLogger)
+	}
+
 	if runtimeConfig.Debug || runtimeConfig.DryRun {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
@@ -100,16 +115,20 @@ func setupControllerRuntimeLogEncoding(runtimeConfig *runtimeConfiguration) zap.
 		level = zapcore.InfoLevel
 	}
 
+	development := !runtimeConfig.JsonLogs
+
 	return zap.Options{
-		Development: true,
+		Development: development,
 		Level:       level,
 		EncoderConfigOptions: []zap.EncoderConfigOption{
-			func(ec *zapcore.EncoderConfig) {
-				ec.NameKey = ""   // remove logger name
-				ec.CallerKey = "" // remove file info
-				ec.EncodeLevel = zapcore.CapitalLevelEncoder
-				ec.EncodeTime = zapcore.TimeEncoderOfLayout("2006/01/02 15:04:05")
-				ec.ConsoleSeparator = " "
+			func(encoder *zapcore.EncoderConfig) {
+				encoder.TimeKey = "time"
+				encoder.LevelKey = "severity"
+				encoder.NameKey = ""   // remove logger name
+				encoder.CallerKey = "" // remove file info
+				encoder.EncodeLevel = zapcore.CapitalLevelEncoder
+				encoder.EncodeTime = zapcore.TimeEncoderOfLayout("2006/01/02 15:04:05")
+				encoder.ConsoleSeparator = " "
 			},
 		},
 	}

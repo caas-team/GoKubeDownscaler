@@ -26,6 +26,8 @@ type CommonRuntimeConfiguration struct {
 	TimeAnnotation string
 	// MetricsEnabled sets if Prometheus metrics should be exposed.
 	MetricsEnabled bool
+	// JsonLogs sets logs in json format
+	JsonLogs bool
 	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
 	Kubeconfig string
 }
@@ -42,6 +44,7 @@ func GetDefaultConfig() *CommonRuntimeConfiguration {
 		TimeAnnotation:    "",
 		Kubeconfig:        "",
 		MetricsEnabled:    false,
+		JsonLogs:          false,
 	}
 }
 
@@ -94,6 +97,12 @@ func (c *CommonRuntimeConfiguration) ParseCommonFlags() {
 		"metrics",
 		false,
 		"expose Prometheus metrics (default: false)",
+	)
+	flag.BoolVar(
+		&c.JsonLogs,
+		"json-logs",
+		false,
+		"sets logs in json format (default: false)",
 	)
 	flag.StringVar(
 		&c.Kubeconfig,
