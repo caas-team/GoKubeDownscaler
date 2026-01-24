@@ -1,0 +1,31 @@
+---
+title: priorityClassName
+id: priorityClassName
+globalReference: docs-helm-priority-class-name
+description: How to set priorityClassName for the GoKubeDownscaler
+keywords: [priorityClassName]
+---
+
+# priorityClassName
+
+The `priorityClassName` value adds a priority class to the GoKubeDownscaler pods.
+
+:::info
+
+The default value for `priorityClassName` is:
+
+```yaml
+priorityClass:
+```
+
+:::
+
+This field allows the GoKubeDownscaler pods to be scheduled with a specific priority class.
+
+If you want to allow the GoKubeDownscaler pods to schedule with a priority class named `high-priority` you can set:
+
+```yaml
+priorityClassName: "high-priority"
+```
+
+For more information on priority classes you can reference [the official Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/).
