@@ -53,7 +53,7 @@ func main() {
 	scheme := apimachineryruntime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	client, err := kubernetes.NewClient(config.Kubeconfig, config.DryRun)
+	client, err := kubernetes.NewClient(config.Kubeconfig, config.DryRun, config.Qps, config.Burst)
 	if err != nil {
 		slog.Error("failed to create new Kubernetes client", "error", err)
 		os.Exit(1)
@@ -61,7 +61,7 @@ func main() {
 
 	// Create a second client that is not in dry-run mode, for cert rotation which should always be performed
 	// even when other operations are in dry-run mode
-	clientNoDryRun, err := kubernetes.NewClient(config.Kubeconfig, false)
+	clientNoDryRun, err := kubernetes.NewClient(config.Kubeconfig, false, config.Qps, config.Burst)
 	if err != nil {
 		slog.Error("failed to create new Kubernetes client", "error", err)
 		os.Exit(1)
