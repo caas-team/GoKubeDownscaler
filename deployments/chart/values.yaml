@@ -38,6 +38,8 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+priorityClassName: ""
+
 podSecurityContext:
   runAsGroup: 1000
   runAsNonRoot: true
@@ -94,6 +96,8 @@ webhookController:
     tag: "" # Dynamically set from CI
 
   replicaCount: 1
+
+  priorityClassName: ""
 
   extraArguments:
   #  - --interval=60

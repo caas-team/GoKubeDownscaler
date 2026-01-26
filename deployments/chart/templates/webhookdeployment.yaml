@@ -25,6 +25,9 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ include "go-kube-downscaler.webhookController.fullname" . }}
+      {{- if .Values.webhookController.priorityClassName }}
+      priorityClassName: {{ .Values.webhookController.priorityClassName }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}-webhook
           image: "{{ .Values.webhookController.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

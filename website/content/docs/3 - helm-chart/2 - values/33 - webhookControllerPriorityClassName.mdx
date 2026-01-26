@@ -1,0 +1,33 @@
+---
+title: webhookControllerPriorityClassName
+id: webhookControllerPriorityClassName
+globalReference: docs-helm-webhook-controller-priority-class-name
+description: How to set priorityClassName for the GoKubeDownscaler Webhook Deployment
+keywords: [webhookControllerPriorityClassName]
+---
+
+# webhookController.priorityClassName
+
+The `webhookController.priorityClassName` value adds a priority class to the GoKubeDownscaler Webhook pods.
+
+:::info
+
+The default value for `webhookController.priorityClassName` is:
+
+```yaml
+webhookController:
+  priorityClassName: ""
+```
+
+:::
+
+This field allows the GoKubeDownscaler Webhook pods to be scheduled with a specific priority class.
+
+If you want to allow the GoKubeDownscaler Webhook pods to schedule with a priority class named `high-priority` you can set:
+
+```yaml
+webhookController:
+  priorityClassName: "high-priority"
+```
+
+For more information on priorityClasses you can reference [the official Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/).
