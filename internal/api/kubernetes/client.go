@@ -31,8 +31,9 @@ const (
 )
 
 var (
-	ErrNegativeBurst = stdErrors.New("burst argument must be non-negative")
-	ErrNegativeQPS   = stdErrors.New("qps argument must be non-negative")
+	ErrInvalidBurst = stdErrors.New("burst argument must greater than zero")
+	ErrInvalidQPS   = stdErrors.New("qps argument can't be zero, it can either be a positive value " +
+		"or a negative value to disable rate limiting")
 )
 
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
@@ -79,12 +80,12 @@ func NewClient(kubeconfig string, dryRun bool, qps float64, burst int) (client, 
 		return kubeclient, fmt.Errorf("failed to get config for Kubernetes: %w", err)
 	}
 
-	if qps < 0 {
-		return kubeclient, fmt.Errorf("%w: got %f", ErrNegativeQPS, qps)
+	if burst <= 0 {
+		return kubeclient, fmt.Errorf("%w: got %d", ErrInvalidBurst, burst)
 	}
 
-	if burst < 0 {
-		return kubeclient, fmt.Errorf("%w: got %d", ErrNegativeBurst, burst)
+	if qps == 0 {
+		return kubeclient, fmt.Errorf("%w", ErrInvalidQPS)
 	}
 
 	// set qps and burst rate limiting options. See https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1/

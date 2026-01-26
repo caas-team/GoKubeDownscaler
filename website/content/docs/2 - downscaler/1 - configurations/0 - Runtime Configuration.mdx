@@ -103,8 +103,8 @@ Here is a list of all the available runtime configurations for the Downscaler.
 
 - Type: float64
 - Description: Sets the maximum number of queries per second (QPS) that the downscaler can make to the Kubernetes API server.
-  For more information, refer to the
-  [Kubernets Documentation](https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1)
+  If you set QPS to a negative value rate limiting will be disabled even if you specify a Burst value.
+  [Kubernets Documentation](https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1) and
 - Default: 500
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
 
@@ -112,8 +112,10 @@ Here is a list of all the available runtime configurations for the Downscaler.
 
 - Type: int
 - Description: Sets the maximum burst rate the downscaler can use when throttling requests to the Kubernetes API server.
-  For more information, refer to the
-  [Kubernets Documentation](https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1)
+  Burst must be greater than 0, and it is only effective if QPS is set to a non-negative value.
+  It is strongly recommended to set
+  Burst to a value greater than QPS to allow for occasional spikes in request rates.
+  [Kubernets Documentation](https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1) and
 - Default: 1000
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
 
