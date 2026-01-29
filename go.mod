@@ -6,19 +6,19 @@ require (
 	github.com/argoproj/argo-rollouts v1.8.3
 	github.com/kedacore/keda/v2 v2.18.3
 	github.com/open-policy-agent/cert-controller v0.15.0
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.88.0
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.88.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.88.1
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.88.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
 	github.com/wI2L/jsondiff v0.7.0
-	github.com/zalando-incubator/stackset-controller v1.4.123
+	github.com/zalando-incubator/stackset-controller v1.4.125
 	go.uber.org/zap v1.27.1
 	k8s.io/api v0.35.0
 	k8s.io/apimachinery v0.35.0
 	k8s.io/apiserver v0.35.0
 	k8s.io/client-go v0.35.0
 	k8s.io/component-base v0.35.0
-	sigs.k8s.io/controller-runtime v0.22.4
+	sigs.k8s.io/controller-runtime v0.23.1
 )
 
 require (
@@ -118,6 +118,6 @@ require (
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.34.0 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
-	sigs.k8s.io/structured-merge-diff/v6 v6.3.1 // indirect
+	sigs.k8s.io/structured-merge-diff/v6 v6.3.2-0.20260122202528-d9cc6641c482 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
