@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	actionsv1alpha1 "github.com/actions/actions-runner-controller/apis/actions.github.com/v1alpha1"
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
@@ -21,8 +22,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -72,6 +75,7 @@ func NewClient(kubeconfig string, dryRun bool, qps float64, burst int) (client, 
 	var kubeclient client
 
 	var clientsets scalable.Clientsets
+	var scheme *runtime.Scheme
 
 	kubeclient.dryRun = dryRun
 
@@ -117,9 +121,34 @@ func NewClient(kubeconfig string, dryRun bool, qps float64, burst int) (client, 
 		return kubeclient, fmt.Errorf("failed to get clientset for monitoring resources: %w", err)
 	}
 
+	scheme, err = NewScheme()
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to build scheme: %w", err)
+	}
+
+	clientsets.Client, err = ctrlclient.New(config, ctrlclient.Options{
+		Scheme: scheme,
+	})
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to get controller runtime client: %w", err)
+	}
+
 	kubeclient.clientsets = &clientsets
 
 	return kubeclient, nil
+}
+
+// NewScheme creates a new runtime.Scheme with all needed APIs registered.
+func NewScheme() (*runtime.Scheme, error) {
+	scheme := runtime.NewScheme()
+
+	// GitHub Actions Runner Controller CRDs
+	err := actionsv1alpha1.AddToScheme(scheme)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add a scheme to generic client: %w", err)
+	}
+
+	return scheme, nil
 }
 
 // client is a Kubernetes client with downscaling specific functions.
