@@ -4,6 +4,9 @@ import * as ArgoSVG from "@site/static/img/Argo.svg";
 import * as KubernetesSVG from "@site/static/img/Kubernetes.svg";
 import * as KedaSVG from "@site/static/img/Keda.svg";
 import * as ZalandoSVG from "@site/static/img/Zalando.svg";
+import * as GithubLightSVG from "@site/static/img/Github-white.svg";
+import * as GithubDarkSVG from "@site/static/img/Github.svg";
+import { useColorMode } from "@docusaurus/theme-common";
 import Link from "@docusaurus/Link";
 
 const delayClasses = [
@@ -17,19 +20,22 @@ const delayClasses = [
 const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
   {
     title: "Prometheus",
-    Svg: PrometheusSVG.default,
+    SvgLight: PrometheusSVG.default,
+    SvgDark: PrometheusSVG.default,
     href: "https://prometheus.io/",
     supportedResources: ["Prometheuses"],
   },
   {
     title: "Argo",
-    Svg: ArgoSVG.default,
+    SvgLight: ArgoSVG.default,
+    SvgDark: ArgoSVG.default,
     href: "https://argoproj.github.io/",
     supportedResources: ["Rollouts"],
   },
   {
     title: "Kubernetes",
-    Svg: KubernetesSVG.default,
+    SvgLight: KubernetesSVG.default,
+    SvgDark: KubernetesSVG.default,
     href: "https://kubernetes.io/",
     supportedResources: [
       "Deployment",
@@ -43,25 +49,37 @@ const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
   },
   {
     title: "Keda",
-    Svg: KedaSVG.default,
+    SvgLight: KedaSVG.default,
+    SvgDark: KedaSVG.default,
     href: "https://keda.sh/",
     supportedResources: ["ScaledObjects"],
   },
   {
     title: "Zalando",
-    Svg: ZalandoSVG.default,
+    SvgLight: ZalandoSVG.default,
+    SvgDark: ZalandoSVG.default,
     href: "https://opensource.zalando.com/",
     supportedResources: ["Stacks"],
+  },
+  {
+    title: "Github Actions",
+    SvgLight: GithubDarkSVG.default,
+    SvgDark: GithubLightSVG.default,
+    href: "https://docs.github.com/en/actions/concepts/runners/actions-runner-controller",
+    supportedResources: ["AutoscalingRunnerSet"],
   },
 ];
 
 function SupportedResourceGroup({
   title,
-  Svg,
+  SvgLight,
+  SvgDark,
   href,
   supportedResources,
   className,
 }: SupportedResourceGroupProps) {
+  const { colorMode } = useColorMode();
+  const Svg = colorMode === "dark" ? SvgDark : SvgLight;
   return (
     <div
       className={`animate-fade-down max-w-full px-4 pb-8 w-full xl:flex-1 ${className}`}
@@ -88,8 +106,8 @@ export function SupportedResources(): JSX.Element {
         Supported Resources
       </Heading>
       <section className="flex items-center p-8 w-full">
-        <div className="mx-auto max-w-6xl px-4 w-full">
-          <div className="flex flex-wrap -mx-4 space-x-4">
+        <div className="mx-auto max-w-7xl px-4 w-full">
+          <div className="flex flex-wrap -mx-2 space-x-2">
             {SupportedResourceGroupList.map((props, idx) => (
               <SupportedResourceGroup
                 className={delayClasses[idx] || ""}
