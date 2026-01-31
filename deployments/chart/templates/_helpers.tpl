@@ -406,3 +406,156 @@ Create webhook resources
 {{ end -}}
 {{ end -}}
 {{- end }}
+
+
+{{/*
+resources include in annotationsCompliance
+*/}}
+{{- define "go-kube-downscaler.annotationsCompliance" -}}
+{{- $createUpdate := .createUpdate | default false }}
+{{- range $resource := .Values.includedResources -}}
+{{ if eq $resource "deployments" -}}
+- apiGroups:
+    - apps
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - deployments
+{{ end -}}
+{{ if eq $resource "statefulsets" -}}
+- apiGroups:
+    - apps
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - statefulsets
+{{ end -}}
+{{ if eq $resource "daemonsets" -}}
+- apiGroups:
+    - apps
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - daemonsets
+{{ end -}}
+{{ if eq $resource "rollouts" -}}
+- apiGroups:
+    - argoproj.io
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - rollouts
+{{ end -}}
+{{ if eq $resource "horizontalpodautoscalers" -}}
+- apiGroups:
+    - autoscaling
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - horizontalpodautoscalers
+{{ end -}}
+{{ if eq $resource "jobs" -}}
+- apiGroups:
+    - batch
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - jobs
+{{ end -}}
+{{ if eq $resource "cronjobs" -}}
+- apiGroups:
+    - batch
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - cronjobs
+{{ end -}}
+{{ if eq $resource "scaledobjects" -}}
+- apiGroups:
+    - keda.sh
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - scaledobjects
+{{ end -}}
+{{ if eq $resource "stacks" -}}
+- apiGroups:
+    - zalando.org
+  resources:
+    - stacks
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+{{ end -}}
+{{ if eq $resource "prometheuses" -}}
+- apiGroups:
+    - monitoring.coreos.com
+  resources:
+    - prometheuses
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+{{ end -}}
+{{ if eq $resource "poddisruptionbudgets" -}}
+- apiGroups:
+    - policy
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - poddisruptionbudgets
+{{ end -}}
+{{ end -}}
+{{- end }}
