@@ -15,6 +15,7 @@ const delayClasses = [
   "animate-delay-500",
   "animate-delay-750",
   "animate-delay-1000",
+  "animate-delay-1250",
 ];
 
 const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
@@ -82,7 +83,7 @@ function SupportedResourceGroup({
   const Svg = colorMode === "dark" ? SvgDark : SvgLight;
   return (
     <div
-      className={`animate-fade-down max-w-full px-4 pb-8 w-full xl:flex-1 ${className}`}
+      className={`animate-fade-down max-w-full px-2 pb-8 w-full xl:flex-1 ${className}`}
     >
       <div className="flex justify-center mb-2">
         <Link href={href}>
@@ -107,7 +108,7 @@ export function SupportedResources(): JSX.Element {
       </Heading>
       <section className="flex items-center p-8 w-full">
         <div className="mx-auto max-w-7xl px-4 w-full">
-          <div className="flex flex-wrap -mx-2 space-x-2">
+          <div className="flex flex-wrap -mx-4 space-x-4">
             {SupportedResourceGroupList.map((props, idx) => (
               <SupportedResourceGroup
                 className={delayClasses[idx] || ""}
