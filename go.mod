@@ -3,6 +3,7 @@ module github.com/caas-team/gokubedownscaler
 go 1.25.5
 
 require (
+	github.com/actions/actions-runner-controller v0.27.6
 	github.com/argoproj/argo-rollouts v1.8.3
 	github.com/kedacore/keda/v2 v2.18.3
 	github.com/open-policy-agent/cert-controller v0.15.0
