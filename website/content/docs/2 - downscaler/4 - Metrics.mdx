@@ -137,30 +137,30 @@ Common metrics are listed at the end, as they are always present.
 ### Webhook Dry-Run Metrics
 
 - **metric_name**: `kubedownscaler_potential_validate_workload_admission_requests_total`
-- type: counter
-- dimensions: namespace, result
-- description: Number of workloads intercepted by kubedownscaler webhook broken down by namespace and result of mutating review.
+  - type: counter
+  - dimensions: namespace, result
+  - description: Number of workloads intercepted by kubedownscaler webhook broken down by namespace and result of mutating review.
 
 ### Webhook Production Metrics
 
 - **metric_name**: `kubedownscaler_validate_workload_admission_requests_total`
-- type: counter
-- dimensions: namespace, result
-- description: Number of workloads intercepted by kubedownscaler webhook broken down by namespace and result of mutating review.
+  - type: counter
+  - dimensions: namespace, result
+  - description: Number of workloads intercepted by kubedownscaler webhook broken down by namespace and result of mutating review.
 
 ### Webhook Common Metrics
 
 - **metric_name**: `controller_runtime_webhook_latency_seconds`
-- type: histogram
-- dimensions: webhook
-- description: Measures the latency of processing admission webhook requests broken down by webhook path.
+  - type: histogram
+  - dimensions: webhook
+  - description: Measures the latency of processing admission webhook requests broken down by webhook path.
 
 - **metric_name**: `controller_runtime_webhook_requests_in_flight`
-- type: counter
-- dimensions: webhook
-- description: Measures the webhook requests currently being processed broken down by webhook path.
+  - type: counter
+  - dimensions: webhook
+  - description: Measures the webhook requests currently being processed broken down by webhook path.
 
 - **metric_name**: `controller_runtime_webhook_requests_total`
-- type: counter
-- dimensions: code, webhook
-- description: Measures the total number of webhook requests received broken down by http code webhook path.
+  - type: counter
+  - dimensions: code, webhook
+  - description: Measures the total number of webhook requests received broken down by http code webhook path.
