@@ -71,6 +71,8 @@ type Client interface {
 }
 
 // NewClient makes a new Client.
+//
+// nolint: cyclop // this function is complex due to the multiple clientsets being created.
 func NewClient(kubeconfig string, dryRun bool, qps float64, burst int) (client, error) {
 	var kubeclient client
 
