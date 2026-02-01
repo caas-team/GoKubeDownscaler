@@ -31,6 +31,17 @@ jobs:
             ${{ inputs.setLatest && 'latest' || '' }}
             ${{ inputs.appVersion }}
 
+      - name: Docker meta webhook
+        id: meta-webhook
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            mtr.devops.telekom.de/caas/go-kube-downscaler-webhook
+            ghcr.io/caas-team/gokubedownscaler-webhook
+          tags: |
+            ${{ inputs.setLatest && 'latest' || '' }}
+            ${{ inputs.appVersion }}
+
       - name: Install Cosign
         uses: sigstore/cosign-installer@main
         with:
@@ -61,14 +72,27 @@ jobs:
         id: build-push
         with:
           context: .
+          file: ./build/kubedownscaler/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+
+      - name: Build and push webhook
+        uses: docker/build-push-action@v6
+        id: build-push-webhook
+        with:
+          context: .
+          file: ./build/admissioncontroller/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta-webhook.outputs.tags }}
 
       - name: Sign Push
         run: |
           cosign sign --key env://COSIGN_KEY --tlog-upload=false ghcr.io/caas-team/gokubedownscaler@${{ steps.build-push.outputs.digest }}
           cosign sign --key env://COSIGN_KEY --tlog-upload=false mtr.devops.telekom.de/caas/go-kube-downscaler@${{ steps.build-push.outputs.digest }}
+          cosign sign --key env://COSIGN_KEY --tlog-upload=false ghcr.io/caas-team/gokubedownscaler-webhook@${{ steps.build-push-webhook.outputs.digest }}
+          cosign sign --key env://COSIGN_KEY --tlog-upload=false mtr.devops.telekom.de/caas/go-kube-downscaler-webhook@${{ steps.build-push-webhook.outputs.digest }}
         env:
           COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
 
