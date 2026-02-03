@@ -1,0 +1,66 @@
+---
+title: Announcing GoKubeDownscaler 1.3.0
+description: This blog post announces the release of GoKubeDownscaler version 1.3.0, highlighting new features, improvements, and bug fixes.
+slug: announcing-gokubedownscaler-1-3-0
+authors:
+  - GoKubeDownscalerTeam
+tags: [release, 1.3.0, go-kube-downscaler]
+---
+
+# Announcing GoKubeDownscaler 1.3.0
+
+We are pleased to announce the release of version 1.3.0 of GoKubeDownscaler.
+This release represents a significant milestone as it officially brings the project to GA
+and brings it into feature parity with the original, popular PyKubeDownscaler written in Python.
+{/* truncate */}
+From now on, all development and new features will focus primarily on this project, with the goal of making it available
+within the CNCF landscape.
+
+## New Features
+
+Over the past few months, in addition to adapting PyKubeDownscaler features within this new project,
+we have been working hard to release as many new features and improvements as possible to make Kubernetes downscaling
+and cost optimization workflows as effective as possible.
+Among the new features are:
+
+- **Introduction of Metrics**: Starting today, GoKubeDownscaler exposes a series of metrics that can be used for production alerts,
+  general statistics, and tracking of CPU and memory savings.
+  Metrics can be exposed using the `--metrics` argument.
+- **Performance Optimizations**: GoKubeDownscaler introduces new quality-of-life performance improvements.
+  API calls have been optimized and reduced,
+  multithreaded execution has been introduced, leveraging Go's native parallelism.
+  Resource usage has been minimized, especially during idle situations.
+- **Webhook Introduction**: An optional webhook has been introduced that can perform scaling during resource admission phases.
+  This is very useful for ensuring cluster compliance and avoiding unnecessary scale-ups that could occur if a resource is deployed
+  between two KubeDownscaler cycles.
+  The webhook can be installed via Helm Chart.
+- **Regulated API Server Access**: GoKubeDownscaler now natively supports and customizes QPS and Burst values to avoid saturating the API Server
+  during downscaling peaks.
+  The user can adjust these values using the `--qps` and `--burst` arguments.
+- **Introducing JSON Logs**: GoKubeDownscaler can now print logs in JSON format using the --json-logs argument.
+
+## How To Migrate From PyKubeDownscaler
+
+To migrate from PyKubeDownscaler, you can follow the dedicated guide in our documentation at this link.
+We expect the migration to be quick and with only a few changes required.
+We recommend reading the guide carefully to avoid missing any details.
+The development team is available to answer any questions or address any issues within the "Issues" or "Discussions" sections
+of the GitHub repository.
+
+## PyKubeDownscaler Set In Maintenance Mode
+
+For anyone wondering what will happen from now on to the PyKubeDownscaler project, our fork of the original KubeDownscaler
+that we have maintained, evolved, and refined over the past two years, we assure you that we will continue to support the tool
+with bug fixes, security patches, helm chart changes, and the introduction of any mandatory features.
+
+## Adopters
+
+If your company actively uses the GoKubeDownscaler, you can contact us through our [slack channel](https://inviter.co/kube-downscaler)
+to add your logo to our showcase carousel in the homepage of our website.
+
+## Conclusions
+
+The development team sincerely thanks everyone who, over the past year and half, supported the development of this new tool by
+volunteering their time, offering ideas, suggestions, and pull requests.
+In the coming months we expect to add as many features as possible
+to make this project more and more attractive, stay tuned!

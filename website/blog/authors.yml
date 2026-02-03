@@ -22,3 +22,8 @@ JTaeuber:
   email: jan.taeuber@telekom.de
   socials:
     github: JTaeuber
+GoKubeDownscalerTeam:
+  name: GoKubeDownscaler Maintainers
+  title: Development Team of the GoKubeDownscaler
+  url: https://github.com/caas-team/GoKubeDownscaler
+  image_url: /img/kubedownscaler.svg

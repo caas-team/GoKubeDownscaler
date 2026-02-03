@@ -28,14 +28,14 @@ Information on how to install the Downscaler is on [our website](https://caas-te
 
 ### Missing Features
 
-Currently the GoKubeDownscaler is still a WIP.
-This means that there still might be some features missing from the py-kube-downscaler.
+GoKubeDownscaler is now GA.
+This means that the core py-kube-downscaler features are all present, though there’s a small chance we might have missed something
 You can find a list of the known-missing features [under the `missing feature` label](/../../labels/missing%20feature).
-If you think that any other features are missing or you have an idea for a new feature, feel free to open an [Issue](/../../issues/).
+If you think that any other features are missing, or you have an idea for a new feature, feel free to open an [Issue](/../../issues/).
 
 ## Developing
 
-This section covers the basics of developing on this repo, a more detailed guide can be found on [our website](https://caas-team.github.io/GoKubeDownscaler/guides/developing).
+This section covers the basics of developing on this repo, a more detailed guide can be found on [our website](https://caas-team.github.io/GoKubeDownscaler/contributing/developing).
 
 Please read the [contribution manifest](./CONTRIBUTING.md).
 
