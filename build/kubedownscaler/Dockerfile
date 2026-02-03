@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY ../.. /tmp/kubedownscaler
 
-RUN CGO_ENABLED=0 go build -o bin/gokubedownscaler ./cmd/kubedownscaler
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/gokubedownscaler ./cmd/kubedownscaler
 
 FROM scratch
 
