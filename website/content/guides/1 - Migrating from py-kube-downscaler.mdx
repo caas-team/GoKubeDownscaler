@@ -42,6 +42,12 @@ For that you can follow our [Installation Guide](ref:guides-installation).
 
 ## Features
 
+This section contains a list of the new features and quality of life improvements that were added
+during the rewrite from py-kube-downscaler to GoKubeDownscaler.
+When a new feature introduced a breaking change
+it will be mentioned in the respective feature section and also summarized in the
+[breaking changes table](#breaking-changes).
+
 ### Incompatibility
 
 Some [values](ref:docs-values) are now incompatible with each other.
@@ -58,6 +64,14 @@ This makes it more intuitive to configure.
 
 The downscaler now uses [RFC3339 timestamps](https://datatracker.ietf.org/doc/html/rfc3339) exclusively.
 This means that you will not have to juggle with multiple timestamp formats.
+
+See the [breaking changes entry](#from-features) for more information.
+
+### Go Regex Flavor
+
+The downscaler now uses the [Go regex flavor](https://pkg.go.dev/regexp/syntax#hdr-Syntax) instead of the Python one.
+This means that some of the regex patterns you used before might not work anymore
+and need to be checked and eventually refactored.
 
 See the [breaking changes entry](#from-features) for more information.
 
@@ -144,6 +158,7 @@ This is a collection of breaking changes caused by a feature:
 | ----------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [Incompatibility](#incompatibility)       | Will now error out and skip scaling if misconfigured | low - might cause some workloads not to be scaled                                                                                                |
 | [Actual Exclusion](#actual-exclusion)     | Excluded workloads will no longer be scaled up       | low - if you relied on this quirk, the classic behavior can always be restored using [Exclusion Upscale](ref:docs-values#upscale-excluded) value |
+| [Go Regex Flavor](#go-regex-flavor)       | Python regex flavor is no longer used                | low to medium - existing regex rules must be checked and eventually refactored using [Go flavor](https://pkg.go.dev/regexp/syntax#hdr-Syntax)    |
 | [Scopes](#scopes)                         | Scaling value order is now consistent                | medium - could result in other values setting scaling                                                                                            |
 | [Uniform Timestamps](#uniform-timestamps) | RFC3339 timestamps are now used exclusively          | medium - some workloads might need to be updated                                                                                                 |
 
