@@ -1,0 +1,60 @@
+---
+title: healthProbes
+id: healthProbes
+globalReference: docs-helm-health-probes
+description: How to customize the health probes used by GoKubeDownscaler Deployment
+keywords: [healthProbes, livenessProbe, readinessProbe]
+---
+
+# HealthProbes
+
+The `healthProbes` section defines how some of the health probes properties should be set.
+
+:::info
+
+```yaml
+healthProbes:
+readinessProbe:
+  enabled: true
+  failureThreshold: 3
+  initialDelaySeconds: 5
+  periodSeconds: 3
+  timeoutSeconds: 2
+  successThreshold: 1
+
+livenessProbe:
+  enabled: true
+  failureThreshold: 3
+  initialDelaySeconds: 5
+  periodSeconds: 3
+  timeoutSeconds: 2
+  successThreshold: 1
+```
+
+:::
+
+The basic fields that can be set are:
+
+- `healthProbes.readinessProbe.enabled`: Enables or disables the readiness probe for the GoKubeDownscaler.
+  When enabled, the API server checks if the GoKubeDownscaler is ready to serve traffic.
+- `healthProbes.readinessProbe.failureThreshold`: The number of consecutive probe failures that must occur before the
+  GoKubeDownscaler is considered unready.
+- `healthProbes.readinessProbe.initialDelaySeconds`: The number of seconds after the container starts before the
+  readiness probe is initiated.
+- `healthProbes.readinessProbe.periodSeconds`: How often (in seconds) the readiness probe is performed.
+- `healthProbes.readinessProbe.timeoutSeconds`: The number of seconds after which the readiness probe times out if no
+  response is received.
+- `healthProbes.readinessProbe.successThreshold`: The number of consecutive successful probes required
+  for the GoKubeDownscaler to be considered ready
+
+- `healthProbes.livenessProbe.enabled`: Enables or disables the liveness probe for the GoKubeDownscaler.
+  When enabled, the API server checks if the GoKubeDownscaler is still alive and functioning.
+- `healthProbes.livenessProbe.failureThreshold`: The number of consecutive probe failures that must occur before the
+  GoKubeDownscaler is considered unhealthy and restarted.
+- `healthProbes.livenessProbe.initialDelaySeconds`: The number of seconds after the container starts before the liveness
+  probe is initiated.
+- `healthProbes.livenessProbe.periodSeconds`: How often (in seconds) the liveness probe is performed.
+- `healthProbes.livenessProbe.timeoutSeconds`: The number of seconds after which the liveness probe times out if no
+  response is received.
+- `healthProbes.livenessProbe.successThreshold`: The number of consecutive successful probes required
+  for the GoKubeDownscaler to be considered healthy

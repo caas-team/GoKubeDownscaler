@@ -55,6 +55,23 @@ securityContext:
     drop:
       - ALL
 
+healthProbes:
+  readinessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 5
+    periodSeconds: 3
+    timeoutSeconds: 2
+    successThreshold: 1
+
+  livenessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 5
+    periodSeconds: 3
+    timeoutSeconds: 2
+    successThreshold: 1
+
 resources:
   limits:
     cpu: 2000m
@@ -111,6 +128,7 @@ webhookController:
       initialDelaySeconds: 5
       periodSeconds: 3
       timeoutSeconds: 2
+      successThreshold: 1
 
     livenessProbe:
       enabled: true
@@ -118,6 +136,7 @@ webhookController:
       initialDelaySeconds: 5
       periodSeconds: 3
       timeoutSeconds: 2
+      successThreshold: 1
 
   resources:
     limits:

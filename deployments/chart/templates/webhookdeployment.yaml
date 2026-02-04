@@ -78,6 +78,7 @@ spec:
             initialDelaySeconds: {{ .Values.webhookController.healthProbes.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.webhookController.healthProbes.readinessProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.webhookController.healthProbes.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.webhookController.healthProbes.readinessProbe.successThreshold }}
           {{- end }}
           {{- if .Values.webhookController.healthProbes.readinessProbe.enabled }}
           livenessProbe:
@@ -88,6 +89,7 @@ spec:
             initialDelaySeconds: {{ .Values.webhookController.healthProbes.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.webhookController.healthProbes.livenessProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.webhookController.healthProbes.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.webhookController.healthProbes.livenessProbe.successThreshold }}
           {{- end }}
       volumes:
         - name: tls
