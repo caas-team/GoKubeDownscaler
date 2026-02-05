@@ -43,6 +43,8 @@ func main() {
 
 	defer cancel()
 
+	go serveHealth()
+
 	if !config.LeaderElection {
 		runWithoutLeaderElection(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
 		return
@@ -75,6 +77,33 @@ func serveMetrics() {
 	}
 
 	slog.Info("serving metrics on /metrics")
+}
+
+// serveHealth starts the health server for the downscaler.
+func serveHealth() {
+	pathRecorderMux := http.NewServeMux()
+
+	pathRecorderMux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	pathRecorderMux.HandleFunc("/readyz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	server := &http.Server{
+		Addr:         ":8081",
+		Handler:      pathRecorderMux,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+
+	err := server.ListenAndServe()
+	if err != nil {
+		slog.Error("failed to start health server", "error", err)
+		os.Exit(1)
+	}
 }
 
 // runWithLeaderElection runs the downscaler with leader election enabled.

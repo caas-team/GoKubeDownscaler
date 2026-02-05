@@ -21,6 +21,7 @@ webhookController:
       initialDelaySeconds: 5
       periodSeconds: 3
       timeoutSeconds: 2
+      successThreshold: 1
 
     livenessProbe:
       enabled: true
@@ -28,6 +29,7 @@ webhookController:
       initialDelaySeconds: 5
       periodSeconds: 3
       timeoutSeconds: 2
+      successThreshold: 1
 ```
 
 :::
@@ -43,6 +45,8 @@ The basic fields that can be set are:
 - `webhookController.healthProbes.readinessProbe.periodSeconds`: How often (in seconds) the readiness probe is performed.
 - `webhookController.healthProbes.readinessProbe.timeoutSeconds`: The number of seconds after which the readiness probe times out if no
   response is received.
+- `webhookController.healthProbes.readinessProbe.successThreshold`: The number of consecutive successful probes required
+  for the webhook to be considered ready
 
 - `webhookController.healthProbes.livenessProbe.enabled`: Enables or disables the liveness probe for the webhook.
   When enabled, the API server checks if the webhook is still alive and functioning.
@@ -53,3 +57,5 @@ The basic fields that can be set are:
 - `webhookController.healthProbes.livenessProbe.periodSeconds`: How often (in seconds) the liveness probe is performed.
 - `webhookController.healthProbes.livenessProbe.timeoutSeconds`: The number of seconds after which the liveness probe times out if no
   response is received.
+- `webhookController.healthProbes.livenessProbe.successThreshold`: The number of consecutive successful probes required
+  for the webhook to be considered healthy

@@ -61,6 +61,28 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.healthProbes.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            failureThreshold: {{ .Values.healthProbes.readinessProbe.failureThreshold }}
+            initialDelaySeconds: {{ .Values.healthProbes.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthProbes.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthProbes.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.healthProbes.readinessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.healthProbes.readinessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            failureThreshold: {{ .Values.healthProbes.livenessProbe.failureThreshold }}
+            initialDelaySeconds: {{ .Values.healthProbes.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthProbes.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthProbes.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.healthProbes.livenessProbe.successThreshold }}
+          {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
