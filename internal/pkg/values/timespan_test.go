@@ -9,6 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
 func TestParseRelativeTimeSpan(t *testing.T) {
 	t.Parallel()
 
@@ -23,10 +27,10 @@ func TestParseRelativeTimeSpan(t *testing.T) {
 			timespanString: "Mon-Fri 07:00-16:00 UTC",
 			wantResult: &relativeTimeSpan{
 				timezone:    time.UTC,
-				weekdayFrom: time.Monday,
-				weekdayTo:   time.Friday,
-				timeFrom:    7 * Hour,
-				timeTo:      16 * Hour,
+				weekdayFrom: ptr(time.Monday),
+				weekdayTo:   ptr(time.Friday),
+				timeFrom:    ptr(7 * Hour),
+				timeTo:      ptr(16 * Hour),
 			},
 			wantErr: false,
 		},
@@ -35,10 +39,10 @@ func TestParseRelativeTimeSpan(t *testing.T) {
 			timespanString: "Sat-Sun 20:00-06:00 UTC",
 			wantResult: &relativeTimeSpan{
 				timezone:    time.UTC,
-				weekdayFrom: time.Saturday,
-				weekdayTo:   time.Sunday,
-				timeFrom:    20 * Hour,
-				timeTo:      6 * Hour,
+				weekdayFrom: ptr(time.Saturday),
+				weekdayTo:   ptr(time.Sunday),
+				timeFrom:    ptr(20 * Hour),
+				timeTo:      ptr(6 * Hour),
 			},
 			wantErr: false,
 		},
@@ -67,14 +71,56 @@ func TestParseRelativeTimeSpan(t *testing.T) {
 			wantErr:        true,
 		},
 		{
+			name:           "no weekdays format",
+			timespanString: "03:00-04:00 UTC",
+			wantResult: &relativeTimeSpan{
+				timezone:    time.UTC,
+				weekdayFrom: nil,
+				weekdayTo:   nil,
+				timeFrom:    ptr(3 * Hour),
+				timeTo:      ptr(4 * Hour),
+			},
+			wantErr: false,
+		},
+		{
+			name:           "no timezone format",
+			timespanString: "Mon-Fri 03:00-04:00",
+			wantResult: &relativeTimeSpan{
+				timezone:    nil,
+				weekdayFrom: ptr(time.Monday),
+				weekdayTo:   ptr(time.Friday),
+				timeFrom:    ptr(3 * Hour),
+				timeTo:      ptr(4 * Hour),
+			},
+			wantErr: false,
+		},
+		{
+			name:           "no timezone no weekdays format",
+			timespanString: "03:00-04:00",
+			wantResult: &relativeTimeSpan{
+				timezone:    nil,
+				weekdayFrom: nil,
+				weekdayTo:   nil,
+				timeFrom:    ptr(3 * Hour),
+				timeTo:      ptr(4 * Hour),
+			},
+			wantErr: false,
+		},
+		{
+			name:           "invalid Format",
+			timespanString: "Mon-Fri 03:00-04-00 UTC",
+			wantResult:     nil,
+			wantErr:        true,
+		},
+		{
 			name:           "all day",
 			timespanString: "Mon-Fri 00:00-24:00 UTC",
 			wantResult: &relativeTimeSpan{
 				timezone:    time.UTC,
-				weekdayFrom: time.Monday,
-				weekdayTo:   time.Friday,
-				timeFrom:    0 * Hour,
-				timeTo:      24 * Hour,
+				weekdayFrom: ptr(time.Monday),
+				weekdayTo:   ptr(time.Friday),
+				timeFrom:    ptr(0 * Hour),
+				timeTo:      ptr(24 * Hour),
 			},
 			wantErr: false,
 		},
@@ -107,37 +153,37 @@ func TestRelativeTimeSpan_isWeekdayInRange(t *testing.T) {
 	}{
 		{
 			name:       "in range",
-			timespan:   relativeTimeSpan{weekdayFrom: time.Monday, weekdayTo: time.Friday},
+			timespan:   relativeTimeSpan{weekdayFrom: ptr(time.Monday), weekdayTo: ptr(time.Friday)},
 			weekday:    time.Wednesday,
 			wantResult: true,
 		},
 		{
 			name:       "from in range",
-			timespan:   relativeTimeSpan{weekdayFrom: time.Monday, weekdayTo: time.Friday},
+			timespan:   relativeTimeSpan{weekdayFrom: ptr(time.Monday), weekdayTo: ptr(time.Friday)},
 			weekday:    time.Monday,
 			wantResult: true,
 		},
 		{
 			name:       "to in range",
-			timespan:   relativeTimeSpan{weekdayFrom: time.Monday, weekdayTo: time.Friday},
+			timespan:   relativeTimeSpan{weekdayFrom: ptr(time.Monday), weekdayTo: ptr(time.Friday)},
 			weekday:    time.Friday,
 			wantResult: true,
 		},
 		{
 			name:       "reverse in range",
-			timespan:   relativeTimeSpan{weekdayFrom: time.Saturday, weekdayTo: time.Sunday},
+			timespan:   relativeTimeSpan{weekdayFrom: ptr(time.Saturday), weekdayTo: ptr(time.Sunday)},
 			weekday:    time.Saturday,
 			wantResult: true,
 		},
 		{
 			name:       "reverse out of range",
-			timespan:   relativeTimeSpan{weekdayFrom: time.Saturday, weekdayTo: time.Sunday},
+			timespan:   relativeTimeSpan{weekdayFrom: ptr(time.Saturday), weekdayTo: ptr(time.Sunday)},
 			weekday:    time.Monday,
 			wantResult: false,
 		},
 		{
 			name:       "out of range",
-			timespan:   relativeTimeSpan{weekdayFrom: time.Monday, weekdayTo: time.Friday},
+			timespan:   relativeTimeSpan{weekdayFrom: ptr(time.Monday), weekdayTo: ptr(time.Friday)},
 			weekday:    time.Saturday,
 			wantResult: false,
 		},
@@ -164,79 +210,79 @@ func TestRelativeTimeSpan_isTimeOfDayInRange(t *testing.T) {
 	}{
 		{
 			name:       "in range",
-			timespan:   relativeTimeSpan{timeFrom: 6 * Hour, timeTo: 20 * Hour},
+			timespan:   relativeTimeSpan{timeFrom: ptr(6 * Hour), timeTo: ptr(20 * Hour)},
 			timeOfDay:  16 * Hour,
 			wantResult: true,
 		},
 		{
 			name:       "to out of range",
-			timespan:   relativeTimeSpan{timeFrom: 6 * Hour, timeTo: 20 * Hour},
+			timespan:   relativeTimeSpan{timeFrom: ptr(6 * Hour), timeTo: ptr(20 * Hour)},
 			timeOfDay:  20 * Hour,
 			wantResult: false,
 		},
 		{
 			name:       "reverse in range",
-			timespan:   relativeTimeSpan{timeFrom: 18 * Hour, timeTo: 4 * Hour},
+			timespan:   relativeTimeSpan{timeFrom: ptr(18 * Hour), timeTo: ptr(4 * Hour)},
 			timeOfDay:  3 * Hour,
 			wantResult: true,
 		},
 		{
 			name:       "reverse to out of range",
-			timespan:   relativeTimeSpan{timeFrom: 18 * Hour, timeTo: 4 * Hour},
+			timespan:   relativeTimeSpan{timeFrom: ptr(18 * Hour), timeTo: ptr(4 * Hour)},
 			timeOfDay:  4 * Hour,
 			wantResult: false,
 		},
 		{
 			name:       "from in range",
-			timespan:   relativeTimeSpan{timeFrom: 6 * Hour, timeTo: 20 * Hour},
+			timespan:   relativeTimeSpan{timeFrom: ptr(6 * Hour), timeTo: ptr(20 * Hour)},
 			timeOfDay:  6 * Hour,
 			wantResult: true,
 		},
 		{
 			name:       "reverse from in range",
-			timespan:   relativeTimeSpan{timeFrom: 18 * Hour, timeTo: 4 * Hour},
+			timespan:   relativeTimeSpan{timeFrom: ptr(18 * Hour), timeTo: ptr(4 * Hour)},
 			timeOfDay:  18 * Hour,
 			wantResult: true,
 		},
 		{
 			name:       "all day",
-			timespan:   relativeTimeSpan{timeFrom: 0 * Hour, timeTo: 24 * Hour},
+			timespan:   relativeTimeSpan{timeFrom: ptr(0 * Hour), timeTo: ptr(24 * Hour)},
 			timeOfDay:  18 * Hour,
 			wantResult: true,
 		},
 		{
 			name:       "all day overlap to next day",
-			timespan:   relativeTimeSpan{timeFrom: 0 * Hour, timeTo: 24 * Hour},
+			timespan:   relativeTimeSpan{timeFrom: ptr(0 * Hour), timeTo: ptr(24 * Hour)},
 			timeOfDay:  24*Hour - Minute,
 			wantResult: true,
 		},
 		{
 			name:       "all day start of day",
-			timespan:   relativeTimeSpan{timeFrom: 0 * Hour, timeTo: 24 * Hour},
+			timespan:   relativeTimeSpan{timeFrom: ptr(0 * Hour), timeTo: ptr(24 * Hour)},
 			timeOfDay:  0 * Hour,
 			wantResult: true,
 		},
 		{
 			name:       "24 never",
-			timespan:   relativeTimeSpan{timeFrom: 24 * Hour, timeTo: 0 * Hour},
+			timespan:   relativeTimeSpan{timeFrom: ptr(24 * Hour), timeTo: ptr(0 * Hour)},
 			timeOfDay:  18 * Hour,
 			wantResult: false,
 		},
 		{
 			name:       "24 never overlap to next day",
-			timespan:   relativeTimeSpan{timeFrom: 24 * Hour, timeTo: 0 * Hour},
+			timespan:   relativeTimeSpan{timeFrom: ptr(24 * Hour), timeTo: ptr(0 * Hour)},
 			timeOfDay:  24*Hour - Minute,
 			wantResult: false,
 		},
 		{
 			name:       "24 never start of day",
-			timespan:   relativeTimeSpan{timeFrom: 24 * Hour, timeTo: 0 * Hour},
+			timespan:   relativeTimeSpan{timeFrom: ptr(24 * Hour), timeTo: ptr(0 * Hour)},
 			timeOfDay:  0 * Hour,
 			wantResult: false,
 		},
 		{
 			name:       "0 never",
-			timespan:   relativeTimeSpan{timeFrom: 0 * Hour, timeTo: 0 * Hour},
+			timespan:   relativeTimeSpan{timeFrom: ptr(0 * Hour), timeTo: ptr(0 * Hour)},
 			timeOfDay:  0 * Hour,
 			wantResult: false,
 		},
