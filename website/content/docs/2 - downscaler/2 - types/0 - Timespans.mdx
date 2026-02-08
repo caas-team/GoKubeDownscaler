@@ -47,6 +47,38 @@ See [RFC3339 Timestamps](https://datatracker.ietf.org/doc/html/rfc3339) for more
 You can reverse the times (example: `20:00-08:00`).
 This makes the timespan match the time from start of day until 08:00 and from 20:00 until the end of day.
 
+Relative timespans can also be defined without a timezone, without a week frame or with both missing.
+This setup
+however requires a global timezone and/or week frame to be set, otherwise the timespan would not be valid and scaling
+will result in an error.
+
+- Format: `<Time-Of-Day-From>-<Time-Of-Day-To> <Timezone>`
+- Requires: [DEFAULT_WEEKFRAME](ref:docs-values#weekframe) environment variable to be set
+- Examples:
+
+```text
+    08:00-20:00 Asia/Tokyo                # On the days defined in the global week frame: from 08:00 to 20:00
+    00:00-24:00 UTC                       # On the days defined in the global week frame: the entire day
+```
+
+- Format: `<Weekday-From>-<Weekday-To> <Time-Of-Day-From>-<Time-Of-Day-To>`
+- Requires: [DEFAULT_TIMEZONE](ref:docs-values#timezone) environment variable to be set
+- Examples:
+
+```text
+    Mon-Fri 08:00-20:00                   # From Monday to Friday: from 08:00 to 20:00 in the timezone defined in the global timezone
+    Sat-Sun 00:00-22:00                   # On the weekend: from 08:00 to 22:00 in the timezone defined in the global timezone
+```
+
+- Format: `<Time-Of-Day-From>-<Time-Of-Day-To>`
+- Requires: [DEFAULT_WEEKFRAME](ref:docs-values#weekframe), [DEFAULT_TIMEZONE](ref:docs-values#timezone) environment variables to be set
+- Examples:
+
+```text
+    08:00-20:00                           # On the days defined in the global weekframe: from 08:00 to 20:00 defined in the global timezone
+    00:00-14:00                           # On the days defined in the global weekframe: from 00:00 to 14:00 defined in the global timezone
+```
+
 ### Valid Values
 
 #### Weekdays
