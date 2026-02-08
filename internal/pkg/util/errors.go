@@ -19,10 +19,22 @@ type NilWeekFrameError struct {
 	reason string
 }
 
-func newNilWeekframe(reason string) error {
+func newNilWeekFrame(reason string) error {
 	return &NilWeekFrameError{reason: reason}
 }
 
-func (i *NilWeekFrameError) Error() string {
-	return fmt.Sprintf("invalid weekframe: %q", i.reason)
+func (n *NilWeekFrameError) Error() string {
+	return fmt.Sprintf("invalid weekframe: %q", n.reason)
+}
+
+type NilTimezoneError struct {
+	reason string
+}
+
+func NewNilTimezoneError(reason string) error {
+	return &NilTimezoneError{reason: reason}
+}
+
+func (n *NilTimezoneError) Error() string {
+	return fmt.Sprintf("invalid timezone: %q", n.reason)
 }

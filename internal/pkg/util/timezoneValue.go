@@ -5,25 +5,29 @@ import (
 	"time"
 )
 
-type timezoneValue struct {
-	p **time.Location
+type TimezoneValue struct {
+	Value **time.Location
 }
 
-func (t *timezoneValue) String() string {
-	if t.p == nil || *t.p == nil {
+func (t *TimezoneValue) String() string {
+	if t.Value == nil || *t.Value == nil {
 		return ""
 	}
 
-	return (*t.p).String()
+	return (*t.Value).String()
 }
 
-func (t *timezoneValue) Set(v string) error {
-	loc, err := time.LoadLocation(v)
-	if err != nil {
-		return fmt.Errorf("invalid timezone %q: %w", v, err)
+func (t *TimezoneValue) Set(value string) error {
+	if t.Value == nil {
+		return NewNilTimezoneError("timezone value is nil")
 	}
 
-	*t.p = loc
+	loc, err := time.LoadLocation(value)
+	if err != nil {
+		return fmt.Errorf("invalid timezone %q: %w", value, err)
+	}
+
+	*t.Value = loc
 
 	return nil
 }

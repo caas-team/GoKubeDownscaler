@@ -11,16 +11,16 @@ type WeekFrame struct {
 	WeekdayTo   *time.Weekday
 }
 
-type weekFrameValue struct {
-	p **WeekFrame
+type WeekFrameValue struct {
+	Value **WeekFrame
 }
 
-func (w *weekFrameValue) String() string {
-	if w.p == nil || *w.p == nil {
+func (w *WeekFrameValue) String() string {
+	if w.Value == nil || *w.Value == nil {
 		return ""
 	}
 
-	weekFrame := *w.p
+	weekFrame := *w.Value
 	if weekFrame.WeekdayFrom == nil || weekFrame.WeekdayTo == nil {
 		return ""
 	}
@@ -31,7 +31,7 @@ func (w *weekFrameValue) String() string {
 	)
 }
 
-func (w *weekFrameValue) Set(value string) error {
+func (w *WeekFrameValue) Set(value string) error {
 	weekdays := map[string]time.Weekday{
 		"mon": time.Monday,
 		"tue": time.Tuesday,
@@ -57,16 +57,16 @@ func (w *weekFrameValue) Set(value string) error {
 		return newInvalidWeekFrameValue("invalid weekdayTo", parts[1])
 	}
 
-	if w.p == nil {
-		return newNilWeekframe("weekframe pointer is nil")
+	if w.Value == nil {
+		return newNilWeekFrame("weekframe value is nil")
 	}
 
-	if *w.p == nil {
-		*w.p = &WeekFrame{}
+	if *w.Value == nil {
+		*w.Value = &WeekFrame{}
 	}
 
-	(*w.p).WeekdayFrom = &weekdayFrom
-	(*w.p).WeekdayTo = &weekdayTo
+	(*w.Value).WeekdayFrom = &weekdayFrom
+	(*w.Value).WeekdayTo = &weekdayTo
 
 	return nil
 }

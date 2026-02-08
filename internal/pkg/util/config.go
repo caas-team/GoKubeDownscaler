@@ -144,13 +144,5 @@ func (c *CommonRuntimeConfiguration) ParseConfigEnvVars() error {
 		return fmt.Errorf("error while getting EXCLUDE_DEPLOYMENTS environment variable: %w", err)
 	}
 
-	if err := GetEnvValue("DEFAULT_TIMEZONE", &timezoneValue{p: &c.DefaultTimezone}); err != nil {
-		return fmt.Errorf("error while getting DEFAULT_TIMEZONE environment variable: %w", err)
-	}
-
-	if err := GetEnvValue("DEFAULT_WEEKFRAME", &weekFrameValue{p: &c.DefaultWeekFrame}); err != nil {
-		return fmt.Errorf("error while getting DEFAULT_WEEKFRAME environment variable: %w", err)
-	}
-
 	return nil
 }
