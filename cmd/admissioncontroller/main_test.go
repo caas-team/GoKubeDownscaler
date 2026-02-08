@@ -26,7 +26,10 @@ type MockClient struct {
 	mock.Mock
 }
 
-func (m *MockClient) GetNamespaceScope(namespace string, ctx context.Context) (*values.Scope, error) {
+func (m *MockClient) GetNamespaceScope(
+	namespace string,
+	ctx context.Context,
+) (*values.Scope, error) {
 	args := m.Called(namespace, ctx)
 	return args.Get(0).(*values.Scope), args.Error(1)
 }

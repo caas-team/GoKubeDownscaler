@@ -331,7 +331,7 @@ func scanWorkload(
 		return nil
 	}
 
-	excluded := scopes.GetExcluded()
+	excluded := scopes.GetExcluded(scopes)
 	upscaleOnExclusion := scopes.GetUpscaleExcluded()
 
 	if excluded && !upscaleOnExclusion {
@@ -408,6 +408,13 @@ func scaleWorkload(
 
 	if scaling == values.ScalingIgnore {
 		slog.Debug("scaling is ignored, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
+
+		return nil
+	}
+
+	if scaling == values.ScalingIncomplete {
+		slog.Debug("scaling times cannot be determined, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
 
 		return nil

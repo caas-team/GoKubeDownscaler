@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"regexp"
+	"time"
 )
 
 // CommonRuntimeConfiguration contains fields shared among different runtime configurations.
@@ -32,6 +33,10 @@ type CommonRuntimeConfiguration struct {
 	Qps float64
 	// Burst sets the maximum burst to use while communicating with the Kubernetes API.
 	Burst int
+	// DefaultTimezone sets the default timezone to use for timezone calculations, in the format "America/New_York".
+	DefaultTimezone *time.Location
+	// DefaultWeekFrame sets the default week frame to use for calculations, in the format "Mon-Fri".
+	DefaultWeekFrame *WeekFrame
 	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
 	Kubeconfig string
 }
@@ -49,6 +54,8 @@ func GetDefaultConfig() *CommonRuntimeConfiguration {
 		Kubeconfig:        "",
 		MetricsEnabled:    false,
 		JsonLogs:          false,
+		DefaultTimezone:   nil,
+		DefaultWeekFrame:  nil,
 	}
 }
 
@@ -135,6 +142,14 @@ func (c *CommonRuntimeConfiguration) ParseConfigEnvVars() error {
 
 	if err := GetEnvValue("EXCLUDE_DEPLOYMENTS", &c.ExcludeWorkloads); err != nil {
 		return fmt.Errorf("error while getting EXCLUDE_DEPLOYMENTS environment variable: %w", err)
+	}
+
+	if err := GetEnvValue("DEFAULT_TIMEZONE", &timezoneValue{p: &c.DefaultTimezone}); err != nil {
+		return fmt.Errorf("error while getting DEFAULT_TIMEZONE environment variable: %w", err)
+	}
+
+	if err := GetEnvValue("DEFAULT_WEEKFRAME", &weekFrameValue{p: &c.DefaultWeekFrame}); err != nil {
+		return fmt.Errorf("error while getting DEFAULT_WEEKFRAME environment variable: %w", err)
 	}
 
 	return nil

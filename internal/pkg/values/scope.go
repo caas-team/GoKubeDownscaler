@@ -13,11 +13,12 @@ import (
 type Scaling int
 
 const (
-	ScalingNone     Scaling = iota // no scaling set in this scope, go to next scope
-	ScalingIgnore                  // not scaling
-	ScalingDown                    // scaling down
-	ScalingUp                      // scaling up
-	ScalingMultiple                // multiple scalings with same priority matched, this should be handled as an error
+	ScalingNone       Scaling = iota // no scaling set in this scope, go to next scope
+	ScalingIgnore                    // not scaling
+	ScalingDown                      // scaling down
+	ScalingUp                        // scaling up
+	ScalingMultiple                  // multiple scalings with same priority matched, this should be handled as an error
+	ScalingIncomplete                // not enough information to perform scaling, e.g. due to timespan being incomplete
 )
 
 // ScopeID is an enum that describes the current Scope.
@@ -52,18 +53,20 @@ func NewScope() *Scope {
 
 // Scope represents a value Scope.
 type Scope struct {
-	DownscalePeriod   timeSpans     // periods to downscale in
-	DownTime          timeSpans     // within these timespans workloads will be scaled down, outside of them they will be scaled up
-	UpscalePeriod     timeSpans     // periods to upscale in
-	UpTime            timeSpans     // within these timespans workloads will be scaled up, outside of them they will be scaled down
-	Exclude           timeSpans     // defines when the workload should be excluded
-	ExcludeUntil      *time.Time    // until when the workload should be excluded
-	ForceUptime       timeSpans     // force workload into an uptime state when in one of the timespans
-	ForceDowntime     timeSpans     // force workload into a downtime state when in one of the timespans
-	DownscaleReplicas Replicas      // the replicas to scale down to
-	GracePeriod       time.Duration // grace period until new workloads will be scaled down
-	ScaleChildren     triStateBool  // ownerReference will immediately trigger scaling of children workloads, when applicable
-	UpscaleExcluded   triStateBool  // excluded workloads will be upscaled
+	DownscalePeriod   timeSpans       // periods to downscale in
+	DownTime          timeSpans       // within these timespans workloads will be scaled down, outside of them they will be scaled up
+	UpscalePeriod     timeSpans       // periods to upscale in
+	UpTime            timeSpans       // within these timespans workloads will be scaled up, outside of them they will be scaled down
+	Exclude           timeSpans       // defines when the workload should be excluded
+	ExcludeUntil      *time.Time      // until when the workload should be excluded
+	ForceUptime       timeSpans       // force workload into an uptime state when in one of the timespans
+	ForceDowntime     timeSpans       // force workload into a downtime state when in one of the timespans
+	DownscaleReplicas Replicas        // the replicas to scale down to
+	GracePeriod       time.Duration   // grace period until new workloads will be scaled down
+	ScaleChildren     triStateBool    // ownerReference will immediately trigger scaling of children workloads, when applicable
+	UpscaleExcluded   triStateBool    // excluded workloads will be upscaled
+	DefaultTimezone   *time.Location  // default timezone to use when not specified in a timespan, defaults to nil
+	DefaultWeekFrame  *util.WeekFrame // default week frame to use when not specified in a timespan, defaults to nil
 }
 
 func GetDefaultScope() *Scope {
@@ -80,6 +83,8 @@ func GetDefaultScope() *Scope {
 		GracePeriod:       15 * time.Minute,
 		ScaleChildren:     triStateBool{isSet: false, value: false},
 		UpscaleExcluded:   triStateBool{isSet: false, value: false},
+		DefaultTimezone:   nil,
+		DefaultWeekFrame:  nil,
 	}
 }
 
@@ -99,10 +104,15 @@ func (s *Scope) CheckForIncompatibleFields() error {
 }
 
 // getCurrentScaling gets the current scaling, not checking for incompatibility.
-func (s *Scope) getCurrentScaling() Scaling {
+func (s *Scope) getCurrentScaling(scopes Scopes) Scaling {
 	// check times
 	if s.DownTime != nil {
-		if s.DownTime.inTimeSpans() {
+		inTimeSpans, err := s.DownTime.inTimeSpans(scopes)
+		if err != nil {
+			return ScalingIncomplete
+		}
+
+		if inTimeSpans {
 			return ScalingDown
 		}
 
@@ -110,7 +120,12 @@ func (s *Scope) getCurrentScaling() Scaling {
 	}
 
 	if s.UpTime != nil {
-		if s.UpTime.inTimeSpans() {
+		inTimeSpans, err := s.UpTime.inTimeSpans(scopes)
+		if err != nil {
+			return ScalingIncomplete
+		}
+
+		if inTimeSpans {
 			return ScalingUp
 		}
 
@@ -119,15 +134,22 @@ func (s *Scope) getCurrentScaling() Scaling {
 
 	// check periods
 	if s.DownscalePeriod != nil || s.UpscalePeriod != nil {
-		return s.getScalingFromPeriods()
+		return s.getScalingFromPeriods(scopes)
 	}
 
 	return ScalingNone
 }
 
-func (s *Scope) getScalingFromPeriods() Scaling {
-	inDowntime := s.DownscalePeriod.inTimeSpans()
-	inUptime := s.UpscalePeriod.inTimeSpans()
+func (s *Scope) getScalingFromPeriods(scopes Scopes) Scaling {
+	inDowntime, errInDowntime := s.DownscalePeriod.inTimeSpans(scopes)
+	if errInDowntime != nil {
+		return ScalingIncomplete
+	}
+
+	inUptime, errInUptime := s.UpscalePeriod.inTimeSpans(scopes)
+	if errInUptime != nil {
+		return ScalingIncomplete
+	}
 
 	if inUptime && inDowntime {
 		return ScalingMultiple // this prevents unintended behavior; in the future this should be handled while checking for conflicts
@@ -144,9 +166,16 @@ func (s *Scope) getScalingFromPeriods() Scaling {
 	return ScalingIgnore
 }
 
-func (s *Scope) getForceScaling() Scaling {
-	forceDowntime := s.ForceDowntime.inTimeSpans()
-	forceUptime := s.ForceUptime.inTimeSpans()
+func (s *Scope) getForceScaling(scopes Scopes) Scaling {
+	forceDowntime, errForceDowntime := s.ForceDowntime.inTimeSpans(scopes)
+	if errForceDowntime != nil {
+		return ScalingIncomplete
+	}
+
+	forceUptime, errForceUptime := s.ForceUptime.inTimeSpans(scopes)
+	if errForceUptime != nil {
+		return ScalingIncomplete
+	}
 
 	if forceDowntime && forceUptime {
 		return ScalingMultiple // this prevents unintended behavior; in the future this should be handled while checking for conflicts
@@ -169,12 +198,51 @@ func (s *Scope) getForceScaling() Scaling {
 
 type Scopes [5]*Scope
 
+func (s Scopes) GetDefaultTimeSpan() *time.Location {
+	for _, scope := range s {
+		defaultTimezone := scope.DefaultTimezone
+		if defaultTimezone == nil {
+			continue
+		}
+
+		return defaultTimezone
+	}
+
+	return nil
+}
+
+func (s Scopes) GetDefaultWeekdayFrom() *time.Weekday {
+	for _, scope := range s {
+		weekdayFrom := scope.DefaultWeekFrame.WeekdayFrom
+		if weekdayFrom == nil {
+			continue
+		}
+
+		return weekdayFrom
+	}
+
+	return nil
+}
+
+func (s Scopes) GetDefaultWeekdayTo() *time.Weekday {
+	for _, scope := range s {
+		weekdayTo := scope.DefaultWeekFrame.WeekdayTo
+		if weekdayTo == nil {
+			continue
+		}
+
+		return weekdayTo
+	}
+
+	return nil
+}
+
 // GetCurrentScaling gets the current scaling of the first scope that implements scaling.
 func (s Scopes) GetCurrentScaling() Scaling {
 	var result Scaling
 
 	for _, scope := range s {
-		forcedScaling := scope.getForceScaling()
+		forcedScaling := scope.getForceScaling(s)
 		if forcedScaling == ScalingNone {
 			continue // scope doesnt implement forced scaling; falling through
 		}
@@ -188,7 +256,7 @@ func (s Scopes) GetCurrentScaling() Scaling {
 	}
 
 	for _, scope := range s {
-		scopeScaling := scope.getCurrentScaling()
+		scopeScaling := scope.getCurrentScaling(s)
 		if scopeScaling == ScalingNone {
 			continue // scope doesnt implement scaling; falling through
 		}
@@ -225,13 +293,18 @@ func (s Scopes) GetScaleChildren() bool {
 }
 
 // GetExcluded checks if the scopes exclude scaling.
-func (s Scopes) GetExcluded() bool {
+func (s Scopes) GetExcluded(scopes Scopes) bool {
 	for _, scope := range s {
 		if scope.Exclude == nil {
 			continue
 		}
 
-		if scope.Exclude.inTimeSpans() {
+		exclude, err := scope.Exclude.inTimeSpans(scopes)
+		if err != nil {
+			return false
+		}
+
+		if exclude {
 			return true
 		}
 

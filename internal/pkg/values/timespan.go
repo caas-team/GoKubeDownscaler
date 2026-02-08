@@ -34,22 +34,27 @@ var (
 
 type TimeSpan interface {
 	// isTimeInSpan checks if time is in the timespan or not
-	isTimeInSpan(time time.Time) bool
+	isTimeInSpan(time time.Time, scopes Scopes) (bool, error)
 }
 
 type timeSpans []TimeSpan
 
 // inTimeSpans checks if current time is in one of the timespans or not.
-func (t *timeSpans) inTimeSpans() bool {
+func (t *timeSpans) inTimeSpans(scopes Scopes) (bool, error) {
 	for _, timespan := range *t {
-		if !timespan.isTimeInSpan(time.Now()) {
+		isTimeInSpan, err := timespan.isTimeInSpan(time.Now(), scopes)
+		if err != nil {
+			return false, fmt.Errorf("failed to check timespan: %w", err)
+		}
+
+		if !isTimeInSpan {
 			continue
 		}
 
-		return true
+		return true, nil
 	}
 
-	return false
+	return false, nil
 }
 
 // String implementation for timeSpans.
@@ -122,6 +127,46 @@ func parseAbsoluteTimeSpan(timespan string) (absoluteTimeSpan, error) {
 	}, nil
 }
 
+type relativeTimeSpan struct {
+	timezone    *time.Location
+	weekdayFrom *time.Weekday
+	weekdayTo   *time.Weekday
+	timeFrom    *dayTime
+	timeTo      *dayTime
+}
+
+// defaultTimeSpan fills the missing values of the relativeTimeSpan with the default values from the scopes.
+// If a value is missing and there is no default value for it, an error is returned.
+func (t relativeTimeSpan) defaultTimeSpan(scopes Scopes) (relativeTimeSpan, error) {
+	defaultedTimeSpan := t
+
+	if t.timezone == nil {
+		defaultedTimeSpan.timezone = scopes.GetDefaultTimeSpan()
+		if defaultedTimeSpan.timezone == nil {
+			return defaultedTimeSpan,
+				newUndefinedDefaultError("failed to get default timezone from scopes for relative timespan with missing timezone")
+		}
+	}
+
+	if t.weekdayFrom == nil {
+		defaultedTimeSpan.weekdayFrom = scopes.GetDefaultWeekdayFrom()
+		if defaultedTimeSpan.weekdayFrom == nil {
+			return defaultedTimeSpan,
+				newUndefinedDefaultError("failed to get default weekdayFrom from scopes for relative timespan with missing weekframe")
+		}
+	}
+
+	if t.weekdayTo == nil {
+		defaultedTimeSpan.weekdayTo = scopes.GetDefaultWeekdayTo()
+		if defaultedTimeSpan.weekdayTo == nil {
+			return defaultedTimeSpan,
+				newUndefinedDefaultError("failed to get default weekdayTo from scopes for relative timespan with missing weekframe")
+		}
+	}
+
+	return defaultedTimeSpan, nil
+}
+
 // parseRelativeTimeSpan parses a relative timespan. will panic if timespan is not a relative timespan.
 // nolint: cyclop, gocyclo // this function is a bit complex but needed to parse the relative timespan string
 func parseRelativeTimeSpan(timespanString string) (*relativeTimeSpan, error) {
@@ -176,14 +221,6 @@ func parseRelativeTimeSpan(timespanString string) (*relativeTimeSpan, error) {
 	return &timespan, nil
 }
 
-type relativeTimeSpan struct {
-	timezone    *time.Location
-	weekdayFrom *time.Weekday
-	weekdayTo   *time.Weekday
-	timeFrom    *dayTime
-	timeTo      *dayTime
-}
-
 // isWeekdayInRange checks if the weekday falls into the weekday range.
 func (t relativeTimeSpan) isWeekdayInRange(weekday time.Weekday) bool {
 	if *t.weekdayFrom <= *t.weekdayTo { // check if range wraps across weeks
@@ -203,12 +240,17 @@ func (t relativeTimeSpan) isTimeOfDayInRange(timeOfDay dayTime) bool {
 }
 
 // isTimeInSpan check if the time is in the span.
-func (t relativeTimeSpan) isTimeInSpan(targetTime time.Time) bool {
-	targetTime = targetTime.In(t.timezone)
+func (t relativeTimeSpan) isTimeInSpan(targetTime time.Time, scopes Scopes) (bool, error) {
+	defaultedTimeSpan, err := t.defaultTimeSpan(scopes)
+	if err != nil {
+		return false, fmt.Errorf("failed to fill missing values of relative timespan with default values: %w", err)
+	}
+
+	targetTime = targetTime.In(defaultedTimeSpan.timezone)
 	timeOfDay := extractDayTime(targetTime)
 	weekday := targetTime.Weekday()
 
-	return t.isTimeOfDayInRange(timeOfDay) && t.isWeekdayInRange(weekday)
+	return defaultedTimeSpan.isTimeOfDayInRange(timeOfDay) && defaultedTimeSpan.isWeekdayInRange(weekday), nil
 }
 
 // String implementation for relativeTimeSpan.
@@ -229,8 +271,8 @@ type absoluteTimeSpan struct {
 }
 
 // isTimeInSpan check if the time is in the span.
-func (t absoluteTimeSpan) isTimeInSpan(targetTime time.Time) bool {
-	return (t.from.Before(targetTime) || t.from.Equal(targetTime)) && t.to.After(targetTime)
+func (t absoluteTimeSpan) isTimeInSpan(targetTime time.Time, _ Scopes) (bool, error) {
+	return (t.from.Before(targetTime) || t.from.Equal(targetTime)) && t.to.After(targetTime), nil
 }
 
 // String implementation for absoluteTimeSpan.
@@ -277,7 +319,7 @@ func getWeekday(weekday string) (*time.Weekday, error) {
 // booleanTimeSpan is a TimeSpan which statically is either always active or never active.
 type booleanTimeSpan bool
 
-func (b booleanTimeSpan) isTimeInSpan(_ time.Time) bool { return bool(b) }
+func (b booleanTimeSpan) isTimeInSpan(_ time.Time, _ Scopes) (bool, error) { return bool(b), nil }
 
 // parseBooleanTimeSpan tries to parse the given timespan string to a booleanTimespan.
 func parseBooleanTimeSpan(timespanString string) (booleanTimeSpan, bool) {

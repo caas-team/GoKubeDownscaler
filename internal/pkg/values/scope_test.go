@@ -21,6 +21,7 @@ func TestScope_checkForIncompatibleFields(t *testing.T) {
 
 	tests := []struct {
 		name    string
+		scopes  Scopes
 		scope   Scope
 		wantErr bool
 	}{
@@ -93,11 +94,19 @@ func TestScope_getCurrentScaling(t *testing.T) {
 
 	tests := []struct {
 		name        string
+		scopes      Scopes
 		scope       Scope
 		wantScaling Scaling
 	}{
 		{
 			name: "in downtime",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				DownTime: timeSpans{booleanTimeSpan(true)},
 			},
@@ -105,6 +114,13 @@ func TestScope_getCurrentScaling(t *testing.T) {
 		},
 		{
 			name: "out of downtime",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				DownTime: timeSpans{booleanTimeSpan(false)},
 			},
@@ -112,6 +128,13 @@ func TestScope_getCurrentScaling(t *testing.T) {
 		},
 		{
 			name: "in uptime",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				UpTime: timeSpans{booleanTimeSpan(true)},
 			},
@@ -119,6 +142,13 @@ func TestScope_getCurrentScaling(t *testing.T) {
 		},
 		{
 			name: "out of uptime",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				UpTime: timeSpans{booleanTimeSpan(false)},
 			},
@@ -126,6 +156,13 @@ func TestScope_getCurrentScaling(t *testing.T) {
 		},
 		{
 			name: "in downscaleperiod",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				DownscalePeriod: timeSpans{booleanTimeSpan(true)},
 			},
@@ -133,6 +170,13 @@ func TestScope_getCurrentScaling(t *testing.T) {
 		},
 		{
 			name: "out of downscaleperiod",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				DownscalePeriod: timeSpans{booleanTimeSpan(false)},
 			},
@@ -140,6 +184,13 @@ func TestScope_getCurrentScaling(t *testing.T) {
 		},
 		{
 			name: "in upscaleperiod",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				UpscalePeriod: timeSpans{booleanTimeSpan(true)},
 			},
@@ -147,13 +198,27 @@ func TestScope_getCurrentScaling(t *testing.T) {
 		},
 		{
 			name: "out of upscaleperiod",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				UpscalePeriod: timeSpans{booleanTimeSpan(false)},
 			},
 			wantScaling: ScalingIgnore,
 		},
 		{
-			name:        "none set",
+			name: "none set",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope:       Scope{},
 			wantScaling: ScalingNone,
 		},
@@ -163,7 +228,7 @@ func TestScope_getCurrentScaling(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			scaling := test.scope.getCurrentScaling()
+			scaling := test.scope.getCurrentScaling(test.scopes)
 			assert.Equal(t, test.wantScaling, scaling)
 		})
 	}
@@ -174,11 +239,19 @@ func TestScope_getForceScaling(t *testing.T) {
 
 	tests := []struct {
 		name        string
+		scopes      Scopes
 		scope       Scope
 		wantScaling Scaling
 	}{
 		{
 			name: "forceDowntime",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				ForceDowntime: timeSpans{booleanTimeSpan(true)},
 			},
@@ -186,6 +259,13 @@ func TestScope_getForceScaling(t *testing.T) {
 		},
 		{
 			name: "forceUptime",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				ForceUptime: timeSpans{booleanTimeSpan(true)},
 			},
@@ -193,6 +273,13 @@ func TestScope_getForceScaling(t *testing.T) {
 		},
 		{
 			name: "forceDowntime false",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				ForceDowntime: timeSpans{booleanTimeSpan(false)},
 			},
@@ -200,6 +287,13 @@ func TestScope_getForceScaling(t *testing.T) {
 		},
 		{
 			name: "forceUptime false",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				ForceUptime: timeSpans{booleanTimeSpan(false)},
 			},
@@ -207,6 +301,13 @@ func TestScope_getForceScaling(t *testing.T) {
 		},
 		{
 			name: "forceUptime and forceDowntime true",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				ForceUptime:   timeSpans{booleanTimeSpan(true)},
 				ForceDowntime: timeSpans{booleanTimeSpan(true)},
@@ -215,6 +316,13 @@ func TestScope_getForceScaling(t *testing.T) {
 		},
 		{
 			name: "forceUptime and forceDowntime false",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				ForceUptime:   timeSpans{booleanTimeSpan(false)},
 				ForceDowntime: timeSpans{booleanTimeSpan(false)},
@@ -223,6 +331,13 @@ func TestScope_getForceScaling(t *testing.T) {
 		},
 		{
 			name: "forceUptime false and forceDowntime true",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				ForceUptime:   timeSpans{booleanTimeSpan(false)},
 				ForceDowntime: timeSpans{booleanTimeSpan(true)},
@@ -231,6 +346,13 @@ func TestScope_getForceScaling(t *testing.T) {
 		},
 		{
 			name: "forceUptime true and forceDowntime false",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope: Scope{
 				ForceUptime:   timeSpans{booleanTimeSpan(true)},
 				ForceDowntime: timeSpans{booleanTimeSpan(false)},
@@ -238,7 +360,14 @@ func TestScope_getForceScaling(t *testing.T) {
 			wantScaling: ScalingUp,
 		},
 		{
-			name:        "none set",
+			name: "none set",
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
 			scope:       Scope{},
 			wantScaling: ScalingNone,
 		},
@@ -248,7 +377,7 @@ func TestScope_getForceScaling(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			scaling := test.scope.getForceScaling()
+			scaling := test.scope.getForceScaling(test.scopes)
 			assert.Equal(t, test.wantScaling, scaling)
 		})
 	}
@@ -305,6 +434,17 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 				&Scope{},
 			},
 			wantScaling: ScalingNone,
+		},
+		{
+			name: "shorter timespan and no timezone and weekframes defined ",
+			scopes: Scopes{
+				&Scope{DownTime: timeSpans{relativeTimeSpan{timeFrom: ptr(7 * Hour), timeTo: ptr(16 * Hour)}}},
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
+			wantScaling: ScalingIncomplete,
 		},
 	}
 
@@ -638,13 +778,24 @@ func TestScopes_GetExcluded(t *testing.T) {
 			},
 			wantExcluded: true,
 		},
+		{
+			name: "shorter timespans, not excluded",
+			scopes: Scopes{
+				&Scope{DownTime: timeSpans{relativeTimeSpan{timeFrom: ptr(7 * Hour), timeTo: ptr(16 * Hour)}}},
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
+			wantExcluded: false,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			gotExcluded := test.scopes.GetExcluded()
+			gotExcluded := test.scopes.GetExcluded(test.scopes)
 			assert.Equal(t, test.wantExcluded, gotExcluded)
 		})
 	}

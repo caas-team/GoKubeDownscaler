@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -332,6 +333,7 @@ func TestAbsoluteTimeSpan_isTimeInSpan(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
+		scopes     Scopes
 		name       string
 		timespan   absoluteTimeSpan
 		time       time.Time
@@ -379,8 +381,200 @@ func TestAbsoluteTimeSpan_isTimeInSpan(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			gotResult := test.timespan.isTimeInSpan(test.time)
+			gotResult, _ := test.timespan.isTimeInSpan(test.time, test.scopes)
 			assert.Equal(t, test.wantResult, gotResult)
+		})
+	}
+}
+
+func TestRelativeTimeSpan_isTimeInSpan(t *testing.T) {
+	t.Parallel()
+
+	newDayTime := func(hour, minute int) *dayTime {
+		dt := dayTime(hour*60 + minute)
+		return &dt
+	}
+
+	tests := []struct {
+		scopes     Scopes
+		name       string
+		timespan   relativeTimeSpan
+		time       time.Time
+		wantResult bool
+	}{
+		{
+			scopes: Scopes{
+				GetDefaultScope(),
+			},
+			name: "time in range",
+			timespan: relativeTimeSpan{
+				timeFrom:    newDayTime(8, 0),
+				timeTo:      newDayTime(17, 0),
+				weekdayFrom: func() *time.Weekday { w := time.Monday; return &w }(),
+				weekdayTo:   func() *time.Weekday { w := time.Friday; return &w }(),
+				timezone:    time.UTC,
+			},
+			time:       time.Date(2026, time.February, 5, 12, 30, 0, 0, time.UTC),
+			wantResult: true,
+		},
+		{
+			scopes: Scopes{
+				GetDefaultScope(),
+			},
+			name: "before timeFrom",
+			timespan: relativeTimeSpan{
+				timeFrom:    newDayTime(8, 0),
+				timeTo:      newDayTime(17, 0),
+				weekdayFrom: func() *time.Weekday { w := time.Monday; return &w }(),
+				weekdayTo:   func() *time.Weekday { w := time.Friday; return &w }(),
+				timezone:    time.UTC,
+			},
+			time:       time.Date(2026, time.February, 5, 7, 59, 0, 0, time.UTC),
+			wantResult: false,
+		},
+		{
+			scopes: Scopes{
+				GetDefaultScope(),
+			},
+			name: "after timeTo",
+			timespan: relativeTimeSpan{
+				timeFrom:    newDayTime(8, 0),
+				timeTo:      newDayTime(17, 0),
+				weekdayFrom: func() *time.Weekday { w := time.Monday; return &w }(),
+				weekdayTo:   func() *time.Weekday { w := time.Friday; return &w }(),
+				timezone:    time.UTC,
+			},
+			time:       time.Date(2026, time.February, 5, 17, 1, 0, 0, time.UTC),
+			wantResult: false,
+		},
+		{
+			scopes: Scopes{
+				GetDefaultScope(),
+			},
+			name: "outside weekday",
+			timespan: relativeTimeSpan{
+				timeFrom:    newDayTime(8, 0),
+				timeTo:      newDayTime(17, 0),
+				weekdayFrom: func() *time.Weekday { w := time.Monday; return &w }(),
+				weekdayTo:   func() *time.Weekday { w := time.Friday; return &w }(),
+				timezone:    time.UTC,
+			},
+			time:       time.Date(2026, time.February, 7, 12, 0, 0, 0, time.UTC),
+			wantResult: false,
+		},
+		{
+			scopes: Scopes{
+				&Scope{
+					DefaultTimezone: time.UTC,
+					DefaultWeekFrame: func() *util.WeekFrame {
+						f, t := time.Monday, time.Friday
+						return &util.WeekFrame{WeekdayFrom: &f, WeekdayTo: &t}
+					}(),
+				},
+			},
+			name: "outside weekday no timezone",
+			timespan: relativeTimeSpan{
+				timeFrom:    newDayTime(8, 0),
+				timeTo:      newDayTime(17, 0),
+				weekdayFrom: func() *time.Weekday { w := time.Monday; return &w }(),
+				weekdayTo:   func() *time.Weekday { w := time.Friday; return &w }(),
+				timezone:    nil,
+			},
+			time:       time.Date(2026, time.February, 7, 12, 0, 0, 0, time.UTC),
+			wantResult: false,
+		},
+		{
+			scopes: Scopes{
+				&Scope{
+					DefaultTimezone: time.UTC,
+					DefaultWeekFrame: func() *util.WeekFrame {
+						f, t := time.Monday, time.Friday
+						return &util.WeekFrame{WeekdayFrom: &f, WeekdayTo: &t}
+					}(),
+				},
+			},
+			name: "outside weekday no timezone no weekdays",
+			timespan: relativeTimeSpan{
+				timeFrom:    newDayTime(8, 0),
+				timeTo:      newDayTime(17, 0),
+				weekdayFrom: nil,
+				weekdayTo:   nil,
+				timezone:    nil,
+			},
+			time:       time.Date(2026, time.February, 7, 12, 0, 0, 0, time.UTC),
+			wantResult: false,
+		},
+	}
+
+	testsNilDefaults := []struct {
+		scopes   Scopes
+		name     string
+		timespan relativeTimeSpan
+		time     time.Time
+	}{
+		{
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
+			name: "outside weekday no timezone, nil defaults",
+			timespan: relativeTimeSpan{
+				timeFrom:    newDayTime(8, 0),
+				timeTo:      newDayTime(17, 0),
+				weekdayFrom: func() *time.Weekday { w := time.Monday; return &w }(),
+				weekdayTo:   func() *time.Weekday { w := time.Friday; return &w }(),
+				timezone:    nil,
+			},
+			time: time.Date(2026, time.February, 7, 12, 0, 0, 0, time.UTC),
+		},
+		{
+			scopes: Scopes{
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+				GetDefaultScope(),
+			},
+			name: "outside weekday no timezone no weekdays, nil defaults",
+			timespan: relativeTimeSpan{
+				timeFrom:    newDayTime(8, 0),
+				timeTo:      newDayTime(17, 0),
+				weekdayFrom: nil,
+				weekdayTo:   nil,
+				timezone:    nil,
+			},
+			time: time.Date(2026, time.February, 7, 12, 0, 0, 0, time.UTC),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			gotResult, err := test.timespan.isTimeInSpan(test.time, test.scopes)
+			require.NoError(t, err)
+			assert.Equal(t, test.wantResult, gotResult)
+		})
+	}
+
+	for _, test := range testsNilDefaults {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			gotResult, err := test.timespan.isTimeInSpan(test.time, test.scopes)
+
+			// Expect false because the timespan cannot resolve timezone/weekdays
+			assert.False(t, gotResult)
+
+			// Expect an error of type *UndefinedDefaultError when the timespan cannot resolve timezone or weekdays
+			// And defaults are nil on upper scopes
+			if assert.Error(t, err) {
+				var undefErr *UndefinedDefaultError
+				assert.ErrorAs(t, err, &undefErr, "error should be of type *UndefinedDefaultError")
+			}
 		})
 	}
 }
