@@ -67,3 +67,15 @@ func newInvalidReplicaTypeError(reason, value string) error {
 func (p *InvalidReplicaTypeError) Error() string {
 	return fmt.Sprintf("invalid replica type error: %q, got %s.", p.reason, p.value)
 }
+
+type UndefinedDefaultError struct {
+	reason string
+}
+
+func newUndefinedDefaultError(reason string) error {
+	return &UndefinedDefaultError{reason: reason}
+}
+
+func (u *UndefinedDefaultError) Error() string {
+	return fmt.Sprintf("undefined default value error: %q", u.reason)
+}

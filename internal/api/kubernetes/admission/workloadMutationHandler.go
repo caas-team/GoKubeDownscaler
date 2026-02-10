@@ -233,7 +233,8 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 
 	slog.Debug("finished parsing all scopes", "scopes", scopes, "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
-	if scopes.GetExcluded() {
+	scopeIsExcluded := scopes.GetExcluded(scopes)
+	if scopeIsExcluded {
 		slog.Info("workload is excluded from mutation",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
@@ -302,6 +303,24 @@ func evaluateWorkloadScalingConditions(
 			true,
 			http.StatusAccepted,
 			"scaling configuration is ignored for workload",
+			false,
+			dryRun), nil
+	}
+
+	if scaling == values.ScalingIncomplete {
+		slog.Debug("scaling configuration incomplete missing values in timespan, skipping",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+			"dryRun", dryRun,
+		)
+
+		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
+
+		return newReviewResponse(
+			review.Request.UID,
+			true,
+			http.StatusAccepted,
+			"scaling configuration incomplete missing values in timespan, skipping",
 			false,
 			dryRun), nil
 	}

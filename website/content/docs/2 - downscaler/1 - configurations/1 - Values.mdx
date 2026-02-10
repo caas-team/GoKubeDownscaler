@@ -205,6 +205,28 @@ Here is a list of all values that can be set on the Downscaler.
 - Where to set: [CLI Scope](ref:docs-cli-scope#values), [Namespace Scope](ref:docs-namespace-scope#values),
   [Workload Scope](ref:docs-workload-scope#values)
 
+### Timezone
+
+- Type: [Timezone](ref:docs-timezone)
+- Description: Set a global default timezone for the timespans.
+  Allows users to specify timespans without a timezone
+  (e.g. `Mon-Fri 8-18` instead of `Mon-Fri 8-18 UTC`).
+  It can be used in combination with Weekframe value to have
+  even shorter timespan definitions (e.g. `8-18`)
+- Default: false
+- Where to set:
+
+### WeekFrame
+
+- Type: [WeekFrame](ref:docs-weekframe)
+- Description: Set a global default weekframe for the timespans.
+  Allows users to specify timespans without a weekframe
+  (e.g. `8-18 UTC` instead of `Mon-Fri 8-18 UTC`).
+  It can be used in combination with Timezone value to have
+  even shorter timespan definitions (e.g. `8-18`)
+- Default: false
+- Where to set: [ENV Scope](ref:docs-env-scope#values)
+
 ## Incompatibilities
 
 ### Parsing Incompatibility

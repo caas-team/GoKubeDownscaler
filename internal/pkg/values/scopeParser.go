@@ -29,6 +29,8 @@ const (
 	envUptime          = "DEFAULT_UPTIME"
 	envDownscalePeriod = "DOWNSCALE_PERIOD"
 	envDowntime        = "DEFAULT_DOWNTIME"
+	envTimezone        = "DEFAULT_TIMEZONE"
+	envWeekFrame       = "DEFAULT_WEEKFRAME"
 )
 
 // ParseScopeFlags sets all flags corresponding to scope values to fill into l.
@@ -116,6 +118,14 @@ func (s *Scope) GetScopeFromEnv() error {
 	err = util.GetEnvValue(envDowntime, &s.DownTime)
 	if err != nil {
 		return fmt.Errorf("error while getting %q environment variable: %w", envDowntime, err)
+	}
+
+	if err = util.GetEnvValue(envTimezone, &util.TimezoneValue{Value: s.DefaultTimezone}); err != nil {
+		return fmt.Errorf("error while getting %q environment variable: %w", envTimezone, err)
+	}
+
+	if err = util.GetEnvValue(envWeekFrame, &util.WeekFrameValue{Value: &s.DefaultWeekFrame}); err != nil {
+		return fmt.Errorf("error while getting %q environment variable: %w", envWeekFrame, err)
 	}
 
 	if err = s.CheckForIncompatibleFields(); err != nil {
