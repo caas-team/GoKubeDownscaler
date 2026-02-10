@@ -6,19 +6,19 @@ import (
 )
 
 type TimezoneValue struct {
-	Value **time.Location
+	Value *time.Location
 }
 
 func (t *TimezoneValue) String() string {
-	if t.Value == nil || *t.Value == nil {
+	if t == nil || t.Value == nil {
 		return ""
 	}
 
-	return (*t.Value).String()
+	return t.Value.String()
 }
 
 func (t *TimezoneValue) Set(value string) error {
-	if t.Value == nil {
+	if t == nil {
 		return NewNilTimezoneError("timezone value is nil")
 	}
 
@@ -27,7 +27,7 @@ func (t *TimezoneValue) Set(value string) error {
 		return fmt.Errorf("invalid timezone %q: %w", value, err)
 	}
 
-	*t.Value = loc
+	t.Value = loc
 
 	return nil
 }
