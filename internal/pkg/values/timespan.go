@@ -23,7 +23,7 @@ var (
 		`(?i)^` +
 			`(?:(?P<from_weekday>` + weekday + `)-(?P<to_weekday>` + weekday + `)\s+)?` +
 			`(?P<from_time>` + timeofday + `)` +
-			`(?:-(?P<to_time>` + timeofday + `))?` +
+			`-(?P<to_time>` + timeofday + `)` +
 			`(?:\s+(?P<timezone>` + timezone + `))?` +
 			`$`,
 	)
