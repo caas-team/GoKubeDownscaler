@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // getResourceFunc is a function that gets a specific resource as a Workload.
@@ -34,6 +35,7 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"rollouts":                 getRollouts,
 		"stacks":                   getStacks,
 		"prometheuses":             getPrometheuses,
+		"autoscalingrunnersets":    getAutoscalingRunnerSets,
 	}
 
 	resourceFunc, exists := resourceFuncMap[resource]
@@ -68,6 +70,7 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"rollout":                 parseRolloutFromBytes,
 		"stack":                   parseStackFromBytes,
 		"prometheus":              parsePrometheusFromBytes,
+		"autoscalingrunnerset":    parseAutoscalingRunnerSetFromBytes,
 	}
 
 	parseFunc, exists := parseWorkloadFuncMap[resource]
@@ -136,4 +139,5 @@ type Clientsets struct {
 	Argo       *argo.Clientset
 	Zalando    *zalando.Clientset
 	Monitoring *monitoring.Clientset
+	Client     ctrlclient.Client
 }
