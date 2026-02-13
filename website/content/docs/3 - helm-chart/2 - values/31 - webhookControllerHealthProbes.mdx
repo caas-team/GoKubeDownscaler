@@ -3,7 +3,13 @@ title: webhookControllerHealthProbes
 id: webhookControllerHealthProbes
 globalReference: docs-helm-webhook-controller-health-probes
 description: How to customize the health probes used by GoKubeDownscaler Webhook Deployment
-keywords: [webhookControllerHealthProbes, livenessProbe, readinessProbe]
+keywords:
+  [
+    webhookControllerHealthProbes,
+    webhookControllerLivenessProbe,
+    webhookControllerReadinessProbe,
+    webhookControllerStartupProbe,
+  ]
 ---
 
 # webhookController.healthProbes
@@ -30,32 +36,52 @@ webhookController:
       periodSeconds: 3
       timeoutSeconds: 2
       successThreshold: 1
+
+    startupProbe:
+      enabled: true
+      failureThreshold: 3
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 2
+      successThreshold: 1
 ```
 
 :::
 
 The basic fields that can be set are:
 
-- `webhookController.healthProbes.readinessProbe.enabled`: Enables or disables the readiness probe for the webhook.
-  When enabled, the API server checks if the webhook is ready to serve traffic.
+- `webhookController.healthProbes.readinessProbe.enabled`: Enables or disables the readiness probe for the GoKubeDownscaler Webhook.
+  When enabled,Kubernetes checks if the GoKubeDownscaler Webhook is ready to serve traffic.
 - `webhookController.healthProbes.readinessProbe.failureThreshold`: The number of consecutive probe failures that must occur before the
-  webhook is considered unready.
+  GoKubeDownscaler Webhook is considered unready.
 - `webhookController.healthProbes.readinessProbe.initialDelaySeconds`: The number of seconds after the container starts before the
   readiness probe is initiated.
 - `webhookController.healthProbes.readinessProbe.periodSeconds`: How often (in seconds) the readiness probe is performed.
 - `webhookController.healthProbes.readinessProbe.timeoutSeconds`: The number of seconds after which the readiness probe times out if no
   response is received.
 - `webhookController.healthProbes.readinessProbe.successThreshold`: The number of consecutive successful probes required
-  for the webhook to be considered ready
+  for the GoKubeDownscaler Webhook to be considered ready
 
-- `webhookController.healthProbes.livenessProbe.enabled`: Enables or disables the liveness probe for the webhook.
-  When enabled, the API server checks if the webhook is still alive and functioning.
+- `webhookController.healthProbes.livenessProbe.enabled`: Enables or disables the liveness probe for the GoKubeDownscaler Webhook.
+  When enabled, Kubernetes checks if the webhook is still alive and functioning.
 - `webhookController.healthProbes.livenessProbe.failureThreshold`: The number of consecutive probe failures that must occur before the
-  webhook is considered unhealthy and restarted.
+  GoKubeDownscaler Webhook is considered unhealthy and restarted.
 - `webhookController.healthProbes.livenessProbe.initialDelaySeconds`: The number of seconds after the container starts before the liveness
   probe is initiated.
 - `webhookController.healthProbes.livenessProbe.periodSeconds`: How often (in seconds) the liveness probe is performed.
 - `webhookController.healthProbes.livenessProbe.timeoutSeconds`: The number of seconds after which the liveness probe times out if no
   response is received.
 - `webhookController.healthProbes.livenessProbe.successThreshold`: The number of consecutive successful probes required
-  for the webhook to be considered healthy
+  for the GoKubeDownscaler Webhook to be considered healthy
+
+- `webhookController.healthProbes.startupProbe.enabled`: Enables or disables the startup probe for the GoKubeDownscaler Webhook.
+  When enabled, Kubernetes checks if the GoKubeDownscaler Webhook has started up successfully.
+- `webhookController.healthProbes.startupProbe.failureThreshold`: The number of consecutive probe failures that must
+  occur before the GoKubeDownscaler Webhook is considered to have failed startup.
+- `webhookController.healthProbes.startupProbe.initialDelaySeconds`: The number of seconds after the container starts before the startup
+  probe is initiated.
+- `webhookController.healthProbes.startupProbe.periodSeconds`: How often (in seconds) the startup probe is performed.
+- `webhookController.healthProbes.startupProbe.timeoutSeconds`: The number of seconds after which the startup probe times out
+  if no response is received.
+- `webhookController.healthProbes.startupProbe.successThreshold`: The number of consecutive successful probes required for
+  the GoKubeDownscaler Webhook to be considered to have started up successfully

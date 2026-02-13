@@ -3,7 +3,7 @@ title: healthProbes
 id: healthProbes
 globalReference: docs-helm-health-probes
 description: How to customize the health probes used by GoKubeDownscaler Deployment
-keywords: [healthProbes, livenessProbe, readinessProbe]
+keywords: [healthProbes, livenessProbe, readinessProbe, startupProbe]
 ---
 
 # HealthProbes
@@ -12,23 +12,33 @@ The `healthProbes` section defines how some of the health probes properties shou
 
 :::info
 
+The default value of healthProbes is:
+
 ```yaml
 healthProbes:
-readinessProbe:
-  enabled: true
-  failureThreshold: 3
-  initialDelaySeconds: 5
-  periodSeconds: 3
-  timeoutSeconds: 2
-  successThreshold: 1
+  readinessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 5
+    periodSeconds: 3
+    timeoutSeconds: 2
+    successThreshold: 1
 
-livenessProbe:
-  enabled: true
-  failureThreshold: 3
-  initialDelaySeconds: 5
-  periodSeconds: 3
-  timeoutSeconds: 2
-  successThreshold: 1
+  livenessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 5
+    periodSeconds: 3
+    timeoutSeconds: 2
+    successThreshold: 1
+
+  startupProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds:
+    periodSeconds: 3
+    timeoutSeconds: 2
+    successThreshold: 1
 ```
 
 :::
@@ -36,7 +46,7 @@ livenessProbe:
 The basic fields that can be set are:
 
 - `healthProbes.readinessProbe.enabled`: Enables or disables the readiness probe for the GoKubeDownscaler.
-  When enabled, the API server checks if the GoKubeDownscaler is ready to serve traffic.
+  When enabled, Kubernetes checks if the GoKubeDownscaler is ready to serve traffic.
 - `healthProbes.readinessProbe.failureThreshold`: The number of consecutive probe failures that must occur before the
   GoKubeDownscaler is considered unready.
 - `healthProbes.readinessProbe.initialDelaySeconds`: The number of seconds after the container starts before the
@@ -48,7 +58,7 @@ The basic fields that can be set are:
   for the GoKubeDownscaler to be considered ready
 
 - `healthProbes.livenessProbe.enabled`: Enables or disables the liveness probe for the GoKubeDownscaler.
-  When enabled, the API server checks if the GoKubeDownscaler is still alive and functioning.
+  When enabled, Kubernetes checks if the GoKubeDownscaler is still alive and functioning.
 - `healthProbes.livenessProbe.failureThreshold`: The number of consecutive probe failures that must occur before the
   GoKubeDownscaler is considered unhealthy and restarted.
 - `healthProbes.livenessProbe.initialDelaySeconds`: The number of seconds after the container starts before the liveness
@@ -58,3 +68,14 @@ The basic fields that can be set are:
   response is received.
 - `healthProbes.livenessProbe.successThreshold`: The number of consecutive successful probes required
   for the GoKubeDownscaler to be considered healthy
+
+- `healthProbes.startupProbe.enabled`: Enables or disables the startup probe for the GoKubeDownscaler.
+  When enabled, Kubernetes checks if the GoKubeDownscaler has started up successfully.
+- `healthProbes.startupProbe.failureThreshold`: The number of consecutive probe failures that must
+  occur before the GoKubeDownscaler is considered to have failed startup.
+- `healthProbes.startupProbe.initialDelaySeconds`: The number of seconds after the container starts before the startup
+  probe is initiated.
+- `healthProbes.startupProbe.periodSeconds`: How often (in seconds) the startup probe is performed.
+- `healthProbes.startupProbe.timeoutSeconds`: The number of seconds after which the startup probe times out if no response is received.
+- `healthProbes.startupProbe.successThreshold`: The number of consecutive successful probes required for the GoKubeDownscaler to be
+  considered to have started up successfully

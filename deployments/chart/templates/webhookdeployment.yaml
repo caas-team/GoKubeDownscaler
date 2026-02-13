@@ -91,6 +91,17 @@ spec:
             timeoutSeconds: {{ .Values.webhookController.healthProbes.livenessProbe.timeoutSeconds }}
             successThreshold: {{ .Values.webhookController.healthProbes.livenessProbe.successThreshold }}
           {{- end }}
+          {{- if .Values.webhookController.healthProbes.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            failureThreshold: {{ .Values.webhookController.healthProbes.startupProbe.failureThreshold }}
+            initialDelaySeconds: {{ .Values.webhookController.healthProbes.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.webhookController.healthProbes.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.webhookController.healthProbes.startupProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.webhookController.healthProbes.startupProbe.successThreshold }}
+          {{- end }}
       volumes:
         - name: tls
           secret:

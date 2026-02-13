@@ -83,6 +83,17 @@ spec:
             timeoutSeconds: {{ .Values.healthProbes.livenessProbe.timeoutSeconds }}
             successThreshold: {{ .Values.healthProbes.livenessProbe.successThreshold }}
           {{- end }}
+          {{- if .Values.healthProbes.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            failureThreshold: {{ .Values.healthProbes.startupProbe.failureThreshold }}
+            initialDelaySeconds: {{ .Values.healthProbes.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthProbes.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthProbes.startupProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.healthProbes.startupProbe.successThreshold }}
+          {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
