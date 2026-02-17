@@ -43,6 +43,7 @@ func main() {
 
 	defer cancel()
 
+	// must be started before leader election to be served even on non-leader instances
 	go serveHealth()
 
 	if !config.LeaderElection {
