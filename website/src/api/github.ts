@@ -27,6 +27,6 @@ export const FetchGithubLabels = async ({
       };
     });
   } catch (error) {
-    throw new Error(`Failed to fetch labels from github: ${error.message}`);
+    throw new Error(`Failed to fetch labels from github: ${error.message}`, { cause: error });
   }
 };
