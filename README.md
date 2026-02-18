@@ -29,7 +29,7 @@ Information on how to install the Downscaler is on [our website](https://caas-te
 ### Missing Features
 
 GoKubeDownscaler is now GA.
-This means that the core py-kube-downscaler features are all present, though there’s a small chance we might have missed something
+This means that the core py-kube-downscaler features are all present, though there’s a chance we might have missed something
 You can find a list of the known-missing features [under the `missing feature` label](/../../labels/missing%20feature).
 If you think that any other features are missing, or you have an idea for a new feature, feel free to open an [Issue](/../../issues/).
 
