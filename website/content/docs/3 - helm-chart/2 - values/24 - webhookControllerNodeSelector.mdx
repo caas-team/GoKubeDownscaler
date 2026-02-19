@@ -1,0 +1,41 @@
+---
+title: webhookControllerNodeSelector
+id: webhookControllerNodeSelector
+globalReference: docs-helm-webhook-controller-node-selector
+description: How to set nodeSelector for the GoKubeDownscaler Webhook Deployment
+keywords: [webhookControllerNodeSelector]
+---
+
+# webhookController.nodeSelector
+
+The `webhookController.nodeSelector` value defines labels of nodes that you want the deployment to be scheduled on.
+
+:::info
+
+The default value for `webhookController.nodeSelector` is:
+
+```yaml
+webhookController:
+  nodeSelector: {}
+```
+
+:::
+
+If you want the GoKubeDownscaler Webhook Deployment to be scheduled on a specific type of node you can specify the
+determining labels of the node here.
+
+:::tip Example
+
+If you set:
+
+```yaml
+webhookController:
+  nodeSelector:
+    disktype: ssd
+    env: production
+```
+
+The GoKubeDownscaler Webhook Deployment will only be scheduled on a Node that has both the `disktype` label set to `ssd`
+and the `env` label to `production`.
+
+:::

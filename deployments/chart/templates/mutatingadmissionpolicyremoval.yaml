@@ -1,0 +1,102 @@
+{{- if and (or .Values.annotationsCompliance.onWorkloads.enabled .Values.annotationsCompliance.onNamespace.enabled) (not (semverCompare ">=1.34.0" .Capabilities.KubeVersion.Version)) }}
+{{- fail "annotationsCompliance using MutatingAdmissionPolicy requires Kubernetes >= 1.34.0 (MutatingAdmissionPolicy/v1beta1)" }}
+{{- end }}
+{{- if and (or .Values.annotationsCompliance.onWorkloads.preventRemoval .Values.annotationsCompliance.onNamespace.preventRemoval) (semverCompare ">=1.34.0" .Capabilities.KubeVersion.Version) .Values.annotationsCompliance.mutateUnauthorizedAnnotationsAddition }}
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: prevent-removal-downscaler-reserved-annotations
+spec:
+  matchConstraints:
+    resourceRules:
+    {{- if .Values.annotationsCompliance.onNamespace.enabled }}
+      - apiGroups:
+          - ""
+        apiVersions:
+          - "*"
+        operations:
+          - "UPDATE"
+        resources:
+          - namespaces
+    {{- end }}
+    {{- if .Values.annotationsCompliance.onWorkloads.enabled }}
+{{- include "go-kube-downscaler.annotationsCompliance" (merge . (dict "preventRemoval" .Values.annotationsCompliance.onWorkloads.preventRemoval )) | trim | nindent 6 }}
+    {{- end }}
+  matchConditions:
+    - name: kube-downscaler-webhook-sa
+      expression: 'oldObject != null && has(oldObject.metadata.annotations) && oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) && object != null && (!has(object.metadata.annotations) || !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) || oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/") && (!(l in object.metadata.annotations)))) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.webhookController.fullname" . }}"'
+    - name: kube-downscaler-sa
+      expression: 'oldObject != null && has(oldObject.metadata.annotations) && oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) && object != null && (!has(object.metadata.annotations) || !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) || oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/") && (!(l in object.metadata.annotations)))) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}"'
+    {{- if .Values.annotationsCompliance.authorizedNamespacesToServiceAccountsRegex }}
+    {{- $nameIndex := 0 }}
+    {{- range $namespaceRegex, $serviceAccounts := .Values.annotationsCompliance.authorizedNamespacesToServiceAccountsRegex }}
+    {{- range $index, $saRegex := $serviceAccounts }}
+    {{- $nameIndex = add $nameIndex 1 }}
+    - name: authorized-sa-pattern-{{index}}-{{$nameIndex}}
+      expression: 'oldObject != null && has(oldObject.metadata.annotations) && oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) && object != null && (!has(object.metadata.annotations) || !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) || oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/") && (!(l in object.metadata.annotations)))) && !request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")'
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.annotationsCompliance.authorizedUsersRegex }}
+    {{- range $index, $groupRegex := .Values.annotationsCompliance.authorizedUsersRegex }}
+    - name: authorized-group-pattern-{{$index}}
+      expression: 'oldObject != null && has(oldObject.metadata.annotations) && oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/")) && object != null && (!has(object.metadata.annotations) || !object.metadata.annotations.exists(l, l.startsWith("downscaler/")) || oldObject.metadata.annotations.exists(l, l.startsWith("downscaler/") && (!(l in object.metadata.annotations)))) && !request.userInfo.groups.exists(g, g.matches("{{ $groupRegex }}"))'
+    {{- end }}
+    {{- end }}
+  failurePolicy: Ignore
+  reinvocationPolicy: IfNeeded
+  mutations:
+  - patchType: JSONPatch
+    jsonPatch:
+      expression: >
+        oldObject != null && has(oldObject.metadata.annotations)
+        ?
+          (
+            (
+              !has(object.metadata.annotations)
+              ?
+                [
+                  JSONPatch{
+                    op: "add",
+                    path: "/metadata/annotations",
+                    value: {}
+                  }
+                ]
+              : []
+            )
+            +
+            oldObject.metadata.annotations
+              .filter(
+                k,
+                k.startsWith("downscaler/")
+                && (
+                  !has(object.metadata.annotations)
+                  || (
+                    has(object.metadata.annotations)
+                    && !(k in object.metadata.annotations)
+                  )
+                )
+              )
+              .map(
+                k,
+                JSONPatch{
+                  op: "add",
+                  path: "/metadata/annotations/" + k.replace("/", "~1"),
+                  value: oldObject.metadata.annotations[k]
+                }
+              )
+          )
+        : []
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: prevent-remove-downscaler-reserved-annotations-binding
+spec:
+  policyName: prevent-removal-downscaler-reserved-annotations
+  matchResources:
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: Exists
+{{- end }}
