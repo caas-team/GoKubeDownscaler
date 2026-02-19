@@ -213,7 +213,7 @@ const config: Config = {
       {
         hashed: true,
         indexBlog: false,
-        docsRouteBasePath: ["/docs", "/guides"],
+        docsRouteBasePath: ["/docs", "/guides", "/contributing"],
         docsDir: "content",
         searchBarShortcutHint: false,
       } as Partial<PluginOptions>,
