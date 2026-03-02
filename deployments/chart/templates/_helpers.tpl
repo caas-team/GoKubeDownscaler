@@ -275,6 +275,16 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "autoscalingrunnersets" }}
+- apiGroups:
+    - actions.github.com
+  resources:
+    - autoscalingrunnersets
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -404,5 +414,15 @@ Create webhook resources
   resources:
     - poddisruptionbudgets
 {{ end -}}
+{{- if eq $resource "autoscalingrunnersets" }}
+- apiGroups:
+    - actions.github.com
+  resources:
+    - autoscalingrunnersets
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{ end -}}
 {{- end }}
