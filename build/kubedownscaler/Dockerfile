@@ -1,4 +1,7 @@
-FROM golang:1.25.7 AS build
+FROM --platform=$BUILDPLATFORM golang:1.25.7 AS build
+
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /tmp/kubedownscaler
 
@@ -8,7 +11,7 @@ RUN go mod download
 
 COPY ../.. /tmp/kubedownscaler
 
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/gokubedownscaler ./cmd/kubedownscaler
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/gokubedownscaler ./cmd/kubedownscaler
 
 FROM scratch
 
