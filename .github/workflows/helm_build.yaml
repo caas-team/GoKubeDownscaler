@@ -28,11 +28,9 @@ jobs:
       - name: Log in to Helm OCI Registry
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
-          echo ${DOCKER_PASSWORD} | helm registry login ${MTR} -u ${DOCKER_USERNAME} --password-stdin
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          MTR: mtr.devops.telekom.de
 
       - name: Helm Lint, Package, and Push
         run: |
@@ -40,9 +38,7 @@ jobs:
           helm lint .
           helm package . --version ${{ inputs.version }} --app-version ${{ inputs.appVersion }}
           helm push $(ls *.tgz | head -1) oci://ghcr.io/caas-team/charts
-          helm push $(ls *.tgz | head -1) oci://${MTR}/${REPO}/charts
         env:
-          MTR: mtr.devops.telekom.de
           REPO: caas
 
       - name: Dispatch Event to Helm-Charts Repo
