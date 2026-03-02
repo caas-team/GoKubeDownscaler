@@ -5,7 +5,7 @@ go 1.25.7
 require (
 	github.com/actions/actions-runner-controller v0.27.6
 	github.com/argoproj/argo-rollouts v1.8.4
-	github.com/kedacore/keda/v2 v2.19.0
+	github.com/kedacore/keda/v2 v2.18.3
 	github.com/open-policy-agent/cert-controller v0.15.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.89.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.89.0
