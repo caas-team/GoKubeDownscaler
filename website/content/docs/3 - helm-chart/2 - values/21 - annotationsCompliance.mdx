@@ -1,0 +1,329 @@
+---
+title: annotationsCompliance
+id: annotationsCompliance
+globalReference: docs-prevent-annotations-compliance
+description: How to prevent users from deploying, editing or remove reserved annotations
+keywords: [annotationsCompliance]
+---
+
+# annotationsCompliance
+
+The `annotationsCompliance` section of the chart allows cluster administrators to set a configuration that prevents
+users from deploying downscaler annotations on Kubernetes objects, thus restricting their ability to control the downscaler behavior.
+The ability to block the addition, editing or removal of downscaler annotations can be crucial for maintaining consistent
+downscaling policies across multi-tenant environments, ensuring that only authorized users, groups or service accounts can alter
+global settings.
+
+Let's say an administrator wants to enforce a specific downscaling strategy across all namespaces in the cluster using
+annotations.
+By configuring the `annotationsCompliance` section, the administrator can ensure that non-privileged users, groups or service accounts
+cannot add/edit/remove downscaler annotations on their workloads that bypass the established strategy
+
+This feature uses a Kubernetes ValidatingAdmissionPolicy or MutatingAdmissionPolicy depending on the configuration
+chosen:
+
+- `MutatingAdmissionPolicy`: will remove any unauthorized downscaler annotations found on user workloads upon creation or update, unless
+  the user or service account is authorized to set downscaler annotations.
+- `ValidatingAdmissionPolicy`: will block the creation or update of user workloads that contain unauthorized downscaler annotations, unless
+  the user or service account is authorized to set downscaler annotations.
+
+Additionally, it is also possible to deploy an additional MutatingAdmissionPolicy or ValidatingAdmissionPolicy
+that prevents the removal of downscaler annotations from objects if the user or service account is not authorized to do so.
+
+The following values can be configured:
+
+- `mutateUnauthorizedAnnotationsAddition` indicates whether to use a MutatingAdmissionPolicy to remove unauthorized downscaler annotations
+  from workloads upon creation or update.
+  If set to false, a ValidatingAdmissionPolicy will be used instead to block the creation or update of workloads
+  with unauthorized downscaler annotations.
+- `validationActions` array that indicates the type of actions to take when an unauthorized annotation is found.
+  Possible values are
+  `Audit`, `Warn`, and `Deny`.
+  This only applies when `mutateUnauthorizedAnnotationsAddition` is false.
+- `authorizedNamespacesToServiceAccountsRegex` map contains key-value pairs where the key is a namespace regex and the value is a regex
+  that matches service accounts in that namespace that are authorized to set downscaler annotations.
+- `authorizedUsersRegex` array of regex strings that match users that are authorized to set downscaler annotations.
+- `onWorkloads.enabled` indicates whether the policy should be applied to workloads (Deployments, StatefulSets, etc.).
+- `onWorkloads.preventRemoval` indicates whether to deploy a separate MutatingAdmissionPolicy to prevent the removal of downscaler
+  annotations from workloads.
+- `onNamespace.enabled` indicates whether the policy should be applied to Namespace resources.
+- `onNamespace.preventRemoval` indicates whether to deploy a separate ValidatingAdmissionPolicy to block the removal
+  of downscaler annotations from Namespace resources.
+  This policy can be deployed even if `onNamespace.enabled` is false.
+
+The default values for `preventUnauthorizedAnnotations` are:
+
+```yaml
+annotationsCompliance:
+  mutateUnauthorizedAnnotationsAddition: false
+  validationActions: [Deny]
+  authorizedNamespacesToServiceAccountsRegex: {}
+  authorizedUsersRegex: []
+  authorizedGroupsRegex: []
+  onWorkloads:
+    enabled: false
+    preventRemoval: false
+  onNamespace:
+    enabled: false
+    preventRemoval: false
+```
+
+Administrators must take care of configuring this section according to their needs.
+
+The expressions that will be used to evaluate the authorized service accounts, groups or users are listed below; the mutation
+happens when all expressions evaluate to true:
+
+When `onWorkloads.enabled` and/or `onNamespace.enabled`, the following expressions are evaluated to prevent
+the addition of unauthorized downscaler annotations or the editing of existing ones:
+
+```cel
+has(object.metadata.annotations) &&
+object.metadata.annotations.exists(
+    l,
+    l.startsWith("downscaler/") &&
+    (
+        oldObject != null ||
+        !has(oldObject.metadata.annotations) ||
+        !(l in oldObject.metadata.annotations) ||
+        object.metadata.annotations[l] != oldObject.metadata.annotations[l]
+    )
+) &&
+request.userInfo.username!="system:serviceaccount:{{ .Release.Namespace }}:{{ include \"go-kube-downscaler.webhookController.fullname\" . }}"
+```
+
+```cel
+has(object.metadata.annotations) &&
+object.metadata.annotations.exists(
+    l,
+    l.startsWith("downscaler/") &&
+    (
+        oldObject != null ||
+        !has(oldObject.metadata.annotations) ||
+        !(l in oldObject.metadata.annotations) ||
+        object.metadata.annotations[l] != oldObject.metadata.annotations[l]
+    )
+) &&
+request.userInfo.username!="system:serviceaccount:{{ .Release.Namespace }}:{{ include \"go-kube-downscaler.serviceAccountName\" . }}"
+```
+
+```cel
+has(object.metadata.annotations) &&
+object.metadata.annotations.exists(
+    l,
+    l.startsWith("downscaler/") &&
+    (
+        oldObject != null ||
+        !has(oldObject.metadata.annotations) ||
+        !(l in oldObject.metadata.annotations) ||
+        object.metadata.annotations[l] != oldObject.metadata.annotations[l]
+    )
+) &&
+!request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")
+```
+
+```cel
+has(object.metadata.annotations) &&
+object.metadata.annotations.exists(
+    l,
+    l.startsWith("downscaler/") &&
+    (
+        oldObject != null ||
+        !has(oldObject.metadata.annotations) ||
+        !(l in oldObject.metadata.annotations) ||
+        object.metadata.annotations[l] != oldObject.metadata.annotations[l]
+    ) &&
+    !request.userInfo.username.matches("{{ $userRegex }}")
+```
+
+To summarize, the mutation or validation will occur if:
+
+1. The object being created or updated contains downscaler annotations.
+2. The object did not previously have downscaler annotations (in case of an update) or the annotation value has changed.
+3. The user making the request is not a kube downscaler service account (webhook or main deployment).
+4. The user making the request does not match any of the authorized service accounts, groups or users defined in the configuration
+   (via regex patterns for namespaces/service accounts, groups or specific users).
+
+:::note
+If the non-privileged user has the permission to update the object, the removal of downscaler annotations is always permitted.
+The next
+paragraph explains how to prevent the removal of downscaler annotations.
+:::
+
+When `onWorkloads.preventRemoval` and/or `onNamespace.preventRemoval` is true, the following expressions are evaluated
+to prevent the removal of downscaler annotations from Namespace resources:
+
+```cel
+oldObject != null &&
+has(oldObject.metadata.annotations) &&
+oldObject.metadata.annotations.exists(
+    l,
+    l.startsWith("downscaler/")
+) &&
+object != null &&
+(
+    !has(object.metadata.annotations) ||
+    !object.metadata.annotations.exists(
+        l,
+        l.startsWith("downscaler/")
+    ) ||
+    oldObject.metadata.annotations.exists(
+        l,
+        l.startsWith("downscaler/") && !(l in object.metadata.annotations)
+    )
+) &&
+request.userInfo.username!="system:serviceaccount:{{ .Release.Namespace }}:{{ include \"go-kube-downscaler.webhookController.fullname\" . }}"
+```
+
+```cel
+oldObject != null &&
+has(oldObject.metadata.annotations) &&
+oldObject.metadata.annotations.exists(
+    l,
+    l.startsWith("downscaler/")
+) &&
+object != null &&
+(
+    !has(object.metadata.annotations) ||
+    !object.metadata.annotations.exists(
+        l,
+        l.startsWith("downscaler/")
+    ) ||
+    oldObject.metadata.annotations.exists(
+        l,
+        l.startsWith("downscaler/") && !(l in object.metadata.annotations)
+    )
+) &&
+request.userInfo.username!="system:serviceaccount:{{ .Release.Namespace }}:{{ include \"go-kube-downscaler.serviceAccountName\" . }}"
+```
+
+```cel
+oldObject != null &&
+has(oldObject.metadata.annotations) &&
+oldObject.metadata.annotations.exists(
+    l,
+    l.startsWith("downscaler/")
+) &&
+object != null &&
+(
+    !has(object.metadata.annotations) ||
+    !object.metadata.annotations.exists(
+        l,
+        l.startsWith("downscaler/")
+    ) ||
+    oldObject.metadata.annotations.exists(
+        l,
+        l.startsWith("downscaler/") && !(l in object.metadata.annotations)
+    )
+) &&
+!request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")
+```
+
+```cel
+oldObject != null &&
+has(oldObject.metadata.annotations) &&
+oldObject.metadata.annotations.exists(
+    l,
+    l.startsWith("downscaler/")
+) &&
+object != null &&
+(
+    !has(object.metadata.annotations) ||
+    !object.metadata.annotations.exists(
+        l,
+        l.startsWith("downscaler/")
+    ) ||
+    oldObject.metadata.annotations.exists(
+        l,
+        l.startsWith("downscaler/") && !(l in object.metadata.annotations)
+    )
+) &&
+!request.userInfo.username.matches("{{ $userRegex }}")
+```
+
+To summarize, the validation will occur if:
+
+1. The object being updated previously contained downscaler annotations.
+2. The object being updated no longer contains downscaler annotations (annotations were removed).
+3. The user making the request is not a kube downscaler service account (webhook or main deployment).
+4. The user making the request does not match any of the authorized service accounts, groups or users defined in the configuration
+   (via regex patterns for namespaces/service accounts, groups or specific users).
+
+:::note
+If the non-privileged user has the permission to delete the entire resource (e.g., Namespace or Deployment),
+they can still delete the entire resource even if they are not authorized to remove the downscaler annotations.
+:::note
+
+This is an example of how to configure the `annotationsCompliance` object:
+
+```yaml
+annotationsCompliance:
+  mutateUnauthorizedAnnotationsAddition: false
+  validationActions: [Deny]
+  authorizedNamespacesToServiceAccountsRegex:
+    namespace1:
+      - sa1
+  authorizedUsersRegex:
+    - "^user1.*"
+  authorizedGroupsRegex: []
+  onWorkloads:
+    enabled: true
+    preventRemoval: false
+  onNamespace:
+    enabled: false
+    preventRemoval: false
+```
+
+:::warning
+If a **ValidatingAdmissionPolicy** is used to prevent editing or removal of downscaler annotations, exercise caution.
+
+Non-privileged users and administrators must ensure that workload templates comply with the required annotations.
+Only an authorized user is permitted to modify or remove these annotations.
+Failure to do so may result in blocked updates
+or removal of the annotations.
+
+For this reason, we suggest to use a **MutatingAdmissionPolicy** or a **ValidatingAdmissionPolicy**
+without **Deny** action when possible.
+
+Let's consider the following example:
+
+1. An administrator approves an exception request from a user and adds an annotation to a Deployment to exclude it from downscaling
+
+```cel
+kubectl annotate deploy example-deployment downscaler/exclude="true"
+```
+
+1. The user must align the Deployment template with this annotation to avoid validation errors during future updates.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+  namespace: default
+  labels:
+    app: example
+  annotations:
+    downscaler/exclude: "true"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example
+  template:
+    metadata:
+      labels:
+        app: example
+    spec:
+      containers:
+        - name: example-container
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+```
+
+1. If the user attempts to update the Deployment without including the required annotation in the template, or the
+   annotation value is changed, the update will be blocked by the ValidatingAdmissionPolicy.
+   Only an authorized user can
+   modify or remove the annotation.
+
+:::
