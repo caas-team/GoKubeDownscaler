@@ -212,7 +212,7 @@ const config: Config = {
       require.resolve("@easyops-cn/docusaurus-search-local"),
       {
         hashed: true,
-        indexBlog: false,
+        indexBlog: true,
         docsRouteBasePath: ["/docs", "/guides", "/contributing"],
         docsDir: "content",
         searchBarShortcutHint: false,
