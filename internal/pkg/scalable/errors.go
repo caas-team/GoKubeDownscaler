@@ -41,6 +41,19 @@ func (o *OriginalReplicasUnsetError) Error() string {
 	return o.reason
 }
 
+type UnexpectedOriginalReplicasError struct {
+	expected string
+	actual   string
+}
+
+func newUnexpectedOriginalReplicasError(expected, actual string) error {
+	return &UnexpectedOriginalReplicasError{expected: expected, actual: actual}
+}
+
+func (u *UnexpectedOriginalReplicasError) Error() string {
+	return fmt.Sprintf("expected originalReplicas %T, got %T", u.expected, u.actual)
+}
+
 type ExpectTypeGotTypeError struct {
 	expected any
 	actual   any
