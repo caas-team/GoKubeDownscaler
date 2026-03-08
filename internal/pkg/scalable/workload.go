@@ -75,6 +75,8 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"prometheus":              parsePrometheusFromBytes,
 		"autoscalingrunnerset":    parseAutoscalingRunnerSetFromBytes,
 		"services":                parseServiceFromBytes,
+		"awsnlbservice":           parseServiceFromBytes,
+		"awselbservice":           parseServiceFromBytes,
 	}
 
 	parseFunc, exists := parseWorkloadFuncMap[resource]
