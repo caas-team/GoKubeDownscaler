@@ -303,6 +303,16 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
+- apiGroups:
+    - ""
+  resources:
+    - services
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- if eq $resource "postgresqls" }}
 - apiGroups:
     - acid.zalan.do
@@ -494,6 +504,19 @@ Create webhook resources
   resources:
     - postgresqls
 {{ end -}}
+{{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
+- apiGroups:
+    - ""
+  resources:
+    - services
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{ if eq $resource "kafkaconnects" -}}
 - apiGroups:
     - kafka.strimzi.io
@@ -745,5 +768,18 @@ resources include in annotationsCompliance
   resources:
     - kafkabridges
 {{ end -}}
+{{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
+- apiGroups:
+    - ""
+  apiVersions:
+    - "*"
+  resources:
+    - services
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+{{- end }}
 {{ end -}}
 {{- end }}
