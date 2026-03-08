@@ -285,6 +285,16 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
+- apiGroups:
+    - ""
+  resources:
+    - services
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -419,6 +429,19 @@ Create webhook resources
     - actions.github.com
   resources:
     - autoscalingrunnersets
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
+- apiGroups:
+    - ""
+  resources:
+    - services
+  operations:
+    - "CREATE"
+    - "UPDATE"
   verbs:
     - get
     - list
@@ -577,5 +600,18 @@ resources include in annotationsCompliance
   resources:
     - poddisruptionbudgets
 {{ end -}}
+{{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
+- apiGroups:
+    - ""
+  apiVersions:
+    - "*"
+  resources:
+    - services
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+{{- end }}
 {{ end -}}
 {{- end }}

@@ -22,9 +22,13 @@ includedResources:
 #  - jobs
 #  - cronjobs
 #  - scaledobjects
+#  - services
 #  - stacks
 #  - poddisruptionbudgets
 #  - prometheuses
+#  - autoscalingrunnersets
+#  - awselbservices
+#  - awsnlbservices
 
 fullnameOverride: ""
 nameOverride: ""

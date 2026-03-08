@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -37,6 +38,18 @@ func (p PercentageReplicas) AsInt32() (int32, error) {
 
 func (p PercentageReplicas) AsIntStr() intstr.IntOrString {
 	return intstr.FromString(strconv.Itoa(int(p)) + "%")
+}
+
+type StatusReplicas string
+
+func (s StatusReplicas) String() string { return string(s) }
+
+func (s StatusReplicas) AsInt32() (int32, error) {
+	return 0, newInvalidReplicaTypeError("status replicas cannot be converted to int32", s.String())
+}
+
+func (s StatusReplicas) AsIntStr() intstr.IntOrString {
+	return intstr.FromString(string(s))
 }
 
 type ReplicasValue struct {
@@ -77,6 +90,11 @@ func (r *ReplicasValue) Set(value string) error {
 		}
 	}
 
+	if isAlpha(value) && !isBooleanString(value) {
+		*r.Replicas = StatusReplicas(value)
+		return nil
+	}
+
 	return newInvalidReplicaTypeError("invalid replica value", value)
 }
 
@@ -97,6 +115,21 @@ func NewReplicasFromIntOrStr(intOrString *intstr.IntOrString) Replicas {
 	}
 
 	return nil
+}
+
+func isAlpha(s string) bool {
+	for _, r := range s {
+		if !unicode.IsLetter(r) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func isBooleanString(s string) bool {
+	lower := strings.ToLower(s)
+	return lower == "true" || lower == "false"
 }
 
 func (r *ReplicasValue) String() string {
