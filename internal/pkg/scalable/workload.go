@@ -79,6 +79,8 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"prometheus":              parsePrometheusFromBytes,
 		"autoscalingrunnerset":    parseAutoscalingRunnerSetFromBytes,
 		"services":                parseServiceFromBytes,
+		"awsnlbservice":           parseServiceFromBytes,
+		"awselbservice":           parseServiceFromBytes,
 		"postgresql":              parsePostgresqlFromBytes,
 		"kafkaconnect":            parseKafkaConnectFromBytes,
 		"kafkamirrormaker2":       parseKafkaMirrorMaker2FromBytes,
