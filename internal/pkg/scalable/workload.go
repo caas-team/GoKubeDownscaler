@@ -36,6 +36,9 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"stacks":                   getStacks,
 		"prometheuses":             getPrometheuses,
 		"autoscalingrunnersets":    getAutoscalingRunnerSets,
+		"services":                 getServices,
+		"awsnlbservices":           getAWSNLBServices,
+		"awselbservices":           getAWSELBServices,
 	}
 
 	resourceFunc, exists := resourceFuncMap[resource]
@@ -71,6 +74,7 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"stack":                   parseStackFromBytes,
 		"prometheus":              parsePrometheusFromBytes,
 		"autoscalingrunnerset":    parseAutoscalingRunnerSetFromBytes,
+		"services":                parseServiceFromBytes,
 	}
 
 	parseFunc, exists := parseWorkloadFuncMap[resource]
