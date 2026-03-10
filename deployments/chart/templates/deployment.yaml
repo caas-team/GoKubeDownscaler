@@ -59,6 +59,10 @@ spec:
           - configMapRef:
               name: {{ .Values.configMap.name }}
               optional: true
+          env:
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 10 }}
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:

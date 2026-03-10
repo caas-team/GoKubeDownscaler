@@ -92,6 +92,8 @@ podAnnotations: {}
 
 podLabels: {}
 
+extraEnv: []
+
 nodeSelector: {}
 
 tolerations: []
