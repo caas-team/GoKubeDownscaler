@@ -90,6 +90,8 @@ resources:
 
 podAnnotations: {}
 
+podLabels: {}
+
 nodeSelector: {}
 
 tolerations: []
