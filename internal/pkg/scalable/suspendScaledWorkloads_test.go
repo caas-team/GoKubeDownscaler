@@ -76,12 +76,12 @@ func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 		{
 			name:            "scale down nil parallelism",
 			suspend:         boolAsPointer(false),
-			parallelism:     nil, // now valid
+			parallelism:     nil,
 			cpuRequest:      "250m",
 			memRequest:      "128Mi",
 			wantSuspend:     boolAsPointer(true),
-			wantSavedCPU:    0.25 * 1,              // default 1
-			wantSavedMemory: 128 * 1024 * 1024 * 1, // default 1
+			wantSavedCPU:    0.25 * 1,              // default parallelism = 1
+			wantSavedMemory: 128 * 1024 * 1024 * 1, // default parallelism = 1
 		},
 		{
 			name:            "already scaled down",
