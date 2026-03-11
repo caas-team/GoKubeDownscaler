@@ -73,8 +73,10 @@ func (j *job) getSavedResourcesRequests() *metrics.SavedResources {
 		}
 	}
 
-	totalSavedCPU *= float64(*j.Spec.Parallelism)
-	totalSavedMemory *= float64(*j.Spec.Parallelism)
+	parallelism := derefInt32(j.Spec.Parallelism, 1)
+
+	totalSavedCPU *= float64(parallelism)
+	totalSavedMemory *= float64(parallelism)
 
 	return metrics.NewSavedResources(totalSavedCPU, totalSavedMemory)
 }
