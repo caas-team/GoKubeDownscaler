@@ -91,6 +91,10 @@ resources:
 
 podAnnotations: {}
 
+podLabels: {}
+
+extraEnv: []
+
 nodeSelector: {}
 
 tolerations: []
@@ -142,6 +146,10 @@ webhookController:
   #  - --interval=60
 
   podAnnotations: {}
+
+  podLabels: {}
+
+  extraEnv: []
 
   healthProbes:
     readinessProbe:
