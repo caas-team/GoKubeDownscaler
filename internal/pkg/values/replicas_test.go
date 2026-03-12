@@ -38,8 +38,13 @@ func TestReplicasValue_Set(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			name:      "invalid non numeric",
-			input:     "abc",
+			name:  "non numeric",
+			input: "LoadBalancer",
+			want:  StatusReplicas("LoadBalancer"),
+		},
+		{
+			name:      "non numeric and boolean",
+			input:     "false",
 			expectErr: true,
 		},
 	}
