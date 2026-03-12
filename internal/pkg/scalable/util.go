@@ -279,3 +279,12 @@ func removeOriginalReplicas(workload Workload) {
 	delete(annotations, annotationOriginalReplicas)
 	workload.SetAnnotations(annotations)
 }
+
+// derefInt32 safely dereference int32, if not present a default value is set instead.
+func derefInt32(p *int32, def int32) int32 {
+	if p != nil {
+		return *p
+	}
+
+	return def
+}

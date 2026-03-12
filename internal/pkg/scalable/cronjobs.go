@@ -116,8 +116,10 @@ func (c *cronJob) getSavedResourcesRequests() *metrics.SavedResources {
 		}
 	}
 
-	totalSavedCPU *= float64(*c.Spec.JobTemplate.Spec.Parallelism)
-	totalSavedMemory *= float64(*c.Spec.JobTemplate.Spec.Parallelism)
+	parallelism := derefInt32(c.Spec.JobTemplate.Spec.Parallelism, 1)
+
+	totalSavedCPU *= float64(parallelism)
+	totalSavedMemory *= float64(parallelism)
 
 	return metrics.NewSavedResources(totalSavedCPU, totalSavedMemory)
 }
