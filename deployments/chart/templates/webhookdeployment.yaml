@@ -5,6 +5,9 @@ metadata:
   name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
   labels:
     {{- include "go-kube-downscaler.labels" . | nindent 4 }}
+    {{- with .Values.podLabels }}
+    {{- toYaml . | nindent 8 }}
+    {{- end }}
 spec:
   replicas: {{ .Values.webhookController.replicaCount }}
   selector:
@@ -61,6 +64,10 @@ spec:
             - configMapRef:
                 name: {{ .Values.configMap.name }}
                 optional: true
+          env:
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 10 }}
+            {{- end }}
           resources:
             {{- toYaml .Values.webhookController.resources | nindent 12 }}
           securityContext:
