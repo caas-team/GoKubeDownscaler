@@ -145,11 +145,11 @@ webhookController:
   #  - --interval=60
 
   podAnnotations: {}
-  
+
   podLabels: {}
-  
+
   extraEnv: []
-  
+
   healthProbes:
     readinessProbe:
       enabled: true
