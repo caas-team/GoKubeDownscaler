@@ -56,7 +56,7 @@ func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 	tests := []struct {
 		name            string
 		suspend         *bool
-		parallelism     int32
+		parallelism     *int32
 		cpuRequest      string
 		memRequest      string
 		wantSuspend     *bool
@@ -66,7 +66,7 @@ func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 		{
 			name:            "scale down",
 			suspend:         boolAsPointer(false),
-			parallelism:     2,
+			parallelism:     int32Ptr(2),
 			cpuRequest:      "250m",
 			memRequest:      "128Mi",
 			wantSuspend:     boolAsPointer(true),
@@ -74,9 +74,19 @@ func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 			wantSavedMemory: 128 * 1024 * 1024 * 2, // 128Mi * 2
 		},
 		{
+			name:            "scale down nil parallelism",
+			suspend:         boolAsPointer(false),
+			parallelism:     nil,
+			cpuRequest:      "250m",
+			memRequest:      "128Mi",
+			wantSuspend:     boolAsPointer(true),
+			wantSavedCPU:    0.25 * 1,              // default parallelism = 1
+			wantSavedMemory: 128 * 1024 * 1024 * 1, // default parallelism = 1
+		},
+		{
 			name:            "already scaled down",
 			suspend:         boolAsPointer(true),
-			parallelism:     2,
+			parallelism:     int32Ptr(2),
 			cpuRequest:      "250m",
 			memRequest:      "128Mi",
 			wantSuspend:     boolAsPointer(true),
@@ -86,7 +96,7 @@ func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 		{
 			name:            "suspend unset",
 			suspend:         nil,
-			parallelism:     2,
+			parallelism:     int32Ptr(2),
 			cpuRequest:      "250m",
 			memRequest:      "128Mi",
 			wantSuspend:     boolAsPointer(true),
@@ -111,7 +121,7 @@ func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 					},
 				},
 			}
-			cronjob.Spec.JobTemplate.Spec.Parallelism = &test.parallelism
+			cronjob.Spec.JobTemplate.Spec.Parallelism = test.parallelism
 
 			s := suspendScaledWorkload{&cronjob}
 
