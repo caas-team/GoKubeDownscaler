@@ -21,7 +21,20 @@ function HomepageHeader() {
               {siteConfig.title}
             </Heading>
           </div>
-          <p className="animate-fade-down text-2xl">{siteConfig.tagline}</p>
+            <div>
+                {/* small screen headline */}
+                <p className="animate-fade-down text-xl sm:hidden mb-6">
+                    Saving Cloud Costs By Scaling Workloads Down After Hours
+                </p>
+                {/* medium and larger screens headline */}
+                <p className="animate-fade-down text-xl sm:text-2xl md:text-3xl lg:text-4xl hidden sm:block mb-2 mt-6">
+                    {siteConfig.tagline}
+                </p>
+                {/* subheading (shown only on medium and larger screens) */}
+                <p className="animate-fade-down text-md sm:text-xl md:text-2xl lg:text-2xl hidden sm:block mb-6 mt-4">
+                    Saving Cloud Costs By Scaling Workloads Down After Hours
+                </p>
+            </div>
           <div className="flex justify-center space-x-0 sm:space-x-3 sm:flex-row space-y-3 sm:space-y-0 flex-col">
             <Button
               name="Get Started"
