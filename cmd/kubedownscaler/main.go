@@ -45,12 +45,14 @@ func main() {
 
 	go serveHealth()
 
+	downscalerMetrics := initMetrics(config)
+
 	if !config.LeaderElection {
-		runWithoutLeaderElection(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
+		runWithoutLeaderElection(client, ctx, scopeDefault, scopeCli, scopeEnv, config, downscalerMetrics)
 		return
 	}
 
-	runWithLeaderElection(client, cancel, ctx, scopeDefault, scopeCli, scopeEnv, config)
+	runWithLeaderElection(client, cancel, ctx, scopeDefault, scopeCli, scopeEnv, config, downscalerMetrics)
 }
 
 // serveMetrics starts the metrics server for the downscaler.
@@ -113,6 +115,7 @@ func runWithLeaderElection(
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *runtimeConfiguration,
+	downscalerMetrics *metrics.Metrics,
 ) {
 	lease, err := client.CreateLease(leaseName)
 	if err != nil {
@@ -136,18 +139,9 @@ func runWithLeaderElection(
 		RetryPeriod:     5 * time.Second,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
-				var downscalerMetrics *metrics.Metrics
-
-				if config.MetricsEnabled {
-					go serveMetrics()
-
-					downscalerMetrics = metrics.NewMetrics(config.DryRun)
-					downscalerMetrics.RegisterAll()
-				}
-
 				slog.Info("started leading")
 
-				err = startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
+				err = startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config, downscalerMetrics)
 				if err != nil {
 					slog.Error("an error occurred while scanning workloads", "error", err)
 					cancel()
@@ -170,10 +164,11 @@ func runWithoutLeaderElection(
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *runtimeConfiguration,
+	downscalerMetrics *metrics.Metrics,
 ) {
 	slog.Warn("proceeding without leader election; this could cause errors when running with multiple replicas")
 
-	err := startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config)
+	err := startScanning(client, ctx, scopeDefault, scopeCli, scopeEnv, config, downscalerMetrics)
 	if err != nil {
 		slog.Error("an error occurred while scanning workloads, exiting", "error", err)
 		os.Exit(1)
@@ -186,8 +181,8 @@ func startScanning(
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	config *runtimeConfiguration,
+	downscalerMetrics *metrics.Metrics,
 ) error {
-	downscalerMetrics := initMetrics(config)
 
 	slog.Info("started downscaler")
 
