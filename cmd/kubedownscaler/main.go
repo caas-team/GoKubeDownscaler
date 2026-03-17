@@ -183,6 +183,7 @@ func startScanning(
 	config *runtimeConfiguration,
 	downscalerMetrics *metrics.Metrics,
 ) error {
+
 	slog.Info("started downscaler")
 
 	previousNamespacesToMetrics := newNamespaceToMetrics(config)
@@ -491,11 +492,11 @@ func initMetrics(config *runtimeConfiguration) *metrics.Metrics {
 
 	go serveMetrics()
 
-	m := metrics.NewMetrics(config.DryRun)
-	m.RegisterAll()
+	downscalerMetrics := metrics.NewMetrics(config.DryRun)
+	downscalerMetrics.RegisterAll()
 	slog.Info("metrics initialized")
 
-	return m
+	return downscalerMetrics
 }
 
 // getWorkloadNamespaceMetrics retrieves the metrics holder for the workload's namespace.
