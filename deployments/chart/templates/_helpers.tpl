@@ -414,16 +414,17 @@ Create webhook resources
   resources:
     - poddisruptionbudgets
 {{ end -}}
-{{- if eq $resource "autoscalingrunnersets" }}
+{{ if eq $resource "autoscalingrunnersets" -}}
 - apiGroups:
     - actions.github.com
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
   resources:
     - autoscalingrunnersets
-  verbs:
-    - get
-    - list
-    - update
-{{- end }}
+{{ end -}}
 {{ end -}}
 {{- end }}
 
@@ -576,6 +577,19 @@ resources include in annotationsCompliance
     - "UPDATE"
   resources:
     - poddisruptionbudgets
+{{ end -}}
+{{ if eq $resource "autoscalingrunnersets" -}}
+- apiGroups:
+    - actions.github.com
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - autoscalingrunnersets
 {{ end -}}
 {{ end -}}
 {{- end }}
