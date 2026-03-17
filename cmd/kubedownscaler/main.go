@@ -491,11 +491,11 @@ func initMetrics(config *runtimeConfiguration) *metrics.Metrics {
 
 	go serveMetrics()
 
-	donwscalerMetrics := metrics.NewMetrics(config.DryRun)
-	donwscalerMetrics.RegisterAll()
+	m := metrics.NewMetrics(config.DryRun)
+	m.RegisterAll()
 	slog.Info("metrics initialized")
 
-	return donwscalerMetrics
+	return m
 }
 
 // getWorkloadNamespaceMetrics retrieves the metrics holder for the workload's namespace.
