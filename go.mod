@@ -1,6 +1,6 @@
 module github.com/caas-team/gokubedownscaler
 
-go 1.25.7
+go 1.25.8
 
 require (
 	github.com/actions/actions-runner-controller v0.27.6
@@ -14,11 +14,11 @@ require (
 	github.com/wI2L/jsondiff v0.7.0
 	github.com/zalando-incubator/stackset-controller v1.4.126
 	go.uber.org/zap v1.27.1
-	k8s.io/api v0.35.2
-	k8s.io/apimachinery v0.35.2
-	k8s.io/apiserver v0.35.2
-	k8s.io/client-go v0.35.2
-	k8s.io/component-base v0.35.2
+	k8s.io/api v0.35.3
+	k8s.io/apimachinery v0.35.3
+	k8s.io/apiserver v0.35.3
+	k8s.io/client-go v0.35.3
+	k8s.io/component-base v0.35.3
 	sigs.k8s.io/controller-runtime v0.22.5
 )
 
