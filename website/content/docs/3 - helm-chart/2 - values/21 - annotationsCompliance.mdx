@@ -93,7 +93,7 @@ request.userInfo.username!="system:serviceaccount:{{ .Release.Namespace }}:{{ in
 
 ```cel
 has(object.metadata.annotations) &&
-object.metadata.annotations.exists(
+  object.metadata.annotations.exists(
     l,
     l.startsWith("downscaler/") &&
     (
@@ -108,11 +108,10 @@ request.userInfo.username!="system:serviceaccount:{{ .Release.Namespace }}:{{ in
 
 ```cel
 has(object.metadata.annotations) &&
-object.metadata.annotations.exists(
+  object.metadata.annotations.exists(
     l,
     l.startsWith("downscaler/") &&
-    (
-        oldObject != null ||
+      (oldObject != null ||
         !has(oldObject.metadata.annotations) ||
         !(l in oldObject.metadata.annotations) ||
         object.metadata.annotations[l] != oldObject.metadata.annotations[l]
@@ -251,7 +250,7 @@ To summarize, the validation will occur if:
 :::note
 If the non-privileged user has the permission to delete the entire resource (e.g., Namespace or Deployment),
 they can still delete the entire resource even if they are not authorized to remove the downscaler annotations.
-:::note
+:::
 
 This is an example of how to configure the `annotationsCompliance` object:
 

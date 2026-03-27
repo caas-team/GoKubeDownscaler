@@ -1,5 +1,4 @@
-//nolint:gosec // G706 structured slog logging, not vulnerable to log injection
-//nolint:gosec // G705 machine to machien communication, not browser rendered
+//nolint:gosec // G706 structured slog logging (safe), G705 machine-to-machine communication (not browser rendered)
 package main
 
 import (
