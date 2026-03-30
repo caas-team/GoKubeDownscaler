@@ -25,29 +25,29 @@ spec:
     {{- end }}
   matchConditions:
     - name: kube-downscaler-webhook-sa
-      expression: 'has(object.metadata.annotations) && object.metadata.annotations.exists(l, l.startsWith("downscaler/") && (oldObject != null || !has(oldObject.metadata.annotations) || !(l in oldObject.metadata.annotations) || object.metadata.annotations[l] != oldObject.metadata.annotations[l])) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.webhookController.fullname" . }}"'
+      expression: 'has(object.metadata.annotations) && object.metadata.annotations.exists(l, l.startsWith("downscaler/") && (oldObject == null || !has(oldObject.metadata.annotations) || !(l in oldObject.metadata.annotations) || object.metadata.annotations[l] != oldObject.metadata.annotations[l])) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.webhookController.fullname" . }}"'
     - name: kube-downscaler-sa
-      expression: 'has(object.metadata.annotations) && object.metadata.annotations.exists(l, l.startsWith("downscaler/") && (oldObject != null || !has(oldObject.metadata.annotations) || !(l in oldObject.metadata.annotations) || object.metadata.annotations[l] != oldObject.metadata.annotations[l])) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}"'
+      expression: 'has(object.metadata.annotations) && object.metadata.annotations.exists(l, l.startsWith("downscaler/") && (oldObject == null || !has(oldObject.metadata.annotations) || !(l in oldObject.metadata.annotations) || object.metadata.annotations[l] != oldObject.metadata.annotations[l])) && request.userInfo.username != "system:serviceaccount:{{ .Release.Namespace }}:{{ include "go-kube-downscaler.serviceAccountName" . }}"'
     {{- if .Values.annotationsCompliance.authorizedNamespacesToServiceAccountsRegex }}
     {{- $nameIndex := 0 }}
     {{- range $namespaceRegex, $serviceAccounts := .Values.annotationsCompliance.authorizedNamespacesToServiceAccountsRegex }}
     {{- range $index, $saRegex := $serviceAccounts }}
     {{- $nameIndex = add $nameIndex 1 }}
     - name: authorized-sa-pattern-{{index}}-{{$nameIndex}}
-      expression: 'has(object.metadata.annotations) && object.metadata.annotations.exists(l, l.startsWith("downscaler/") && (oldObject != null || !has(oldObject.metadata.annotations) || !(l in oldObject.metadata.annotations) || object.metadata.annotations[l] != oldObject.metadata.annotations[l])) && !request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")'
+      expression: 'has(object.metadata.annotations) && object.metadata.annotations.exists(l, l.startsWith("downscaler/") && (oldObject == null || !has(oldObject.metadata.annotations) || !(l in oldObject.metadata.annotations) || object.metadata.annotations[l] != oldObject.metadata.annotations[l])) && !request.userInfo.username.matches("^system:serviceaccount:{{$namespaceRegex}}:{{$saRegex}}")'
     {{- end }}
     {{- end }}
     {{- end }}
     {{- if .Values.annotationsCompliance.authorizedUsersRegex }}
     {{- range $index, $userRegex := .Values.annotationsCompliance.authorizedUsersRegex }}
     - name: authorized-user-pattern-{{$index}}
-      expression: 'has(object.metadata.annotations) && object.metadata.annotations.exists(l, l.startsWith("downscaler/") && (oldObject != null || !has(oldObject.metadata.annotations) || !(l in oldObject.metadata.annotations) || object.metadata.annotations[l] != oldObject.metadata.annotations[l])) && !request.userInfo.username.matches("{{ $userRegex }}")'
+      expression: 'has(object.metadata.annotations) && object.metadata.annotations.exists(l, l.startsWith("downscaler/") && (oldObject == null || !has(oldObject.metadata.annotations) || !(l in oldObject.metadata.annotations) || object.metadata.annotations[l] != oldObject.metadata.annotations[l])) && !request.userInfo.username.matches("{{ $userRegex }}")'
     {{- end }}
     {{- end }}
     {{- if .Values.annotationsCompliance.authorizedGroupsRegex }}
     {{- range $index, $groupRegex := .Values.annotationsCompliance.authorizedGroupsRegex }}
     - name: authorized-group-pattern-{{$index}}
-      expression: 'has(object.metadata.annotations) && object.metadata.annotations.exists(l, l.startsWith("downscaler/") && (oldObject != null || !has(oldObject.metadata.annotations) || !(l in oldObject.metadata.annotations) || object.metadata.annotations[l] != oldObject.metadata.annotations[l])) && !request.userInfo.groups.exists(g, g.matches("{{ $groupRegex }}"))'
+      expression: 'has(object.metadata.annotations) && object.metadata.annotations.exists(l, l.startsWith("downscaler/") && (oldObject == null || !has(oldObject.metadata.annotations) || !(l in oldObject.metadata.annotations) || object.metadata.annotations[l] != oldObject.metadata.annotations[l])) && !request.userInfo.groups.exists(g, g.matches("{{ $groupRegex }}"))'
     {{- end }}
     {{- end }}
   failurePolicy: Ignore
