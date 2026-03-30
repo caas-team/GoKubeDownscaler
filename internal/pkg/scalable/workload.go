@@ -39,6 +39,8 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"services":                 getServices,
 		"awsnlbservices":           getAWSNLBServices,
 		"awselbservices":           getAWSELBServices,
+		"ingresses":                getIngresses,
+		"gateways":                 getGateways,
 	}
 
 	resourceFunc, exists := resourceFuncMap[resource]
@@ -77,6 +79,8 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"services":                parseServiceFromBytes,
 		"awsnlbservice":           parseServiceFromBytes,
 		"awselbservice":           parseServiceFromBytes,
+		"ingresses":               parseIngressesFromBytes,
+		"gateways":                parseGatewaysFromBytes,
 	}
 
 	parseFunc, exists := parseWorkloadFuncMap[resource]
