@@ -1,4 +1,3 @@
-//nolint:gosec // G706 structured slog logging (safe), G705 machine-to-machine communication (not browser rendered)
 package main
 
 import (
@@ -168,6 +167,7 @@ func main() {
 func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
+	//nolint:gosec // G706 structured slog logging (safe), G705 machine-to-machine communication (not browser rendered)
 	slog.Debug("received validation request from uri", "requestURI", request.RequestURI)
 
 	admissionHandler := admission.NewWorkloadMutationHandler(
