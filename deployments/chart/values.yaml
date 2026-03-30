@@ -26,6 +26,9 @@ includedResources:
 #  - poddisruptionbudgets
 #  - prometheuses
 #  - autoscalingrunnersets
+#  - kafkaconnects
+#  - kafkamirrormaker2s
+#  - kafkabridges
 
 fullnameOverride: ""
 nameOverride: ""
