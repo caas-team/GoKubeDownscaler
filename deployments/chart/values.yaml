@@ -29,6 +29,8 @@ includedResources:
 #  - autoscalingrunnersets
 #  - awselbservices
 #  - awsnlbservices
+#  - ingresses
+#  - gateways
 
 fullnameOverride: ""
 nameOverride: ""

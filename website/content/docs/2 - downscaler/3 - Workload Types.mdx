@@ -131,3 +131,21 @@ with the `service.beta.kubernetes.io/aws-load-balancer-type` annotation set to a
 Scales by setting the type to ClusterIP.
 Only services with the `service.beta.kubernetes.io/aws-load-balancer-type` annotation
 set to `nlb` are scaled.
+
+### Ingresses
+
+- id: ingresses
+- resource: ingresses.v1.networking.k8s.io
+
+Scales by setting the IngressClassName of the Gateway object to `downscaler-ingress-class`.
+In a constrained installation, the GatewayClass object with the name `downscaler-gateway-class` must
+be provisioned by a cluster administrator having the necessary cluster-wide permissions
+
+### Gateways
+
+- id: gateways
+- resource: gateway.v1.networking.k8s.io
+
+Scales by setting the GatewayClassName of the Gateway object to `downscaler-gateway-class`.
+In a constrained installation, the GatewayClass object with the name `downscaler-gateway-class` must
+be provisioned by a cluster administrator having the necessary cluster-wide permissions

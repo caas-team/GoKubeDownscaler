@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 )
 
 // getResourceFunc is a function that gets a specific resource as a Workload.
@@ -149,5 +150,6 @@ type Clientsets struct {
 	Argo       *argo.Clientset
 	Zalando    *zalando.Clientset
 	Monitoring *monitoring.Clientset
+	Gateway    *gatewayapi.Clientset
 	Client     ctrlclient.Client
 }

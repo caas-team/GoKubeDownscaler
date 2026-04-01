@@ -47,7 +47,9 @@ const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
       "PodDisruptionBudget",
       "Job",
       "Services",
-      "CloudProvider Services"
+      "CloudProvider Services",
+      "Ingresses",
+      "Gateways"
     ],
   },
   {
