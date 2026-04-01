@@ -71,7 +71,7 @@ func (i *ingress) ScaleUp() error {
 
 // ScaleDown scales the resource down.
 func (i *ingress) ScaleDown(_ values.Replicas) (*metrics.SavedResources, error) {
-	currentState := i.Ingress.Spec.IngressClassName
+	currentState := i.Spec.IngressClassName
 
 	if *currentState == downscalerIngressClassConst {
 		_, err := getOriginalReplicas(i)
@@ -91,9 +91,9 @@ func (i *ingress) ScaleDown(_ values.Replicas) (*metrics.SavedResources, error) 
 
 		return metrics.NewSavedResources(0, 0), nil
 	}
-	
+
 	downscalerIngressClass := downscalerIngressClassConst
-	i.Ingress.Spec.IngressClassName = &downscalerIngressClass
+	i.Spec.IngressClassName = &downscalerIngressClass
 
 	replicas := values.StatusReplicas(*currentState)
 	setOriginalReplicas(replicas, i)
