@@ -101,3 +101,19 @@ The [validatingadmissionpolicyremoval.yaml](repo:deployments/chart/templates/val
 ValidatingAdmissionPolicy that blocks the removal of any `downscaler/` annotations from namespaces or workloads
 if unauthorized users or service accounts tried removing them.
 When deployed, the policy is bound to every namespace.
+
+## IngressClass
+
+The [downscalergatewayclass.yaml](repo:deployments/chart/templates/downscaleringressclass.yaml) file creates a GatewayClass that
+is sometimes needed for the GoKubeDownscaler to be able to scale down `Ingress` resources.
+This resource is optional, it is only
+needed if external operators (e.g. the AWS Load Balancer Controller) checks for the real presence of each `IngressClass` referenced
+in the templates of the `Ingress` resources in the cluster.
+
+## GatewayClass
+
+The [downscalergatewayclass.yaml](repo:deployments/chart/templates/downscalergatewayclass.yaml) file creates a GatewayClass that
+is sometimes needed for the GoKubeDownscaler to be able to scale down `Gateways` resources.
+This resource is optional, it is only
+needed if external operators (e.g. the AWS Load Balancer Controller) checks for the real presence of each `GatewayClass` referenced
+in the templates of the `Gateway` resources in the cluster.
