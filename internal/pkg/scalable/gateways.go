@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	downscalerGatewayClassConst = "downscaler-gateway-class"
+	downscalerGatewayClassConst = "kube-downscaler-gateway-class"
 )
 
 // getGateways is the getResourceFunc for gateways.

@@ -31,6 +31,24 @@ If replicaCount is greater than 1, leader election is enabled by default.
 {{- end }}
 
 {{/*
+Return true if "gateways" is present in .Values.includedResources
+*/}}
+{{- define "go-kube-downscaler.deployGatewayClass" -}}
+{{- if and (hasKey .Values "includedResources") (contains "gateways" (toJson .Values.includedResources)) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Return true if "ingresses" is present in .Values.includedResources
+*/}}
+{{- define "go-kube-downscaler.deployIngressClass" -}}
+{{- if and (hasKey .Values "includedResources") (contains "ingresses" (toJson .Values.includedResources)) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
 Common labels
 */}}
 {{- define "go-kube-downscaler.labels" -}}

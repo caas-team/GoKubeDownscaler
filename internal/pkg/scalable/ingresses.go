@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	downscalerIngressClassConst = "downscaler-ingress-class"
+	downscalerIngressClassConst = "kube-downscaler-ingress-class"
 )
 
 // getIngress is the getResourceFunc for ingresses.
