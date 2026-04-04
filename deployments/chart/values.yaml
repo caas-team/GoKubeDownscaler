@@ -121,6 +121,10 @@ configMap:
 # Force pod restart when the configuration changes
 forceRestartOnConfigChange: true
 
+deployExtraResources:
+  gatewayClass: false
+  ingressClass: false
+
 annotationsCompliance:
   mutateUnauthorizedAnnotationsAddition: false
   validationActions: [Deny]
