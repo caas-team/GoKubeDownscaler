@@ -1,11 +1,10 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -27,7 +26,7 @@ func getGateways(namespace string, clientsets *Clientsets, ctx context.Context) 
 
 	results := make([]Workload, 0, len(gateways.Items))
 	for i := range gateways.Items {
-		results = append(results, &gateway{&gateways.Items[i]})
+		results = append(results, &valueScaledWorkload{&gateway{&gateways.Items[i]}})
 	}
 
 	return results, nil
@@ -40,7 +39,7 @@ func parseGatewaysFromBytes(rawObject []byte) (Workload, error) {
 		return nil, fmt.Errorf("failed to decode Gateway: %w", err)
 	}
 
-	return &gateway{&gtw}, nil
+	return &valueScaledWorkload{&gateway{&gtw}}, nil
 }
 
 // ingress is a wrapper for ingress.networkingv1 to implement the Workload interface.
@@ -48,55 +47,26 @@ type gateway struct {
 	*gatewayv1.Gateway
 }
 
-// ScaleUp scales the resource up.
-func (g *gateway) ScaleUp() error {
-	originalState, err := getOriginalReplicas(g)
-	if err != nil {
-		var originalReplicasUnsetError *OriginalReplicasUnsetError
-		if ok := errors.As(err, &originalReplicasUnsetError); ok {
-			slog.Debug("original replicas is not set, skipping", "workload", g.GetName(), "namespace", g.GetNamespace())
-			return nil
-		}
-
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
-	}
-
-	g.Spec.GatewayClassName = gatewayv1.ObjectName(originalState.String())
-
-	removeOriginalReplicas(g)
+// setValue sets the value on the resource. Changes won't be made on Kubernetes until update() is called.
+func (g *gateway) setValue(targetReplicas values.Replicas) error {
+	g.Spec.GatewayClassName = gatewayv1.ObjectName(targetReplicas.String())
 
 	return nil
 }
 
-// ScaleDown scales the resource down.
-func (g *gateway) ScaleDown(_ values.Replicas) (*metrics.SavedResources, error) {
-	currentState := g.Spec.GatewayClassName
+// getValue gets the current value of the resource and the value used for downscaling,
+//
+//nolint:nonamedreturns //required to better understand the function
+func (g *gateway) getValue() (currentValue, downscalingValue values.Replicas, err error) {
+	currentValue = values.StatusReplicas(g.Spec.GatewayClassName)
+	downscalingValue = values.StatusReplicas(downscalerGatewayClassConst)
 
-	if currentState == downscalerGatewayClassConst {
-		_, err := getOriginalReplicas(g)
+	return currentValue, downscalingValue, nil
+}
 
-		var originalReplicasUnsetErr *OriginalReplicasUnsetError
-		if err != nil {
-			if ok := errors.As(err, &originalReplicasUnsetErr); !ok {
-				return metrics.NewSavedResources(0, 0), err
-			}
-
-			slog.Debug("workload is already at target scale down state, skipping", "workload", g.GetName(), "namespace", g.GetNamespace())
-
-			return metrics.NewSavedResources(0, 0), nil
-		}
-
-		slog.Debug("workload is already scaled down, skipping", "workload", g.GetName(), "namespace", g.GetNamespace())
-
-		return metrics.NewSavedResources(0, 0), nil
-	}
-
-	g.Spec.GatewayClassName = downscalerGatewayClassConst
-
-	replicas := values.StatusReplicas(currentState)
-	setOriginalReplicas(replicas, g)
-
-	return metrics.NewSavedResources(0, 0), nil
+// getSavedResourcesRequests gets the amount of resources that are requested to be saved by downscaling this resource.
+func (g *gateway) getSavedResourcesRequests() *metrics.SavedResources {
+	return metrics.NewSavedResources(0, 0)
 }
 
 // Reget regets the resource from the Kubernetes API.
@@ -129,14 +99,21 @@ func (g *gateway) Copy() (Workload, error) {
 
 	copied := g.DeepCopy()
 
-	return &gateway{Gateway: copied}, nil
+	return &valueScaledWorkload{valueScaledResource: &gateway{Gateway: copied}}, nil
 }
 
 // Compare compares two ingress resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (g *gateway) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
-	gtwCopy, ok := workloadCopy.(*gateway)
+	vswCopy, ok := workloadCopy.(*valueScaledWorkload)
 	if !ok {
-		return nil, newExpectTypeGotTypeError((*gateway)(nil), workloadCopy)
+		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
+	}
+
+	gtwCopy, ok := vswCopy.valueScaledResource.(*gateway)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*gateway)(nil), vswCopy.valueScaledResource)
 	}
 
 	if g.Gateway == nil || gtwCopy.Gateway == nil {

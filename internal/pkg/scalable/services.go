@@ -1,11 +1,10 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
@@ -28,7 +27,7 @@ func getServices(namespace string, clientsets *Clientsets, ctx context.Context) 
 
 	results := make([]Workload, 0, len(services.Items))
 	for i := range services.Items {
-		results = append(results, &service{&services.Items[i]})
+		results = append(results, &valueScaledWorkload{&service{&services.Items[i]}})
 	}
 
 	return results, nil
@@ -46,7 +45,7 @@ func getAWSELBServices(namespace string, clientsets *Clientsets, ctx context.Con
 		svc := &services.Items[i]
 
 		if val, ok := svc.Annotations[AWSLoadBalancerAnnotation]; !ok || !strings.EqualFold(val, "nlb") {
-			results = append(results, &service{svc})
+			results = append(results, &valueScaledWorkload{&service{svc}})
 		}
 	}
 
@@ -65,7 +64,7 @@ func getAWSNLBServices(namespace string, clientsets *Clientsets, ctx context.Con
 		svc := &services.Items[i]
 
 		if val, ok := svc.Annotations[AWSLoadBalancerAnnotation]; ok && strings.EqualFold(val, "nlb") {
-			results = append(results, &service{svc})
+			results = append(results, &valueScaledWorkload{&service{svc}})
 		}
 	}
 
@@ -79,7 +78,7 @@ func parseServiceFromBytes(rawObject []byte) (Workload, error) {
 		return nil, fmt.Errorf("failed to decode Service: %w", err)
 	}
 
-	return &service{&svc}, nil
+	return &valueScaledWorkload{&service{&svc}}, nil
 }
 
 // service is a wrapper for service.corev1 to implement the Workload interface.
@@ -87,59 +86,32 @@ type service struct {
 	*corev1.Service
 }
 
-// ScaleUp scales the resource up.
-func (s *service) ScaleUp() error {
-	originalState, err := getOriginalReplicas(s)
-	if err != nil {
-		var originalReplicasUnsetError *OriginalReplicasUnsetError
-		if ok := errors.As(err, &originalReplicasUnsetError); ok {
-			slog.Debug("original replicas is not set, skipping", "workload", s.GetName(), "namespace", s.GetNamespace())
-			return nil
-		}
-
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+// setValue sets the value on the resource. Changes won't be made on Kubernetes until update() is called.
+func (s *service) setValue(value values.Replicas) error {
+	// only allow LoadBalancer or ClusterIP
+	if value.String() != string(corev1.ServiceTypeLoadBalancer) && value.String() != string(corev1.ServiceTypeClusterIP) {
+		allowed := fmt.Sprintf("%s or %s", string(corev1.ServiceTypeLoadBalancer), string(corev1.ServiceTypeClusterIP))
+		return newUnexpectedOriginalReplicasError(allowed, value)
 	}
 
-	if originalState.String() != string(corev1.ServiceTypeLoadBalancer) {
-		return newUnexpectedOriginalReplicasError(string(corev1.ServiceTypeLoadBalancer), originalState.String())
-	}
-
-	s.Spec.Type = corev1.ServiceType(originalState.String())
-
-	removeOriginalReplicas(s)
+	s.Spec.Type = corev1.ServiceType(value.String())
 
 	return nil
 }
 
-// ScaleDown scales the resource down.
-func (s *service) ScaleDown(_ values.Replicas) (*metrics.SavedResources, error) {
-	currentState := string(s.Spec.Type)
+// getValue gets the current value of the resource and the value used for downscaling,
+//
+//nolint:nonamedreturns //required to better understand the function
+func (s *service) getValue() (currentValue, downscalingValue values.Replicas, err error) {
+	currentValue = values.StatusReplicas(s.Spec.Type)
+	downscalingValue = values.StatusReplicas(corev1.ServiceTypeClusterIP)
 
-	if currentState == string(corev1.ServiceTypeClusterIP) {
-		_, err := getOriginalReplicas(s)
+	return currentValue, downscalingValue, nil
+}
 
-		var originalReplicasUnsetErr *OriginalReplicasUnsetError
-		if err != nil {
-			if ok := errors.As(err, &originalReplicasUnsetErr); !ok {
-				return metrics.NewSavedResources(0, 0), err
-			}
-
-			slog.Debug("workload is already at target scale down state, skipping", "workload", s.GetName(), "namespace", s.GetNamespace())
-
-			return metrics.NewSavedResources(0, 0), nil
-		}
-
-		slog.Debug("workload is already scaled down, skipping", "workload", s.GetName(), "namespace", s.GetNamespace())
-
-		return metrics.NewSavedResources(0, 0), nil
-	}
-
-	s.Spec.Type = corev1.ServiceTypeClusterIP
-
-	replicas := values.StatusReplicas(currentState)
-	setOriginalReplicas(replicas, s)
-
-	return metrics.NewSavedResources(0, 0), nil
+// getSavedResourcesRequests gets the amount of resources that are requested to be saved by downscaling this resource.
+func (s *service) getSavedResourcesRequests() *metrics.SavedResources {
+	return metrics.NewSavedResources(0, 0)
 }
 
 // Reget regets the resource from the Kubernetes API.
@@ -172,14 +144,21 @@ func (s *service) Copy() (Workload, error) {
 
 	copied := s.DeepCopy()
 
-	return &service{Service: copied}, nil
+	return &valueScaledWorkload{&service{Service: copied}}, nil
 }
 
 // Compare compares two service resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (s *service) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
-	svcCopy, ok := workloadCopy.(*service)
+	vsw, ok := workloadCopy.(*valueScaledWorkload)
 	if !ok {
-		return nil, newExpectTypeGotTypeError((*service)(nil), workloadCopy)
+		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
+	}
+
+	svcCopy, ok := vsw.valueScaledResource.(*service)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*service)(nil), vsw.valueScaledResource)
 	}
 
 	if s.Service == nil || svcCopy.Service == nil {

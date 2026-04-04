@@ -42,16 +42,16 @@ func (o *OriginalReplicasUnsetError) Error() string {
 }
 
 type UnexpectedOriginalReplicasError struct {
-	expected string
-	actual   string
+	allowedValues string
+	actual        any
 }
 
-func newUnexpectedOriginalReplicasError(expected, actual string) error {
-	return &UnexpectedOriginalReplicasError{expected: expected, actual: actual}
+func newUnexpectedOriginalReplicasError(allowedValues string, actual any) error {
+	return &UnexpectedOriginalReplicasError{allowedValues: allowedValues, actual: actual}
 }
 
 func (u *UnexpectedOriginalReplicasError) Error() string {
-	return fmt.Sprintf("expected originalReplicas %T, got %T", u.expected, u.actual)
+	return fmt.Sprintf("unexpected originalReplicas: allowed %q, got %v", u.allowedValues, u.actual)
 }
 
 type ExpectTypeGotTypeError struct {
@@ -80,4 +80,17 @@ func newNilUnderlyingObjectError(workloadType string) error {
 
 func (o *NilUnderlyingObjectError) Error() string {
 	return o.workloadType + " not found"
+}
+
+type IngressClassNameNilError struct {
+	namespace string
+	name      string
+}
+
+func newIngressClassNameNilError(namespace, name string) error {
+	return &IngressClassNameNilError{namespace: namespace, name: name}
+}
+
+func (e *IngressClassNameNilError) Error() string {
+	return fmt.Sprintf("IngressClassName is nil for ingress %s / %s", e.namespace, e.name)
 }

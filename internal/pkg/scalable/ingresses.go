@@ -1,11 +1,10 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -27,7 +26,7 @@ func getIngresses(namespace string, clientsets *Clientsets, ctx context.Context)
 
 	results := make([]Workload, 0, len(ingresses.Items))
 	for i := range ingresses.Items {
-		results = append(results, &ingress{&ingresses.Items[i]})
+		results = append(results, &valueScaledWorkload{&ingress{&ingresses.Items[i]}})
 	}
 
 	return results, nil
@@ -40,7 +39,7 @@ func parseIngressesFromBytes(rawObject []byte) (Workload, error) {
 		return nil, fmt.Errorf("failed to decode Ingress: %w", err)
 	}
 
-	return &ingress{&ing}, nil
+	return &valueScaledWorkload{&ingress{&ing}}, nil
 }
 
 // ingress is a wrapper for ingress.networkingv1 to implement the Workload interface.
@@ -48,57 +47,31 @@ type ingress struct {
 	*networkingv1.Ingress
 }
 
-// ScaleUp scales the resource up.
-func (i *ingress) ScaleUp() error {
-	originalState, err := getOriginalReplicas(i)
-	if err != nil {
-		var originalReplicasUnsetError *OriginalReplicasUnsetError
-		if ok := errors.As(err, &originalReplicasUnsetError); ok {
-			slog.Debug("original replicas is not set, skipping", "workload", i.GetName(), "namespace", i.GetNamespace())
-			return nil
-		}
+// getSavedResourcesRequests gets the amount of resources that are requested to be saved by downscaling this resource.
+func (i *ingress) getSavedResourcesRequests() *metrics.SavedResources {
+	return metrics.NewSavedResources(0, 0)
+}
 
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
-	}
-
-	originalIngressClassName := originalState.String()
-	i.Spec.IngressClassName = &originalIngressClassName
-
-	removeOriginalReplicas(i)
+// setValue sets the value on the resource. Changes won't be made on Kubernetes until update() is called.
+func (i *ingress) setValue(targetReplicas values.Replicas) error {
+	targetValue := targetReplicas.String()
+	i.Spec.IngressClassName = &targetValue
 
 	return nil
 }
 
-// ScaleDown scales the resource down.
-func (i *ingress) ScaleDown(_ values.Replicas) (*metrics.SavedResources, error) {
-	currentState := i.Spec.IngressClassName
-
-	if *currentState == downscalerIngressClassConst {
-		_, err := getOriginalReplicas(i)
-
-		var originalReplicasUnsetErr *OriginalReplicasUnsetError
-		if err != nil {
-			if ok := errors.As(err, &originalReplicasUnsetErr); !ok {
-				return metrics.NewSavedResources(0, 0), err
-			}
-
-			slog.Debug("workload is already at target scale down state, skipping", "workload", i.GetName(), "namespace", i.GetNamespace())
-
-			return metrics.NewSavedResources(0, 0), nil
-		}
-
-		slog.Debug("workload is already scaled down, skipping", "workload", i.GetName(), "namespace", i.GetNamespace())
-
-		return metrics.NewSavedResources(0, 0), nil
+// getValue gets the current value of the resource and the value used for downscaling,
+//
+//nolint:nonamedreturns //required to better understand the function
+func (i *ingress) getValue() (currentValue, downscalingValue values.Replicas, err error) {
+	if i.Spec.IngressClassName == nil {
+		return nil, nil, newIngressClassNameNilError(i.GetNamespace(), i.GetName())
 	}
 
-	downscalerIngressClass := downscalerIngressClassConst
-	i.Spec.IngressClassName = &downscalerIngressClass
+	currentValue = values.StatusReplicas(*i.Spec.IngressClassName)
+	downscalingValue = values.StatusReplicas(downscalerIngressClassConst)
 
-	replicas := values.StatusReplicas(*currentState)
-	setOriginalReplicas(replicas, i)
-
-	return metrics.NewSavedResources(0, 0), nil
+	return currentValue, downscalingValue, nil
 }
 
 // Reget regets the resource from the Kubernetes API.
@@ -131,14 +104,21 @@ func (i *ingress) Copy() (Workload, error) {
 
 	copied := i.DeepCopy()
 
-	return &ingress{Ingress: copied}, nil
+	return &valueScaledWorkload{&ingress{Ingress: copied}}, nil
 }
 
 // Compare compares two ingress resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (i *ingress) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
-	ingCopy, ok := workloadCopy.(*ingress)
+	vsw, ok := workloadCopy.(*valueScaledWorkload)
 	if !ok {
-		return nil, newExpectTypeGotTypeError((*ingress)(nil), workloadCopy)
+		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
+	}
+
+	ingCopy, ok := vsw.valueScaledResource.(*ingress)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*ingress)(nil), vsw.valueScaledResource)
 	}
 
 	if i.Ingress == nil || ingCopy.Ingress == nil {
