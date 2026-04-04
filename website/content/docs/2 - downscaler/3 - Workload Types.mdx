@@ -106,3 +106,46 @@ Scales by setting the replica count to the [downscale replicas](ref:docs-values#
 - resource: autoscalingrunnerset.v1alpha1.actions.github.com
 
 Scales by setting the minRunners count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+### Services
+
+- id: services
+- resource: services.v1
+
+Scales by setting the type to ClusterIP.
+
+### AWSELBServices
+
+- id: awselbservices
+- resource: services.v1
+
+Scales by setting the type to ClusterIP.
+Only services without the `service.beta.kubernetes.io/aws-load-balancer-type` annotation or
+with the `service.beta.kubernetes.io/aws-load-balancer-type` annotation set to a value different from `nlb` are scaled.
+
+### AWSNLBServices
+
+- id: awsnlbservices
+- resource: services.v1
+
+Scales by setting the type to ClusterIP.
+Only services with the `service.beta.kubernetes.io/aws-load-balancer-type` annotation
+set to `nlb` are scaled.
+
+### Ingresses
+
+- id: ingresses
+- resource: ingresses.v1.networking.k8s.io
+
+Scales by setting the IngressClassName of the Gateway object to `downscaler-ingress-class`.
+In a constrained installation, the GatewayClass object with the name `downscaler-gateway-class` must
+be provisioned by a cluster administrator having the necessary cluster-wide permissions
+
+### Gateways
+
+- id: gateways
+- resource: gateway.v1.networking.k8s.io
+
+Scales by setting the GatewayClassName of the Gateway object to `downscaler-gateway-class`.
+In a constrained installation, the GatewayClass object with the name `downscaler-gateway-class` must
+be provisioned by a cluster administrator having the necessary cluster-wide permissions

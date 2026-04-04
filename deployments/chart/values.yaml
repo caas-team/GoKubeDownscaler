@@ -22,10 +22,15 @@ includedResources:
 #  - jobs
 #  - cronjobs
 #  - scaledobjects
+#  - services
 #  - stacks
 #  - poddisruptionbudgets
 #  - prometheuses
 #  - autoscalingrunnersets
+#  - awselbservices
+#  - awsnlbservices
+#  - ingresses
+#  - gateways
 
 fullnameOverride: ""
 nameOverride: ""
@@ -115,6 +120,10 @@ configMap:
 
 # Force pod restart when the configuration changes
 forceRestartOnConfigChange: true
+
+deployExtraResources:
+  gatewayClass: false
+  ingressClass: false
 
 annotationsCompliance:
   mutateUnauthorizedAnnotationsAddition: false
