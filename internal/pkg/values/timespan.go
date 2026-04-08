@@ -93,6 +93,18 @@ func (t *timeSpans) Set(value string) error {
 			continue
 		}
 
+		if isSingleTimespan(timespanText) {
+			// parse as single timespan
+			timespan, err := parseSingleTimeSpan(timespanText)
+			if err != nil {
+				return fmt.Errorf("failed to parse single timespan: %w", err)
+			}
+
+			timespans = append(timespans, timespan)
+
+			continue
+		}
+
 		// parse as relative timestamp
 		timespan, err := parseRelativeTimeSpan(timespanText)
 		if err != nil {
@@ -314,6 +326,101 @@ func getWeekday(weekday string) (*time.Weekday, error) {
 		"weekday is not in the expected format (e.g. 'mon, tue, wed, thu, fri, sat, sun')",
 		weekday,
 	)
+}
+
+type singleTimeMode int
+
+const (
+	modeFrom singleTimeMode = iota
+	modeUntil
+)
+
+func (s singleTimeMode) String() string {
+	switch s {
+	case modeFrom:
+		return "from"
+	case modeUntil:
+		return "until"
+	default:
+		return "unknown"
+	}
+}
+
+type singleTimeSpan struct {
+	mode *singleTimeMode
+	time time.Time
+}
+
+// isTimeInSpan check if the time is in the span.
+func (s singleTimeSpan) isTimeInSpan(targetTime time.Time, _ Scopes) (bool, error) {
+	if s.mode == nil {
+		return false, newIsTimeInSpanError("timespan mode is nil")
+	}
+
+	if *s.mode == modeFrom {
+		return !targetTime.Before(s.time), nil
+	}
+
+	if *s.mode == modeUntil {
+		return targetTime.Before(s.time), nil
+	}
+
+	return false, newIsTimeInSpanError("unknown timespan mode")
+}
+
+// String implementation for singleTimeSpan.
+func (s singleTimeSpan) String() string {
+	return fmt.Sprintf(
+		"singleTimeSpan(%s %s)",
+		s.mode.String(),
+		s.time.Format(time.RFC3339),
+	)
+}
+
+// parseSingleTimeSpan parses an absolute timespan. will panic if timespan is not an absolute timespan.
+func parseSingleTimeSpan(timespanString string) (*singleTimeSpan, error) {
+	trimmedTimespan := strings.TrimSpace(timespanString)
+	if trimmedTimespan == "" {
+		return nil, newInvalidSyntaxError("empty timespan: ", timespanString)
+	}
+
+	lower := strings.ToLower(trimmedTimespan)
+	var mode singleTimeMode
+	var timespan string
+
+	switch {
+	case strings.HasPrefix(lower, "from"):
+		mode = modeFrom
+		timespan = strings.TrimSpace(trimmedTimespan[len("from"):])
+
+	case strings.HasPrefix(lower, "until"):
+		mode = modeUntil
+		timespan = strings.TrimSpace(trimmedTimespan[len("until"):])
+
+	default:
+		return nil, newInvalidSyntaxError(
+			"failed to parse single timespan: missing 'from' or 'until' prefix: ",
+			timespanString,
+		)
+	}
+
+	if timespan == "" {
+		return nil, newInvalidSyntaxError("missing timestamp in single timespan: ", timespanString)
+	}
+
+	rfcTimespan, err := time.Parse(time.RFC3339, timespan)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse timestamp: %w", err)
+	}
+
+	m := mode
+
+	return &singleTimeSpan{mode: &m, time: rfcTimespan}, nil
+}
+
+// isSingleTimespan checks if the timespan string is of an absolute Timespan.
+func isSingleTimespan(timestamp string) bool {
+	return strings.HasPrefix(timestamp, "from") || strings.HasPrefix(timestamp, "until")
 }
 
 // booleanTimeSpan is a TimeSpan which statically is either always active or never active.

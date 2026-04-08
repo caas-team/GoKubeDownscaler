@@ -68,6 +68,18 @@ func (p *InvalidReplicaTypeError) Error() string {
 	return fmt.Sprintf("invalid replica type error: %q, got %s.", p.reason, p.value)
 }
 
+type isTimeInSpanError struct {
+	reason string
+}
+
+func newIsTimeInSpanError(reason string) error {
+	return &isTimeInSpanError{reason: reason}
+}
+
+func (u *isTimeInSpanError) Error() string {
+	return fmt.Sprintf("timespan error: %q", u.reason)
+}
+
 type UndefinedDefaultError struct {
 	reason string
 }

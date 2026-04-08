@@ -676,3 +676,90 @@ func TestIsAbsoluteTimestamp(t *testing.T) {
 		})
 	}
 }
+
+func TestParseSingleTimeSpan(t *testing.T) {
+	t.Parallel()
+
+	testTimestamp := "2024-07-01T12:00:00Z"
+	t1Time, _ := time.Parse(time.RFC3339, testTimestamp)
+
+	tests := []struct {
+		name    string
+		input   string
+		want    *singleTimeSpan
+		wantErr bool
+	}{
+		{
+			name:  "from valid",
+			input: "from" + testTimestamp,
+			want:  &singleTimeSpan{mode: func() *singleTimeMode { m := modeFrom; return &m }(), time: t1Time},
+		},
+		{
+			name:  "until valid",
+			input: "until" + testTimestamp,
+			want:  &singleTimeSpan{mode: func() *singleTimeMode { m := modeUntil; return &m }(), time: t1Time},
+		},
+		{
+			name:    "missing prefix",
+			input:   testTimestamp,
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "empty",
+			input:   "",
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "invalid timestamp",
+			input:   "from not-a-time",
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := parseSingleTimeSpan(test.input)
+			if test.wantErr {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, got)
+			assert.Equal(t, test.want.time, got.time)
+			require.NotNil(t, got.mode)
+			assert.Equal(t, test.want.mode, got.mode)
+		})
+	}
+}
+
+func TestIsSingleTimestamp(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input string
+		want  bool
+	}{
+		{name: "from with space", input: "from 2024-07-01T12:00:00Z", want: true},
+		{name: "until with space", input: "until 2024-07-01T12:00:00Z", want: true},
+		{name: "from no space", input: "from2024-07-01T12:00:00Z", want: true},
+		{name: "Until capitalized", input: "Until 2024-07-01T12:00:00Z", want: false},
+		{name: "From capitalized", input: "From2024-07-01T12:00:00Z", want: false},
+		{name: "random timestamp", input: "2024-07-01T12:00:00Z", want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := isSingleTimespan(tt.input)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
