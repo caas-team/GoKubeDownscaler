@@ -93,9 +93,9 @@ func (t *timeSpans) Set(value string) error {
 			continue
 		}
 
-		if isSingleTimespan(timespanText) {
+		if isDirectionalTimespan(timespanText) {
 			// parse as single timespan
-			timespan, err := parseSingleTimeSpan(timespanText)
+			timespan, err := parseDirectionalTimeSpan(timespanText)
 			if err != nil {
 				return fmt.Errorf("failed to parse single timespan: %w", err)
 			}
@@ -328,14 +328,14 @@ func getWeekday(weekday string) (*time.Weekday, error) {
 	)
 }
 
-type singleTimeMode int
+type DirectionalMode int
 
 const (
-	modeFrom singleTimeMode = iota
+	modeFrom DirectionalMode = iota
 	modeUntil
 )
 
-func (s singleTimeMode) String() string {
+func (s DirectionalMode) String() string {
 	switch s {
 	case modeFrom:
 		return "from"
@@ -346,13 +346,13 @@ func (s singleTimeMode) String() string {
 	}
 }
 
-type singleTimeSpan struct {
-	mode *singleTimeMode
+type directionalTimeSpan struct {
+	mode *DirectionalMode
 	time time.Time
 }
 
 // isTimeInSpan check if the time is in the span.
-func (s singleTimeSpan) isTimeInSpan(targetTime time.Time, _ Scopes) (bool, error) {
+func (s directionalTimeSpan) isTimeInSpan(targetTime time.Time, _ Scopes) (bool, error) {
 	if s.mode == nil {
 		return false, newIsTimeInSpanError("timespan mode is nil")
 	}
@@ -368,8 +368,8 @@ func (s singleTimeSpan) isTimeInSpan(targetTime time.Time, _ Scopes) (bool, erro
 	return false, newIsTimeInSpanError("unknown timespan mode")
 }
 
-// String implementation for singleTimeSpan.
-func (s singleTimeSpan) String() string {
+// String implementation for directionalTimeSpan.
+func (s directionalTimeSpan) String() string {
 	return fmt.Sprintf(
 		"singleTimeSpan(%s %s)",
 		s.mode.String(),
@@ -377,25 +377,33 @@ func (s singleTimeSpan) String() string {
 	)
 }
 
-// parseSingleTimeSpan parses an absolute timespan. will panic if timespan is not an absolute timespan.
-func parseSingleTimeSpan(timespanString string) (*singleTimeSpan, error) {
+// parseDirectionalTimeSpan parses a directionalTimeSpan. will panic if timespan is not a directionalTimeSpan.
+func parseDirectionalTimeSpan(timespanString string) (*directionalTimeSpan, error) {
 	trimmedTimespan := strings.TrimSpace(timespanString)
 	if trimmedTimespan == "" {
 		return nil, newInvalidSyntaxError("empty timespan: ", timespanString)
 	}
 
 	lower := strings.ToLower(trimmedTimespan)
-	var mode singleTimeMode
+	var mode DirectionalMode
 	var timespan string
 
 	switch {
 	case strings.HasPrefix(lower, "from"):
 		mode = modeFrom
+
 		timespan = strings.TrimSpace(trimmedTimespan[len("from"):])
+		if strings.HasPrefix(timespan, "-") {
+			timespan = strings.TrimSpace(timespan[1:])
+		}
 
 	case strings.HasPrefix(lower, "until"):
 		mode = modeUntil
+
 		timespan = strings.TrimSpace(trimmedTimespan[len("until"):])
+		if strings.HasPrefix(timespan, "-") {
+			timespan = strings.TrimSpace(timespan[1:])
+		}
 
 	default:
 		return nil, newInvalidSyntaxError(
@@ -405,7 +413,7 @@ func parseSingleTimeSpan(timespanString string) (*singleTimeSpan, error) {
 	}
 
 	if timespan == "" {
-		return nil, newInvalidSyntaxError("missing timestamp in single timespan: ", timespanString)
+		return nil, newInvalidSyntaxError("missing timestamp in directional timespan: ", timespanString)
 	}
 
 	rfcTimespan, err := time.Parse(time.RFC3339, timespan)
@@ -415,11 +423,11 @@ func parseSingleTimeSpan(timespanString string) (*singleTimeSpan, error) {
 
 	m := mode
 
-	return &singleTimeSpan{mode: &m, time: rfcTimespan}, nil
+	return &directionalTimeSpan{mode: &m, time: rfcTimespan}, nil
 }
 
-// isSingleTimespan checks if the timespan string is of an absolute Timespan.
-func isSingleTimespan(timestamp string) bool {
+// isDirectionalTimespan checks if the timespan string is of an absolute Timespan.
+func isDirectionalTimespan(timestamp string) bool {
 	return strings.HasPrefix(timestamp, "from") || strings.HasPrefix(timestamp, "until")
 }
 
