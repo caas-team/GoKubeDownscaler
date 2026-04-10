@@ -677,7 +677,7 @@ func TestIsAbsoluteTimestamp(t *testing.T) {
 	}
 }
 
-func TestParseSingleTimeSpan(t *testing.T) {
+func TestParseDirectionalTimeSpan(t *testing.T) {
 	t.Parallel()
 
 	testTimestamp := "2024-07-01T12:00:00Z"
@@ -686,18 +686,48 @@ func TestParseSingleTimeSpan(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string
-		want    *singleTimeSpan
+		want    *directionalTimeSpan
 		wantErr bool
 	}{
 		{
 			name:  "from valid",
 			input: "from" + testTimestamp,
-			want:  &singleTimeSpan{mode: func() *singleTimeMode { m := modeFrom; return &m }(), time: t1Time},
+			want:  &directionalTimeSpan{mode: func() *DirectionalMode { m := modeFrom; return &m }(), time: t1Time},
 		},
 		{
 			name:  "until valid",
 			input: "until" + testTimestamp,
-			want:  &singleTimeSpan{mode: func() *singleTimeMode { m := modeUntil; return &m }(), time: t1Time},
+			want:  &directionalTimeSpan{mode: func() *DirectionalMode { m := modeUntil; return &m }(), time: t1Time},
+		},
+		{
+			name:  "from valid with space",
+			input: "from " + testTimestamp,
+			want:  &directionalTimeSpan{mode: func() *DirectionalMode { m := modeFrom; return &m }(), time: t1Time},
+		},
+		{
+			name:  "until valid with space",
+			input: "until " + testTimestamp,
+			want:  &directionalTimeSpan{mode: func() *DirectionalMode { m := modeUntil; return &m }(), time: t1Time},
+		},
+		{
+			name:  "from valid with hyphen",
+			input: "from-" + testTimestamp,
+			want:  &directionalTimeSpan{mode: func() *DirectionalMode { m := modeFrom; return &m }(), time: t1Time},
+		},
+		{
+			name:  "until valid with hyphen",
+			input: "until-" + testTimestamp,
+			want:  &directionalTimeSpan{mode: func() *DirectionalMode { m := modeUntil; return &m }(), time: t1Time},
+		},
+		{
+			name:  "from valid with hyphen",
+			input: "from - " + testTimestamp,
+			want:  &directionalTimeSpan{mode: func() *DirectionalMode { m := modeFrom; return &m }(), time: t1Time},
+		},
+		{
+			name:  "until valid with hyphen",
+			input: "until - " + testTimestamp,
+			want:  &directionalTimeSpan{mode: func() *DirectionalMode { m := modeUntil; return &m }(), time: t1Time},
 		},
 		{
 			name:    "missing prefix",
@@ -723,7 +753,7 @@ func TestParseSingleTimeSpan(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := parseSingleTimeSpan(test.input)
+			got, err := parseDirectionalTimeSpan(test.input)
 			if test.wantErr {
 				require.Error(t, err)
 				return
@@ -738,7 +768,7 @@ func TestParseSingleTimeSpan(t *testing.T) {
 	}
 }
 
-func TestIsSingleTimestamp(t *testing.T) {
+func TestIsDirectionalTimestamp(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -758,7 +788,7 @@ func TestIsSingleTimestamp(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := isSingleTimespan(tt.input)
+			got := isDirectionalTimespan(tt.input)
 			assert.Equal(t, tt.want, got)
 		})
 	}
