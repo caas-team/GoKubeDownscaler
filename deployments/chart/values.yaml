@@ -30,6 +30,9 @@ includedResources:
 #  - kafkaconnects
 #  - kafkamirrormaker2s
 #  - kafkabridges
+#  - advancedstatefulsets
+#  - clonesets
+#  - uniteddeployments
 
 fullnameOverride: ""
 nameOverride: ""

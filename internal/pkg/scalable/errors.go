@@ -29,6 +29,18 @@ func (i *InvalidResourceError) Error() string {
 	return fmt.Sprintf("error: specified rescource type %q is not supported", i.resource)
 }
 
+type UnsupportedAPIVersionError struct {
+	apiVersion string
+}
+
+func newUnsupportedAPIVersionError(apiVersion string) error {
+	return &UnsupportedAPIVersionError{apiVersion: apiVersion}
+}
+
+func (e *UnsupportedAPIVersionError) Error() string {
+	return fmt.Sprintf("error: unsupported apiVersion %q", e.apiVersion)
+}
+
 type OriginalReplicasUnsetError struct {
 	reason string
 }
