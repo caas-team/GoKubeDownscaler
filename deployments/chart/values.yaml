@@ -26,6 +26,9 @@ includedResources:
 #  - poddisruptionbudgets
 #  - prometheuses
 #  - autoscalingrunnersets
+#  - advancedstatefulsets
+#  - clonesets
+#  - uniteddeployments
 
 fullnameOverride: ""
 nameOverride: ""
