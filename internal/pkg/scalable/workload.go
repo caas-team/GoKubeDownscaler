@@ -8,6 +8,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
+	kruise "github.com/openkruise/kruise/pkg/client/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	"github.com/wI2L/jsondiff"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
@@ -36,6 +37,9 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"stacks":                   getStacks,
 		"prometheuses":             getPrometheuses,
 		"autoscalingrunnersets":    getAutoscalingRunnerSets,
+		"kruisestatefulsets":       getKruiseStatefulSets,
+		"clonesets":                getCloneSets,
+		"uniteddeployments":        getUnitedDeployments,
 	}
 
 	resourceFunc, exists := resourceFuncMap[resource]
@@ -71,6 +75,9 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"stack":                   parseStackFromBytes,
 		"prometheus":              parsePrometheusFromBytes,
 		"autoscalingrunnerset":    parseAutoscalingRunnerSetFromBytes,
+		"advancedstatefulsets":    parseKruiseStatefulSetFromBytes,
+		"clonesets":               parseCloneSetFromBytes,
+		"uniteddeployments":       parseUnitedDeploymentsFromBytes,
 	}
 
 	parseFunc, exists := parseWorkloadFuncMap[resource]
@@ -140,4 +147,5 @@ type Clientsets struct {
 	Zalando    *zalando.Clientset
 	Monitoring *monitoring.Clientset
 	Client     ctrlclient.Client
+	Kruise     *kruise.Clientset
 }

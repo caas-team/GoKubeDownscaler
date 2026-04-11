@@ -285,6 +285,36 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "advancedstatefulsets" }}
+- apiGroups:
+    - apps.kruise.io
+  resources:
+    - statefulsets
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "clonesets" }}
+- apiGroups:
+    - apps.kruise.io
+  resources:
+    - clonesets
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "uniteddeployments" }}
+- apiGroups:
+    - apps.kruise.io
+  resources:
+    - uniteddeployments
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -424,6 +454,39 @@ Create webhook resources
     - "UPDATE"
   resources:
     - autoscalingrunnersets
+{{ end -}}
+{{ if eq $resource "advancedstatefulsets" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1beta1"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - statefulsets
+{{ end -}}
+{{ if eq $resource "clonesets" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1alpha1"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - clonesets
+{{ end -}}
+{{ if eq $resource "uniteddeployments" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1alpha1"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - uniteddeployments
 {{ end -}}
 {{ end -}}
 {{- end }}
@@ -590,6 +653,45 @@ resources include in annotationsCompliance
     - "UPDATE"
   resources:
     - autoscalingrunnersets
+{{ end -}}
+{{ if eq $resource "advancedstatefulsets" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1beta1"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - statefulsets
+{{ end -}}
+{{ if eq $resource "clonesets" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1alpha1"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - clonesets
+{{ end -}}
+{{ if eq $resource "uniteddeployments" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1alpha1"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - uniteddeployments
 {{ end -}}
 {{ end -}}
 {{- end }}

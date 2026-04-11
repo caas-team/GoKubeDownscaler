@@ -7,6 +7,7 @@ require (
 	github.com/argoproj/argo-rollouts v1.8.4
 	github.com/kedacore/keda/v2 v2.18.3
 	github.com/open-policy-agent/cert-controller v0.15.0
+	github.com/openkruise/kruise v1.8.3
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.89.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.89.0
 	github.com/prometheus/client_golang v1.23.2
