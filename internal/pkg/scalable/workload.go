@@ -8,6 +8,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
+	kruise "github.com/openkruise/kruise/pkg/client/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	"github.com/wI2L/jsondiff"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
@@ -46,6 +47,9 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"kafkaconnects":            getKafkaConnects,
 		"kafkamirrormaker2s":       getKafkaMirrorMaker2s,
 		"kafkabridges":             getKafkaBridges,
+		"kruisestatefulsets":       getKruiseStatefulSets,
+		"clonesets":                getCloneSets,
+		"uniteddeployments":        getUnitedDeployments,
 	}
 
 	resourceFunc, exists := resourceFuncMap[resource]
@@ -90,6 +94,9 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"kafkaconnect":            parseKafkaConnectFromBytes,
 		"kafkamirrormaker2":       parseKafkaMirrorMaker2FromBytes,
 		"kafkabridge":             parseKafkaBridgeFromBytes,
+		"advancedstatefulsets":    parseKruiseStatefulSetFromBytes,
+		"clonesets":               parseCloneSetFromBytes,
+		"uniteddeployments":       parseUnitedDeploymentsFromBytes,
 	}
 
 	parseFunc, exists := parseWorkloadFuncMap[resource]
@@ -160,4 +167,5 @@ type Clientsets struct {
 	Monitoring *monitoring.Clientset
 	Gateway    *gatewayapi.Clientset
 	Client     ctrlclient.Client
+	Kruise     *kruise.Clientset
 }
