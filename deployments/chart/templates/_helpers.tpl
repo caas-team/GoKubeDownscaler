@@ -648,6 +648,7 @@ Create webhook resources
     - apps.kruise.io
   apiVersions:
     - "v1beta1"
+    - "v1alpha1"
   operations:
     - "CREATE"
     - "UPDATE"
@@ -901,7 +902,7 @@ resources include in annotationsCompliance
 - apiGroups:
     - apps.kruise.io
   apiVersions:
-    - "v1beta1"
+    - "*"
   operations:
   {{- if $createUpdate }}
     - "CREATE"
