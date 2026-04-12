@@ -6,6 +6,7 @@ import * as KedaSVG from "@site/static/img/Keda.svg";
 import * as ZalandoSVG from "@site/static/img/Zalando.svg";
 import * as GithubLightSVG from "@site/static/img/Github-white.svg";
 import * as GithubDarkSVG from "@site/static/img/Github.svg";
+import * as GatewaySVG from "@site/static/img/Gateway.svg";
 import { useColorMode } from "@docusaurus/theme-common";
 import Link from "@docusaurus/Link";
 
@@ -16,6 +17,7 @@ const delayClasses = [
   "animate-delay-750",
   "animate-delay-1000",
   "animate-delay-1250",
+  "animate-delay-1500"
 ];
 
 const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
@@ -39,17 +41,15 @@ const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
     SvgDark: KubernetesSVG.default,
     href: "https://kubernetes.io/",
     supportedResources: [
-      "Deployment",
-      "StatefulSet",
-      "DeamonSet",
-      "CronJob",
-      "HorizontalPodAutoscaler",
-      "PodDisruptionBudget",
-      "Job",
+      "Deployments",
+      "StatefulSets",
+      "DeamonSets",
+      "CronJobs",
+      "HorizontalPodAutoscalers",
+      "PodDisruptionBudgets",
+      "Jobs",
       "Services",
-      "CloudProvider Services",
-      "Ingresses",
-      "Gateways"
+      "Ingresses"
     ],
   },
   {
@@ -72,6 +72,13 @@ const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
     SvgDark: GithubLightSVG.default,
     href: "https://docs.github.com/en/actions/concepts/runners/actions-runner-controller",
     supportedResources: ["AutoscalingRunnerSet"],
+  },
+  {
+    title: "Gateway API",
+    SvgLight: GatewaySVG.default,
+    SvgDark: GatewaySVG.default,
+    href: "https://gateway-api.sigs.k8s.io/",
+    supportedResources: ["Gateways"],
   },
 ];
 
