@@ -37,7 +37,7 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"stacks":                   getStacks,
 		"prometheuses":             getPrometheuses,
 		"autoscalingrunnersets":    getAutoscalingRunnerSets,
-		"kruisestatefulsets":       getAdvancedStatefulSets,
+		"advancedstatefulsets":     getAdvancedStatefulSets,
 		"clonesets":                getCloneSets,
 		"uniteddeployments":        getUnitedDeployments,
 	}
