@@ -42,6 +42,7 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"kafkamirrormaker2s":       getKafkaMirrorMaker2s,
 		"kafkabridges":             getKafkaBridges,
 		"kruisestatefulsets":       getAdvancedStatefulSets,
+		"advancedstatefulsets":     getAdvancedStatefulSets,
 		"clonesets":                getCloneSets,
 		"uniteddeployments":        getUnitedDeployments,
 	}
