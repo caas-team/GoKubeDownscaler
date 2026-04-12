@@ -31,6 +31,24 @@ If replicaCount is greater than 1, leader election is enabled by default.
 {{- end }}
 
 {{/*
+Return true if "gateways" is present in .Values.includedResources
+*/}}
+{{- define "go-kube-downscaler.deployGatewayClass" -}}
+{{- if and (hasKey .Values "includedResources") (contains "gateways" (toJson .Values.includedResources)) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Return true if "ingresses" is present in .Values.includedResources
+*/}}
+{{- define "go-kube-downscaler.deployIngressClass" -}}
+{{- if and (hasKey .Values "includedResources") (contains "ingresses" (toJson .Values.includedResources)) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
 Common labels
 */}}
 {{- define "go-kube-downscaler.labels" -}}
@@ -285,6 +303,36 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
+- apiGroups:
+    - ""
+  resources:
+    - services
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "ingresses"}}
+- apiGroups:
+    - networking.k8s.io
+  resources:
+    - ingresses
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "gateways"}}
+- apiGroups:
+    - gateway.networking.k8s.io
+  resources:
+    - gateways
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -425,6 +473,45 @@ Create webhook resources
   resources:
     - autoscalingrunnersets
 {{ end -}}
+{{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
+- apiGroups:
+    - ""
+  resources:
+    - services
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "ingresses" }}
+- apiGroups:
+    - "networking.k8s.io"
+  resources:
+    - ingresses
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "gateways" }}
+- apiGroups:
+    - "gateway.networking.k8s.io"
+  resources:
+    - gateways
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{ end -}}
 {{- end }}
 
@@ -591,5 +678,44 @@ resources include in annotationsCompliance
   resources:
     - autoscalingrunnersets
 {{ end -}}
+{{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
+- apiGroups:
+    - ""
+  apiVersions:
+    - "*"
+  resources:
+    - services
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+{{- end }}
+{{- if eq $resource "ingresses" }}
+- apiGroups:
+    - "networking.k8s.io"
+  apiVersions:
+    - "*"
+  resources:
+    - ingresses
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+{{- end }}
+{{- if eq $resource "gateways" }}
+- apiGroups:
+    - "gateway.networking.k8s.io"
+  apiVersions:
+    - "*"
+  resources:
+    - gateways
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+{{- end }}
 {{ end -}}
 {{- end }}

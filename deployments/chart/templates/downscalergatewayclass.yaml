@@ -1,0 +1,9 @@
+{{- /* Only deploy when the user explicitly enables deployment AND the resource is included in includedResources */ -}}
+{{- if and .Values.deployExtraResources.gatewayClass (include "go-kube-downscaler.deployGatewayClass" .) -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: kube-downscaler-gateway-class
+spec:
+  controllerName: kube-downscaler.k8s/gateway-controller
+{{- end }}
