@@ -93,6 +93,18 @@ func (t *timeSpans) Set(value string) error {
 			continue
 		}
 
+		if isDirectionalTimespan(timespanText) {
+			// parse as directional timespan
+			timespan, err := parseDirectionalTimeSpan(timespanText)
+			if err != nil {
+				return fmt.Errorf("failed to parse directional timespan: %w", err)
+			}
+
+			timespans = append(timespans, timespan)
+
+			continue
+		}
+
 		// parse as relative timestamp
 		timespan, err := parseRelativeTimeSpan(timespanText)
 		if err != nil {
@@ -314,6 +326,109 @@ func getWeekday(weekday string) (*time.Weekday, error) {
 		"weekday is not in the expected format (e.g. 'mon, tue, wed, thu, fri, sat, sun')",
 		weekday,
 	)
+}
+
+type DirectionalMode int
+
+const (
+	modeFrom DirectionalMode = iota
+	modeUntil
+)
+
+func (s DirectionalMode) String() string {
+	switch s {
+	case modeFrom:
+		return "from"
+	case modeUntil:
+		return "until"
+	default:
+		return "unknown"
+	}
+}
+
+type directionalTimeSpan struct {
+	mode *DirectionalMode
+	time time.Time
+}
+
+// isTimeInSpan check if the time is in the span.
+func (s directionalTimeSpan) isTimeInSpan(targetTime time.Time, _ Scopes) (bool, error) {
+	if s.mode == nil {
+		return false, newIsTimeInSpanError("timespan mode is nil")
+	}
+
+	if *s.mode == modeFrom {
+		return !targetTime.Before(s.time), nil
+	}
+
+	if *s.mode == modeUntil {
+		return targetTime.Before(s.time), nil
+	}
+
+	return false, newIsTimeInSpanError("unknown timespan mode")
+}
+
+// String implementation for directionalTimeSpan.
+func (s directionalTimeSpan) String() string {
+	return fmt.Sprintf(
+		"directionalTimeSpan(%s %s)",
+		s.mode.String(),
+		s.time.Format(time.RFC3339),
+	)
+}
+
+// parseDirectionalTimeSpan parses a directionalTimeSpan. will panic if timespan is not a directionalTimeSpan.
+func parseDirectionalTimeSpan(timespanString string) (*directionalTimeSpan, error) {
+	trimmedTimespan := strings.TrimSpace(timespanString)
+	if trimmedTimespan == "" {
+		return nil, newInvalidSyntaxError("empty timespan: ", timespanString)
+	}
+
+	lower := strings.ToLower(trimmedTimespan)
+	var mode DirectionalMode
+	var timespan string
+
+	switch {
+	case strings.HasPrefix(lower, "from"):
+		mode = modeFrom
+
+		timespan = strings.TrimSpace(trimmedTimespan[len("from"):])
+		if strings.HasPrefix(timespan, "-") {
+			timespan = strings.TrimSpace(timespan[1:])
+		}
+
+	case strings.HasPrefix(lower, "until"):
+		mode = modeUntil
+
+		timespan = strings.TrimSpace(trimmedTimespan[len("until"):])
+		if strings.HasPrefix(timespan, "-") {
+			timespan = strings.TrimSpace(timespan[1:])
+		}
+
+	default:
+		return nil, newInvalidSyntaxError(
+			"failed to parse directional timespan: missing 'from' or 'until' prefix: ",
+			timespanString,
+		)
+	}
+
+	if timespan == "" {
+		return nil, newInvalidSyntaxError("missing timestamp in directional timespan: ", timespanString)
+	}
+
+	rfcTimespan, err := time.Parse(time.RFC3339, timespan)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse timestamp: %w", err)
+	}
+
+	m := mode
+
+	return &directionalTimeSpan{mode: &m, time: rfcTimespan}, nil
+}
+
+// isDirectionalTimespan checks if the timespan string is of an absolute Timespan.
+func isDirectionalTimespan(timestamp string) bool {
+	return strings.HasPrefix(timestamp, "from") || strings.HasPrefix(timestamp, "until")
 }
 
 // booleanTimeSpan is a TimeSpan which statically is either always active or never active.
