@@ -17,6 +17,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
+	kruise "github.com/openkruise/kruise/pkg/client/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
 	corev1 "k8s.io/api/core/v1"
@@ -121,6 +122,11 @@ func NewClient(kubeconfig string, dryRun bool, qps float64, burst int) (client, 
 	clientsets.Monitoring, err = monitoring.NewForConfig(config)
 	if err != nil {
 		return kubeclient, fmt.Errorf("failed to get clientset for monitoring resources: %w", err)
+	}
+
+	clientsets.Kruise, err = kruise.NewForConfig(config)
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to get clientset for kruise resources: %w", err)
 	}
 
 	scheme, err = NewScheme()
