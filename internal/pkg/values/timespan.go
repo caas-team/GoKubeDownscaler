@@ -94,10 +94,10 @@ func (t *timeSpans) Set(value string) error {
 		}
 
 		if isDirectionalTimespan(timespanText) {
-			// parse as single timespan
+			// parse as directional timespan
 			timespan, err := parseDirectionalTimeSpan(timespanText)
 			if err != nil {
-				return fmt.Errorf("failed to parse single timespan: %w", err)
+				return fmt.Errorf("failed to parse directional timespan: %w", err)
 			}
 
 			timespans = append(timespans, timespan)
@@ -371,7 +371,7 @@ func (s directionalTimeSpan) isTimeInSpan(targetTime time.Time, _ Scopes) (bool,
 // String implementation for directionalTimeSpan.
 func (s directionalTimeSpan) String() string {
 	return fmt.Sprintf(
-		"singleTimeSpan(%s %s)",
+		"directionalTimeSpan(%s %s)",
 		s.mode.String(),
 		s.time.Format(time.RFC3339),
 	)
@@ -407,7 +407,7 @@ func parseDirectionalTimeSpan(timespanString string) (*directionalTimeSpan, erro
 
 	default:
 		return nil, newInvalidSyntaxError(
-			"failed to parse single timespan: missing 'from' or 'until' prefix: ",
+			"failed to parse directional timespan: missing 'from' or 'until' prefix: ",
 			timespanString,
 		)
 	}
