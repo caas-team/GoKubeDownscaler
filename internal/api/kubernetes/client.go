@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 )
 
 const (
@@ -121,6 +122,11 @@ func NewClient(kubeconfig string, dryRun bool, qps float64, burst int) (client, 
 	clientsets.Monitoring, err = monitoring.NewForConfig(config)
 	if err != nil {
 		return kubeclient, fmt.Errorf("failed to get clientset for monitoring resources: %w", err)
+	}
+
+	clientsets.Gateway, err = gatewayapi.NewForConfig(config)
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to get clientset for gateway resources: %w", err)
 	}
 
 	scheme, err = NewScheme()
