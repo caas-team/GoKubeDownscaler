@@ -13,6 +13,7 @@ type Replicas interface {
 	String() string
 	AsIntStr() intstr.IntOrString
 	AsInt32() (int32, error)
+	AsBool() (bool, error)
 }
 
 type AbsoluteReplicas int32
@@ -21,6 +22,10 @@ func (a AbsoluteReplicas) String() string { return strconv.Itoa(int(a)) }
 
 func (a AbsoluteReplicas) AsInt32() (int32, error) {
 	return int32(a), nil
+}
+
+func (a AbsoluteReplicas) AsBool() (bool, error) {
+	return false, newInvalidReplicaTypeError("absolute replicas cannot be converted to bool", a.String())
 }
 
 func (a AbsoluteReplicas) AsIntStr() intstr.IntOrString {
@@ -35,8 +40,30 @@ func (p PercentageReplicas) AsInt32() (int32, error) {
 	return 0, newInvalidReplicaTypeError("percentage replicas cannot be converted to int32", p.String())
 }
 
+func (p PercentageReplicas) AsBool() (bool, error) {
+	return false, newInvalidReplicaTypeError("percentage replicas cannot be converted to bool", p.String())
+}
+
 func (p PercentageReplicas) AsIntStr() intstr.IntOrString {
 	return intstr.FromString(strconv.Itoa(int(p)) + "%")
+}
+
+type BooleanReplicas bool
+
+func (s BooleanReplicas) String() string {
+	return strconv.FormatBool(bool(s))
+}
+
+func (s BooleanReplicas) AsInt32() (int32, error) {
+	return 0, newInvalidReplicaTypeError("boolean replicas cannot be converted to int32", s.String())
+}
+
+func (s BooleanReplicas) AsBool() (bool, error) {
+	return bool(s), nil
+}
+
+func (s BooleanReplicas) AsIntStr() intstr.IntOrString {
+	return intstr.FromString(strconv.FormatBool(bool(s)))
 }
 
 type ReplicasValue struct {
@@ -77,6 +104,21 @@ func (r *ReplicasValue) Set(value string) error {
 		}
 	}
 
+	if isBooleanString(value) {
+		valueLower := strings.ToLower(strings.TrimSpace(value))
+
+		parsedBooleanValue, err := strconv.ParseBool(valueLower)
+		if err != nil {
+			return newInvalidReplicaTypeError("invalid boolean replica value", value)
+		}
+
+		replica := BooleanReplicas(parsedBooleanValue)
+
+		*r.Replicas = replica
+
+		return nil
+	}
+
 	return newInvalidReplicaTypeError("invalid replica value", value)
 }
 
@@ -105,4 +147,10 @@ func (r *ReplicasValue) String() string {
 	}
 
 	return (*r.Replicas).String()
+}
+
+// isBooleanString checks if the string is a boolean value (true/false).
+func isBooleanString(s string) bool {
+	lower := strings.ToLower(s)
+	return lower == "true" || lower == "false"
 }

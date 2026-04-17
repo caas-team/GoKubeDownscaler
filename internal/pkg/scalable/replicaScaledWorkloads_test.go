@@ -21,6 +21,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 		originalReplicas     values.Replicas
 		wantOriginalReplicas values.Replicas
 		wantReplicas         values.Replicas
+		wantUpdateNeeded     bool
 		wantErr              error
 	}{
 		{
@@ -29,6 +30,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 			originalReplicas:     values.AbsoluteReplicas(5),
 			wantOriginalReplicas: nil,
 			wantReplicas:         values.AbsoluteReplicas(5),
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "already scaled up",
@@ -36,6 +38,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 			originalReplicas:     nil,
 			wantOriginalReplicas: nil,
 			wantReplicas:         values.AbsoluteReplicas(5),
+			wantUpdateNeeded:     false,
 		},
 		{
 			name:                 "original replicas not set",
@@ -43,6 +46,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 			originalReplicas:     nil,
 			wantOriginalReplicas: nil,
 			wantReplicas:         values.AbsoluteReplicas(0),
+			wantUpdateNeeded:     false,
 		},
 		{
 			name:                 "original replicas is not AbsoluteReplicas",
@@ -50,6 +54,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 			originalReplicas:     values.PercentageReplicas(50),
 			wantOriginalReplicas: nil,
 			wantReplicas:         values.AbsoluteReplicas(0),
+			wantUpdateNeeded:     false,
 			wantErr:              &values.InvalidReplicaTypeError{},
 		},
 	}
@@ -66,7 +71,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, deployment)
 			}
 
-			err := deployment.ScaleUp()
+			updateNeeded, err := deployment.ScaleUp()
 			var invalidReplicaTypeError *values.InvalidReplicaTypeError
 
 			if errors.As(test.wantErr, &invalidReplicaTypeError) {
@@ -75,6 +80,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 			}
 
 			require.NoError(t, err)
+			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
 
 			replicas, err := deployment.getReplicas()
 			require.NoError(t, err)
@@ -104,6 +110,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 		wantReplicas         values.Replicas
 		wantSavedCPU         float64 // in cores
 		wantSavedMemory      float64 // in bytes
+		wantUpdateNeeded     bool
 		wantErr              error
 	}{
 		{
@@ -115,6 +122,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			wantReplicas:         values.AbsoluteReplicas(0),
 			wantSavedCPU:         0.5,               // 5 replicas × 0.1 cores each
 			wantSavedMemory:      320 * 1024 * 1024, // 5 replicas × 64Mi = 320MiB
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "already scaled down",
@@ -125,6 +133,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			wantReplicas:         values.AbsoluteReplicas(0),
 			wantSavedCPU:         0.5,               // 5 replicas × 0.1 cores each
 			wantSavedMemory:      320 * 1024 * 1024, // 5 replicas × 64Mi = 320MiB
+			wantUpdateNeeded:     false,
 		},
 		{
 			name:                 "original replicas set, but not scaled down",
@@ -135,6 +144,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			wantReplicas:         values.AbsoluteReplicas(0),
 			wantSavedCPU:         0.2,               // 2 replicas × 0.1 cores
 			wantSavedMemory:      128 * 1024 * 1024, // 2 replicas × 64Mi
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "downscale replicas is not AbsoluteReplicas",
@@ -145,6 +155,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			wantReplicas:         values.AbsoluteReplicas(5),
 			wantSavedCPU:         0.0,
 			wantSavedMemory:      0.0,
+			wantUpdateNeeded:     false,
 			wantErr:              &values.InvalidReplicaTypeError{},
 		},
 	}
@@ -175,7 +186,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, workload)
 			}
 
-			savedResources, err := workload.ScaleDown(test.downtimeReplicas)
+			savedResources, updateNeeded, err := workload.ScaleDown(test.downtimeReplicas)
 
 			if test.wantErr != nil {
 				var targetErr *values.InvalidReplicaTypeError
@@ -185,6 +196,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			}
 
 			require.NoError(t, err)
+			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
 
 			gotReplicas, err := workload.getReplicas()
 			require.NoError(t, err)

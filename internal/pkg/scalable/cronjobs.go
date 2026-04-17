@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
 	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -122,6 +123,19 @@ func (c *cronJob) getSavedResourcesRequests() *metrics.SavedResources {
 	totalSavedMemory *= float64(parallelism)
 
 	return metrics.NewSavedResources(totalSavedCPU, totalSavedMemory)
+}
+
+// nolint: nonamedreturns // getSuspend gets the current value of the suspend field on the cronJob and the target downscale state for it.
+func (c *cronJob) getSuspend() (currentValue, targetDownscaleState values.Replicas) {
+	current := false
+	if c.Spec.Suspend != nil {
+		current = *c.Spec.Suspend
+	}
+
+	currentValue = values.BooleanReplicas(current)
+	targetDownscaleState = values.BooleanReplicas(true)
+
+	return currentValue, targetDownscaleState
 }
 
 // setSuspend sets the value of the suspend field on the cronJob.

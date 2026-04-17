@@ -242,9 +242,19 @@ func (c client) DownscaleWorkload(
 	workload scalable.Workload,
 	ctx context.Context,
 ) (*metrics.SavedResources, error) {
-	savedResources, err := workload.ScaleDown(replicas)
+	savedResources, isUpdateNeeded, err := workload.ScaleDown(replicas)
 	if err != nil {
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
+	}
+
+	if !isUpdateNeeded {
+		slog.Debug(
+			"workload is already in a scaled down state, no update needed",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+		)
+
+		return savedResources, nil
 	}
 
 	if c.dryRun {
@@ -269,9 +279,19 @@ func (c client) DownscaleWorkload(
 
 // UpscaleWorkload upscales the workload to the original replicas.
 func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
-	err := workload.ScaleUp()
+	isUpdateNeeded, err := workload.ScaleUp()
 	if err != nil {
 		return fmt.Errorf("failed to set the workload into a scaled up state: %w", err)
+	}
+
+	if !isUpdateNeeded {
+		slog.Debug(
+			"workload is already in a scaled up state, no update needed",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+		)
+
+		return nil
 	}
 
 	if c.dryRun {

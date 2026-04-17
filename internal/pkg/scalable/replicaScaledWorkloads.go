@@ -34,50 +34,52 @@ type replicaScaledWorkload struct {
 }
 
 // ScaleUp scales up the underlying replicaScaledResource.
-func (r *replicaScaledWorkload) ScaleUp() error {
+func (r *replicaScaledWorkload) ScaleUp() (bool, error) {
 	originalReplicas, err := getOriginalReplicas(r)
 	if err != nil {
 		var originalReplicasUnsetErr *OriginalReplicasUnsetError
 		if ok := errors.As(err, &originalReplicasUnsetErr); ok {
 			slog.Debug("original replicas is not set, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
-			return nil
+			return false, nil
 		}
 
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+		return false, fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
 	originalReplicasInt32, err := originalReplicas.AsInt32()
 	if err != nil {
-		return fmt.Errorf("failed to convert original replicas to int32: %w", err)
+		return false, fmt.Errorf("failed to convert original replicas to int32: %w", err)
 	}
 
 	err = r.setReplicas(originalReplicasInt32)
 	if err != nil {
-		return fmt.Errorf("failed to set original replicas for workload: %w", err)
+		return false, fmt.Errorf("failed to set original replicas for workload: %w", err)
 	}
 
 	removeOriginalReplicas(r)
 
-	return nil
+	return true, nil
 }
 
 // ScaleDown scales down the underlying replicaScaledResource.
 //
 
-func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, error) {
+func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, bool, error) {
 	downscaleReplicasInt32, err := downscaleReplicas.AsInt32()
+
+	savedResources := metrics.NewSavedResources(0, 0)
 	if err != nil {
-		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to convert replicas to int32: %w", err)
+		return savedResources, false, fmt.Errorf("failed to convert replicas to int32: %w", err)
 	}
 
 	currentReplicas, err := r.getReplicas()
 	if err != nil {
-		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to get current replicas for workload: %w", err)
+		return savedResources, false, fmt.Errorf("failed to get current replicas for workload: %w", err)
 	}
 
 	currentReplicasInt32, err := currentReplicas.AsInt32()
 	if err != nil {
-		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to convert current replicas to int32: %w", err)
+		return savedResources, false, fmt.Errorf("failed to convert current replicas to int32: %w", err)
 	}
 
 	if currentReplicasInt32 == downscaleReplicasInt32 {
@@ -86,31 +88,31 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (*m
 
 		originalReplicasInt32, isOriginalReplicasSet, err = getOriginalReplicasInt32(r)
 		if err != nil {
-			return metrics.NewSavedResources(0, 0), err
+			return savedResources, false, err
 		}
 
 		if !isOriginalReplicasSet {
 			slog.Debug("workload is already at target scale down replicas, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
-			return metrics.NewSavedResources(0, 0), nil
+			return savedResources, false, nil
 		}
 
-		savedResources := r.getSavedResourcesRequests(originalReplicasInt32 - downscaleReplicasInt32)
+		savedResources = r.getSavedResourcesRequests(originalReplicasInt32 - downscaleReplicasInt32)
 
 		slog.Debug("workload is already scaled down, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
 
-		return savedResources, nil
+		return savedResources, false, nil
 	}
-
-	savedResources := r.getSavedResourcesRequests(currentReplicasInt32 - downscaleReplicasInt32)
 
 	err = r.setReplicas(downscaleReplicasInt32)
 	if err != nil {
-		return savedResources, fmt.Errorf("failed to set replicas for workload: %w", err)
+		return savedResources, false, fmt.Errorf("failed to set replicas for workload: %w", err)
 	}
+
+	savedResources = r.getSavedResourcesRequests(currentReplicasInt32 - downscaleReplicasInt32)
 
 	setOriginalReplicas(currentReplicas, r)
 
-	return savedResources, nil
+	return savedResources, true, nil
 }
 
 // getOriginalReplicas retrieves the original replicas from the workload.

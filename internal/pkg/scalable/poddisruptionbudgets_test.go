@@ -26,6 +26,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 		wantOriginalReplicas values.Replicas
 		wantMinAvailable     *intstr.IntOrString
 		wantMaxUnavailable   *intstr.IntOrString
+		wantUpdateNeeded     bool
 	}{
 		{
 			name:                 "minAvailable scale up",
@@ -35,6 +36,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 			wantOriginalReplicas: nil,
 			wantMinAvailable:     &replicasUpscaled,
 			wantMaxUnavailable:   nil,
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "minAvailable already scaled up",
@@ -44,6 +46,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 			wantOriginalReplicas: nil,
 			wantMinAvailable:     &replicasUpscaled,
 			wantMaxUnavailable:   nil,
+			wantUpdateNeeded:     false,
 		},
 		{
 			name:                 "minAvailable orignal replicas not set",
@@ -53,6 +56,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 			wantOriginalReplicas: nil,
 			wantMinAvailable:     &replicasDownscaled,
 			wantMaxUnavailable:   nil,
+			wantUpdateNeeded:     false,
 		},
 		{
 			name:                 "minAvailable percentile",
@@ -62,6 +66,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 			wantOriginalReplicas: nil,
 			wantMinAvailable:     &percentileUpscaled,
 			wantMaxUnavailable:   nil,
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "minAvailable percentile already scaled up",
@@ -71,6 +76,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 			wantOriginalReplicas: nil,
 			wantMinAvailable:     &percentileUpscaled,
 			wantMaxUnavailable:   nil,
+			wantUpdateNeeded:     false,
 		},
 		{
 			name:                 "maxUnavailable scale up",
@@ -80,6 +86,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 			wantOriginalReplicas: nil,
 			wantMinAvailable:     nil,
 			wantMaxUnavailable:   &replicasUpscaled,
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "maxUnavailable already scaled up",
@@ -89,6 +96,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 			wantOriginalReplicas: nil,
 			wantMinAvailable:     nil,
 			wantMaxUnavailable:   &replicasUpscaled,
+			wantUpdateNeeded:     false,
 		},
 		{
 			name:                 "maxUnavailable orignal replicas not set",
@@ -98,6 +106,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 			wantOriginalReplicas: nil,
 			wantMinAvailable:     nil,
 			wantMaxUnavailable:   &replicasDownscaled,
+			wantUpdateNeeded:     false,
 		},
 		{
 			name:                 "maxUnavailable percentile",
@@ -107,6 +116,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 			wantOriginalReplicas: nil,
 			wantMinAvailable:     nil,
 			wantMaxUnavailable:   &percentileUpscaled,
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "maxUnavailable percentile already scaled up",
@@ -116,6 +126,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 			wantOriginalReplicas: nil,
 			wantMinAvailable:     nil,
 			wantMaxUnavailable:   &percentileUpscaled,
+			wantUpdateNeeded:     false,
 		},
 	}
 
@@ -131,8 +142,9 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, pdb)
 			}
 
-			err := pdb.ScaleUp()
+			updateNeeded, err := pdb.ScaleUp()
 			require.NoError(t, err)
+			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
 
 			if test.wantMaxUnavailable != nil {
 				if assert.NotNil(t, pdb.Spec.MaxUnavailable) {
@@ -174,6 +186,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 		wantOriginalReplicas values.Replicas
 		wantMinAvailable     *intstr.IntOrString
 		wantMaxUnavailable   *intstr.IntOrString
+		wantUpdateNeeded     bool
 	}{
 		{
 			name:                 "minAvailable scale down",
@@ -183,6 +196,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			wantOriginalReplicas: values.AbsoluteReplicas(5),
 			wantMinAvailable:     &replicasDownscaled,
 			wantMaxUnavailable:   nil,
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "minAvailable already scaled down",
@@ -192,6 +206,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			wantOriginalReplicas: values.AbsoluteReplicas(5),
 			wantMinAvailable:     &replicasDownscaled,
 			wantMaxUnavailable:   nil,
+			wantUpdateNeeded:     false,
 		},
 		{
 			name:                 "minAvailable orignal replicas set, but not scaled down",
@@ -201,6 +216,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			wantOriginalReplicas: values.AbsoluteReplicas(2),
 			wantMinAvailable:     &replicasDownscaled,
 			wantMaxUnavailable:   nil,
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "minAvailable percentileUpscaled",
@@ -210,6 +226,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			wantOriginalReplicas: values.PercentageReplicas(50),
 			wantMinAvailable:     &replicasDownscaled,
 			wantMaxUnavailable:   nil,
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "minAvailable percentileUpscaled already scaled down",
@@ -219,6 +236,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			wantOriginalReplicas: values.AbsoluteReplicas(5),
 			wantMinAvailable:     &replicasDownscaled,
 			wantMaxUnavailable:   nil,
+			wantUpdateNeeded:     false,
 		},
 		{
 			name:                 "maxUnavailable scale down",
@@ -228,6 +246,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			wantOriginalReplicas: values.AbsoluteReplicas(5),
 			wantMinAvailable:     nil,
 			wantMaxUnavailable:   &replicasDownscaled,
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "maxUnavailable already scaled down",
@@ -237,6 +256,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			wantOriginalReplicas: values.AbsoluteReplicas(5),
 			wantMinAvailable:     nil,
 			wantMaxUnavailable:   &replicasDownscaled,
+			wantUpdateNeeded:     false,
 		},
 		{
 			name:                 "maxUnavailable orignal replicas set, but not scaled down",
@@ -246,6 +266,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			wantOriginalReplicas: values.AbsoluteReplicas(2),
 			wantMinAvailable:     nil,
 			wantMaxUnavailable:   &replicasDownscaled,
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "maxUnavailable percentileUpscaled",
@@ -255,6 +276,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			wantOriginalReplicas: values.PercentageReplicas(50),
 			wantMinAvailable:     nil,
 			wantMaxUnavailable:   &replicasDownscaled,
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "maxUnavailable percentileUpscaled already scaled down",
@@ -264,6 +286,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 			wantOriginalReplicas: values.AbsoluteReplicas(50),
 			wantMinAvailable:     nil,
 			wantMaxUnavailable:   &replicasDownscaled,
+			wantUpdateNeeded:     false,
 		},
 	}
 
@@ -279,8 +302,9 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, pdb)
 			}
 
-			_, err := pdb.ScaleDown(values.AbsoluteReplicas(0))
+			_, updateNeeded, err := pdb.ScaleDown(values.AbsoluteReplicas(0))
 			require.NoError(t, err)
+			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
 
 			if test.wantMaxUnavailable != nil {
 				if assert.NotNil(t, pdb.Spec.MaxUnavailable) {

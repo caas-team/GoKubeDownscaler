@@ -124,9 +124,9 @@ type Workload interface {
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
 	Update(clientsets *Clientsets, ctx context.Context) error
 	// ScaleUp scales up the workload
-	ScaleUp() error
+	ScaleUp() (bool, error)
 	// ScaleDown scales down the workload
-	ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, error)
+	ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, bool, error)
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
 	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
