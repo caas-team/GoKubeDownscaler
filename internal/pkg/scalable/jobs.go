@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
 	batch "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +41,19 @@ func parseJobFromBytes(rawObject []byte) (Workload, error) {
 // job is a wrapper for job.v1.batch to implement the suspendScaledResource interface.
 type job struct {
 	*batch.Job
+}
+
+// nolint: nonamedreturns // getSuspend gets the current value of the suspend field on the job and the target downscale state for it.
+func (j *job) getSuspend() (currentValue, targetDownscaleState values.Replicas) {
+	current := false
+	if j.Spec.Suspend != nil {
+		current = *j.Spec.Suspend
+	}
+
+	currentValue = values.BooleanReplicas(current)
+	targetDownscaleState = values.BooleanReplicas(true)
+
+	return currentValue, targetDownscaleState
 }
 
 // setSuspend sets the value of the suspend field on the job.

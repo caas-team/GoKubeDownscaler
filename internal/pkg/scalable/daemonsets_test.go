@@ -15,19 +15,25 @@ func TestDaemonSet_ScaleUp(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name         string
-		labelSet     bool
-		wantLabelSet bool
+		name             string
+		labelSet         bool
+		originalReplicas values.Replicas
+		wantLabelSet     bool
+		wantUpdateNeeded bool
 	}{
 		{
-			name:         "scale up",
-			labelSet:     true,
-			wantLabelSet: false,
+			name:             "scale up",
+			labelSet:         true,
+			originalReplicas: values.BooleanReplicas(false),
+			wantLabelSet:     false,
+			wantUpdateNeeded: true,
 		},
 		{
-			name:         "already scaled up",
-			labelSet:     false,
-			wantLabelSet: false,
+			name:             "already scaled up",
+			labelSet:         false,
+			originalReplicas: nil,
+			wantLabelSet:     false,
+			wantUpdateNeeded: false,
 		},
 	}
 
@@ -41,8 +47,13 @@ func TestDaemonSet_ScaleUp(t *testing.T) {
 				deamonset.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: "true"}
 			}
 
-			err := deamonset.ScaleUp()
+			if test.originalReplicas != nil {
+				setOriginalReplicas(test.originalReplicas, &deamonset)
+			}
+
+			updateNeeded, err := deamonset.ScaleUp()
 			require.NoError(t, err)
+			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
 
 			_, ok := deamonset.Spec.Template.Spec.NodeSelector[labelMatchNone]
 			assert.Equal(t, test.wantLabelSet, ok)
@@ -56,42 +67,64 @@ func TestDaemonSet_ScaleDown(t *testing.T) {
 	tests := []struct {
 		name             string
 		labelSet         bool
-		wantLabelSet     bool
+		originalReplicas values.Replicas
 		currentScheduled int32
 		requestsCPU      string
 		requestsMemory   string
+		wantLabelSet     bool
 		wantSavedCPU     float64
 		wantSavedMemory  float64
+		wantUpdateNeeded bool
 	}{
 		{
 			name:             "scale down",
 			labelSet:         false,
-			wantLabelSet:     true,
+			originalReplicas: nil,
 			currentScheduled: 3,
-			requestsCPU:      "100m",    // 0.1 CPU
-			requestsMemory:   "200Mi",   // 200 MiB
+			requestsCPU:      "100m",  // 0.1 CPU
+			requestsMemory:   "200Mi", // 200 MiB
+			wantLabelSet:     true,
 			wantSavedCPU:     0.3,       // 0.1 * 3
 			wantSavedMemory:  629145600, // 200Mi * 3
+			wantUpdateNeeded: true,
 		},
 		{
+			// label is set AND originalReplicas IS set: we already scaled it down in a previous cycle.
 			name:             "already scaled down",
 			labelSet:         true,
-			wantLabelSet:     true,
+			originalReplicas: values.BooleanReplicas(false),
 			currentScheduled: 2,
-			requestsCPU:      "50m",     // 0.05 CPU
-			requestsMemory:   "100Mi",   // 100 MiB
+			requestsCPU:      "50m",   // 0.05 CPU
+			requestsMemory:   "100Mi", // 100 MiB
+			wantLabelSet:     true,
 			wantSavedCPU:     0.1,       // 0.05 * 2
 			wantSavedMemory:  209715200, // 100Mi * 2
+			wantUpdateNeeded: false,
+		},
+		{
+			// label is set but originalReplicas is NOT set: label was set externally before the downscaler.
+			name:             "already at target scale down state",
+			labelSet:         true,
+			originalReplicas: nil,
+			currentScheduled: 2,
+			requestsCPU:      "50m",
+			requestsMemory:   "100Mi",
+			wantLabelSet:     true,
+			wantSavedCPU:     0.0,
+			wantSavedMemory:  0.0,
+			wantUpdateNeeded: false,
 		},
 		{
 			name:             "scale down with no resource requests",
 			labelSet:         false,
-			wantLabelSet:     true,
+			originalReplicas: nil,
 			currentScheduled: 2,
 			requestsCPU:      "",
 			requestsMemory:   "",
+			wantLabelSet:     true,
 			wantSavedCPU:     0.0,
 			wantSavedMemory:  0.0,
+			wantUpdateNeeded: true,
 		},
 	}
 
@@ -122,8 +155,13 @@ func TestDaemonSet_ScaleDown(t *testing.T) {
 				daemonset.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: "true"}
 			}
 
-			savedResources, err := daemonset.ScaleDown(values.AbsoluteReplicas(0))
+			if test.originalReplicas != nil {
+				setOriginalReplicas(test.originalReplicas, &daemonset)
+			}
+
+			savedResources, updateNeeded, err := daemonset.ScaleDown(values.AbsoluteReplicas(0))
 			require.NoError(t, err)
+			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
 
 			_, ok := daemonset.Spec.Template.Spec.NodeSelector[labelMatchNone]
 			assert.Equal(t, test.wantLabelSet, ok)
