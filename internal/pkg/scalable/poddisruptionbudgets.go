@@ -82,16 +82,16 @@ func (p *podDisruptionBudget) setMaxUnavailable(targetMaxUnavailable values.Repl
 }
 
 // ScaleUp scales the resource up.
-func (p *podDisruptionBudget) ScaleUp() error {
+func (p *podDisruptionBudget) ScaleUp() (bool, error) {
 	originalReplicas, err := getOriginalReplicas(p)
 	if err != nil {
 		var originalReplicasUnsetErr *OriginalReplicasUnsetError
 		if ok := errors.As(err, &originalReplicasUnsetErr); ok {
 			slog.Debug("original replicas is not set, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
-			return nil
+			return false, nil
 		}
 
-		return fmt.Errorf("failed to get original replicas for workload: %w", err)
+		return false, fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
 	maxUnavailable := p.getMaxUnavailable()
@@ -99,7 +99,7 @@ func (p *podDisruptionBudget) ScaleUp() error {
 		p.setMaxUnavailable(originalReplicas)
 		removeOriginalReplicas(p)
 
-		return nil
+		return true, nil
 	}
 
 	minAvailable := p.getMinAvailable()
@@ -107,41 +107,43 @@ func (p *podDisruptionBudget) ScaleUp() error {
 		p.setMinAvailable(originalReplicas)
 		removeOriginalReplicas(p)
 
-		return nil
+		return true, nil
 	}
 
-	return nil
+	return false, nil
 }
 
 // ScaleDown scales the resource down.
-func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, error) {
+func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, bool, error) {
+	savedResources := metrics.NewSavedResources(0, 0)
+
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {
 		if maxUnavailable.String() == downscaleReplicas.String() {
 			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
-			return metrics.NewSavedResources(0, 0), nil
+			return savedResources, false, nil
 		}
 
 		p.setMaxUnavailable(downscaleReplicas)
 		setOriginalReplicas(maxUnavailable, p)
 
-		return metrics.NewSavedResources(0, 0), nil
+		return savedResources, true, nil
 	}
 
 	minAvailable := p.getMinAvailable()
 	if minAvailable != nil {
 		if minAvailable.String() == downscaleReplicas.String() {
 			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
-			return metrics.NewSavedResources(0, 0), nil
+			return savedResources, false, nil
 		}
 
 		p.setMinAvailable(downscaleReplicas)
 		setOriginalReplicas(minAvailable, p)
 
-		return metrics.NewSavedResources(0, 0), nil
+		return savedResources, true, nil
 	}
 
-	return metrics.NewSavedResources(0, 0), nil
+	return metrics.NewSavedResources(0, 0), false, nil
 }
 
 // Reget regets the resource from the Kubernetes API.
