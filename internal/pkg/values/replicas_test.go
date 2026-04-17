@@ -42,6 +42,16 @@ func TestReplicasValue_Set(t *testing.T) {
 			input:     "abc",
 			expectErr: true,
 		},
+		{
+			name:  "valid boolean true",
+			input: "true",
+			want:  BooleanReplicas(true),
+		},
+		{
+			name:  "valid boolean false",
+			input: "false",
+			want:  BooleanReplicas(false),
+		},
 	}
 
 	for _, test := range tests {
@@ -60,6 +70,93 @@ func TestReplicasValue_Set(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, *replicas.Replicas)
 			assert.Equal(t, test.want, *replicas.Replicas)
+		})
+	}
+}
+
+func TestBooleanReplicas_String(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input BooleanReplicas
+		want  string
+	}{
+		{name: "true", input: BooleanReplicas(true), want: "true"},
+		{name: "false", input: BooleanReplicas(false), want: "false"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, test.want, test.input.String())
+		})
+	}
+}
+
+func TestBooleanReplicas_AsBool(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input BooleanReplicas
+		want  bool
+	}{
+		{name: "true", input: BooleanReplicas(true), want: true},
+		{name: "false", input: BooleanReplicas(false), want: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := test.input.AsBool()
+			require.NoError(t, err)
+			assert.Equal(t, test.want, got)
+		})
+	}
+}
+
+func TestBooleanReplicas_AsInt32_ReturnsError(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input BooleanReplicas
+	}{
+		{name: "true", input: BooleanReplicas(true)},
+		{name: "false", input: BooleanReplicas(false)},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := test.input.AsInt32()
+			var invalidReplicaTypeErr *InvalidReplicaTypeError
+			assert.ErrorAs(t, err, &invalidReplicaTypeErr)
+		})
+	}
+}
+
+func TestBooleanReplicas_AsIntStr(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		input   BooleanReplicas
+		wantStr string
+	}{
+		{name: "true", input: BooleanReplicas(true), wantStr: "true"},
+		{name: "false", input: BooleanReplicas(false), wantStr: "false"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := test.input.AsIntStr()
+			assert.Equal(t, test.wantStr, got.String())
 		})
 	}
 }
