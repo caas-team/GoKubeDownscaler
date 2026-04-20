@@ -193,8 +193,8 @@ func TestSendAdmissionReviewResponse_WriteError(t *testing.T) {
 	// NOT parallel: this test mutates the global slog default logger.
 	// Running it sequentially ensures it completes (and restores the logger)
 	// before any parallel test goroutine can call slog.Info into our buffer.
-
 	originalLogger := slog.Default()
+
 	t.Cleanup(func() { slog.SetDefault(originalLogger) })
 
 	var logBuffer bytes.Buffer
