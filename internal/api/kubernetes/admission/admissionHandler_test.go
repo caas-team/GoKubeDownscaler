@@ -189,7 +189,7 @@ func (e *errorWriter) Write(p []byte) (int, error) {
 	return 0, errWriteError
 }
 
-//nolint:paralleltest // cannot run in parallel
+//nolint:paralleltest // cannot run test in parallel
 func TestSendAdmissionReviewResponse_WriteError(t *testing.T) {
 	// this test cannot run in parallel: test captures the global slog logger via slog.SetDefault,
 	// which is shared across all goroutines. Running in parallel would cause a data race between
