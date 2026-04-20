@@ -201,6 +201,7 @@ func TestSendAdmissionReviewResponse_WriteError(t *testing.T) {
 	t.Cleanup(func() { slog.SetDefault(originalLogger) })
 
 	var logBuffer bytes.Buffer
+
 	slog.SetDefault(slog.New(slog.NewTextHandler(&logBuffer, nil)))
 
 	resp := newReviewResponse("id456", true, 200, "ok", false, false)
