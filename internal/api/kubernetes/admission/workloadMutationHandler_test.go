@@ -222,12 +222,12 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload excluded by annotation",
-			setupMocks: func(t *testing.T, m *MockClient) {
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
 				t.Helper()
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 
 				scope := values.GetDefaultScope()
-				m.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"} },
 			request: func(t *testing.T) *http.Request {
