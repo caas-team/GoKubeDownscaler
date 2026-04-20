@@ -184,6 +184,7 @@ func TestEvaluateMutation(t *testing.T) {
 			name: "Workload excluded because uptime",
 			setupMocks: func(t *testing.T, mockClient *MockClient) {
 				t.Helper()
+
 				scope := values.NewScope()
 				scope.DownscaleReplicas = values.AbsoluteReplicas(0)
 				_ = scope.ForceUptime.Set("always")
@@ -203,6 +204,7 @@ func TestEvaluateMutation(t *testing.T) {
 			name: "Workload mutated because downtime",
 			setupMocks: func(t *testing.T, mockClient *MockClient) {
 				t.Helper()
+
 				scope := values.NewScope()
 				scope.DownscaleReplicas = values.AbsoluteReplicas(0)
 				_ = scope.ForceDowntime.Set("always")
@@ -239,6 +241,7 @@ func TestEvaluateMutation(t *testing.T) {
 			name: "Workload excluded by namespace scope",
 			setupMocks: func(t *testing.T, m *MockClient) {
 				t.Helper()
+
 				scope := values.GetDefaultScope()
 				_ = scope.Exclude.Set("true")
 
