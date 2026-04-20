@@ -1,0 +1,103 @@
+---
+title: Helm Chart Components
+id: helm-chart-components
+globalReference: docs-helm-components
+description: List of All GoKubeDownscaler Helm Chart Components
+keywords: [components, helm chart components]
+---
+
+# Helm Chart Components
+
+The following Kubernetes Objects can be created with our Helm Chart:
+
+## Deployment
+
+The [deployment.yaml](repo:deployments/chart/templates/deployment.yaml) file creates the main Deployment of the GoKubeDownscaler
+with a reference to the provided ServiceAccount and ConfigMap.
+
+## Serviceaccount
+
+The [serviceaccount.yaml](repo:deployments/chart/templates/serviceaccount.yaml) file creates a ServiceAccount
+that will be used by the GoKubeDownscaler to interact with Kubernetes.
+
+## Configmap
+
+The [configmap.yaml](repo:deployments/chart/templates/configmap.yaml) file creates a new ConfigMap with the provided name.
+It is used to store environment variables like `EXCLUDE_NAMESPACES`.
+
+## Clusterrole
+
+The [clusterrole.yaml](repo:deployments/chart/templates/clusterrole.yaml) file creates a ClusterRole and a ClusterRoleBinding
+for the desired cluster if there are no namespaces defined in [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces).
+These allow the actions the GoKubeDownscaler needs to scale down workloads in a cluster-wide context.
+
+## Role
+
+The [role.yaml](repo:deployments/chart/templates/role.yaml) file creates a Role and a RoleBinding
+for every namespace listed in [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces).
+
+## Leaserole
+
+The [leaserole.yaml](repo:deployments/chart/templates/leaserole.yaml) file creates a Role and RoleBinding
+if [`--leader-election`](ref:docs-runtime-configuration#leader-election) is enabled in order to make lease management possible.
+
+## Webhookdeployment
+
+The [webhookdeployment.yaml](repo:deployments/chart/templates/webhookdeployment.yaml) file creates the Deployment
+for the Admission Controller Webhook.
+This resource is created only if the `webhook.enabled` value is set to `true`.
+
+## Webhookservice
+
+The [webhookservice.yaml](repo:deployments/chart/templates/webhookservice.yaml) file creates the Service that exposes
+the Webhook Deployment.
+This resource is created only if the `webhook.enabled` value is set to `true`.
+
+## Webhookrole
+
+The [webhookrole.yaml](repo:deployments/chart/templates/webhookrole.yaml) file creates a Role and RoleBinding that
+allows the Webhook Deployment to only read the Webhook secret
+
+## Mutatingwebhookconfiguration
+
+The [mutatingwebhookconfiguration.yaml](repo:deployments/chart/templates/mutatingwebhookconfiguration.yaml) file creates
+the MutatingWebhookConfiguration needed for the Admission Controller Webhook to work.
+By default, it intercepts all the
+creation and update requests for the targeted resources and send the review request to the Webhook Deployment through
+its Service in a secure way.
+The MutatingWebhookConfiguration does not apply for the namespace where the Webhook
+is deployed and from requests originated by the main Deployment of the GoKubeDownscaler.
+
+## PodMonitor
+
+The [podmonitor.yaml](repo:deployments/chart/templates/leaserole.yaml) file creates a PodMonitor that is able to scrape
+metrics from GoKubeDownscaler main deployment
+
+## Mutatingadmissionpolicy
+
+The [mutatingadmissionpolicy.yaml](repo:deployments/chart/templates/mutatingadmissionpolicy.yaml) file creates a
+MutatingAdmissionPolicy that modifies objects on create/update, removing annotations that start with `downscaler/`
+if they were deployed by unauthorized users or service accounts, or preventing editing their value if they were deployed by
+authorized users or service account.
+When deployed, the policy is bound to every namespace.
+
+## Mutatingadmissionpolicyremoval
+
+The [mutatingadmissionpolicyremoval.yaml](repo:deployments/chart/templates/validatingadmissionpolicyremoval.yaml) file creates a
+MutatingAdmissionPolicyRemoval that re-adds removed `downscaler/` annotations in namespaces or workloads
+if unauthorized users or service accounts removed them.
+When deployed, the policy is bound to every namespace.
+
+## Validatingadmissionpolicy
+
+The [validatingadmissionpolicy.yaml](repo:deployments/chart/templates/validatingadmissionpolicy.yaml) file creates a
+ValidatingAdmissionPolicy that blocks the creation of namespaces or workloads with any `downscaler/` annotations if deployed by
+unauthorized users or service accounts, and prevents editing these annotations if deployed by authorized users or service accounts.
+When deployed, the policy is bound to every namespace.
+
+## Validatingadmissionpolicyremoval
+
+The [validatingadmissionpolicyremoval.yaml](repo:deployments/chart/templates/validatingadmissionpolicyremoval.yaml) file creates a
+ValidatingAdmissionPolicy that blocks the removal of any `downscaler/` annotations from namespaces or workloads
+if unauthorized users or service accounts tried removing them.
+When deployed, the policy is bound to every namespace.

@@ -20,9 +20,9 @@ const config: Config = {
   tagline: "A Horizontal Autoscaler For Kubernetes Workloads",
   favicon: "img/kubedownscaler.svg",
 
-  url: "https://caas-team.github.io",
+  url: "https://kube-downscaler.io",
 
-  baseUrl: "/GoKubeDownscaler",
+  baseUrl: "/",
 
   organizationName: "caas-team",
   projectName: "GoKubeDownscaler",
@@ -71,6 +71,9 @@ const config: Config = {
           editUrl:
             "https://github.com/caas-team/GoKubeDownscaler/edit/main/website",
           showLastUpdateTime: true,
+          versions: {
+            current: { label: "Next 🚧" },
+          },
         },
         blog: {
           blogTitle: "GoKubeDownscaler Blog",
@@ -88,6 +91,12 @@ const config: Config = {
         theme: {
           customCss: "./src/css/custom.css",
         },
+        sitemap: {
+          changefreq: "weekly",
+          priority: 0.8,
+          ignorePatterns: ["/tags/**"],
+          filename: "sitemap.xml",
+        },
       } satisfies Preset.Options,
     ],
   ],
@@ -104,7 +113,6 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      hideOnScroll: true,
       logo: {
         alt: "Kubedownscaler Logo",
         src: "img/kubedownscaler-name-dark.svg",
@@ -131,9 +139,18 @@ const config: Config = {
           label: "Contributing",
         },
         {
+          to: "/adopters",
+          label: "Adopters",
+          position: "left",
+        },
+        {
           to: "blog",
           label: "Blog",
           position: "left",
+        },
+        {
+          type: "docsVersionDropdown",
+          position: "right",
         },
         {
           href: "https://github.com/caas-team/GoKubeDownscaler",
@@ -144,7 +161,7 @@ const config: Config = {
         },
         {
           href: "https://inviter.co/kube-downscaler",
-          "aria-label": "GitHub",
+          "aria-label": "Slack Community",
           position: "right",
           title: "kube-downscaler | Slack",
           className: "navbar-icon icon-slack",
@@ -177,6 +194,38 @@ const config: Config = {
     },
   } satisfies Preset.ThemeConfig,
   headTags: [
+    // Preconnect for Google Fonts to improve LCP (non-render-blocking)
+    {
+      tagName: "link",
+      attributes: {
+        rel: "preconnect",
+        href: "https://fonts.googleapis.com",
+      },
+    },
+    {
+      tagName: "link",
+      attributes: {
+        rel: "preconnect",
+        href: "https://fonts.gstatic.com",
+        crossorigin: "anonymous",
+      },
+    },
+    {
+      tagName: "link",
+      attributes: {
+        rel: "preload",
+        as: "style",
+        href: "https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap",
+        onload: "this.onload=null;this.rel='stylesheet'",
+      },
+    },
+    {
+      tagName: "noscript",
+      innerHTML:
+        '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap">',
+      attributes: {},
+    },
+    // SoftwareApplication structured data (enriched)
     {
       tagName: "script",
       attributes: {
@@ -185,14 +234,56 @@ const config: Config = {
       innerHTML: JSON.stringify({
         "@context": "https://schema.org/",
         "@type": "SoftwareApplication",
+        "@id": "https://kube-downscaler.io/#software",
         name: "GoKubeDownscaler",
+        alternateName: ["kube-downscaler", "go-kube-downscaler", "kubernetes downscaler"],
         description:
-          "GoKubeDownscaler is a Kubernetes autoscaler that lets you downscale your workloads during off-hours to save costs on your cloud bill. It is lightweight and easy-to-use; works with EKS, GKE, AKS, and every other Kubernetes clusters.",
-        applicationCategory: "Kubernetes Addon",
+          "GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours (nights, weekend, holidays) to reduce cloud costs",
+        applicationCategory: "DeveloperApplication",
+        applicationSubCategory: "Kubernetes Addon",
         operatingSystem: "Linux",
-        url: "https://caas-team.github.io/GoKubeDownscaler/",
-        logo: "https://github.com/caas-team/GoKubeDownscaler/blob/main/logo/kubedownscaler.svg",
+        url: "https://kube-downscaler.io/",
+        downloadUrl:
+          "https://github.com/caas-team/GoKubeDownscaler/releases/latest",
+        license: "https://opensource.org/licenses/Apache-2.0",
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "USD",
+        },
+        softwareVersion: "1.3.0",
+        keywords:
+          "kubernetes, kube-downscaler, downscaler, cost optimization, scheduled scaling, cloud costs, kubernetes autoscaler",
         author: {
+          "@type": "Organization",
+          name: "CaaS Team",
+          url: "https://github.com/caas-team",
+          logo: "https://kube-downscaler.io/img/kubedownscaler.svg",
+        },
+        maintainer: {
+          "@type": "Organization",
+          name: "CaaS Team",
+          url: "https://github.com/caas-team",
+        },
+        codeRepository:
+          "https://github.com/caas-team/GoKubeDownscaler",
+      }),
+    },
+    // WebSite schema with Sitelinks
+    {
+      tagName: "script",
+      attributes: {
+        type: "application/ld+json",
+      },
+      innerHTML: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://kube-downscaler.io/#website",
+        name: "GoKubeDownscaler",
+        url: "https://kube-downscaler.io/",
+        description:
+          "GoKubeDownscaler: a Kubernetes horizontal autoscaler that reduces Kubernetes cloud costs by scaling workloads based on time schedules.",
+        publisher: {
           "@type": "Organization",
           name: "CaaS Team",
           url: "https://github.com/caas-team",
@@ -203,7 +294,7 @@ const config: Config = {
       tagName: "link",
       attributes: {
         rel: "manifest",
-        href: "/GoKubeDownscaler/manifest.json",
+        href: "/manifest.json",
       },
     },
   ],

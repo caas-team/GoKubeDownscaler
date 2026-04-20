@@ -1,0 +1,57 @@
+---
+title: Webhook
+id: components-webhook
+globalReference: docs-components-webhook
+description: Learn about the Webhook component of GoKubeDownscaler and how it works
+keywords: [components, webhook]
+---
+
+# Webhook
+
+The **Webhook** is an optional component of GoKubeDownscaler.
+It works by intercepting the creation or update requests of workloads and evaluating
+them against the defined schedules and configurations.
+If a workload matches the criteria to be scaled down upon creation or update, the Webhook
+modifies the creation/update request to set the number of replicas to the target downscale value.
+
+:::note
+
+Different from the Downscaler, the Webhook only acts on the creation or update of workloads.
+It does not periodically check and scale workloads
+like the Downscaler does.
+
+:::
+
+## How It Works
+
+The Webhook operates as follows:
+
+1. **Intercept Requests**: The Webhook intercepts the creation or update requests of workloads
+2. **Evaluate Workload**: The Webhook evaluates the workload against the defined schedules and configurations to determine if it should be
+   scaled down upon creation or update
+3. **Modify Workload**: If the workload needs to be scaled down, the Webhook modifies the request to set the number of replicas to the
+   target downscale value
+
+The Webhook can only be installed cluster-wide, since it operates at the API server level.
+
+The details of how the Downscaler evaluates workloads and determines scaling actions are covered in the
+[Scopes And Scaling](ref:docs-scopes-and-scaling) section.
+
+:::tip
+
+We designed the `MutatingWebhookConfiguration` process so that it does not block the creation or update of workloads in case of errors,
+however, during the evaluation process, unexpected errors may occur that are not related to our component, but could instead be caused by Kubernetes.
+We recommend keeping the `failurePolicy` field of the `MutatingWebhookConfiguration` resource set to `Ignore` (the default value we provided)
+you can read more inside the Helm Chart documentation and more specifically in this section
+([in this section](ref:docs-helm-webhook-controller-mutating-webhook-configuration)).
+
+:::
+
+## When to Use the Webhook
+
+There are a couple of scenarios where using the Webhook is beneficial:
+
+- **Immediate Compliance**: It is useful when the organization wants to ensure that all newly created or updated workloads are immediately compliant
+  with the scaling policies defined by the organization.
+- **Avoid Short-term Provisioning**: When workloads are created or updated during a downtime period, the Webhook can ensure they are downscaled
+  immediately, avoiding short-term node provisioning and deprovisioning (and the associated useless costs)

@@ -3,26 +3,26 @@
     "name": "GoKubeDownscaler",
     "icons": [
         {
-            "src": "/GoKubeDownscaler/img/kubedownscaler.svg",
+            "src": "/img/kubedownscaler.svg",
             "type": "image/svg+xml",
             "sizes": "any"
         }
     ],
-    "id": "/GoKubeDownscaler",
-    "start_url": "/GoKubeDownscaler",
+    "id": "/",
+    "start_url": "https://kube-downscaler.io/",
     "background_color": "#FFFFFF",
     "display": "standalone",
-    "scope": "/GoKubeDownscaler",
+    "scope": "https://kube-downscaler.io/",
     "theme_color": "#FFFFFF",
     "shortcuts": [
         {
             "name": "Documentation",
             "short_name": "Documentation",
             "description": "Documentation on the GoKubeDownscaler",
-            "url": "/GoKubeDownscaler/docs",
+            "url": "https://kube-downscaler.io/docs",
             "icons": [
                 {
-                    "src": "/GoKubeDownscaler/img/kubedownscaler.svg",
+                    "src": "/img/kubedownscaler.svg",
                     "sizes": "any"
                 }
             ]
@@ -31,10 +31,46 @@
             "name": "Guides",
             "short_name": "Guides",
             "description": "Guides for the GoKubeDownscaler",
-            "url": "/GoKubeDownscaler/guides",
+            "url": "https://kube-downscaler.io/guides",
             "icons": [
                 {
-                    "src": "/GoKubeDownscaler/img/kubedownscaler.svg",
+                    "src": "/img/kubedownscaler.svg",
+                    "sizes": "any"
+                }
+            ]
+        },
+        {
+            "name": "Contributing",
+            "short_name": "Contributing",
+            "description": "Contribute to GoKubeDownscaler",
+            "url": "https://kube-downscaler.io/contributing",
+            "icons": [
+                {
+                    "src": "/img/kubedownscaler.svg",
+                    "sizes": "any"
+                }
+            ]
+        },
+        {
+            "name": "Adopters",
+            "short_name": "Adopters",
+            "description": "Adopters of GoKubeDownscaler",
+            "url": "https://kube-downscaler.io/adopters",
+            "icons": [
+                {
+                    "src": "/img/kubedownscaler.svg",
+                    "sizes": "any"
+                }
+            ]
+        },
+        {
+            "name": "Blog",
+            "short_name": "Blog",
+            "description": "Latest news and updates from GoKubeDownscaler",
+            "url": "https://kube-downscaler.io/blog",
+            "icons": [
+                {
+                    "src": "/img/kubedownscaler.svg",
                     "sizes": "any"
                 }
             ]
