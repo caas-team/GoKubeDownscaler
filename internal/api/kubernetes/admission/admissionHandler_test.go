@@ -189,15 +189,15 @@ func (e *errorWriter) Write(p []byte) (int, error) {
 	return 0, errWriteError
 }
 
-// nolint:paralleltest // cannot run in parallel
+//nolint:paralleltest // cannot run in parallel
 func TestSendAdmissionReviewResponse_WriteError(t *testing.T) {
 	// this test cannot run in parallel: test captures the global slog logger via slog.SetDefault,
 	// which is shared across all goroutines. Running in parallel would cause a data race between
 	// this test reading logBuffer and other parallel tests writing to the same global logger.
 	// The correct long-term fix would involve injection a *slog.Logger into sendAdmissionReviewResponse.
 	// This test will likely be refactored in the near future
-
 	originalLogger := slog.Default()
+
 	t.Cleanup(func() { slog.SetDefault(originalLogger) })
 
 	var logBuffer bytes.Buffer
