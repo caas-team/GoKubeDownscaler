@@ -1,0 +1,35 @@
+---
+title: WeekFrame
+id: weekframe
+globalReference: docs-weekframe
+description: Learn how to set weekframe in GoKubeDownscaler.
+keywords: [weekframe]
+---
+
+# WeekFrame
+
+WeekFrame is a value that can be set to specify the global weekframe in which the GoKubeDownscaler should operate when
+evaluating timespans without a specific `<Weekday-From>-<Weekday-To>`.
+
+## Syntax
+
+WeekFrame is a value that consists of two case-insensitive weekdays separated by a hyphen (-)
+to specify the week frame for the downscaler.
+
+```text
+Mon-Fri # set the global weekframe to be from Monday to Friday
+```
+
+### Valid Values
+
+#### Weekdays
+
+Case-insensitive:
+
+- Mon
+- Tue
+- Wed
+- Thu
+- Fri
+- Sat
+- Sun

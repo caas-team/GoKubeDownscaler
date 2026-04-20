@@ -83,18 +83,27 @@ function SupportedResourceGroup({
   const Svg = colorMode === "dark" ? SvgDark : SvgLight;
   return (
     <div
-      className={`animate-fade-down max-w-full px-2 pb-8 w-full xl:flex-1 ${className}`}
+      className={`animate-fade-down flex flex-col items-center text-center ${className}`}
     >
       <div className="flex justify-center mb-2">
         <Link href={href}>
-          <Svg className="h-40 w-40" aria-label={title} role="img" />
+          <Svg
+            className="h-14 w-14 sm:h-20 sm:w-20 md:h-32 md:w-32 lg:h-32 lg:w-32 xl:h-40 xl:w-40"
+            aria-label={title}
+            role="img"
+          />
         </Link>
       </div>
-      <div className="text-center px-4 max-w-64 mx-auto">
-        <Heading as="h2" className="select-none">
+      <div className="px-1 w-full">
+        <Heading
+          as="h2"
+          className="select-none text-sm sm:text-base md:text-xl lg:text-lg xl:text-xl"
+        >
           {title}
         </Heading>
-        <p>{supportedResources.join(", ")}</p>
+        <p className="text-xs sm:text-sm md:text-base lg:text-sm xl:text-base leading-relaxed">
+          {supportedResources.join(", ")}
+        </p>
       </div>
     </div>
   );
@@ -103,12 +112,12 @@ function SupportedResourceGroup({
 export function SupportedResources(): JSX.Element {
   return (
     <div>
-      <Heading className="block w-full text-center pt-8 select-none" as="h1">
+      <Heading className="block w-full text-center pt-10 md:pt-16 select-none" as="h1">
         Supported Resources
       </Heading>
-      <section className="flex items-center p-8 w-full">
-        <div className="mx-auto max-w-7xl px-4 w-full">
-          <div className="flex flex-wrap -mx-4 space-x-4">
+      <section className="px-4 md:px-12 lg:px-8 pb-10 md:pb-16 pt-6 md:pt-8 w-full">
+        <div className="mx-auto max-w-7xl w-full">
+          <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-8 lg:gap-6 items-start">
             {SupportedResourceGroupList.map((props, idx) => (
               <SupportedResourceGroup
                 className={delayClasses[idx] || ""}

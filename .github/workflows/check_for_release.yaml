@@ -32,6 +32,16 @@ jobs:
             echo "app_version_change=$app_version_change" >> $GITHUB_ENV
           fi
 
+      - name: Validate semantic versioning
+        if: ${{ env.app_version_change == 'version changed' }}
+        run: |
+          app_version=$(yq e '.appVersion' ./deployments/chart/Chart.yaml)
+          if ! echo "$app_version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::appVersion '$app_version' is not valid semantic versioning. Expected MAJOR.MINOR.PATCH (e.g. 1.3.0)"
+            exit 1
+          fi
+          echo "appVersion '$app_version' correctly follows semantic versioning"
+
       - name: Remove new version label
         if: ${{ env.app_version_change == 'No appVersion changes detected.' }}
         run: |
