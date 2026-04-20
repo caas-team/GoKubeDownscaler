@@ -301,12 +301,12 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload excluded because missing labels",
-			setupMocks: func(t *testing.T, m *MockClient) {
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
 				t.Helper()
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 
 				scope := values.GetDefaultScope()
-				m.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"} },
 			request: func(t *testing.T) *http.Request {
@@ -337,30 +337,30 @@ func TestEvaluateMutation(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		indexedTestCase := testCase
+		currentTest := testCase
 
-		t.Run(indexedTestCase.name, func(t *testing.T) {
+		t.Run(currentTest.name, func(t *testing.T) {
 			t.Parallel()
 
 			mockClient := &MockClient{}
 			handler := newHandlerWithMocks(mockClient)
 
-			if indexedTestCase.setupMocks != nil {
-				indexedTestCase.setupMocks(t, mockClient)
+			if currentTest.setupMocks != nil {
+				currentTest.setupMocks(t, mockClient)
 			}
 
-			if indexedTestCase.setupHandler != nil {
-				indexedTestCase.setupHandler(handler)
+			if currentTest.setupHandler != nil {
+				currentTest.setupHandler(handler)
 			}
 
-			req := indexedTestCase.request(t)
+			req := currentTest.request(t)
 			input, _ := parseAdmissionReviewFromRequest(req)
 			workload, _ := scalable.ParseWorkloadFromRawObject("deployment", input.Request.Object.Raw)
 
 			resp, err := handler.evaluateWorkloadMutation(context.Background(), workload, input, false)
 			require.NoError(t, err)
-			require.Equal(t, indexedTestCase.expectedCode, resp.Response.Result.Code)
-			require.Contains(t, resp.Response.Result.Message, indexedTestCase.expectedMessage)
+			require.Equal(t, currentTest.expectedCode, resp.Response.Result.Code)
+			require.Contains(t, resp.Response.Result.Message, currentTest.expectedMessage)
 		})
 	}
 }

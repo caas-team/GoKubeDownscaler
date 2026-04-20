@@ -102,15 +102,15 @@ func TestParseAdmissionReviewFromRequest(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		indexedTestCase := testCase
+		currentTest := testCase
 
-		t.Run(indexedTestCase.name, func(t *testing.T) {
+		t.Run(currentTest.name, func(t *testing.T) {
 			t.Parallel()
 
-			req := indexedTestCase.reqBuilder()
+			req := currentTest.reqBuilder()
 			parsed, err := parseAdmissionReviewFromRequest(req)
 
-			if indexedTestCase.expectError {
+			if currentTest.expectError {
 				if err == nil {
 					t.Errorf("expected error, got nil")
 				}
@@ -190,22 +190,25 @@ func (e *errorWriter) Write(p []byte) (int, error) {
 }
 
 func TestSendAdmissionReviewResponse_WriteError(t *testing.T) {
-	t.Parallel()
+	// NOT parallel: this test mutates the global slog default logger.
+	// Running it sequentially ensures it completes (and restores the logger)
+	// before any parallel test goroutine can call slog.Info into our buffer.
 
-	var buf bytes.Buffer
-	logger := slog.New(slog.NewTextHandler(&buf, nil))
-	slog.SetDefault(logger)
+	originalLogger := slog.Default()
+	t.Cleanup(func() { slog.SetDefault(originalLogger) })
+
+	var logBuffer bytes.Buffer
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logBuffer, nil)))
 
 	resp := newReviewResponse("id456", true, 200, "ok", false, false)
-	mockWriter := &errorWriter{}
-	sendAdmissionReviewResponse(mockWriter, resp)
+	sendAdmissionReviewResponse(&errorWriter{}, resp)
 
-	logs := buf.String()
-	if !strings.Contains(logs, "failed to write response") {
-		t.Errorf("expected log to contain 'failed to write response', got %q", logs)
+	capturedLogs := logBuffer.String()
+	if !strings.Contains(capturedLogs, "failed to write response") {
+		t.Errorf("expected log to contain 'failed to write response', got %q", capturedLogs)
 	}
 
-	if !strings.Contains(logs, "write error") {
-		t.Errorf("expected log to contain 'write error', got %q", logs)
+	if !strings.Contains(capturedLogs, "write error") {
+		t.Errorf("expected log to contain 'write error', got %q", capturedLogs)
 	}
 }
