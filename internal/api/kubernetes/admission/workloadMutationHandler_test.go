@@ -184,7 +184,6 @@ func TestEvaluateMutation(t *testing.T) {
 			name: "Workload excluded because uptime",
 			setupMocks: func(t *testing.T, mockClient *MockClient) {
 				t.Helper()
-
 				scope := values.NewScope()
 				scope.DownscaleReplicas = values.AbsoluteReplicas(0)
 				_ = scope.ForceUptime.Set("always")
@@ -204,7 +203,6 @@ func TestEvaluateMutation(t *testing.T) {
 			name: "Workload mutated because downtime",
 			setupMocks: func(t *testing.T, mockClient *MockClient) {
 				t.Helper()
-
 				scope := values.NewScope()
 				scope.DownscaleReplicas = values.AbsoluteReplicas(0)
 				_ = scope.ForceDowntime.Set("always")
@@ -241,7 +239,6 @@ func TestEvaluateMutation(t *testing.T) {
 			name: "Workload excluded by namespace scope",
 			setupMocks: func(t *testing.T, m *MockClient) {
 				t.Helper()
-
 				scope := values.GetDefaultScope()
 				_ = scope.Exclude.Set("true")
 
@@ -337,30 +334,30 @@ func TestEvaluateMutation(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		tc := testCase // capture loop variable to avoid closure race
+		indexedTestCase := testCase
 
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(indexedTestCase.name, func(t *testing.T) {
 			t.Parallel()
 
 			mockClient := &MockClient{}
 			handler := newHandlerWithMocks(mockClient)
 
-			if tc.setupMocks != nil {
-				tc.setupMocks(t, mockClient)
+			if indexedTestCase.setupMocks != nil {
+				indexedTestCase.setupMocks(t, mockClient)
 			}
 
-			if tc.setupHandler != nil {
-				tc.setupHandler(handler)
+			if indexedTestCase.setupHandler != nil {
+				indexedTestCase.setupHandler(handler)
 			}
 
-			req := tc.request(t)
+			req := indexedTestCase.request(t)
 			input, _ := parseAdmissionReviewFromRequest(req)
 			workload, _ := scalable.ParseWorkloadFromRawObject("deployment", input.Request.Object.Raw)
 
 			resp, err := handler.evaluateWorkloadMutation(context.Background(), workload, input, false)
 			require.NoError(t, err)
-			require.Equal(t, tc.expectedCode, resp.Response.Result.Code)
-			require.Contains(t, resp.Response.Result.Message, tc.expectedMessage)
+			require.Equal(t, indexedTestCase.expectedCode, resp.Response.Result.Code)
+			require.Contains(t, resp.Response.Result.Message, indexedTestCase.expectedMessage)
 		})
 	}
 }
