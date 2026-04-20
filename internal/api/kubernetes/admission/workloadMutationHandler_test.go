@@ -239,14 +239,14 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload excluded by namespace scope",
-			setupMocks: func(t *testing.T, m *MockClient) {
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
 				t.Helper()
 
 				scope := values.GetDefaultScope()
 				_ = scope.Exclude.Set("true")
 
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
-				m.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"} },
 			request: func(t *testing.T) *http.Request {
@@ -258,9 +258,9 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload excluded by exclude list",
-			setupMocks: func(t *testing.T, m *MockClient) {
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
 				t.Helper()
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) {
 				h.includeNamespaces = &[]string{"default"}
@@ -275,10 +275,10 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload excluded by external scaling (keda)",
-			setupMocks: func(t *testing.T, m *MockClient) {
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
 				t.Helper()
 				scaledObject := buildScaledObjectFromBytes(t, "default") // uses subtest t
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{scaledObject}, nil)
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{scaledObject}, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"} },
 			request: func(t *testing.T) *http.Request {
@@ -290,7 +290,7 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name:         "Workload ignored because namespace not included",
-			setupMocks:   func(t *testing.T, m *MockClient) { t.Helper() },
+			setupMocks:   func(t *testing.T, mockClient *MockClient) { t.Helper() },
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"other-namespace"} },
 			request: func(t *testing.T) *http.Request {
 				t.Helper()
@@ -318,9 +318,9 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload excluded by exclude list (explicit workload)",
-			setupMocks: func(t *testing.T, m *MockClient) {
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
 				t.Helper()
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) {
 				h.includeNamespaces = &[]string{"default"}
