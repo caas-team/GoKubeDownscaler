@@ -102,13 +102,15 @@ func TestParseAdmissionReviewFromRequest(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
+		tc := testCase
+
+		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			req := testCase.reqBuilder()
+			req := tc.reqBuilder()
 			parsed, err := parseAdmissionReviewFromRequest(req)
 
-			if testCase.expectError {
+			if tc.expectError {
 				if err == nil {
 					t.Errorf("expected error, got nil")
 				}
