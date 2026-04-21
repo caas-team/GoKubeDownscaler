@@ -20,10 +20,10 @@ repos:
       - id: golangci-lint-repo-mod
         args: [--config, .golangci.yaml, --, --fix]
   - repo: https://github.com/jonathan-mayer/pre-commit-deadcode
-    rev: v0.0.1
+    rev: v0.0.2
     hooks:
       - id: go-deadcode
-        exclude: ^website/node_modules/
+        args: ["--exclude-regex", "/website/node_modules/"]
   - repo: https://github.com/rbubley/mirrors-prettier
     rev: v3.8.3
     hooks:
