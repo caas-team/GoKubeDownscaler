@@ -62,9 +62,11 @@
     "node": ">=18.0"
   },
   "overrides": {
-    "mermaid": "11.12.3"
+    "mermaid": "11.12.3",
+    "serialize-javascript": "7.0.5"
   },
   "_notes": {
-    "mermaid-override": "temporarily override mermaid to fix a potential regression that causes the mermaid diagrams to look stretched."
+    "mermaid-override": "temporarily override mermaid to fix a potential regression that causes the mermaid diagrams to look stretched.",
+    "serialize-javascript-override": "override serialize-javascript to fix a security vulnerability in older versions pulled in by transitive dependencies."
   }
 }
