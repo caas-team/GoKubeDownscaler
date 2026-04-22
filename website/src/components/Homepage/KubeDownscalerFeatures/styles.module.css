@@ -57,6 +57,12 @@
   margin-bottom: 1.25rem;
 }
 
+.description {
+  color: var(--ifm-color-emphasis-700);
+  font-size: clamp(1rem, 2vw, 1.125rem);
+  line-height: 1.75;
+}
+
 @media (min-width: 768px) {
   .col {
     margin-bottom: 2rem;
