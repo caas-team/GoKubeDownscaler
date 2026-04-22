@@ -42,7 +42,7 @@ const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
     supportedResources: [
       "Deployment",
       "StatefulSet",
-      "DeamonSet",
+      "DaemonSet",
       "CronJob",
       "HorizontalPodAutoscaler",
       "PodDisruptionBudget",
@@ -135,9 +135,7 @@ export function SupportedResources(): JSX.Element {
             {allPills.map((r) => (
               <span
                 key={r}
-                className="inline-block rounded-full px-2.5 py-1 text-[0.72rem] font-medium leading-tight
-                  bg-magenta/90 text-white/90
-                  dark:bg-magenta/40 dark:text-pink-100"
+                className="inline-block rounded-full px-3 py-1 text-[0.8rem] font-medium leading-tight bg-magenta/90 text-white/90 dark:bg-magenta/40 dark:text-pink-100"
               >
                 {r}
               </span>
