@@ -125,7 +125,7 @@ function Feature({title, Svg, description, idx}: FeatureItem & { idx: number }) 
             </div>
             <div className="text--center padding-horiz--md">
         <Heading as="h3">{title}</Heading>
-        <p>{description}</p>
+        <p className={styles.description}>{description}</p>
       </div>
     </div>
   );

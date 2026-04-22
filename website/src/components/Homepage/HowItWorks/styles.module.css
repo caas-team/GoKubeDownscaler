@@ -36,7 +36,7 @@
 }
 
 .body {
-  font-size: clamp(0.9rem, 1.5vw, 1.125rem);
+  font-size: clamp(1rem, 2vw, 1.125rem);
   line-height: 1.75;
   color: var(--ifm-color-emphasis-700);
   margin: 0;
