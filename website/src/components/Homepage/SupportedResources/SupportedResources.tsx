@@ -1,3 +1,4 @@
+import React from "react";
 import Heading from "@theme/Heading";
 import * as PrometheusSVG from "@site/static/img/Prometheus.svg";
 import * as ArgoSVG from "@site/static/img/Argo.svg";
@@ -101,7 +102,8 @@ function SupportedResourceGroup({
         >
           {title}
         </Heading>
-        <p className="text-xs sm:text-sm md:text-base lg:text-sm xl:text-base leading-relaxed">
+        {/* Desktop only: plain text list */}
+        <p className="hidden sm:block text-xs sm:text-sm md:text-base lg:text-sm xl:text-base leading-relaxed">
           {supportedResources.join(", ")}
         </p>
       </div>
@@ -110,6 +112,7 @@ function SupportedResourceGroup({
 }
 
 export function SupportedResources(): JSX.Element {
+  const allPills = SupportedResourceGroupList.flatMap((g) => g.supportedResources);
   return (
     <div>
       <Heading className="block w-full text-center pt-10 md:pt-16 select-none" as="h1">
@@ -124,6 +127,20 @@ export function SupportedResources(): JSX.Element {
                 key={idx}
                 {...props}
               />
+            ))}
+          </div>
+
+          {/* Mobile-only: unified pill cloud below the logo grid */}
+          <div className="flex sm:hidden flex-wrap justify-center gap-1.5 mt-5 animate-fade-down animate-once animate-delay-500">
+            {allPills.map((r) => (
+              <span
+                key={r}
+                className="inline-block rounded-full px-2.5 py-1 text-[0.72rem] font-medium leading-tight
+                  bg-magenta/90 text-white/90
+                  dark:bg-magenta/40 dark:text-pink-100"
+              >
+                {r}
+              </span>
             ))}
           </div>
         </div>
