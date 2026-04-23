@@ -247,10 +247,24 @@ html[data-theme="dark"] .icon-slack {
   /* when using a subtle open-style, the magenta tint is slightly stronger in dark mode */
 }
 
-/* Hide the navbar logo on screens as small as (or smaller than) iPhone SE/Pixel (393px) */
+/* Hide the navbar logo on screens as small as (or smaller than) iPhone SE/Pixel 5 (375px) */
 @media (max-width: 393px) {
   .navbar__brand .navbar__logo {
     display: none;
+  }
+}
+
+/* Announcement bar: show short text on mobile, full text on larger screens */
+.announcement-short {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .announcement-full {
+    display: none;
+  }
+  .announcement-short {
+    display: inline;
   }
 }
 
