@@ -4,6 +4,19 @@ import useBaseUrl from "@docusaurus/useBaseUrl";
 import { useColorMode } from "@docusaurus/theme-common";
 import styles from "./styles.module.css";
 
+/** Returns true only on phone-sized screens (< 640 px — Tailwind `sm` breakpoint). */
+function useIsPhone(): boolean {
+  const [isPhone, setIsPhone] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    setIsPhone(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsPhone(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return isPhone;
+}
+
 const TIMEZONES = [
   "America/Los_Angeles",
   "Asia/Tokyo",
@@ -15,14 +28,15 @@ const TIMEZONES = [
 
 const TYPING_SPEED_MS = 80;
 const DELETING_SPEED_MS = 40;
-const CYCLE_INTERVAL_MS = 10000;
+const CYCLE_INTERVAL_MS = 8000;
 
-function useTypingCycle(items: string[]): string {
+function useTypingCycle(items: string[], disabled = false): string {
   const [index, setIndex] = useState(0);
   const [displayed, setDisplayed] = useState(items[0]);
   const [phase, setPhase] = useState<"typing" | "waiting" | "deleting">("waiting");
 
   useEffect(() => {
+    if (disabled) return;
     const current = items[index];
 
     if (phase === "waiting") {
@@ -60,7 +74,9 @@ function useTypingCycle(items: string[]): string {
 }
 
 function Terminal() {
-  const timezone = useTypingCycle(TIMEZONES);
+  const isPhone = useIsPhone();
+  const timezone = useTypingCycle(TIMEZONES, isPhone);
+  const displayedTimezone = isPhone ? "Asia/Tokyo" : timezone;
   return (
     <div className={styles.terminal}>
       {/* Title bar */}
@@ -101,8 +117,8 @@ function Terminal() {
           <span className={styles.annotation}>DEFAULT_UPTIME</span>
           <span className={styles.punct}>: </span>
           <span className={styles.scheduleValue}>
-            Mon-Fri 09:00-17:00 {timezone}
-            <span className={styles.cursor}>|</span>
+            Mon-Fri 09:00-17:00 {displayedTimezone}
+            {!isPhone && <span className={styles.cursor}>|</span>}
           </span>
           {"\n"}
           {"  "}

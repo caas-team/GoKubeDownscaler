@@ -171,7 +171,7 @@ const config: Config = {
     announcementBar: {
       id: "star_downscaler",
       content:
-        '⭐️ If you like GoKubeDownscaler, give it a star on <a target="_blank" rel="noopener noreferrer" href="https://github.com/caas-team/GoKubeDownscaler">GitHub</a>! ⭐️',
+        '<span class="announcement-full">⭐️ If you like GoKubeDownscaler, give it a star on <a target="_blank" rel="noopener noreferrer" href="https://github.com/caas-team/GoKubeDownscaler">GitHub</a>! ⭐️</span><span class="announcement-short">⭐️ Give it a star on <a target="_blank" rel="noopener noreferrer" href="https://github.com/caas-team/GoKubeDownscaler">GitHub</a>! ⭐️</span>',
     },
     footer: {
       style: "dark",
