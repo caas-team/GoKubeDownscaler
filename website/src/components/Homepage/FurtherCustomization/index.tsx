@@ -29,7 +29,7 @@ export default function FurtherCustomization(): JSX.Element {
     <section className={styles.section}>
       <div className={styles.inner}>
         <Heading as="h2" className={`${styles.headline} animate-fade-down animate-once animate-delay-0`}>
-          Needs Further Customization?
+          Need Further Customization?
         </Heading>
 
         <p className={`${styles.body} animate-fade-down animate-once animate-delay-200`}>
