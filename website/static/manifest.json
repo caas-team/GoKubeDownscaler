@@ -9,17 +9,17 @@
         }
     ],
     "id": "/",
-    "start_url": "https://kube-downscaler.io/",
+    "start_url": "/",
     "background_color": "#FFFFFF",
     "display": "standalone",
-    "scope": "https://kube-downscaler.io/",
+    "scope": "/",
     "theme_color": "#FFFFFF",
     "shortcuts": [
         {
             "name": "Documentation",
             "short_name": "Documentation",
-            "description": "Documentation on the GoKubeDownscaler",
-            "url": "https://kube-downscaler.io/docs",
+            "description": "Documentation of GoKubeDownscaler",
+            "url": "/docs",
             "icons": [
                 {
                     "src": "/img/kubedownscaler.svg",
@@ -31,7 +31,7 @@
             "name": "Guides",
             "short_name": "Guides",
             "description": "Guides for the GoKubeDownscaler",
-            "url": "https://kube-downscaler.io/guides",
+            "url": "/guides",
             "icons": [
                 {
                     "src": "/img/kubedownscaler.svg",
@@ -43,7 +43,7 @@
             "name": "Contributing",
             "short_name": "Contributing",
             "description": "Contribute to GoKubeDownscaler",
-            "url": "https://kube-downscaler.io/contributing",
+            "url": "/contributing",
             "icons": [
                 {
                     "src": "/img/kubedownscaler.svg",
@@ -55,7 +55,7 @@
             "name": "Adopters",
             "short_name": "Adopters",
             "description": "Adopters of GoKubeDownscaler",
-            "url": "https://kube-downscaler.io/adopters",
+            "url": "/adopters",
             "icons": [
                 {
                     "src": "/img/kubedownscaler.svg",
@@ -67,7 +67,7 @@
             "name": "Blog",
             "short_name": "Blog",
             "description": "Latest news and updates from GoKubeDownscaler",
-            "url": "https://kube-downscaler.io/blog",
+            "url": "/blog",
             "icons": [
                 {
                     "src": "/img/kubedownscaler.svg",
@@ -76,5 +76,5 @@
             ]
         }
     ],
-    "description": "A horizontal autoscaler for Kubernetes workloads"
+    "description": "GoKubeDownscaler: a Kubernetes horizontal autoscaler that reduces Kubernetes cloud costs by scaling workloads based on time schedules."
 }
