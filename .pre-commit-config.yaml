@@ -20,16 +20,16 @@ repos:
       - id: golangci-lint-repo-mod
         args: [--config, .golangci.yaml, --, --fix]
   - repo: https://github.com/jonathan-mayer/pre-commit-deadcode
-    rev: v0.0.1
+    rev: v0.0.2
     hooks:
       - id: go-deadcode
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.8.1
+    rev: v3.8.3
     hooks:
       - id: prettier
         files: \.(md|mdx)$
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.21.0
+    rev: v0.22.1
     hooks:
       - id: markdownlint-cli2
         args: [--fix]
