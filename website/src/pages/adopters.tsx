@@ -13,7 +13,11 @@ function AdoptersHeader() {
             <div className="transform bg-magenta -skew-y-6 xl:hidden h-full w-full absolute top-0 origin-top-left" />
             <header className="select-none text-white bg-magenta items-center flex pt-10 pb-24 px-8 overflow-hidden relative text-center">
                 <div className="px-4 w-full flex flex-col items-center justify-center gap-6">
-                    <KubedownscalerSVG.default className="animate-fade-down h-28 sm:h-36 md:h-44" />
+                    <KubedownscalerSVG.default
+                        className="animate-fade-down h-28 sm:h-36 md:h-44"
+                        role="img"
+                        aria-label="GoKubeDownscaler Logo"
+                    />
                     <Heading
                         as="h1"
                         className="animate-fade-down text-[clamp(1.25rem,4vw,2.5rem)] font-bold m-0"

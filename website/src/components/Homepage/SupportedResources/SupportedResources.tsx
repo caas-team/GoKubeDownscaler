@@ -9,6 +9,7 @@ import * as GithubLightSVG from "@site/static/img/Github-white.svg";
 import * as GithubDarkSVG from "@site/static/img/Github.svg";
 import { useColorMode } from "@docusaurus/theme-common";
 import Link from "@docusaurus/Link";
+import styles from "./styles.module.css";
 
 const delayClasses = [
   "animate-delay-0",
@@ -115,7 +116,7 @@ export function SupportedResources(): JSX.Element {
   const allPills = SupportedResourceGroupList.flatMap((g) => g.supportedResources);
   return (
     <div>
-      <Heading className="block w-full text-center pt-10 md:pt-16 select-none" as="h1">
+      <Heading className={styles.heading} as="h2">
         Supported Resources
       </Heading>
       <section className="px-4 md:px-12 lg:px-8 pb-10 md:pb-16 pt-6 md:pt-8 w-full">

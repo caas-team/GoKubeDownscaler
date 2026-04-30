@@ -166,6 +166,13 @@ const config: Config = {
           title: "kube-downscaler | Slack",
           className: "navbar-icon icon-slack",
         },
+        {
+          href: "https://kube-downscaler.io/blog/rss.xml",
+          "aria-label": "RSS Feed",
+          position: "right",
+          title: "GoKubeDownscaler Blog | RSS Feed",
+          className: "navbar-icon icon-rss",
+        },
       ],
     },
     announcementBar: {
@@ -194,6 +201,51 @@ const config: Config = {
     },
   } satisfies Preset.ThemeConfig,
   headTags: [
+    // Global Open Graph tags (apply to every page)
+    {
+      tagName: "meta",
+      attributes: {
+        property: "og:type",
+        content: "website",
+      },
+    },
+    {
+      tagName: "meta",
+      attributes: {
+        property: "og:site_name",
+        content: "GoKubeDownscaler",
+      },
+    },
+    // Default OG image dimensions (supplements themeConfig.image which injects og:image)
+    {
+      tagName: "meta",
+      attributes: {
+        property: "og:image:width",
+        content: "1280",
+      },
+    },
+    {
+      tagName: "meta",
+      attributes: {
+        property: "og:image:height",
+        content: "640",
+      },
+    },
+    {
+      tagName: "meta",
+      attributes: {
+        property: "og:image:alt",
+        content: "GoKubeDownscaler — Kubernetes Scheduled Autoscaler",
+      },
+    },
+    // Global Twitter Card type
+    {
+      tagName: "meta",
+      attributes: {
+        name: "twitter:card",
+        content: "summary_large_image",
+      },
+    },
     // Preconnect for Google Fonts to improve LCP (non-render-blocking)
     {
       tagName: "link",
@@ -219,6 +271,16 @@ const config: Config = {
         onload: "this.onload=null;this.rel='stylesheet'",
       },
     },
+    // Preload hero SVG for faster LCP (Largest Contentful Paint)
+    {
+      tagName: "link",
+      attributes: {
+        rel: "preload",
+        as: "image",
+        href: "/img/kubedownscaler.svg",
+        type: "image/svg+xml",
+      },
+    },
     {
       tagName: "noscript",
       innerHTML:
@@ -236,37 +298,34 @@ const config: Config = {
         "@type": "SoftwareApplication",
         "@id": "https://kube-downscaler.io/#software",
         name: "GoKubeDownscaler",
-        alternateName: ["kube-downscaler", "go-kube-downscaler", "kubernetes downscaler"],
+        alternateName: [
+          "kube-downscaler",
+          "go-kube-downscaler",
+          "kubernetes downscaler",
+        ],
         description:
           "GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours (nights, weekend, holidays) to reduce cloud costs",
+        image: "https://kube-downscaler.io/img/social-preview.png",
         applicationCategory: "DeveloperApplication",
         applicationSubCategory: "Kubernetes Addon",
         operatingSystem: "Linux",
         url: "https://kube-downscaler.io/",
         downloadUrl:
           "https://github.com/caas-team/GoKubeDownscaler/releases/latest",
+        releaseNotes: "https://github.com/caas-team/GoKubeDownscaler/releases",
         license: "https://opensource.org/licenses/Apache-2.0",
         offers: {
           "@type": "Offer",
           price: "0",
           priceCurrency: "USD",
         },
-        softwareVersion: "1.3.0",
+        sameAs: ["https://github.com/caas-team/GoKubeDownscaler"],
         keywords:
           "kubernetes, kube-downscaler, downscaler, cost optimization, scheduled scaling, cloud costs, kubernetes autoscaler",
-        author: {
-          "@type": "Organization",
-          name: "CaaS Team",
-          url: "https://github.com/caas-team",
-          logo: "https://kube-downscaler.io/img/kubedownscaler.svg",
-        },
-        maintainer: {
-          "@type": "Organization",
-          name: "CaaS Team",
-          url: "https://github.com/caas-team",
-        },
-        codeRepository:
-          "https://github.com/caas-team/GoKubeDownscaler",
+        author: { "@id": "https://kube-downscaler.io/#organization" },
+        maintainer: { "@id": "https://kube-downscaler.io/#organization" },
+        publisher: { "@id": "https://kube-downscaler.io/#organization" },
+        codeRepository: "https://github.com/caas-team/GoKubeDownscaler",
       }),
     },
     // WebSite schema with Sitelinks
@@ -283,11 +342,7 @@ const config: Config = {
         url: "https://kube-downscaler.io/",
         description:
           "GoKubeDownscaler: a Kubernetes horizontal autoscaler that reduces Kubernetes cloud costs by scaling workloads based on time schedules.",
-        publisher: {
-          "@type": "Organization",
-          name: "CaaS Team",
-          url: "https://github.com/caas-team",
-        },
+        publisher: { "@id": "https://kube-downscaler.io/#organization" },
       }),
     },
     {
@@ -296,6 +351,22 @@ const config: Config = {
         rel: "manifest",
         href: "/manifest.json",
       },
+    },
+    // Organization schema
+    {
+      tagName: "script",
+      attributes: {
+        type: "application/ld+json",
+      },
+      innerHTML: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://kube-downscaler.io/#organization",
+        name: "CaaS Team",
+        url: "https://github.com/caas-team",
+        logo: "https://kube-downscaler.io/img/kubedownscaler.svg",
+        sameAs: ["https://github.com/caas-team"],
+      }),
     },
   ],
   themes: [

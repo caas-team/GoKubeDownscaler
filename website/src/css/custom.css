@@ -89,6 +89,14 @@ html[data-theme="dark"] .icon-slack {
   background-image: url("/img/Slack-white.svg");
 }
 
+.icon-rss {
+  background-image: url("/img/Rss-black.svg");
+}
+
+html[data-theme="dark"] .icon-rss {
+  background-image: url("/img/Rss-white.svg");
+}
+
 /* Smaller, more readable font for doc content areas — targets text directly
    because Docusaurus children use rem units and don't inherit from a wrapper */
 
@@ -273,5 +281,12 @@ html[data-theme="dark"] .icon-slack {
   .theme-doc-markdown .faq-question::before,
   .theme-doc-markdown .faq-sep {
     transition: none;
+  }
+
+  /* Disable all animations for users with reduced-motion preference (homepage + all animated elements) */
+  [class*="animate-"] {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
