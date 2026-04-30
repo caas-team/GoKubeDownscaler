@@ -1,0 +1,16 @@
+.heading {
+  font-size: clamp(1.25rem, 3vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 1.25rem;
+  text-align: center;
+  color: var(--ifm-heading-color);
+  min-height: 2rem; /* Prevent CLS during animation */
+  will-change: transform, opacity; /* Optimize animation performance */
+}
+
+@media (min-width: 768px) {
+  .heading {
+    padding-top: 4rem;
+  }
+}

@@ -207,6 +207,7 @@ linters:
       - third_party$
       - builtin$
       - examples$
+      - website/node_modules
 issues:
   max-same-issues: 50
   fix: true
@@ -233,3 +234,4 @@ formatters:
       - third_party$
       - builtin$
       - examples$
+      - website/node_modules

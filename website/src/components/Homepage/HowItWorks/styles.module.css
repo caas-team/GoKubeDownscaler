@@ -1,0 +1,170 @@
+/* ── Section wrapper ── */
+.section {
+  width: 100%;
+  background-color: var(--ifm-background-color);
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.5rem 1.25rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .inner {
+    padding: 4rem 2rem;
+    gap: 3rem;
+  }
+}
+
+/* ── Text block ── */
+.textBlock {
+  text-align: center;
+  max-width: 56rem;
+}
+
+.headline {
+  font-size: clamp(1.25rem, 3vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 1.25rem;
+  color: var(--ifm-heading-color);
+  min-height: 2rem; /* Prevent CLS during animation */
+  will-change: transform, opacity; /* Optimize animation performance */
+}
+
+.body {
+  font-size: clamp(1rem, 2vw, 1.125rem);
+  line-height: 1.75;
+  color: var(--ifm-color-emphasis-700);
+  margin: 0;
+  min-height: 2rem; /* Prevent CLS during animation */
+  will-change: transform, opacity; /* Optimize animation performance */
+}
+
+/* ── Terminal block (always visible) ── */
+.terminalBlock {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* ── Visual block — image hidden on small screens ── */
+.visualBlock {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .visualBlock {
+    display: flex;
+  }
+}
+
+/* ── Terminal ── */
+.terminal {
+  width: 100%;
+  max-width: 56rem;
+  background-color: #1e1e2e;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  font-family: "Menlo", "Monaco", "Consolas", "Courier New", monospace;
+  min-height: 200px; /* Prevent CLS when terminal loads */
+}
+
+.titleBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background-color: #2a2a3e;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.fileName {
+  margin-left: 10px;
+  font-size: 0.75rem;
+  color: #888;
+  font-family: "Menlo", "Monaco", "Consolas", "Courier New", monospace;
+}
+
+.code {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  font-size: 0.7rem;
+  line-height: 1.75;
+  background: transparent;
+  border: none;
+  color: #cdd6f4;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  .code {
+    padding: 1.25rem 1.5rem;
+    font-size: 0.875rem;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: auto;
+  }
+}
+
+.code code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+.keyword   { color: #89b4fa; }
+.punct     { color: #cdd6f4; }
+.value     { color: #a6e3a1; }
+.annotation{ color: #f38ba8; font-weight: 600; }
+.scheduleValue { color: #fab387; }
+.comment   { color: #6c7086; font-style: italic; }
+
+.cursor {
+  display: inline-block;
+  color: #fab387;
+  font-weight: 100;
+  animation: blink 1s step-start infinite;
+  margin-left: 1px;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* Hide the animated cursor entirely when JavaScript is disabled */
+@media (scripting: none) {
+  .cursor {
+    display: none;
+  }
+}
+
+/* ── Preview image ── */
+.previewImage {
+  width: 100%;
+  max-width: 72rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--ifm-color-emphasis-200);
+}

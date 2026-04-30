@@ -1,0 +1,81 @@
+name: "Add your organization as an Adopter"
+description: "Tell us you're using GoKubeDownscaler — we'd love to feature you!"
+title: "Adopter: <your organization name>"
+labels: ["adopter"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for using GoKubeDownscaler! 🎉
+        If you're running it in your company, let us know and we’ll add you to our adopters page.
+
+  - type: input
+    id: company_name
+    attributes:
+      label: "Organization / Company name"
+      placeholder: "e.g. Acme Corp"
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: "Website"
+      placeholder: "https://example.com"
+    validations:
+      required: true
+
+  - type: input
+    id: logo
+    attributes:
+      label: "Logo URL"
+      description: "Public link to your logo (SVG or PNG preferred). You can also provide a link to your company’s public brand assets page or host it on a service like Imgur so we can download the logo directly."
+      placeholder: "https://example.com/logo.svg"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: usage
+    attributes:
+      label: "How are you using GoKubeDownscaler? (optional)"
+      options:
+        - label: "Staging / development environments"
+        - label: "Production environments (internal tools)"
+        - label: "Production environments (customer-facing applications)"
+        - label: "Other"
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: "Anything else you'd like to share? (optional)"
+      description: "If you have any interesting details about your use of GoKubeDownscaler we would love to hear about it!"
+      placeholder: |
+        e.g.
+        - How are you using GoKubeDownscaler? (Downscaling during off hours, scheduled startup mode)
+        - Where is it installed (cloud, on-prem, etc.)?
+        - How many clusters are you running it on?
+        - Did you build any custom automations on top of it?
+    validations:
+      required: false
+
+  - type: input
+    id: contact_email
+    attributes:
+      label: "Contact email (optional)"
+      description: "If provided, we will only use this email to follow up about your adopter listing if we need to clarify details. We will not publish or share your email. You can also provide other contact details, such as your Slack username in our community."
+      placeholder: "you[at]company.com or @slackusername"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: "Confirmation"
+      options:
+        - label: "I confirm I am authorized to provide this logo and consent to GoKubeDownscaler displaying it on the adopters page."
+          value: "consent"
+    validations:
+      required: true

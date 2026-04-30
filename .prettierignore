@@ -1,1 +1,5 @@
 deployments/chart/templates/*.yaml
+
+# Ignore Prettier for FAQ MDX because we use manual formatting and prettier-ignore comments
+website/content/docs/4 - faq.mdx
+website/versioned_docs/*/docs/4 - faq.mdx

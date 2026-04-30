@@ -102,13 +102,15 @@ func TestParseAdmissionReviewFromRequest(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
+		currentTest := testCase
+
+		t.Run(currentTest.name, func(t *testing.T) {
 			t.Parallel()
 
-			req := testCase.reqBuilder()
+			req := currentTest.reqBuilder()
 			parsed, err := parseAdmissionReviewFromRequest(req)
 
-			if testCase.expectError {
+			if currentTest.expectError {
 				if err == nil {
 					t.Errorf("expected error, got nil")
 				}
@@ -187,23 +189,30 @@ func (e *errorWriter) Write(p []byte) (int, error) {
 	return 0, errWriteError
 }
 
+//nolint:paralleltest // cannot run test in parallel
 func TestSendAdmissionReviewResponse_WriteError(t *testing.T) {
-	t.Parallel()
+	// this test cannot run in parallel: test captures the global slog logger via slog.SetDefault,
+	// which is shared across all goroutines. Running in parallel would cause a data race between
+	// this test reading logBuffer and other parallel tests writing to the same global logger.
+	// The correct long-term fix would involve injection a *slog.Logger into sendAdmissionReviewResponse.
+	// This test will likely be refactored in the near future
+	originalLogger := slog.Default()
 
-	var buf bytes.Buffer
-	logger := slog.New(slog.NewTextHandler(&buf, nil))
-	slog.SetDefault(logger)
+	t.Cleanup(func() { slog.SetDefault(originalLogger) })
+
+	var logBuffer bytes.Buffer
+
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logBuffer, nil)))
 
 	resp := newReviewResponse("id456", true, 200, "ok", false, false)
-	mockWriter := &errorWriter{}
-	sendAdmissionReviewResponse(mockWriter, resp)
+	sendAdmissionReviewResponse(&errorWriter{}, resp)
 
-	logs := buf.String()
-	if !strings.Contains(logs, "failed to write response") {
-		t.Errorf("expected log to contain 'failed to write response', got %q", logs)
+	capturedLogs := logBuffer.String()
+	if !strings.Contains(capturedLogs, "failed to write response") {
+		t.Errorf("expected log to contain 'failed to write response', got %q", capturedLogs)
 	}
 
-	if !strings.Contains(logs, "write error") {
-		t.Errorf("expected log to contain 'write error', got %q", logs)
+	if !strings.Contains(capturedLogs, "write error") {
+		t.Errorf("expected log to contain 'write error', got %q", capturedLogs)
 	}
 }
