@@ -20,6 +20,7 @@
   justify-content: center;
   border-radius: 9999px;
   background-color: rgba(226, 0, 116, 0.12);
+  min-height: 80px; /* Explicit height to prevent CLS */
 }
 
 .featureSvg {
@@ -55,12 +56,14 @@
 
 .col {
   margin-bottom: 1.25rem;
+  will-change: transform, opacity; /* Optimize animation performance */
 }
 
 .description {
   color: var(--ifm-color-emphasis-700);
   font-size: clamp(1rem, 2vw, 1.125rem);
   line-height: 1.75;
+  min-height: 3.5rem; /* Prevent CLS during animation */
 }
 
 @media (min-width: 768px) {

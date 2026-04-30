@@ -9,6 +9,125 @@ keywords:
 
 # Frequently Asked Questions
 
+<script type="application/ld+json">{JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+        {
+            "@type": "Question",
+            name: "What is GoKubeDownscaler (kube-downscaler)?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "GoKubeDownscaler (also known as a kube-downscaler) is an open-source Kubernetes horizontal autoscaler that automatically scales workloads down to zero during off-hours — such as nights, weekends, or holidays — to significantly reduce cloud infrastructure costs.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "How does GoKubeDownscaler reduce cloud costs?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "By scaling Kubernetes workloads down to zero during periods of low usage (e.g. after office hours, weekends, holidays), cluster nodes are also freed up, reducing the total number of running VMs and lowering your cloud bill.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "Does GoKubeDownscaler work with EKS, GKE, and AKS?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "Yes. GoKubeDownscaler works with any standard Kubernetes cluster, including Amazon EKS, Google GKE, Azure AKS, and self-managed clusters.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "Is GoKubeDownscaler free to use?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "Yes. GoKubeDownscaler is a free, open-source project licensed under the Apache 2.0 license. It is available on GitHub at https://github.com/caas-team/GoKubeDownscaler.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "How do I install GoKubeDownscaler?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "The easiest way to install GoKubeDownscaler is via Helm: run `helm upgrade -i gokubedownscaler oci://ghcr.io/caas-team/charts/go-kube-downscaler`. You can also install it using raw Kubernetes manifests.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "What Kubernetes resources can GoKubeDownscaler scale?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "GoKubeDownscaler supports scaling Deployments, StatefulSets, DaemonSets, CronJobs, HorizontalPodAutoscalers, PodDisruptionBudgets, Jobs, Argo Rollouts, KEDA ScaledObjects, Zalando Stacks, Prometheus instances, and GitHub Actions AutoscalingRunnerSets.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "How can I scale Kubernetes workloads to zero at night?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "You can scale Kubernetes workloads to zero at night by using a scheduled autoscaler like GoKubeDownscaler. It automatically reduces replicas to zero during off-hours, helping eliminate unnecessary resource usage and costs.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "Can Kubernetes scale to zero automatically?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "By default, Kubernetes Horizontal Pod Autoscaler (HPA) does not support scaling to zero because it requires running pods to collect metrics. Tools like GoKubeDownscaler enable scheduled scale-to-zero behavior for cost optimization.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "How do I reduce Kubernetes cloud costs?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "One of the most effective ways to reduce Kubernetes cloud costs is to scale workloads down during periods of low usage. GoKubeDownscaler automates this by scheduling scale-down events, freeing cluster resources and reducing the number of running nodes.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "What is the difference between HPA and kube-downscaler?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "The Kubernetes Horizontal Pod Autoscaler (HPA) scales workloads dynamically based on metrics like CPU or memory usage, while kube-downscaler scales workloads based on time schedules. This makes it ideal for predictable off-hours cost savings.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "Does GoKubeDownscaler need cluster wide permissions?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "Not necessarily. GoKubeDownscaler can be installed cluster-wide with permissions to manage all namespaces, or it can be installed with limited permissions to manage specific namespaces or workloads. This flexibility allows you to implement cost-saving schedules without granting unnecessary access.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "Does GoKubeDownscaler (kube-downscaler) automatically handle daylight saving time (DST)?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "Yes, GoKubeDownscaler automatically adjusts for daylight saving time (DST) when scheduling scale-down events. It uses the IANA timezone database to ensure that workloads are scaled down at the correct local times, even as DST changes occur.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "Does GoKubeDownscaler work with KEDA?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "Yes. GoKubeDownscaler doesn't interfere with KEDA's dynamic scaling based on external metrics. It can be used alongside KEDA to schedule scale-down events while KEDA handles real-time scaling based on demand."
+            }
+        },
+        {
+            "@type": "Question",
+            name: "What is the difference between GoKubeDownscaler and py-kube-downscaler?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: "GoKubeDownscaler is a complete Go rewrite of py-kube-downscaler with better performance, more supported resource types, and active maintenance. All new features and improvements will be added to GoKubeDownscaler, while py-kube-downscaler is now in maintenance mode. It is recommended to use GoKubeDownscaler for new installations and to migrate existing py-kube-downscaler installations to GoKubeDownscaler to benefit from the latest features and improvements."
+            }
+        }
+    ],
+})}</script>
+
 This page collects frequently asked questions about GoKubeDownscaler.
 If your question isn't answered here, feel free to open an issue or join the project community on [Slack](https://inviter.co/kube-downscaler).
 
@@ -50,6 +169,21 @@ If your question isn't answered here, feel free to open an issue or join the pro
 
 <div className="faq-item">
     {/* prettier-ignore */}
+    <h3 className="faq-question">Does GoKubeDownscaler need cluster-wide permissions?</h3>
+    <hr className="faq-sep" />
+    <div className="faq-answer">
+        Not necessarily.
+        GoKubeDownscaler can be installed with cluster-wide
+        permissions to manage workloads across all namespaces, or it can be
+        installed with limited permissions to manage specific namespaces, even a single one,
+        giving you flexibility to limit scope where required.
+        See the [this section of the installation page](ref:guides-installation#constrained-installation-vs-cluster-wide-installation)
+        for more details.
+    </div>
+</div>
+
+<div className="faq-item">
+    {/* prettier-ignore */}
     <h3 className="faq-question">Does GoKubeDownscaler work with EKS, GKE, and AKS?</h3>
     <hr className="faq-sep" />
     <div className="faq-answer">
@@ -73,6 +207,29 @@ If your question isn't answered here, feel free to open an issue or join the pro
         Since Karpenter offers demand-driven node provisioning, combining it
         with GoKubeDownscaler's scheduled scale-to-zero behavior can produce even
         stronger cost savings.
+    </div>
+</div>
+
+<div className="faq-item">
+    {/* prettier-ignore */}
+    <h3 className="faq-question">What is the difference between HPA and kube-downscaler?</h3>
+    <hr className="faq-sep" />
+    <div className="faq-answer">
+        The Kubernetes Horizontal Pod Autoscaler (HPA) scales workloads dynamically
+        based on metrics such as CPU or memory usage.
+        Kube-downscaler scales workloads based on time schedules (for example nightly or on weekends).
+        This makes kube-downscaler particularly well-suited for predictable off-hours
+        cost savings.
+    </div>
+</div>
+
+<div className="faq-item">
+    <h3 className="faq-question">Does GoKubeDownscaler work with KEDA?</h3>
+    <hr className="faq-sep" />
+    <div className="faq-answer">
+        Yes. GoKubeDownscaler doesn't interfere with KEDA's dynamic scaling based on external metrics.
+        It can be used alongside KEDA to schedule scale-down events while KEDA handles real-time scaling
+        based on demand.
     </div>
 </div>
 
@@ -105,34 +262,6 @@ If your question isn't answered here, feel free to open an issue or join the pro
 
 <div className="faq-item">
     {/* prettier-ignore */}
-    <h3 className="faq-question">What is the difference between HPA and kube-downscaler?</h3>
-    <hr className="faq-sep" />
-    <div className="faq-answer">
-        The Kubernetes Horizontal Pod Autoscaler (HPA) scales workloads dynamically
-        based on metrics such as CPU or memory usage.
-        Kube-downscaler scales workloads based on time schedules (for example nightly or on weekends).
-        This makes kube-downscaler particularly well-suited for predictable off-hours
-        cost savings.
-    </div>
-</div>
-
-<div className="faq-item">
-    {/* prettier-ignore */}
-    <h3 className="faq-question">Does GoKubeDownscaler need cluster-wide permissions?</h3>
-    <hr className="faq-sep" />
-    <div className="faq-answer">
-        Not necessarily.
-        GoKubeDownscaler can be installed with cluster-wide
-        permissions to manage workloads across all namespaces, or it can be
-        installed with limited permissions to manage specific namespaces, even a single one,
-        giving you flexibility to limit scope where required.
-        See the [this section of the installation page](ref:guides-installation#constrained-installation-vs-cluster-wide-installation)
-        for more details.
-    </div>
-</div>
-
-<div className="faq-item">
-    {/* prettier-ignore */}
     <h3 className="faq-question">Does GoKubeDownscaler automatically handle daylight saving time (DST) changes?</h3>
     <hr className="faq-sep" />
     <div className="faq-answer">
@@ -145,6 +274,18 @@ If your question isn't answered here, feel free to open an issue or join the pro
     </div>
 </div>
 
+<div className="faq-item">
+    <h3 className="faq-question">What is the difference between GoKubeDownscaler and py-kube-downscaler?</h3>
+    <hr className="faq-sep" />
+    <div className="faq-answer">
+        GoKubeDownscaler is a complete Go rewrite of py-kube-downscaler with better performance,
+        more supported resource types, and active maintenance.
+        All new features and improvements will be added to GoKubeDownscaler,
+        while py-kube-downscaler is now in maintenance mode.
+        It is recommended to use GoKubeDownscaler for new installations and to migrate existing py-kube-downscaler
+        installations to GoKubeDownscaler to benefit from the latest features and improvements.
+    </div>
+</div>
 ---
 
 If you'd like to add a question to this page, open an issue or submit a pull request with the suggested FAQ entry.

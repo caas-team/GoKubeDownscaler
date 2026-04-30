@@ -27,6 +27,8 @@
   text-align: center;
   color: var(--ifm-heading-color);
   margin: 0;
+  min-height: 2rem; /* Prevent CLS during animation */
+  will-change: transform, opacity; /* Optimize animation performance */
 }
 
 .body {
@@ -36,6 +38,8 @@
   text-align: center;
   max-width: 56rem;
   margin: 0;
+  min-height: 2rem; /* Prevent CLS during animation */
+  will-change: transform, opacity; /* Optimize animation performance */
 }
 
 /* ── Visual block (always visible) ── */
@@ -54,6 +58,7 @@
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   font-family: "Menlo", "Monaco", "Consolas", "Courier New", monospace;
+  min-height: 200px; /* Prevent CLS when terminal loads */
 }
 
 @media (min-width: 1024px) {
