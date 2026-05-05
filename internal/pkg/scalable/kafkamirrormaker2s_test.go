@@ -14,7 +14,7 @@ import (
 // Pass nil to omit spec.replicas entirely.
 func newTestKafkaMirrorMaker2(replicasVal any) *kafkaMirrorMaker2 {
 	obj := map[string]any{
-		"apiVersion": "kafka.strimzi.io/v1beta2",
+		"apiVersion": "kafka.strimzi.io/v1",
 		"kind":       "KafkaMirrorMaker2",
 		"metadata": map[string]any{
 			"name":      "test-kafkamirrormaker2",

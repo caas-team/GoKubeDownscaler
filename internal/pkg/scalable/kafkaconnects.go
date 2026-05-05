@@ -17,7 +17,7 @@ import (
 )
 
 var kafkaConnectGVK = schema.GroupVersionKind{
-	Group: "kafka.strimzi.io", Version: "v1beta2", Kind: "KafkaConnect",
+	Group: "kafka.strimzi.io", Version: "v1", Kind: "KafkaConnect",
 }
 
 // kafkaConnect wraps an unstructured KafkaConnect CR. The unstructured approach

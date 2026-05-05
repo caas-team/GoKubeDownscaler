@@ -14,7 +14,7 @@ import (
 // Pass nil to omit spec.replicas entirely.
 func newTestKafkaBridge(replicasVal any) *kafkaBridge {
 	obj := map[string]any{
-		"apiVersion": "kafka.strimzi.io/v1beta2",
+		"apiVersion": "kafka.strimzi.io/v1",
 		"kind":       "KafkaBridge",
 		"metadata": map[string]any{
 			"name":      "test-kafkabridge",
