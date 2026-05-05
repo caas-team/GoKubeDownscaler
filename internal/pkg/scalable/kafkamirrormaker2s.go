@@ -17,7 +17,7 @@ import (
 )
 
 var kafkaMirrorMaker2GVK = schema.GroupVersionKind{
-	Group: "kafka.strimzi.io", Version: "v1beta2", Kind: "KafkaMirrorMaker2",
+	Group: "kafka.strimzi.io", Version: "v1", Kind: "KafkaMirrorMaker2",
 }
 
 // kafkaMirrorMaker2 wraps an unstructured KafkaMirrorMaker2 CR. The unstructured approach

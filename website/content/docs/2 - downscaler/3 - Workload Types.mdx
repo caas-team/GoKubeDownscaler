@@ -110,23 +110,23 @@ Scales by setting the minRunners count to the [downscale replicas](ref:docs-valu
 ### KafkaConnects
 
 - id: kafkaconnects
-- resource: kafkaconnect.v1beta2.kafka.strimzi.io
+- resource: kafkaconnect.v1.kafka.strimzi.io
 
 Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
-Requires the [Strimzi Kafka Operator](https://strimzi.io/) to be installed.
+Requires the [Strimzi Kafka Operator](https://strimzi.io/) `>=0.49` (the `v1` API was introduced in 0.49 and the legacy `v1beta2` was removed in 1.0.0).
 
 ### KafkaMirrorMaker2s
 
 - id: kafkamirrormaker2s
-- resource: kafkamirrormaker2.v1beta2.kafka.strimzi.io
+- resource: kafkamirrormaker2.v1.kafka.strimzi.io
 
 Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
-Requires the [Strimzi Kafka Operator](https://strimzi.io/) to be installed.
+Requires the [Strimzi Kafka Operator](https://strimzi.io/) `>=0.49` (the `v1` API was introduced in 0.49 and the legacy `v1beta2` was removed in 1.0.0).
 
 ### KafkaBridges
 
 - id: kafkabridges
-- resource: kafkabridge.v1beta2.kafka.strimzi.io
+- resource: kafkabridge.v1.kafka.strimzi.io
 
 Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
-Requires the [Strimzi Kafka Operator](https://strimzi.io/) to be installed.
+Requires the [Strimzi Kafka Operator](https://strimzi.io/) `>=0.49` (the `v1` API was introduced in 0.49 and the legacy `v1beta2` was removed in 1.0.0).
