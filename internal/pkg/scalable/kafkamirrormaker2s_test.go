@@ -8,17 +8,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// newTestStrimziWorkload builds a strimziWorkload with spec.replicas set to the given raw value.
+// newTestKafkaMirrorMaker2 builds a kafkaMirrorMaker2 with spec.replicas set to the given raw value.
 // Pass nil to omit spec.replicas entirely.
-func newTestStrimziWorkload(replicasVal any) *strimziWorkload {
+func newTestKafkaMirrorMaker2(replicasVal any) *kafkaMirrorMaker2 {
 	obj := map[string]any{
 		"apiVersion": "kafka.strimzi.io/v1beta2",
-		"kind":       "KafkaConnect",
+		"kind":       "KafkaMirrorMaker2",
 		"metadata": map[string]any{
-			"name":      "test-kafkaconnect",
+			"name":      "test-kafkamirrormaker2",
 			"namespace": "default",
 		},
 		"spec": map[string]any{},
@@ -29,12 +28,12 @@ func newTestStrimziWorkload(replicasVal any) *strimziWorkload {
 	}
 
 	u := &unstructured.Unstructured{Object: obj}
-	u.SetGroupVersionKind(kafkaConnectGVK)
+	u.SetGroupVersionKind(kafkaMirrorMaker2GVK)
 
-	return &strimziWorkload{Unstructured: u, gvk: kafkaConnectGVK}
+	return &kafkaMirrorMaker2{Unstructured: u}
 }
 
-func TestStrimziWorkload_GetReplicas(t *testing.T) {
+func TestKafkaMirrorMaker2_GetReplicas(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -64,7 +63,7 @@ func TestStrimziWorkload_GetReplicas(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			w := newTestStrimziWorkload(test.replicasVal)
+			w := newTestKafkaMirrorMaker2(test.replicasVal)
 
 			got, err := w.getReplicas()
 
@@ -80,10 +79,10 @@ func TestStrimziWorkload_GetReplicas(t *testing.T) {
 	}
 }
 
-func TestStrimziWorkload_SetReplicas(t *testing.T) {
+func TestKafkaMirrorMaker2_SetReplicas(t *testing.T) {
 	t.Parallel()
 
-	w := newTestStrimziWorkload(float64(3))
+	w := newTestKafkaMirrorMaker2(float64(3))
 
 	require.NoError(t, w.setReplicas(0))
 
@@ -92,65 +91,39 @@ func TestStrimziWorkload_SetReplicas(t *testing.T) {
 	assert.Equal(t, values.AbsoluteReplicas(0), got)
 }
 
-func TestStrimziWorkload_Copy_IsDeepCopy(t *testing.T) {
+func TestKafkaMirrorMaker2_Copy_IsDeepCopy(t *testing.T) {
 	t.Parallel()
 
-	w := newTestStrimziWorkload(float64(5))
-	rsw := &replicaScaledWorkload{replicaScaledResource: w}
+	original := newTestKafkaMirrorMaker2(float64(5))
+	rsw := &replicaScaledWorkload{replicaScaledResource: original}
 
 	copyWorkload, err := rsw.Copy()
 	require.NoError(t, err)
 
-	// Mutate the copy's replicas and verify the original is unchanged.
-	require.NoError(t, w.setReplicas(0))
+	require.NoError(t, original.setReplicas(0))
 
-	origReplicas, err := w.getReplicas()
+	origReplicas, err := original.getReplicas()
 	require.NoError(t, err)
 	assert.Equal(t, values.AbsoluteReplicas(0), origReplicas)
 
 	copyRSW, ok := copyWorkload.(*replicaScaledWorkload)
 	require.True(t, ok)
-	copyStrimzi, ok := copyRSW.replicaScaledResource.(*strimziWorkload)
+	copyMM2, ok := copyRSW.replicaScaledResource.(*kafkaMirrorMaker2)
 	require.True(t, ok)
 
-	copyReplicas, err := copyStrimzi.getReplicas()
+	copyReplicas, err := copyMM2.getReplicas()
 	require.NoError(t, err)
-	// Copy should still have original value (5), not the mutated value (0).
 	assert.Equal(t, values.AbsoluteReplicas(5), copyReplicas)
 }
 
-func TestStrimziWorkload_GVK(t *testing.T) {
+func TestKafkaMirrorMaker2_GVK(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		name string
-		gvk  schema.GroupVersionKind
-	}{
-		{
-			name: "KafkaConnect",
-			gvk:  kafkaConnectGVK,
-		},
-		{
-			name: "KafkaMirrorMaker2",
-			gvk:  kafkaMirrorMaker2GVK,
-		},
-		{
-			name: "KafkaBridge",
-			gvk:  kafkaBridgeGVK,
-		},
-	}
+	u := &unstructured.Unstructured{}
+	u.SetGroupVersionKind(kafkaMirrorMaker2GVK)
+	w := &kafkaMirrorMaker2{Unstructured: u}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-
-			u := &unstructured.Unstructured{}
-			u.SetGroupVersionKind(test.gvk)
-			w := &strimziWorkload{Unstructured: u, gvk: test.gvk}
-
-			assert.Equal(t, test.gvk.Group, w.GroupVersionKind().Group)
-			assert.Equal(t, test.gvk.Version, w.GroupVersionKind().Version)
-			assert.Equal(t, test.gvk.Kind, w.GroupVersionKind().Kind)
-		})
-	}
+	assert.Equal(t, kafkaMirrorMaker2GVK.Group, w.GroupVersionKind().Group)
+	assert.Equal(t, kafkaMirrorMaker2GVK.Version, w.GroupVersionKind().Version)
+	assert.Equal(t, kafkaMirrorMaker2GVK.Kind, w.GroupVersionKind().Kind)
 }
