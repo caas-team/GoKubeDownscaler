@@ -285,6 +285,36 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "kafkaconnects" }}
+- apiGroups:
+    - kafka.strimzi.io
+  resources:
+    - kafkaconnects
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "kafkamirrormaker2s" }}
+- apiGroups:
+    - kafka.strimzi.io
+  resources:
+    - kafkamirrormaker2s
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "kafkabridges" }}
+- apiGroups:
+    - kafka.strimzi.io
+  resources:
+    - kafkabridges
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -424,6 +454,39 @@ Create webhook resources
     - "UPDATE"
   resources:
     - autoscalingrunnersets
+{{ end -}}
+{{ if eq $resource "kafkaconnects" -}}
+- apiGroups:
+    - kafka.strimzi.io
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - kafkaconnects
+{{ end -}}
+{{ if eq $resource "kafkamirrormaker2s" -}}
+- apiGroups:
+    - kafka.strimzi.io
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - kafkamirrormaker2s
+{{ end -}}
+{{ if eq $resource "kafkabridges" -}}
+- apiGroups:
+    - kafka.strimzi.io
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - kafkabridges
 {{ end -}}
 {{ end -}}
 {{- end }}
@@ -590,6 +653,45 @@ resources include in annotationsCompliance
     - "UPDATE"
   resources:
     - autoscalingrunnersets
+{{ end -}}
+{{ if eq $resource "kafkaconnects" -}}
+- apiGroups:
+    - kafka.strimzi.io
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - kafkaconnects
+{{ end -}}
+{{ if eq $resource "kafkamirrormaker2s" -}}
+- apiGroups:
+    - kafka.strimzi.io
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - kafkamirrormaker2s
+{{ end -}}
+{{ if eq $resource "kafkabridges" -}}
+- apiGroups:
+    - kafka.strimzi.io
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - kafkabridges
 {{ end -}}
 {{ end -}}
 {{- end }}
