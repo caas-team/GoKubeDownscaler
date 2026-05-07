@@ -25,7 +25,8 @@ func (w *WeekFrameValue) String() string {
 		return ""
 	}
 
-	return fmt.Sprintf("%s-%s",
+	return fmt.Sprintf(
+		"%s-%s",
 		weekFrame.WeekdayFrom.String()[:3],
 		weekFrame.WeekdayTo.String()[:3],
 	)
