@@ -6,6 +6,7 @@
 <a target="_blank" href="./LICENSE" title="GitHub License"><img alt="GitHub License" src="https://img.shields.io/github/license/caas-team/GoKubeDownscaler?style=flat"></a>
 <a target="_blank" href="/../../graphs/contributors" title="Contributors"><img alt="Contributors" src="https://img.shields.io/github/contributors/caas-team/GoKubeDownscaler?style=flat"></a>
 <a target="_blank" href="/../../stargazers" title="Stars"><img alt="Stars" src="https://img.shields.io/github/stars/caas-team/GoKubeDownscaler?style=flat"></a>
+<a target="_blank" href="https://artifacthub.io/packages/helm/py-kube-downscaler/go-kube-downscaler" title="ArtifactHub"><img alt="go-kube-downscaler" src="https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/py-kube-downscaler"></a>
 <a target="_blank" href="https://inviter.co/kube-downscaler" title="Slack Workspace"><img alt="Slack Workspace" src="https://img.shields.io/badge/slack-kube--downscaler-dark_green?style=flat&logo=slack"></a>
 
 <!-- markdownlint-enable line-length -->

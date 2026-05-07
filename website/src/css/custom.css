@@ -276,6 +276,13 @@ html[data-theme="dark"] .icon-rss {
   }
 }
 
+/* Hide RSS icon in the navbar on small screens */
+@media (max-width: 480px) {
+  .navbar-icon.icon-rss {
+    display: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .theme-doc-markdown .faq-item,
   .theme-doc-markdown .faq-question::before,

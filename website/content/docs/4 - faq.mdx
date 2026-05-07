@@ -9,6 +9,119 @@ keywords:
 
 # Frequently Asked Questions
 
+<script type="application/ld+json">{JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "What is GoKubeDownscaler (kube-downscaler)?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "GoKubeDownscaler is an open-source Kubernetes horizontal autoscaler that " +
+          "scales workloads down to zero during off-hours to reduce cloud " +
+          "infrastructure costs.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Is GoKubeDownscaler free to use?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Yes. " +
+          "GoKubeDownscaler is free and open-source under the Apache 2.0 license." +
+          "The source code is available on GitHub.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How does GoKubeDownscaler reduce cloud costs?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "It scales workloads to zero during predictable low-usage periods so " +
+          "cluster nodes are freed and fewer VMs run, lowering cloud costs.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does GoKubeDownscaler work with EKS, GKE, and AKS?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Yes. " +
+          "It works with standard Kubernetes clusters including Amazon EKS, " +
+          "Google GKE, Azure AKS, and self-managed clusters.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does GoKubeDownscaler work with Karpenter and Cluster Autoscaler?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Yes. " +
+          "It works with both Karpenter and Cluster Autoscaler — GoKubeDownscaler " +
+          "reduces pod demand while these node autoscalers right-size or remove nodes, " +
+          "providing complementary cost savings.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How do I install GoKubeDownscaler?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Install via Helm: helm upgrade -i gokubedownscaler " +
+          "oci://ghcr.io/caas-team/charts/go-kube-downscaler, or use raw Kubernetes manifests.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What Kubernetes resources can GoKubeDownscaler scale?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "GoKubeDownscaler supports scaling many resource types. " +
+          "See the workload types documentation for the complete list.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What is the difference between HPA and kube-downscaler?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "HPA scales based on metrics (CPU/memory). " +
+          "Kube-downscaler scales on time schedules (e.g., nights/weekends) for predictable off-hours savings.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does GoKubeDownscaler need cluster-wide permissions?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Not necessarily. " +
+          "It can be installed cluster-wide or with limited permissions " +
+          "to manage specific namespaces or workloads depending on your security needs.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does GoKubeDownscaler automatically handle daylight saving time (DST) changes?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Yes. " +
+          "It uses the IANA timezone database to adjust schedules for DST so workloads scale at correct local times.",
+      },
+    },
+  ],
+})}</script>
+
 This page collects frequently asked questions about GoKubeDownscaler.
 If your question isn't answered here, feel free to open an issue or join the project community on [Slack](https://inviter.co/kube-downscaler).
 
