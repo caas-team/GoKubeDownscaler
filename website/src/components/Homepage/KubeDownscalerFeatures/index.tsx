@@ -1,8 +1,8 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useState } from "react";
 import clsx from "clsx";
 import Heading from "@theme/Heading";
+import { Button, GitHubButton } from "@site/src/components/Basic/Button";
 import styles from "./styles.module.css";
-// ...existing code... (buttons are declared in other homepage components)
 
 /* ── Inline SVG icons ── */
 
@@ -132,18 +132,97 @@ function Feature({title, Svg, description, idx}: FeatureItem & { idx: number }) 
   );
 }
 
+/* ── Carousel arrow icon ── */
+
+function ChevronLeft(props: React.ComponentProps<"svg">) {
+  return (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  );
+}
+
+function ChevronRight(props: React.ComponentProps<"svg">) {
+  return (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
 /* ── Section ── */
 
 export default function KubeDownscalerFeatures(): ReactNode {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const total = FeatureList.length;
+
   return (
-    <section className={styles.features}>
+    <>
+      <section className={styles.features}>
+        <div className="container">
+
+          {/* ── Desktop: all 3 cards in a row ── */}
+          <div className={clsx("row", styles.desktopRow)}>
+            {FeatureList.map((props, idx) => (
+              <Feature key={props.title} idx={idx} {...props} />
+            ))}
+          </div>
+
+          {/* ── Mobile: carousel (one card at a time) ── */}
+          <div className={styles.carousel}>
+            <button
+              className={styles.arrowBtn}
+              onClick={() => setActiveIdx(i => Math.max(0, i - 1))}
+              disabled={activeIdx === 0}
+              aria-label="Previous card"
+            >
+              <ChevronLeft className={styles.arrowIcon} />
+            </button>
+
+            <div className={styles.carouselTrack}>
+              {FeatureList.map((props, idx) => (
+                <div
+                  key={props.title}
+                  className={clsx(styles.carouselSlide, idx === activeIdx && styles.carouselSlideActive)}
+                  aria-hidden={idx !== activeIdx}
+                >
+                  <Feature idx={idx} {...props} />
+                </div>
+              ))}
+            </div>
+
+            <button
+              className={styles.arrowBtn}
+              onClick={() => setActiveIdx(i => Math.min(total - 1, i + 1))}
+              disabled={activeIdx === total - 1}
+              aria-label="Next card"
+            >
+              <ChevronRight className={styles.arrowIcon} />
+            </button>
+          </div>
+
+          {/* ── Mobile: dot indicators ── */}
+          <div className={styles.dots}>
+            {FeatureList.map((_, i) => (
+              <button
+                key={i}
+                className={clsx(styles.dot, i === activeIdx && styles.dotActive)}
+                onClick={() => setActiveIdx(i)}
+                aria-label={`Go to card ${i + 1}`}
+              />
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── Buttons below the section ── */}
       <div className="container">
-        <div className="row">
-          {FeatureList.map((props, idx) => (
-            <Feature key={props.title} idx={idx} {...props} />
-          ))}
+        <div className="flex flex-col sm:flex-row gap-3 mt-10 sm:mt-6 mb-8 animate-fade-down animate-once animate-delay-700 justify-center items-center">
+          <Button name="Get Started" to="/guides/getting-started" className={styles.ctaButton} primary />
+          <GitHubButton className={styles.ctaButton} primary />
         </div>
       </div>
-    </section>
+    </>
   );
 }

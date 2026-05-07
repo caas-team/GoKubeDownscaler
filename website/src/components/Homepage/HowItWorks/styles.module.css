@@ -24,7 +24,7 @@
 /* ── Text block ── */
 .textBlock {
   text-align: center;
-  max-width: 56rem;
+  max-width: 75rem;
 }
 
 .headline {
@@ -44,6 +44,8 @@
   margin: 0;
   min-height: 2rem; /* Prevent CLS during animation */
   will-change: transform, opacity; /* Optimize animation performance */
+  text-wrap: balance;
+  max-width: 60rem;
 }
 
 /* ── Terminal block (always visible) ── */

@@ -71,3 +71,118 @@
     margin-bottom: 2rem;
   }
 }
+
+/* ── Desktop/mobile visibility ── */
+.desktopRow {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .desktopRow {
+    display: flex;
+  }
+}
+
+/* ── Carousel (mobile only) ── */
+.carousel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .carousel {
+    display: none;
+  }
+}
+
+.carouselTrack {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  min-height: 280px;
+}
+
+.carouselSlide {
+  display: none;
+}
+
+.carouselSlideActive {
+  display: block;
+}
+
+/* ── Arrow buttons ── */
+.arrowBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--ifm-color-emphasis-300);
+  background: transparent;
+  cursor: pointer;
+  color: var(--ifm-color-emphasis-700);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  padding: 0;
+}
+
+.arrowBtn:hover:not(:disabled) {
+  background: rgba(226, 0, 116, 0.1);
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+}
+
+.arrowBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.arrowIcon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ── Dot indicators (mobile only) ── */
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .dots {
+    display: none;
+  }
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  border: none;
+  background: var(--ifm-color-emphasis-300);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.dotActive {
+  background: var(--ifm-color-primary);
+  transform: scale(1.35);
+}
+
+/* ── CTA buttons ── */
+.ctaButton {
+  width: 13rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .ctaButton {
+    width: 12rem;
+  }
+}

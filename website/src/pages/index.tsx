@@ -3,6 +3,7 @@ import Layout from "@theme/Layout";
 import { SupportedResources } from "@site/src/components/Homepage/SupportedResources/SupportedResources.tsx";
 import ProjectDescription from "@site/src/components/Homepage/ProjectDescription";
 import KubeDownscalerFeatures from "@site/src/components/Homepage/KubeDownscalerFeatures";
+import InstallationShowcase from "@site/src/components/Homepage/InstallationShowcase";
 import HowItWorks from "@site/src/components/Homepage/HowItWorks";
 import FurtherCustomization from "@site/src/components/Homepage/FurtherCustomization";
 import { Button, GitHubButton } from "../components/Basic/Button";
@@ -73,9 +74,10 @@ export default function Home(): JSX.Element {
       <HomepageHeader />
       <main>
         <ProjectDescription />
-        <KubeDownscalerFeatures />
+        <InstallationShowcase />
         <HowItWorks />
         <FurtherCustomization />
+        <KubeDownscalerFeatures />
         <SupportedResources />
       </main>
     </Layout>

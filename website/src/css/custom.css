@@ -117,7 +117,7 @@ html[data-theme="dark"] .icon-rss {
 .theme-doc-markdown summary,
 .theme-doc-markdown dt,
 .theme-doc-markdown dd {
-  font-size: 0.90625rem; /* 14.5px */
+  font-size: 0.96875rem; /* 15.5px (increased by ~1px) */
   line-height: 1.75;        /* generous leading for long-form reading */
   letter-spacing: 0.01em;   /* subtle tracking to open up the text */
 }
@@ -136,18 +136,18 @@ html[data-theme="dark"] .icon-rss {
 .theme-doc-markdown code,
 .theme-doc-markdown pre,
 .theme-doc-markdown pre code {
-  font-size: 0.84375rem; /* 13.5px */
+  font-size: 0.90625rem; /* 14.5px (increased by ~1px) */
 }
 
-.theme-doc-markdown h1 { font-size: 1.75rem; }
-.theme-doc-markdown h2 { font-size: 1.375rem; }
-.theme-doc-markdown h3 { font-size: 1.125rem; }
-.theme-doc-markdown h4 { font-size: 1rem; }
+.theme-doc-markdown h1 { font-size: 1.8125rem; }
+.theme-doc-markdown h2 { font-size: 1.4375rem; }
+.theme-doc-markdown h3 { font-size: 1.1875rem; }
+.theme-doc-markdown h4 { font-size: 1.0625rem; }
 
 /* Sidebar nav links */
 .theme-doc-sidebar-container .menu__link,
 .theme-doc-sidebar-container .menu__list-item-collapsible {
-  font-size: 0.875rem; /* 14px */
+  font-size: 0.9375rem; /* 15px (increased by ~1px from 14px) */
   font-weight: 500; /* subtle emphasis */
   line-height: 1.35;
 }
@@ -178,7 +178,7 @@ html[data-theme="dark"] .icon-rss {
 
 /* Right-side table of contents */
 .theme-doc-toc-desktop .table-of-contents__link {
-  font-size: 0.8125rem; /* 12px */
+  font-size: 0.875rem; /* 14px (increased by ~2px from 12px) */
 }
 
 @media (max-width: 996px) {
@@ -189,12 +189,12 @@ html[data-theme="dark"] .icon-rss {
   .theme-doc-markdown blockquote,
   .theme-doc-markdown label,
   .theme-doc-markdown summary {
-    font-size: 0.90625rem;
+    font-size: 0.96875rem;
   }
 
-  .theme-doc-markdown h1 { font-size: 1.55rem; }
-  .theme-doc-markdown h2 { font-size: 1.25rem; }
-  .theme-doc-markdown h3 { font-size: 1.05rem; }
+  .theme-doc-markdown h1 { font-size: 1.625rem; }
+  .theme-doc-markdown h2 { font-size: 1.3125rem; }
+  .theme-doc-markdown h3 { font-size: 1.1125rem; }
 }
 
 /* FAQ item styling (see .faq-item rules below) */

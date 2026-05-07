@@ -1,6 +1,5 @@
 import React from "react";
 import Heading from "@theme/Heading";
-import {Button, GitHubButton} from "@site/src/components/Basic/Button";
 import styles from "./styles.module.css";
 
 const commands = [
@@ -58,11 +57,6 @@ export default function FurtherCustomization(): JSX.Element {
               ))}
             </code>
           </pre>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 mt-6 animate-fade-down animate-once animate-delay-700">
-          <Button name="Get Started" to="/guides/getting-started" className="w-52" primary />
-          <GitHubButton className="w-52" primary />
         </div>
       </div>
     </section>
