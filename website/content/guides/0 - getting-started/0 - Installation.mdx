@@ -12,51 +12,22 @@ import TabItem from "@theme/TabItem";
 <script type="application/ld+json">
   {JSON.stringify({
     "@context": "https://schema.org",
-    "@type": "HowTo",
-    "@id": "https://kube-downscaler.io/guides/installation#howto",
-    name: "Install GoKubeDownscaler",
+    "@type": "TechArticle",
+    "@id": "https://kube-downscaler.io/guides/installation#techarticle",
+    headline: "Install GoKubeDownscaler",
     description:
       "Install GoKubeDownscaler on a Kubernetes cluster using Helm or Kubernetes manifests.",
-    totalTime: "PT5M",
-    about: { "@id": "https://kube-downscaler.io/#software" },
+    articleSection: "Getting Started - Installation",
+    keywords: ["kube-downscaler", "installation", "helm", "kubernetes"],
+    url: "https://kube-downscaler.io/guides/installation",
+    image: "https://kube-downscaler.io/img/social-preview.png",
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": "https://kube-downscaler.io/guides/installation",
+    },
     author: { "@id": "https://kube-downscaler.io/#organization" },
     publisher: { "@id": "https://kube-downscaler.io/#organization" },
-    isPartOf: { "@id": "https://kube-downscaler.io/#website" },
-    supply: [
-      { "@type": "HowToSupply", name: "Helm" },
-      { "@type": "HowToSupply", name: "Access to a Kubernetes cluster" },
-    ],
-    tool: [
-      { "@type": "HowToTool", name: "kubectl" },
-      { "@type": "HowToTool", name: "helm" },
-    ],
-    step: [
-      {
-        "@type": "HowToStep",
-        position: 1,
-        name: "Prepare prerequisites",
-        text: "Install Helm, ensure kubectl is configured, and connect to the target Kubernetes cluster.",
-      },
-      {
-        "@type": "HowToStep",
-        position: 2,
-        name: "Choose an installation method",
-        text: "Install with Helm for the simplest setup or generate Kubernetes manifests if you prefer to apply YAML directly.",
-      },
-      {
-        "@type": "HowToStep",
-        position: 3,
-        name: "Run the Helm install command",
-        text: "Use helm upgrade -i gokubedownscaler oci://ghcr.io/caas-team/charts/go-kube-downscaler to install the chart.",
-      },
-      {
-        "@type": "HowToStep",
-        position: 4,
-        name: "Customize the deployment",
-        text: "Override values.yaml or set constrainedNamespaces to limit the namespaces that GoKubeDownscaler can manage.",
-      },
-    ],
-    url: "https://kube-downscaler.io/guides/installation",
+    about: { "@id": "https://kube-downscaler.io/#software" },
   })}
 </script>
 
