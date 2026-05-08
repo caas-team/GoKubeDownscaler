@@ -112,6 +112,26 @@
   display: block;
 }
 
+/* ── Mobile: use opacity-only fade for carousel to avoid clipping icon ── */
+@media (max-width: 767px) {
+  .carousel :global(.animate-fade-down) {
+    animation-name: featuresFadeIn !important;
+    transform: none !important;
+  }
+}
+
+@keyframes featuresFadeIn {
+  from {
+    opacity: 0;
+    transform: none;
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ── Arrow buttons ── */
 .arrowBtn {
   display: flex;

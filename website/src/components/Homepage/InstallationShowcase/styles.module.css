@@ -10,15 +10,6 @@
   background-color: var(--ifm-background-color);
 }
 
-/* Disable animations on mobile */
-@media (max-width: 899px) {
-  .section :global(.animate-fade-down) {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
-}
-
 .inner {
   display: flex;
   flex-direction: column;

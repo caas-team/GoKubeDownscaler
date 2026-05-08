@@ -313,7 +313,7 @@ const config: Config = {
         downloadUrl:
           "https://github.com/caas-team/GoKubeDownscaler/releases/latest",
         releaseNotes: "https://github.com/caas-team/GoKubeDownscaler/releases",
-        license: "https://opensource.org/licenses/Apache-2.0",
+        license: "https://www.gnu.org/licenses/gpl-3.0.en.html",
         discussionUrl: "https://inviter.co/kube-downscaler",
         bugTrackerUrl: "https://github.com/caas-team/GoKubeDownscaler/issues",
         softwareRequirements: "Kubernetes >= 1.23",
@@ -324,7 +324,7 @@ const config: Config = {
           "Cloud-agnostic support for AWS, GCP, Azure, and on-premises Kubernetes",
           "Integrates with KEDA, Prometheus, Argo, and other CRDs",
           "One-command Helm chart installation and upgrades",
-          "Open-source Apache-2.0 project with public GitHub releases",
+          "Open-source GPLv3 project with public GitHub releases",
           "Documented getting-started, guides, and contributing workflow",
         ],
         screenshot: "https://kube-downscaler.io/img/social-preview.png",
@@ -381,7 +381,7 @@ const config: Config = {
           name: "Go",
           url: "https://go.dev",
         },
-        license: "https://opensource.org/licenses/Apache-2.0",
+        license: "https://www.gnu.org/licenses/gpl-3.0.en.html",
         isPartOf: { "@id": "https://kube-downscaler.io/#software" },
         author: { "@id": "https://kube-downscaler.io/#organization" },
         publisher: { "@id": "https://kube-downscaler.io/#organization" }
