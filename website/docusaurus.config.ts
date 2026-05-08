@@ -48,7 +48,7 @@ const config: Config = {
                 "preset-default", // extend default config
                 "removeDimensions", // automatically switch from width and height to viewbox
                 {
-                  // prefix ids and class names with the filename, to prevent duplicate ids from interfering with eachother
+                  // prefix ids and class names with the filename, to prevent duplicate ids from interfering with each other
                   name: "prefixIds",
                   params: {
                     delim: "_",

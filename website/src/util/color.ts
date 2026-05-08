@@ -39,8 +39,8 @@ export function hexToRGB(hex: string): RgbColor {
 
 export function adjustToLightHsl(hsl: HslColor, rgb: RgbColor): HslColor {
   const lightnessThreshold = 60 / 100;
-  const percievedLightness = (rgb.r * 0.2126 + rgb.g * 0.7152 + rgb.b * 0.0722) / 255; // prettier-ignore
-  const lightnessSwitch = Math.max(0, Math.min((1/(lightnessThreshold - percievedLightness)), 1)); // prettier-ignore
-  const lightenBy = (lightnessThreshold - percievedLightness) * 100 * lightnessSwitch; // prettier-ignore
+  const perceivedLightness = (rgb.r * 0.2126 + rgb.g * 0.7152 + rgb.b * 0.0722) / 255; // prettier-ignore
+  const lightnessSwitch = Math.max(0, Math.min((1/(lightnessThreshold - perceivedLightness)), 1)); // prettier-ignore
+  const lightenBy = (lightnessThreshold - perceivedLightness) * 100 * lightnessSwitch; // prettier-ignore
   return { h: hsl.h, s: hsl.s, l: hsl.l + lightenBy };
 }
