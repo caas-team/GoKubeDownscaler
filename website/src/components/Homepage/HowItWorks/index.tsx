@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import Heading from "@theme/Heading";
-import useBaseUrl from "@docusaurus/useBaseUrl";
-import { useColorMode } from "@docusaurus/theme-common";
 import styles from "./styles.module.css";
 
 /** Returns true only on phone-sized screens (< 640 px — Tailwind `sm` breakpoint). */
@@ -132,10 +130,6 @@ function Terminal() {
 }
 
 export default function HowItWorks(): JSX.Element {
-  const { colorMode } = useColorMode();
-  const darkSrc  = useBaseUrl("/img/how-it-works-dark.png");
-  const lightSrc = useBaseUrl("/img/how-it-works-light.png");
-  const previewSrc = colorMode === "dark" ? darkSrc : lightSrc;
   return (
     <section className={styles.section}>
       <div className={styles.inner}>
@@ -154,22 +148,6 @@ export default function HowItWorks(): JSX.Element {
         {/* Terminal — always visible */}
         <div className={`${styles.terminalBlock} animate-fade-down animate-once animate-delay-300`}>
           <Terminal />
-        </div>
-
-        {/* Image — hidden on small screens or when image is missing */}
-        <div className={`${styles.visualBlock} animate-fade-down animate-once animate-delay-500`}>
-          <img
-            src={previewSrc}
-            alt="GoKubeDownscaler scheduling dashboard showing workloads being scaled down during off-hours"
-            className={styles.previewImage}
-            width={1200}
-            height={675}
-            loading="lazy"
-            decoding="async"
-            onError={(e) => {
-              (e.currentTarget.parentElement as HTMLElement).style.display = "none";
-            }}
-          />
         </div>
       </div>
     </section>

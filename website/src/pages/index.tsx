@@ -69,7 +69,7 @@ export default function Home(): JSX.Element {
         {/* Twitter — page-specific (twitter:card is global in docusaurus.config.ts; twitter:image injected by Docusaurus from themeConfig.image) */}
         <meta name="twitter:title" content="GoKubeDownscaler: Reduce Kubernetes Costs Off-Hours" />
         <meta name="twitter:description" content="GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekend, holidays to reduce cloud costs." />
-        <meta name="twitter:image" content="https://caas-team.github.io/GoKubeDownscaler/img/social-preview.png" />
+        <meta name="twitter:image" content="https://kube-downscaler.io/GoKubeDownscaler/img/social-preview.png" />
       </Head>
       <HomepageHeader />
       <main>
