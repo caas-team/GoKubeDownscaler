@@ -12,6 +12,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+const (
+	admissionReviewKind       = "AdmissionReview"
+	admissionReviewAPIVersion = "admission.k8s.io/v1"
+)
+
 // parseAdmissionReviewFromRequest extracts an AdmissionReview from an http.Request if possible.
 func parseAdmissionReviewFromRequest(request *http.Request) (*admissionv1.AdmissionReview, error) {
 	if request.Header.Get("Content-Type") != "application/json" {
@@ -55,8 +60,8 @@ func newReviewResponse(uid types.UID, allowed bool, httpCode int32, reason strin
 	if warn {
 		return &admissionv1.AdmissionReview{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "AdmissionReview",
-				APIVersion: "admission.k8s.io/v1",
+				Kind:       admissionReviewKind,
+				APIVersion: admissionReviewAPIVersion,
 			},
 			Response: &admissionv1.AdmissionResponse{
 				UID:     uid,
@@ -72,8 +77,8 @@ func newReviewResponse(uid types.UID, allowed bool, httpCode int32, reason strin
 
 	return &admissionv1.AdmissionReview{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "AdmissionReview",
-			APIVersion: "admission.k8s.io/v1",
+			Kind:       admissionReviewKind,
+			APIVersion: admissionReviewAPIVersion,
 		},
 		Response: &admissionv1.AdmissionResponse{
 			UID:     uid,
@@ -92,8 +97,8 @@ func newPatchReviewResponse(uid types.UID, patch []byte) (*admissionv1.Admission
 
 	return &admissionv1.AdmissionReview{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "AdmissionReview",
-			APIVersion: "admission.k8s.io/v1",
+			Kind:       admissionReviewKind,
+			APIVersion: admissionReviewAPIVersion,
 		},
 		Response: &admissionv1.AdmissionResponse{
 			UID:       uid,

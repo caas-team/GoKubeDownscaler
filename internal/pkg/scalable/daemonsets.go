@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	labelMatchNone = "downscaler/match-none"
+	labelMatchNone      = "downscaler/match-none"
+	labelMatchNoneValue = "true"
 )
 
 // getDaemonSets is the getResourceFunc for DaemonSets.
@@ -58,7 +59,7 @@ func (d *daemonSet) ScaleDown(_ values.Replicas) (*metrics.SavedResources, error
 		d.Spec.Template.Spec.NodeSelector = map[string]string{}
 	}
 
-	d.Spec.Template.Spec.NodeSelector[labelMatchNone] = "true"
+	d.Spec.Template.Spec.NodeSelector[labelMatchNone] = labelMatchNoneValue
 
 	savedResources := d.getResourcesRequests(d.Status.DesiredNumberScheduled)
 
