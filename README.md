@@ -18,7 +18,7 @@ with improvements and quality of life changes.
 
 ## Documentation and Guides
 
-The documentation and guides can be found on [our website](https://caas-team.github.io/GoKubeDownscaler).
+The documentation and guides can be found on [our website](https://kube-downscaler.io).
 
 An offline copy of the documentation and blogs can be found in [`website/content`](./website/content) and [`website/blog`](./website/blog).
 In there are Markdown files which can be viewed in any text editor or inside of a Markdown Viewer.
@@ -26,7 +26,7 @@ In there are Markdown files which can be viewed in any text editor or inside of 
 ## Installation
 
 Installation is done via the [Helm Chart](./deployments/chart/).
-Information on how to install the Downscaler is on [our website](https://caas-team.github.io/GoKubeDownscaler/guides/getting-started/installation).
+Information on how to install the Downscaler is on [our website](https://kube-downscaler.io/guides/getting-started/installation).
 
 ### Missing Features
 
@@ -37,7 +37,7 @@ If you think that any other features are missing, or you have an idea for a new 
 
 ## Developing
 
-This section covers the basics of developing on this repo, a more detailed guide can be found on [our website](https://caas-team.github.io/GoKubeDownscaler/contributing/developing).
+This section covers the basics of developing on this repo, a more detailed guide can be found on [our website](https://kube-downscaler.io/contributing/developing).
 
 Please read the [contribution manifest](./CONTRIBUTING.md).
 
