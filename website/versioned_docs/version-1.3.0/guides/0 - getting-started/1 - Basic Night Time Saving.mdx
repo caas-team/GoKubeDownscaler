@@ -9,6 +9,60 @@ keywords: [getting started, night time saving, basic setup guide]
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
+<script type="application/ld+json">
+  {JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "@id": "https://kube-downscaler.io/guides/basic-night-time-saving#howto",
+    about: { "@id": "https://kube-downscaler.io/#software" },
+    author: { "@id": "https://kube-downscaler.io/#organization" },
+    publisher: { "@id": "https://kube-downscaler.io/#organization" },
+    isPartOf: { "@id": "https://kube-downscaler.io/#website" },
+    name: "Configure basic night time saving with GoKubeDownscaler",
+    description:
+      "How to use kube-downscaler for night time savings on Kubernetes non production environments.",
+    url: "https://kube-downscaler.io/guides/basic-night-time-saving",
+    totalTime: "PT10M",
+    supply: [
+      { "@type": "HowToSupply", name: "Access to a Kubernetes cluster" },
+      {
+        "@type": "HowToSupply",
+        name: "GoKubeDownscaler Helm chart or manifests",
+      },
+    ],
+    tool: [
+      { "@type": "HowToTool", name: "helm" },
+      { "@type": "HowToTool", name: "kubectl" },
+    ],
+    step: [
+      {
+        "@type": "HowToStep",
+        position: 1,
+        name: "Prepare the cluster",
+        text: "Ensure Helm and kubectl are installed and connected to the target Kubernetes cluster.",
+      },
+      {
+        "@type": "HowToStep",
+        position: 2,
+        name: "Configure a cluster-wide downtime schedule",
+        text: "Set DEFAULT_DOWNTIME or the --default-downtime argument so kubernetes workloads scale down during off-hours.",
+      },
+      {
+        "@type": "HowToStep",
+        position: 3,
+        name: "Apply namespace-level downtime",
+        text: "Annotate a namespace with downscaler/downtime to scale workloads in that namespace during nights and weekends.",
+      },
+      {
+        "@type": "HowToStep",
+        position: 4,
+        name: "Apply workload-level downtime",
+        text: "Annotate an individual deployment or workload to control night time saving for specific apps.",
+      },
+    ],
+  })}
+</script>
+
 # Basic Night Time Saving
 
 One of the easiest ways and most common use cases for the Downscaler is using it for night time saving.
