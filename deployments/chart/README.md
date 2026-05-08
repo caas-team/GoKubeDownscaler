@@ -33,4 +33,4 @@ helm install go-kube-downscaler caas-team/go-kube-downscaler
 
 Our Helm Chart offers a lot of customizable values for your installation of the GoKubeDownscaler.
 
-You can find information on how to adjust the chart to your needs on our [documentation page](https://caas-team.github.io/GoKubeDownscaler/).
+You can find information on how to adjust the chart to your needs on our [documentation page](https://kube-downscaler.io).
