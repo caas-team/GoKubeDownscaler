@@ -304,7 +304,7 @@ const config: Config = {
           "kubernetes downscaler",
         ],
         description:
-          "GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours (nights, weekend, holidays) to reduce cloud costs",
+          "GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours (nights, weekends, holidays) to reduce cloud costs",
         image: "https://kube-downscaler.io/img/social-preview.png",
         applicationCategory: "DeveloperApplication",
         applicationSubCategory: "Kubernetes Addon",
@@ -314,18 +314,34 @@ const config: Config = {
           "https://github.com/caas-team/GoKubeDownscaler/releases/latest",
         releaseNotes: "https://github.com/caas-team/GoKubeDownscaler/releases",
         license: "https://opensource.org/licenses/Apache-2.0",
+        discussionUrl: "https://inviter.co/kube-downscaler",
+        bugTrackerUrl: "https://github.com/caas-team/GoKubeDownscaler/issues",
+        softwareRequirements: "Kubernetes >= 1.23",
+        featureList: [
+          "Schedule-based horizontal scale-down for Kubernetes workloads",
+          "Namespace and workload-level annotation overrides",
+          "Cloud-agnostic: AWS, GCP, Azure and on-premises Kubernetes",
+          "Support for KEDA, Prometheus, Argo and other popular CRDs",
+          "RFC3339 and recurring schedule (Mon–Fri) time formats",
+          "Helm chart install in one command",
+        ],
+        screenshot: "https://kube-downscaler.io/img/social-preview.png",
         offers: {
           "@type": "Offer",
           price: "0",
           priceCurrency: "USD",
         },
-        sameAs: ["https://github.com/caas-team/GoKubeDownscaler"],
+        sameAs: [
+          "https://github.com/caas-team/GoKubeDownscaler",
+          "https://artifacthub.io/packages/helm/caas-team/kube-downscaler",
+        ],
         keywords:
           "kubernetes, kube-downscaler, downscaler, cost optimization, scheduled scaling, cloud costs, kubernetes autoscaler",
         author: { "@id": "https://kube-downscaler.io/#organization" },
         maintainer: { "@id": "https://kube-downscaler.io/#organization" },
         publisher: { "@id": "https://kube-downscaler.io/#organization" },
         codeRepository: "https://github.com/caas-team/GoKubeDownscaler",
+        hasPart: { "@id": "https://kube-downscaler.io/#software-source-code" },
       }),
     },
     // WebSite schema with Sitelinks
@@ -343,6 +359,30 @@ const config: Config = {
         description:
           "GoKubeDownscaler: a Kubernetes horizontal autoscaler that reduces Kubernetes cloud costs by scaling workloads based on time schedules.",
         publisher: { "@id": "https://kube-downscaler.io/#organization" },
+        about: { "@id": "https://kube-downscaler.io/#software" },
+      }),
+    },
+    {
+      tagName: "script",
+      attributes: {
+        type: "application/ld+json",
+      },
+      innerHTML: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "SoftwareSourceCode",
+        "@id": "https://kube-downscaler.io/#software-source-code",
+        name: "GoKubeDownscaler",
+        url: "https://github.com/caas-team/GoKubeDownscaler",
+        codeRepository: "https://github.com/caas-team/GoKubeDownscaler",
+        programmingLanguage: {
+          "@type": "ComputerLanguage",
+          name: "Go",
+          url: "https://go.dev",
+        },
+        license: "https://opensource.org/licenses/Apache-2.0",
+        isPartOf: { "@id": "https://kube-downscaler.io/#software" },
+        author: { "@id": "https://kube-downscaler.io/#organization" },
+        publisher: { "@id": "https://kube-downscaler.io/#organization" }
       }),
     },
     {
@@ -363,9 +403,22 @@ const config: Config = {
         "@type": "Organization",
         "@id": "https://kube-downscaler.io/#organization",
         name: "CaaS Team",
+        description: "Open-source team maintaining GoKubeDownscaler and related Kubernetes tooling.",
         url: "https://github.com/caas-team",
-        logo: "https://kube-downscaler.io/img/kubedownscaler.svg",
-        sameAs: ["https://github.com/caas-team"],
+        sameAs: [
+          "https://github.com/caas-team",
+        ],
+        contactPoint: {
+          "@type": "ContactPoint",
+          contactType: "community support",
+          url: "https://inviter.co/kube-downscaler",
+        },
+        makesOffer: {
+          "@type": "Offer",
+          itemOffered: { "@id": "https://kube-downscaler.io/#software" },
+          price: "0",
+          priceCurrency: "USD",
+        },
       }),
     },
   ],
