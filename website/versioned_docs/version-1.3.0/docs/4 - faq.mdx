@@ -19,7 +19,7 @@ keywords:
             acceptedAnswer: {
                 "@type": "Answer",
                 text:
-                    "GoKubeDownscaler is an open-source Kubernetes horizontal autoscaler that " +
+                    "GoKubeDownscaler (also known as a kube-downscaler) is an open-source Kubernetes horizontal autoscaler that " +
                     "scales workloads down to zero during off-hours to reduce cloud " +
                     "infrastructure costs.",
             },
@@ -31,7 +31,7 @@ keywords:
                 "@type": "Answer",
                 text:
                     "Yes. " +
-                    "GoKubeDownscaler is free and open-source under the Apache 2.0 license." +
+                    "GoKubeDownscaler is free and open-source under the GPL-3.0 license." +
                     "The source code is available on GitHub.",
             },
         },
@@ -90,12 +90,24 @@ keywords:
         },
         {
             "@type": "Question",
-            name: "What is the difference between HPA and kube-downscaler?",
+            name: "What is the difference between HPA, KEDA and GoKubeDownscaler?",
             acceptedAnswer: {
                 "@type": "Answer",
                 text:
-                    "HPA scales based on metrics (CPU/memory). " +
-                    "Kube-downscaler scales on time schedules (e.g., nights/weekends) for predictable off-hours savings.",
+                    "HPA scales based on metrics (CPU/memory), KEDA scales based on custom metrics and events " +
+                    "(e.g., queue length, http requests, db metrics) " +
+                    "while GoKubeDownscaler scales on time schedules (e.g., nights/weekends) for predictable off-hours savings.",
+            },
+        },
+        {
+            "@type": "Question",
+            name: "Does GoKubeDownscaler work well with KEDA?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text:
+                    "Yes. " +
+                    "GoKubeDownscaler doesn't interfere with KEDA's dynamic scaling based on external metrics." +
+                    "It can be used alongside KEDA to schedule scale-down events while KEDA handles real-time scaling based on demand."
             },
         },
         {
@@ -142,7 +154,7 @@ If your question isn't answered here, feel free to open an issue or join the pro
     <div className="faq-answer">
         Yes.
         GoKubeDownscaler is a free, open-source project licensed under the
-        Apache 2.0 license.
+        GPL-3.0 license.
         The source code is available on GitHub at
         https://github.com/caas-team/GoKubeDownscaler.
     </div>
@@ -211,21 +223,35 @@ If your question isn't answered here, feel free to open an issue or join the pro
     <h3 className="faq-question">What Kubernetes resources can GoKubeDownscaler scale?</h3>
     <hr className="faq-sep" />
     <div className="faq-answer">
-        GoKubeDownscaler supports scaling many resource types.
+        GoKubeDownscaler supports scaling Deployments, StatefulSets, DaemonSets, CronJobs, HorizontalPodAutoscalers,
+        PodDisruptionBudgets, Jobs, Argo Rollouts, KEDA ScaledObjects, Zalando Stacks, Prometheus, and GitHub Actions AutoscalingRunnerSets.
         See the [workload types page](ref:docs-workload-types#list-of-workload-types) for the complete list.
     </div>
 </div>
 
 <div className="faq-item">
     {/* prettier-ignore */}
-    <h3 className="faq-question">What is the difference between HPA and kube-downscaler?</h3>
+    <h3 className="faq-question">What is the difference between HPA, Keda, and GoKubeDownscaler?</h3>
     <hr className="faq-sep" />
     <div className="faq-answer">
         The Kubernetes Horizontal Pod Autoscaler (HPA) scales workloads dynamically
         based on metrics such as CPU or memory usage.
-        Kube-downscaler scales workloads based on time schedules (for example nightly or on weekends).
-        This makes kube-downscaler particularly well-suited for predictable off-hours
+        KEDA scales based on custom metrics and events (e.g., queue length, http requests, db metrics)
+        GoKubeDownscaler scales workloads based on time schedules (for example nightly or on weekends).
+        This makes GoKubeDownscaler particularly well-suited for predictable off-hours
         cost savings.
+    </div>
+</div>
+
+<div className="faq-item">
+    {/* prettier-ignore */}
+    <h3 className="faq-question">Does GoKubeDownscaler work well with KEDA?</h3>
+    <hr className="faq-sep" />
+    <div className="faq-answer">
+        Yes.
+        GoKubeDownscaler doesn't interfere with KEDA's dynamic scaling based on external metrics.
+        It can be used alongside KEDA to schedule scale-down events while KEDA handles real-time scaling
+        based on demand.
     </div>
 </div>
 
