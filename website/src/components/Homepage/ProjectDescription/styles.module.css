@@ -39,3 +39,15 @@
   min-height: 2rem; /* Prevent CLS during animation */
   will-change: transform, opacity; /* Optimize animation performance */
 }
+
+.callout {
+  font-size: clamp(1rem, 2vw, 1.125rem);
+  line-height: 1.8;
+  color: var(--ifm-color-emphasis-700);
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+  font-style: italic;
+  font-weight: 600;
+  opacity: 0.85;
+  will-change: transform, opacity;
+}

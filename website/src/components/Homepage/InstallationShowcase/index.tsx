@@ -130,13 +130,6 @@ function CostChart() {
                     animationPlayState: isPhone || visible ? (isPhone ? "none" : "running") : "paused",
                   } as React.CSSProperties}
                 />
-                {/* Savings Line */}
-                {bar.savingsPct > 0 && (
-                  <div
-                    className={styles.savingsLine}
-                    style={{ "--savings-pct": `${bar.savingsPct}%` } as React.CSSProperties}
-                  />
-                )}
               </div>
               <span className={styles.barLabel}>{bar.label}</span>
             </div>
@@ -159,6 +152,11 @@ function CostChart() {
         <span className={styles.legendText}>After</span>
         <span className={styles.savingBadgeInline}>−70% Of Kubernetes Costs</span>
       </div>
+
+      {/* Calculation basis note */}
+      <p style={{ fontSize: '0.8rem', color: 'var(--ifm-color-emphasis-600)', marginTop: '0.75rem', marginBottom: 0 }}>
+        * This calculation is based on a 40-hour work week (scale-down during evenings, weekends)
+      </p>
     </div>
   );
 }

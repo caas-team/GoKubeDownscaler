@@ -12,7 +12,10 @@ export default function ProjectDescription(): JSX.Element {
         <p className={`${styles.body} animate-fade-down animate-once animate-delay-200`}>
             GoKubeDownscaler acts as a horizontal autoscaler that reduces cloud costs by
             keeping workloads running only when needed. It scales workloads down
-            during low-usage periods (like nights, weekends, and holidays) using user-defined schedules
+            during low-usage periods (like nights, weekends, and holidays) using user-defined schedules.
+        </p>
+        <p className={`${styles.callout} animate-fade-down animate-once animate-delay-300`}>
+          Kubernetes non-production environments and internal tools do not need to stay up and running 24/7!
         </p>
       </div>
     </section>
