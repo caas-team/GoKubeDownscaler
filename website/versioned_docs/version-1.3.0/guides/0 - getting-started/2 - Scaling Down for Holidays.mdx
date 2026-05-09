@@ -9,6 +9,35 @@ keywords: [getting started, holiday, basic setup guide]
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
+<script type="application/ld+json">
+  {JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "@id":
+      "https://kube-downscaler.io/guides/scaling-down-for-holidays#techarticle",
+    headline: "Scaling Down for Holidays with GoKubeDownscaler",
+    description:
+      "How to configure GoKubeDownscaler to scale clusters, namespaces, and workloads down for holiday windows using force downtime and annotations.",
+    articleSection: "Getting Started - Holidays",
+    keywords: [
+      "holidays",
+      "force-downtime",
+      "annotations",
+      "kube-downscaler",
+      "cost savings",
+    ],
+    url: "https://kube-downscaler.io/guides/scaling-down-for-holidays",
+    image: "https://kube-downscaler.io/img/social-preview.png",
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": "https://kube-downscaler.io/guides/scaling-down-for-holidays",
+    },
+    author: { "@id": "https://kube-downscaler.io/#organization" },
+    publisher: { "@id": "https://kube-downscaler.io/#organization" },
+    about: { "@id": "https://kube-downscaler.io/#software" },
+  })}
+</script>
+
 # Scaling Down for Holidays
 
 Another common use case for the Kubedownscaler is using it to scale down the cluster over Holidays.
@@ -221,3 +250,10 @@ This way every workload within this namespace doesn't get affected by the cluste
 
   </TabItem>
 </Tabs>
+
+---
+
+:::info
+For more information about the scaling algorithm check out the [scope documentation](ref:docs-scopes-and-scaling).
+You will find a detailed explanation of how the GoKubeDownscaler evaluates the downtime and decides when to scale down or up workloads.
+:::

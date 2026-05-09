@@ -1,0 +1,127 @@
+---
+title: On Demand Startup
+id: on-demand-startup
+globalReference: guides-on-demand-startup
+description: How to set up your cluster to be always off and only scale up on demand with annotations.
+keywords: [getting started, cluster always off, basic setup guide]
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+<script type="application/ld+json">
+  {JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "@id": "https://kube-downscaler.io/guides/on-demand-startup#techarticle",
+    headline: "On-demand startup with GoKubeDownscaler",
+    description:
+      "This page explains the on demand startup pattern for GoKubeDownscaler non-production environments.",
+    articleSection: "Getting Started - On Demand Startup",
+    keywords: [
+      "on-demand",
+      "scale-up",
+      "annotations",
+      "kube-downscaler",
+      "cost savings",
+    ],
+    url: "https://kube-downscaler.io/guides/on-demand-startup",
+    image: "https://kube-downscaler.io/img/social-preview.png",
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": "https://kube-downscaler.io/guides/on-demand-startup",
+    },
+    author: { "@id": "https://kube-downscaler.io/#organization" },
+    publisher: { "@id": "https://kube-downscaler.io/#organization" },
+    about: { "@id": "https://kube-downscaler.io/#software" },
+  })}
+</script>
+
+One of the most effective patterns for using the GoKubeDownscaler is to keep workloads always scaled down, scale up will be
+performed on demand using annotations.
+This is an advanced pattern that can be used to achieve the maximum cost savings.
+
+For this use case we will use [boolean timespans](ref:docs-timespans#boolean-timespans)
+
+The global configuration for this use case is typically defined manually by cluster administrators.
+In contrast, workload- or namespace-level configuration is usually applied through annotations,
+often managed by external automations running in CI/CD pipelines or behind the internal software catalog exposed to developers to
+interact with the internal development platform.
+
+## Cluster-Wide
+
+The first step is to set up the cluster-wide downtime.
+
+This can be done by either using an [environment variable](ref:docs-env-scope) or a [cli argument](ref:docs-cli-scope)
+for the GoKubeDownscaler.
+
+:::danger[Important]
+In this scenario it is strongly recommend to exclude by default all critical namespaces that are needed
+for the cluster to function properly even when non-essential namespaces are scaled down.
+:::
+
+<Tabs>
+    <TabItem value="Environment Variable" label="Environment Variable" default>
+
+    To set a cluster-wide downtime with environment variables
+    you can add them inside the [values.yaml](repo:deployments/chart/values.yaml) file.
+
+    There you have to add it to the `configMap.extraConfig` field:
+
+    ```yaml title="values.yaml"
+    # ...
+
+    configMap:
+      name: go-kube-downscaler
+      # remember to exclude all crtical namesapces
+      extraConfig: |
+        DEFAULT_DOWNTIME: "always"
+        EXCLUDE_NAMESPACES: "kube-system,istio-system,karpenter,prometheus"
+    # ...
+    ```
+    </TabItem>
+    <TabItem value="Cli Argument" label="Cli Argument">
+
+
+    If you want to instead use a cli argument for the cluster-wide downtime
+    you can also add them inside the [values.yaml](repo:deployments/chart/values.yaml) file.
+
+    There you have to add it to the `arguments` field:
+
+    ```yaml title="values.yaml"
+    # ...
+
+    # remember to exclude all crtical namesapces
+    arguments:
+      - --default-downtime="always"
+      - --exclude-namespaces="kube-system,istio-system,karpenter,prometheus"
+    # ...
+    ```
+    </TabItem>
+
+</Tabs>
+
+After setting the variable in one of the two ways, all non-essential namespaces will be scaled down at all times.
+
+## Namespace Level
+
+At this point external automations (or manual interventions by cluster administrators) scale up namespaces
+upon user request by adding an exclude annotation to the namespace.
+
+```bash
+kubectl annotate namespace my-namespace downscaler/exclude="true"
+```
+
+scale down can be performed by external automations by removing the annotation after a fixed amount of time or by user request.
+Alternatively, it is possible to use the `downscaler/exclude-until` annotation that constrains the exclusion until a specific time.
+
+```bash
+kubectl annotate namespace my-namespace downscaler/exclude-until="2025-12-22T00:00:00+01:00"
+```
+
+---
+
+:::info
+For more information about the scaling algorithm check out the [scope documentation](ref:docs-scopes-and-scaling).
+You will find a detailed explanation of how the GoKubeDownscaler evaluates the downtime and decides when to scale down or up workloads.
+:::
