@@ -302,7 +302,8 @@ func (c client) addEvent(
 ) error {
 	if c.dryRun {
 		// Dry run mode
-		slog.Info("running in dry run mode, would have added an event",
+		slog.Info(
+			"running in dry run mode, would have added an event",
 			"objectKind", object.Kind,
 			"namespace", object.Namespace,
 			"name", object.Name,

@@ -87,7 +87,8 @@ func (v *WorkloadMutationHandler) HandleWorkloadMutation(ctx context.Context, wr
 		return
 	}
 
-	slog.Info("received validation request for workload",
+	slog.Info(
+		"received validation request for workload",
 		"workload", workload.GetName(),
 		"namespace", workload.GetNamespace(),
 		"kind", workload.GroupVersionKind().Kind,
@@ -133,7 +134,8 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 			http.StatusAccepted,
 			"workload namespace is not in the list of included namespaces, excluding it from downscaling",
 			false,
-			v.dryRun), nil
+			v.dryRun,
+		), nil
 	}
 
 	// check if workload is externally managed
@@ -169,7 +171,8 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 			http.StatusAccepted,
 			"workload is excluded from downscaling, doesn't need mutation",
 			false,
-			v.dryRun), nil
+			v.dryRun,
+		), nil
 	}
 
 	workload = workloads[0]
@@ -185,7 +188,8 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 
 	scopeWorkload := values.NewScope()
 	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
-		slog.Debug("failed to parse workload scope from annotations",
+		slog.Debug(
+			"failed to parse workload scope from annotations",
 			"error", err,
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
@@ -200,7 +204,8 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 			http.StatusAccepted,
 			"failed to parse workload scope from annotations",
 			true,
-			v.dryRun), err
+			v.dryRun,
+		), err
 	}
 
 	slog.Debug(
@@ -211,7 +216,8 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 
 	scopeNamespace, err := v.client.GetNamespaceScope(workload.GetNamespace(), ctx)
 	if err != nil {
-		slog.Debug("failed to parse namespace scope from annotations",
+		slog.Debug(
+			"failed to parse namespace scope from annotations",
 			"error", err,
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
@@ -226,7 +232,8 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 			http.StatusAccepted,
 			"failed to get namespace scope from annotations",
 			true,
-			v.dryRun), err
+			v.dryRun,
+		), err
 	}
 
 	scopes := values.Scopes{scopeWorkload, scopeNamespace, v.scopeCli, v.scopeEnv, v.scopeDefault}
@@ -248,7 +255,8 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 			http.StatusAccepted,
 			"workload is excluded from downscaling, doesn't need mutation",
 			false,
-			v.dryRun), nil
+			v.dryRun,
+		), nil
 	}
 
 	scaling := scopes.GetCurrentScaling()
@@ -272,7 +280,8 @@ func evaluateWorkloadScalingConditions(
 	admissionMetrics *metrics.AdmissionMetrics,
 ) (*admissionv1.AdmissionReview, error) {
 	if scaling == values.ScalingNone {
-		slog.Debug("scaling is not set by any scope, skipping",
+		slog.Debug(
+			"scaling is not set by any scope, skipping",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun,
@@ -286,11 +295,13 @@ func evaluateWorkloadScalingConditions(
 			http.StatusAccepted,
 			"scaling configuration is not set for workload",
 			false,
-			dryRun), nil
+			dryRun,
+		), nil
 	}
 
 	if scaling == values.ScalingIgnore {
-		slog.Debug("scaling is ignored, skipping",
+		slog.Debug(
+			"scaling is ignored, skipping",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun,
@@ -304,11 +315,13 @@ func evaluateWorkloadScalingConditions(
 			http.StatusAccepted,
 			"scaling configuration is ignored for workload",
 			false,
-			dryRun), nil
+			dryRun,
+		), nil
 	}
 
 	if scaling == values.ScalingIncomplete {
-		slog.Debug("scaling configuration incomplete missing values in timespan, skipping",
+		slog.Debug(
+			"scaling configuration incomplete missing values in timespan, skipping",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun,
@@ -322,7 +335,8 @@ func evaluateWorkloadScalingConditions(
 			http.StatusAccepted,
 			"scaling configuration incomplete missing values in timespan, skipping",
 			false,
-			dryRun), nil
+			dryRun,
+		), nil
 	}
 
 	if scaling == values.ScalingMultiple {
@@ -332,7 +346,8 @@ this is the result of a faulty configuration where on a scope there is multiple 
 setting different scaling states at the same time (e.g. downtime-period and uptime-period or force-downtime and force-uptime)`,
 		)
 
-		slog.Debug("scaling configuration is invalid for workload",
+		slog.Debug(
+			"scaling configuration is invalid for workload",
 			"error", err, "workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun,
@@ -349,7 +364,8 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	}
 
 	if scaling == values.ScalingDown {
-		slog.Info("mutating workload matching scaling down condition",
+		slog.Info(
+			"mutating workload matching scaling down condition",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun,
@@ -395,7 +411,8 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 			http.StatusAccepted,
 			"workload matches scaling up conditions",
 			false,
-			dryRun), nil
+			dryRun,
+		), nil
 	}
 
 	slog.Debug("workload doesn't match any scaling condition, skipping",
@@ -409,7 +426,8 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 		http.StatusAccepted,
 		"workload doesn't match any scaling condition",
 		false,
-		dryRun), nil
+		dryRun,
+	), nil
 }
 
 // evaluateWorkloadExternalScalingCondition checks if the workload is externally managed.
@@ -424,7 +442,8 @@ func (v *WorkloadMutationHandler) evaluateWorkloadExternalScalingCondition(
 
 	scaledObjects, err := v.client.GetScaledObjects(workload.GetNamespace(), ctx)
 	if err != nil {
-		slog.Error("failed to get scaledobjects from namespace",
+		slog.Error(
+			"failed to get scaledobjects from namespace",
 			"error", err,
 			"namespace", workload.GetNamespace(),
 			"workload", workload.GetName(),
@@ -481,7 +500,8 @@ func mutateWorkload(
 			http.StatusAccepted,
 			"failed to deep copy workload",
 			true,
-			dryRun), err
+			dryRun,
+		), err
 	}
 
 	_, err = workloadCopy.ScaleDown(downscaleReplicas)
@@ -494,7 +514,8 @@ func mutateWorkload(
 			http.StatusAccepted,
 			"failed to scale down workload",
 			true,
-			dryRun), err
+			dryRun,
+		), err
 	}
 
 	patch, err := workload.Compare(workloadCopy)
@@ -507,7 +528,8 @@ func mutateWorkload(
 			http.StatusAccepted,
 			"failed to compare workload",
 			true,
-			dryRun), err
+			dryRun,
+		), err
 	}
 
 	slog.Debug("comparison patch correctly generated", "patch", patch.String())
@@ -523,7 +545,8 @@ func mutateWorkload(
 			http.StatusAccepted,
 			"failed to marshal patch",
 			true,
-			dryRun), err
+			dryRun,
+		), err
 	}
 
 	if !dryRun {
@@ -539,5 +562,6 @@ func mutateWorkload(
 		http.StatusAccepted,
 		"would have patched workload",
 		false,
-		dryRun), nil
+		dryRun,
+	), nil
 }

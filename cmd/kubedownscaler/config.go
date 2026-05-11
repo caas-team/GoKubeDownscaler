@@ -96,7 +96,8 @@ func initComponent() (config *runtimeConfiguration, scopeDefault, scopeCli, scop
 		os.Exit(1)
 	}
 
-	slog.Debug("finished getting startup config",
+	slog.Debug(
+		"finished getting startup config",
 		"envScope", scopeEnv,
 		"cliScope", scopeCli,
 		"config", config,
