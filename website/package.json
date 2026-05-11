@@ -24,7 +24,7 @@
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
     "@mdx-js/react": "^3.1.1",
-    "@tailwindcss/postcss": "^4.2.4",
+    "@tailwindcss/postcss": "^4.3.0",
     "clsx": "^2.1.1",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.2.6",
@@ -41,7 +41,7 @@
     "eslint-plugin-markdown": "^5.1.0",
     "json-loader": "^0.5.7",
     "postcss": "^8.5.14",
-    "tailwindcss": "^4.2.4",
+    "tailwindcss": "^4.3.0",
     "tailwindcss-animated": "^2.0.0",
     "typescript": "~6.0.3"
   },
