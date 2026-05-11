@@ -41,7 +41,8 @@ Will result in all workloads in the namespaces `kube-downscaler`, `kube-system` 
 
 :::note
 
-Setting `excludedNamespaces: []` does not clear the exclusion list. The chart omits the `EXCLUDE_NAMESPACES` env var when the list is empty, so the binary falls back to its built-in default (`kube-system`, `kube-downscaler`). To truly exclude nothing, set a regex that cannot match any namespace name, such as `["$^"]`.
+Setting `excludedNamespaces: []` does not clear the exclusion list.
+The chart omits the `EXCLUDE_NAMESPACES` env var when the list is empty, so the binary falls back to its built-in default (`kube-system`, `kube-downscaler`). To truly exclude nothing, set a regex that cannot match any namespace name, such as `["$^"]`.
 
 :::
 
