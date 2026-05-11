@@ -42,7 +42,7 @@ linters:
     - godox
     - goheader
     - gomoddirectives
-    - gomodguard
+    - gomodguard_v2
     - goprintffuncname
     - gosec
     - gosmopolitan
@@ -192,6 +192,7 @@ linters:
       - linters:
           - forcetypeassert
           - gochecknoglobals
+          - goconst
           - govet
           - mnd
           - revive
@@ -207,6 +208,7 @@ linters:
       - third_party$
       - builtin$
       - examples$
+      - website/node_modules
 issues:
   max-same-issues: 50
   fix: true
@@ -233,3 +235,4 @@ formatters:
       - third_party$
       - builtin$
       - examples$
+      - website/node_modules

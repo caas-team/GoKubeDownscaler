@@ -6,6 +6,7 @@
 <a target="_blank" href="./LICENSE" title="GitHub License"><img alt="GitHub License" src="https://img.shields.io/github/license/caas-team/GoKubeDownscaler?style=flat"></a>
 <a target="_blank" href="/../../graphs/contributors" title="Contributors"><img alt="Contributors" src="https://img.shields.io/github/contributors/caas-team/GoKubeDownscaler?style=flat"></a>
 <a target="_blank" href="/../../stargazers" title="Stars"><img alt="Stars" src="https://img.shields.io/github/stars/caas-team/GoKubeDownscaler?style=flat"></a>
+<a target="_blank" href="https://artifacthub.io/packages/helm/py-kube-downscaler/go-kube-downscaler" title="ArtifactHub"><img alt="go-kube-downscaler" src="https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/go-kube-downscaler"></a>
 <a target="_blank" href="https://inviter.co/kube-downscaler" title="Slack Workspace"><img alt="Slack Workspace" src="https://img.shields.io/badge/slack-kube--downscaler-dark_green?style=flat&logo=slack"></a>
 
 <!-- markdownlint-enable line-length -->
@@ -17,7 +18,7 @@ with improvements and quality of life changes.
 
 ## Documentation and Guides
 
-The documentation and guides can be found on [our website](https://caas-team.github.io/GoKubeDownscaler).
+The documentation and guides can be found on [our website](https://kube-downscaler.io).
 
 An offline copy of the documentation and blogs can be found in [`website/content`](./website/content) and [`website/blog`](./website/blog).
 In there are Markdown files which can be viewed in any text editor or inside of a Markdown Viewer.
@@ -25,7 +26,7 @@ In there are Markdown files which can be viewed in any text editor or inside of 
 ## Installation
 
 Installation is done via the [Helm Chart](./deployments/chart/).
-Information on how to install the Downscaler is on [our website](https://caas-team.github.io/GoKubeDownscaler/guides/getting-started/installation).
+Information on how to install the Downscaler is on [our website](https://kube-downscaler.io/guides/getting-started/installation).
 
 ### Missing Features
 
@@ -36,7 +37,7 @@ If you think that any other features are missing, or you have an idea for a new 
 
 ## Developing
 
-This section covers the basics of developing on this repo, a more detailed guide can be found on [our website](https://caas-team.github.io/GoKubeDownscaler/contributing/developing).
+This section covers the basics of developing on this repo, a more detailed guide can be found on [our website](https://kube-downscaler.io/contributing/developing).
 
 Please read the [contribution manifest](./CONTRIBUTING.md).
 

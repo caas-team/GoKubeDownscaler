@@ -38,7 +38,7 @@ func TestDaemonSet_ScaleUp(t *testing.T) {
 			deamonset := daemonSet{&appsv1.DaemonSet{}}
 
 			if test.labelSet {
-				deamonset.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: "true"}
+				deamonset.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: labelMatchNoneValue}
 			}
 
 			err := deamonset.ScaleUp()
@@ -119,7 +119,7 @@ func TestDaemonSet_ScaleDown(t *testing.T) {
 			}
 
 			if test.labelSet {
-				daemonset.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: "true"}
+				daemonset.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: labelMatchNoneValue}
 			}
 
 			savedResources, err := daemonset.ScaleDown(values.AbsoluteReplicas(0))

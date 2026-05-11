@@ -31,31 +31,31 @@ func NewMetrics(dryRun bool) *Metrics {
 			&k8smetrics.GaugeOpts{
 				Name: metricName("downscaled_workloads", dryRun),
 				Help: helperDescription("downscaled workloads managed by kubedownscaler broken down by namespace.", dryRun),
-			}, []string{"namespace"},
+			}, []string{namespace},
 		),
 		upscaledWorkloadGauge: k8smetrics.NewGaugeVec(
 			&k8smetrics.GaugeOpts{
 				Name: metricName("upscaled_workloads", dryRun),
 				Help: helperDescription("upscaled workloads managed by kubedownscaler broken down by namespace.", dryRun),
-			}, []string{"namespace"},
+			}, []string{namespace},
 		),
 		excludedWorkloadGauge: k8smetrics.NewGaugeVec(
 			&k8smetrics.GaugeOpts{
 				Name: metricName("excluded_workloads", dryRun),
 				Help: helperDescription("workloads excluded from kubedownscaler management broken down by namespace.", dryRun),
-			}, []string{"namespace"},
+			}, []string{namespace},
 		),
 		savedMemoryGauge: k8smetrics.NewGaugeVec(
 			&k8smetrics.GaugeOpts{
 				Name: metricName("current_saved_memory_bytes", dryRun),
 				Help: helperDescription("bytes of memory saved by kubedownscaler downscaling actions.", dryRun),
-			}, []string{"namespace"},
+			}, []string{namespace},
 		),
 		savedCPUGauge: k8smetrics.NewGaugeVec(
 			&k8smetrics.GaugeOpts{
 				Name: metricName("current_saved_cpu_cores", dryRun),
 				Help: helperDescription("cores of cpu saved by kubedownscaler downscaling actions.", dryRun),
-			}, []string{"namespace"},
+			}, []string{namespace},
 		),
 
 		// always stable (never marked as "potential")
@@ -63,7 +63,7 @@ func NewMetrics(dryRun bool) *Metrics {
 			&k8smetrics.GaugeOpts{
 				Name: "kubedownscaler_scaling_errors",
 				Help: "Number of scaling errors encountered during the scale process.",
-			}, []string{"namespace", "type"},
+			}, []string{namespace, "type"},
 		),
 		downscalerCycleDurationSeconds: k8smetrics.NewGauge(
 			&k8smetrics.GaugeOpts{

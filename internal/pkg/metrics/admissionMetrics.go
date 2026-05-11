@@ -23,7 +23,7 @@ func NewAdmissionMetrics(dryRun bool) *AdmissionMetrics {
 				Name: metricName("validate_workload_admission_requests_total", dryRun),
 				Help: helperDescription("total number of validateWorkloadAdmissionRequests, broken down by namespace and result of mutation"+
 					" (mutated, not_mutated, error).", dryRun),
-			}, []string{"namespace", "result"},
+			}, []string{namespace, "result"},
 		),
 	}
 }

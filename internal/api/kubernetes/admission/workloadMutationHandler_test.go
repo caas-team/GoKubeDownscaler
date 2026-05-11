@@ -174,7 +174,7 @@ func TestEvaluateMutation(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		setupMocks      func(*MockClient)
+		setupMocks      func(*testing.T, *MockClient)
 		setupHandler    func(*WorkloadMutationHandler)
 		request         func(*testing.T) *http.Request
 		expectedMessage string
@@ -182,7 +182,9 @@ func TestEvaluateMutation(t *testing.T) {
 	}{
 		{
 			name: "Workload excluded because uptime",
-			setupMocks: func(mockClient *MockClient) {
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
+				t.Helper()
+
 				scope := values.NewScope()
 				scope.DownscaleReplicas = values.AbsoluteReplicas(0)
 				_ = scope.ForceUptime.Set("always")
@@ -200,7 +202,9 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload mutated because downtime",
-			setupMocks: func(mockClient *MockClient) {
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
+				t.Helper()
+
 				scope := values.NewScope()
 				scope.DownscaleReplicas = values.AbsoluteReplicas(0)
 				_ = scope.ForceDowntime.Set("always")
@@ -218,11 +222,12 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload excluded by annotation",
-			setupMocks: func(m *MockClient) {
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
+				t.Helper()
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 
 				scope := values.GetDefaultScope()
-				m.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"} },
 			request: func(t *testing.T) *http.Request {
@@ -234,12 +239,14 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload excluded by namespace scope",
-			setupMocks: func(m *MockClient) {
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
+				t.Helper()
+
 				scope := values.GetDefaultScope()
 				_ = scope.Exclude.Set("true")
 
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
-				m.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"} },
 			request: func(t *testing.T) *http.Request {
@@ -251,8 +258,9 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload excluded by exclude list",
-			setupMocks: func(m *MockClient) {
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
+				t.Helper()
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) {
 				h.includeNamespaces = &[]string{"default"}
@@ -267,9 +275,10 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload excluded by external scaling (keda)",
-			setupMocks: func(m *MockClient) {
-				scaledObject := buildScaledObjectFromBytes(t, "default")
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{scaledObject}, nil)
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
+				t.Helper()
+				scaledObject := buildScaledObjectFromBytes(t, "default") // uses subtest t
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{scaledObject}, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"} },
 			request: func(t *testing.T) *http.Request {
@@ -281,7 +290,7 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name:         "Workload ignored because namespace not included",
-			setupMocks:   func(m *MockClient) {},
+			setupMocks:   func(t *testing.T, mockClient *MockClient) { t.Helper() },
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"other-namespace"} },
 			request: func(t *testing.T) *http.Request {
 				t.Helper()
@@ -292,11 +301,12 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload excluded because missing labels",
-			setupMocks: func(m *MockClient) {
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
+				t.Helper()
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 
 				scope := values.GetDefaultScope()
-				m.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"} },
 			request: func(t *testing.T) *http.Request {
@@ -308,8 +318,9 @@ func TestEvaluateMutation(t *testing.T) {
 		},
 		{
 			name: "Workload excluded by exclude list (explicit workload)",
-			setupMocks: func(m *MockClient) {
-				m.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
+				t.Helper()
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) {
 				h.includeNamespaces = &[]string{"default"}
@@ -326,30 +337,30 @@ func TestEvaluateMutation(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
+		currentTest := testCase
+
+		t.Run(currentTest.name, func(t *testing.T) {
 			t.Parallel()
 
 			mockClient := &MockClient{}
 			handler := newHandlerWithMocks(mockClient)
 
-			if testCase.setupMocks != nil {
-				tt := testCase
-				tt.setupMocks(mockClient)
+			if currentTest.setupMocks != nil {
+				currentTest.setupMocks(t, mockClient)
 			}
 
-			if testCase.setupHandler != nil {
-				tt := testCase
-				tt.setupHandler(handler)
+			if currentTest.setupHandler != nil {
+				currentTest.setupHandler(handler)
 			}
 
-			req := testCase.request(t)
+			req := currentTest.request(t)
 			input, _ := parseAdmissionReviewFromRequest(req)
 			workload, _ := scalable.ParseWorkloadFromRawObject("deployment", input.Request.Object.Raw)
 
 			resp, err := handler.evaluateWorkloadMutation(context.Background(), workload, input, false)
 			require.NoError(t, err)
-			require.Equal(t, testCase.expectedCode, resp.Response.Result.Code)
-			require.Contains(t, resp.Response.Result.Message, testCase.expectedMessage)
+			require.Equal(t, currentTest.expectedCode, resp.Response.Result.Code)
+			require.Contains(t, resp.Response.Result.Message, currentTest.expectedMessage)
 		})
 	}
 }
