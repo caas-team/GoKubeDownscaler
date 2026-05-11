@@ -335,7 +335,7 @@ const config: Config = {
         },
         sameAs: [
           "https://github.com/caas-team/GoKubeDownscaler",
-          "https://artifacthub.io/packages/helm/caas-team/kube-downscaler",
+          "https://artifacthub.io/packages/helm/py-kube-downscaler/go-kube-downscaler",
         ],
         keywords:
           "kubernetes, kube-downscaler, downscaler, cost optimization, scheduled scaling, cloud costs, kubernetes autoscaler",
@@ -384,7 +384,7 @@ const config: Config = {
         license: "https://www.gnu.org/licenses/gpl-3.0.en.html",
         isPartOf: { "@id": "https://kube-downscaler.io/#software" },
         author: { "@id": "https://kube-downscaler.io/#organization" },
-        publisher: { "@id": "https://kube-downscaler.io/#organization" }
+        publisher: { "@id": "https://kube-downscaler.io/#organization" },
       }),
     },
     {
@@ -405,11 +405,10 @@ const config: Config = {
         "@type": "Organization",
         "@id": "https://kube-downscaler.io/#organization",
         name: "CaaS Team",
-        description: "Open-source team maintaining GoKubeDownscaler and related Kubernetes tooling.",
+        description:
+          "Open-source team maintaining GoKubeDownscaler and related Kubernetes tooling.",
         url: "https://github.com/caas-team",
-        sameAs: [
-          "https://github.com/caas-team",
-        ],
+        sameAs: ["https://github.com/caas-team"],
         contactPoint: {
           "@type": "ContactPoint",
           contactType: "community support",

@@ -20,7 +20,6 @@ const HELM_COMMANDS: CommandDef[] = [
 function InstallTerminal() {
   const [allDone] = useState(true);
 
-
   return (
     <div className={styles.terminal}>
       {/* Title bar — identical to HowItWorks */}
@@ -50,10 +49,14 @@ function InstallTerminal() {
           {allDone && (
             <>
               <span className={styles.checkIcon}>{"✓ "}</span>
-              <span className={styles.installed}>{"kube-downscaler installed"}</span>
+              <span className={styles.installed}>
+                {"go-kube-downscaler installed"}
+              </span>
               {"\n"}
               <span className={styles.rocket}>{"🚀 "}</span>
-              <span className={styles.ready}>{"You are now ready to save 70% of your Kubernetes bill"}</span>
+              <span className={styles.ready}>
+                {"You are now ready to save 70% of your Kubernetes bill"}
+              </span>
             </>
           )}
         </code>
@@ -124,11 +127,18 @@ function CostChart() {
               <div className={styles.barTrack}>
                 <div
                   className={`${styles.barFill} ${isInstallBar ? styles.barAfter : styles.barBefore}`}
-                  style={{
-                    "--bar-pct": `${bar.pct}%`,
-                    animationDelay: isPhone ? "0ms" : `${i * 120}ms`,
-                    animationPlayState: isPhone || visible ? (isPhone ? "none" : "running") : "paused",
-                  } as React.CSSProperties}
+                  style={
+                    {
+                      "--bar-pct": `${bar.pct}%`,
+                      animationDelay: isPhone ? "0ms" : `${i * 120}ms`,
+                      animationPlayState:
+                        isPhone || visible
+                          ? isPhone
+                            ? "none"
+                            : "running"
+                          : "paused",
+                    } as React.CSSProperties
+                  }
                 />
               </div>
               <span className={styles.barLabel}>{bar.label}</span>
@@ -150,12 +160,22 @@ function CostChart() {
         <span className={styles.legendText}>Before</span>
         <span className={styles.legendDot} data-variant="after" />
         <span className={styles.legendText}>After</span>
-        <span className={styles.savingBadgeInline}>−70% Of Kubernetes Costs</span>
+        <span className={styles.savingBadgeInline}>
+          −70% Of Kubernetes Costs
+        </span>
       </div>
 
       {/* Calculation basis note */}
-      <p style={{ fontSize: '0.8rem', color: 'var(--ifm-color-emphasis-600)', marginTop: '0.75rem', marginBottom: 0 }}>
-        * This calculation is based on a 40-hour work week (scale-down during evenings, weekends)
+      <p
+        style={{
+          fontSize: "0.8rem",
+          color: "var(--ifm-color-emphasis-600)",
+          marginTop: "0.75rem",
+          marginBottom: 0,
+        }}
+      >
+        * This calculation is based on a 40-hour work week (scale-down during
+        evenings, weekends)
       </p>
     </div>
   );
@@ -176,10 +196,17 @@ export default function InstallationShowcase(): JSX.Element {
           </Heading>
           <p className={styles.body}>
             Install GoKubeDownscaler with Helm in under a minute and start
-            saving on your cloud bill from day one. <strong>Teams using GoKubeDownscaler achieve 70% savings after adopting it. No code changes required.</strong>
+            saving on your cloud bill from day one.{" "}
+            <strong>
+              Teams using GoKubeDownscaler achieve 70% savings after adopting
+              it. No code changes required.
+            </strong>
           </p>
           {/* License text */}
-          <p className="animate-fade-down text-sm opacity-70 mt-6" style={{ willChange: "transform", margin: "-0.5rem 0 0 0" }}>
+          <p
+            className="animate-fade-down text-sm opacity-70 mt-6"
+            style={{ willChange: "transform", margin: "-0.5rem 0 0 0" }}
+          >
             ✓ Free And Open Source
           </p>
         </div>
