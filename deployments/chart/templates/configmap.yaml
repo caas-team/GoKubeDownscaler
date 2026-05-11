@@ -4,7 +4,9 @@ metadata:
   name: {{ .Values.configMap.name }}
   namespace: {{ .Release.Namespace }}
 data:
-  EXCLUDE_NAMESPACES: '{{- join "," .Values.excludedNamespaces }}'
+  {{- with .Values.excludedNamespaces }}
+  EXCLUDE_NAMESPACES: '{{ join "," . }}'
+  {{- end }}
   {{- if .Values.configMap.extraConfig }}
   {{- tpl .Values.configMap.extraConfig . | nindent 2 }}
   {{- end }}
