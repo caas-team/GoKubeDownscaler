@@ -19,7 +19,7 @@ There are three types of timespans:
 
 - [Absolute timespans](#absolute-timespans): a timespan defined by two absolute points in time
 - [Relative timespans](#relative-timespans): reoccurring on a weekly schedule
-- [Boolean timespans](#alwaysnevertruefalse): statically always or never active
+- [Boolean timespans](#boolean-timespans): statically always or never active
 
 ## Absolute Timespans
 
@@ -110,7 +110,7 @@ but these (not including `UTC`) shouldn't be used, and only exist for backwards 
 
 Values from: 00:00 - 24:00
 
-## Always/Never/True/False
+## Boolean Timespans
 
 Case-insensitive:
 
@@ -138,7 +138,7 @@ You can mix any type of timespan.
 
 :::note
 
-Although you could mix [boolean timespans](#alwaysnevertruefalse) with the other ones,
+Although you could mix [boolean timespans](#boolean-timespans) with the other ones,
 this is not a valid use case and might be changed to a compatibility conflict in the future.
 
 :::

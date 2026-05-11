@@ -139,7 +139,7 @@ Here is a list of all values that can be set on the Downscaler.
 
 ### Exclude
 
-- Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#alwaysnevertruefalse))
+- Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#boolean-timespans))
 - Default: unset (never matches)
 - Excludes the [workload](ref:docs-workload-types) from being scaled. (Scaling is ignored)
 - Where to set: [Namespace Scope](ref:docs-namespace-scope#values), [Workload Scope](ref:docs-workload-scope#values)
@@ -153,7 +153,7 @@ Here is a list of all values that can be set on the Downscaler.
 
 ### Force Uptime
 
-- Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#alwaysnevertruefalse))
+- Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#boolean-timespans))
 - Default: unset (never matches)
 - Forces the [workload](ref:docs-workload-types) into an uptime state. (Scaling up)
 - [Grouped](#value-groups) with [force downtime](#force-downtime)
@@ -162,7 +162,7 @@ Here is a list of all values that can be set on the Downscaler.
 
 ### Force Downtime
 
-- Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#alwaysnevertruefalse))
+- Type: [Timespans](ref:docs-timespans) (this also includes [true/false](ref:docs-timespans#boolean-timespans))
 - Default: unset (never matches)
 - Forces the [workload](ref:docs-workload-types) into a downtime state. (Scaling down)
 - [Grouped](#value-groups) with [force uptime](#force-uptime)
