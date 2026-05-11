@@ -73,7 +73,7 @@ for the cluster to function properly even when non-essential namespaces are scal
 
     configMap:
       name: go-kube-downscaler
-      # remember to exclude all crtical namesapces
+      # remember to exclude all critical namespaces
       extraConfig: |
         DEFAULT_DOWNTIME: "always"
         EXCLUDE_NAMESPACES: "kube-system,istio-system,karpenter,prometheus"
@@ -91,7 +91,7 @@ for the cluster to function properly even when non-essential namespaces are scal
     ```yaml title="values.yaml"
     # ...
 
-    # remember to exclude all crtical namesapces
+    # remember to exclude all critical namespaces
     arguments:
       - --default-downtime="always"
       - --exclude-namespaces="kube-system,istio-system,karpenter,prometheus"
