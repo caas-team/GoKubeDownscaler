@@ -65,7 +65,7 @@ const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
     supportedResources: ["Stacks"],
   },
   {
-    title: "Github Actions",
+    title: "GitHub Actions",
     SvgLight: GithubDarkSVG.default,
     SvgDark: GithubLightSVG.default,
     href: "https://docs.github.com/en/actions/concepts/runners/actions-runner-controller",

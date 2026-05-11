@@ -60,15 +60,15 @@ export default function Home(): JSX.Element {
     <Layout title={siteConfig.title} description={siteConfig.tagline}>
       <Head>
         <title>GoKubeDownscaler: Reduce Kubernetes Costs Off-Hours</title>
-        <meta name="description" content="GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekend, holidays to reduce cloud costs." />
+        <meta name="description" content="GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekends, holidays to reduce cloud costs." />
         <meta name="keywords" content="kube-downscaler, GoKubeDownscaler, kubernetes downscaler, kubernetes cost optimization, scale down kubernetes, kubernetes scheduled scaling, go-kube-downscaler, kubernetes autoscaler" />
         {/* Open Graph — page-specific (og:type, og:site_name, og:image:* are global in docusaurus.config.ts) */}
         <meta property="og:url" content="https://kube-downscaler.io/" />
         <meta property="og:title" content="GoKubeDownscaler: Reduce Kubernetes Costs Off-Hours" />
-        <meta property="og:description" content="GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekend, holidays to reduce cloud costs." />
+        <meta property="og:description" content="GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekends, holidays to reduce cloud costs." />
         {/* Twitter — page-specific (twitter:card is global in docusaurus.config.ts; twitter:image injected by Docusaurus from themeConfig.image) */}
         <meta name="twitter:title" content="GoKubeDownscaler: Reduce Kubernetes Costs Off-Hours" />
-        <meta name="twitter:description" content="GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekend, holidays to reduce cloud costs." />
+        <meta name="twitter:description" content="GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekends, holidays to reduce cloud costs." />
         <meta name="twitter:image" content="https://kube-downscaler.io/GoKubeDownscaler/img/social-preview.png" />
       </Head>
       <HomepageHeader />

@@ -37,8 +37,8 @@ import TabItem from "@theme/TabItem";
   })}
 </script>
 
-One of the most effective patterns for using the GoKubeDownscaler is to keep workloads always scaled down, scale up will be
-performed on demand using annotations.
+One of the most effective patterns for using the GoKubeDownscaler is to keep workloads always scaled down.
+Scale up will be performed on demand using annotations.
 This is an advanced pattern that can be used to achieve the maximum cost savings.
 
 For this use case we will use [boolean timespans](ref:docs-timespans#alwaysnevertruefalse)
@@ -56,7 +56,7 @@ This can be done by either using an [environment variable](ref:docs-env-scope) o
 for the GoKubeDownscaler.
 
 :::danger[Important]
-In this scenario it is strongly recommend to exclude by default all critical namespaces that are needed
+In this scenario it is strongly recommended to exclude by default all critical namespaces that are needed
 for the cluster to function properly even when non-essential namespaces are scaled down.
 :::
 
@@ -112,7 +112,7 @@ upon user request by adding an exclude annotation to the namespace.
 kubectl annotate namespace my-namespace downscaler/exclude="true"
 ```
 
-scale down can be performed by external automations by removing the annotation after a fixed amount of time or by user request.
+Scale down can be performed by external automations by removing the annotation after a fixed amount of time or by user request.
 Alternatively, it is possible to use the `downscaler/exclude-until` annotation that constrains the exclusion until a specific time.
 
 ```bash

@@ -45,13 +45,13 @@ if [`--leader-election`](ref:docs-runtime-configuration#leader-election) is enab
 
 The [webhookdeployment.yaml](repo:deployments/chart/templates/webhookdeployment.yaml) file creates the Deployment
 for the Admission Controller Webhook.
-This resource is created only if the `webhook.enabled` value is set to `true`.
+This resource is created only if the `webhookController.enabled` value is set to `true`.
 
 ## Webhookservice
 
 The [webhookservice.yaml](repo:deployments/chart/templates/webhookservice.yaml) file creates the Service that exposes
 the Webhook Deployment.
-This resource is created only if the `webhook.enabled` value is set to `true`.
+This resource is created only if the `webhookController.enabled` value is set to `true`.
 
 ## Webhookrole
 
@@ -63,14 +63,14 @@ allows the Webhook Deployment to only read the Webhook secret
 The [mutatingwebhookconfiguration.yaml](repo:deployments/chart/templates/mutatingwebhookconfiguration.yaml) file creates
 the MutatingWebhookConfiguration needed for the Admission Controller Webhook to work.
 By default, it intercepts all the
-creation and update requests for the targeted resources and send the review request to the Webhook Deployment through
+creation and update requests for the targeted resources and sends the review request to the Webhook Deployment through
 its Service in a secure way.
 The MutatingWebhookConfiguration does not apply for the namespace where the Webhook
 is deployed and from requests originated by the main Deployment of the GoKubeDownscaler.
 
 ## PodMonitor
 
-The [podmonitor.yaml](repo:deployments/chart/templates/leaserole.yaml) file creates a PodMonitor that is able to scrape
+The [podmonitor.yaml](repo:deployments/chart/templates/podmonitor.yaml) file creates a PodMonitor that is able to scrape
 metrics from GoKubeDownscaler main deployment
 
 ## Mutatingadmissionpolicy
@@ -78,12 +78,12 @@ metrics from GoKubeDownscaler main deployment
 The [mutatingadmissionpolicy.yaml](repo:deployments/chart/templates/mutatingadmissionpolicy.yaml) file creates a
 MutatingAdmissionPolicy that modifies objects on create/update, removing annotations that start with `downscaler/`
 if they were deployed by unauthorized users or service accounts, or preventing editing their value if they were deployed by
-authorized users or service account.
+authorized users or service accounts.
 When deployed, the policy is bound to every namespace.
 
 ## Mutatingadmissionpolicyremoval
 
-The [mutatingadmissionpolicyremoval.yaml](repo:deployments/chart/templates/validatingadmissionpolicyremoval.yaml) file creates a
+The [mutatingadmissionpolicyremoval.yaml](repo:deployments/chart/templates/mutatingadmissionpolicyremoval.yaml) file creates a
 MutatingAdmissionPolicyRemoval that re-adds removed `downscaler/` annotations in namespaces or workloads
 if unauthorized users or service accounts removed them.
 When deployed, the policy is bound to every namespace.

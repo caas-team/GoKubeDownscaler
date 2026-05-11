@@ -191,7 +191,7 @@ Exclusions can be made with the same granularity using environment variables, cl
 <Tabs>
     <TabItem value="Environment Variable" label="Environment Variable" default>
 
-        If you want to add a cluster-wide exclusions with environment variables
+        If you want to add cluster-wide exclusions with environment variables
         you can add them inside the [values.yaml](repo:deployments/chart/values.yaml) file.
 
         There you have to add it to the `configMap.extraConfig` field:
@@ -229,8 +229,6 @@ Exclusions can be made with the same granularity using environment variables, cl
         If you want to exclude an entire namespace from the cluster-wide downtime,
         you can annotate the namespace with `downscaler/exclude="true"` or `downscaler/exclude-until`.
 
-        There you have to add it to the `arguments` field:
-
         ```bash
         kubectl annotate namespace my-namespace downscaler/exclude="true"
 
@@ -241,8 +239,6 @@ Exclusions can be made with the same granularity using environment variables, cl
 
         If you want to exclude a specific workload from the cluster-wide downtime,
         you can annotate the workload with `downscaler/exclude="true"`.
-
-        There you have to add it to the `arguments` field:
 
         ```bash
         kubectl annotate deployment my-deploy downscaler/exclude="true"

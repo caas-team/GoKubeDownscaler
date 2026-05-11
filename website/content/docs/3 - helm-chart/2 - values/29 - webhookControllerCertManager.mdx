@@ -8,7 +8,7 @@ keywords: [webhookControllerCertManager, certManager]
 
 # webhookController.certManager
 
-The `webhookController.certManager` defines all the value needed to configure cert-manager for the Webhook.
+The `webhookController.certManager` defines all the values needed to configure cert-manager for the Webhook.
 
 :::info
 
@@ -22,7 +22,7 @@ certManager:
   secretTemplate: {}
   ca:
     generate: true
-    ecretName: "kubedownscaler-ca"
+    secretName: "kubedownscaler-ca"
   issuer:
     generate: true
     name: foo-org-ca # Required when "issuer.generate: false"

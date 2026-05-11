@@ -18,7 +18,7 @@ Replicas can be represented as an integer for all workloads
 2 # 2 Replicas
 ```
 
-Replicas can also be represented as a string percentage, for example, when targeting PodDisruption Budgets
+Replicas can also be represented as a string percentage, for example, when targeting PodDisruptionBudgets
 
 ```text
 50% # 50% of the current replicas
@@ -28,7 +28,7 @@ Replicas can also be represented as a string percentage, for example, when targe
 
 A percentage value can be used inside a Scope that is also targeting workloads that do not support percentage replicas
 like PodDisruptionBudgets do.
-This will result in an error on scaling workloads that do not support percentage-based
+This will result in an error on scaling workloads that do not support percentage-based replicas
 and will therefore skip any scaling of these resources unless a more specific scope overrides the downtime replicas value
 
 :::

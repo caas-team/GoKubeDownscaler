@@ -48,10 +48,10 @@ or [Force Downtime](#force-downtime) and [Force Uptime](#force-uptime) is set,
 and both of either match the same time the workload will result in an error during scaling,
 basically skipping scaling on the workload.
 This is _**NOT**_ final intended behavior and you should not rely on this.
-This might change in the future to be seen as an [parsing incompatibility](#parsing-incompatibility)
-instead of an [runtime](#runtime-incompatibility) one.
+This might change in the future to be seen as a [parsing incompatibility](#parsing-incompatibility)
+instead of a [runtime](#runtime-incompatibility) one.
 If this gets changed this would result in misconfigured workloads
-to not being scaled at all, instead erroring during scaling.
+to not be scaled at all, instead erroring during scaling.
 
 :::
 
@@ -192,7 +192,7 @@ Here is a list of all values that can be set on the Downscaler.
 - Type: boolean
 - Description: Enables the downscaler to immediately scale child resources of the targeted workload.
   By default, only the main workload is scaled, which may leave child resources, such as Jobs created by a
-  CronJob, running to completion if the child kind is not included inside the `included-resource` argument
+  CronJob, running to completion if the child kind is not included inside the `include-resources` argument
 - Default: false
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration), [Namespace Scope](ref:docs-namespace-scope#values),
   [Workload Scope](ref:docs-workload-scope#values)
@@ -231,7 +231,7 @@ Here is a list of all values that can be set on the Downscaler.
 
 ### Parsing Incompatibility
 
-Parsing incompatibilities covers most of the downscalers incompatibilities.
+Parsing incompatibilities cover most of the downscaler's incompatibilities.
 This currently includes the `Incompatible with` field shown [above](#list-of-values),
 which marks the incompatibility of two values being set in the same scope.
 

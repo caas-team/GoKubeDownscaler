@@ -14,11 +14,11 @@ The downscaler chart is able to automatically deploy a PodMonitor when requested
 
 The following fields could be customized:
 
-- `enable` indicates whether the PodMonitor resource should be created.
+- `enabled` indicates whether the PodMonitor resource should be created.
 - `interval` specifies the scraping interval of the main deployment.
 - `scrapeTimeout` specifies scrape timeout of the main deployment.
 - `namespace` specifies the namespace where the PodMonitor is deployed (where Prometheus Operator is running).
-- `additionalLabels` specifies xxtra labels to attach to the PodMonitor resource.
+- `additionalLabels` specifies extra labels to attach to the PodMonitor resource.
 - `relabelings` specifies relabeling configs applied to target labels before scraping.
 - `metricRelabelings` specifies relabeling configs applied to metrics after scraping.
 

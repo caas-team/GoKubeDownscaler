@@ -141,7 +141,7 @@ export default function HowItWorks(): JSX.Element {
           <p className={styles.body}>
             The most common way to use GoKubeDownscaler is to set a global schedule.
             The controller continuously reads the desired configuration and scales down workloads when needed.
-            Once the downscaling window ends, the controller brings the workload back at its original state.
+            Once the downscaling window ends, the controller brings the workload back to its original state.
           </p>
         </div>
 

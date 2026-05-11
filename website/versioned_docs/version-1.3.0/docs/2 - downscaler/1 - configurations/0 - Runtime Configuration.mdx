@@ -8,7 +8,7 @@ keywords: [runtime configurations]
 
 # Runtime Configuration
 
-**Runtime Configurations** change how the Downscaler operates. controlling aspects like which namespaces and workload types
+**Runtime Configurations** change how the Downscaler operates, controlling aspects like which namespaces and workload types
 it should target, frequency of scans, retries, whether debugging information is enabled and more.
 Runtime Configurations do not dictate how and when individual workloads are scaled.
 
@@ -59,7 +59,7 @@ Here is a list of all the available runtime configurations for the Downscaler.
 - Default: `deployments`
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
 - works for components: KubeDownscaler (you can still specify this argument inside the Webhook but types configured inside the
-  MutatingWebhookConfiguration takes precedence)
+  MutatingWebhookConfiguration take precedence)
 
 ### Exclude Namespaces
 
@@ -108,7 +108,7 @@ Here is a list of all the available runtime configurations for the Downscaler.
 - Default: 500
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
 
-## Burst
+### Burst
 
 - Type: int
 - Description: Sets the maximum burst rate the downscaler can use when throttling requests to the Kubernetes API server.
@@ -140,7 +140,7 @@ Here is a list of all the available runtime configurations for the Downscaler.
 :::tip
 
 We recommend setting this to a value greater than 0 when [once](#once) is enabled.
-Since, in that case, the downscaler will only run once, you might want to perform retries if such conflicts occurs.
+Since, in that case, the downscaler will only run once, you might want to perform retries if such conflicts occur.
 
 :::
 
