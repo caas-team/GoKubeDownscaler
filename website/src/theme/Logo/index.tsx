@@ -60,9 +60,12 @@ export default function Logo(props: Props): ReactNode {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const logo: NavbarLogo = themeLogo && {
+  const logo: NavbarLogo | undefined = themeLogo && {
     src: isSmallScreen ? "img/kubedownscaler.svg" : themeLogo.src,
     srcDark: isSmallScreen ? "img/kubedownscaler.svg" : themeLogo.srcDark,
+    alt: themeLogo.alt,
+    href: themeLogo.href,
+    target: themeLogo.target,
   };
   const navbarTitle = isSmallScreen ? themeNavbarTitle : "";
 
