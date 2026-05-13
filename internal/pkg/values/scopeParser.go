@@ -21,6 +21,7 @@ const (
 	annotationForceUptime       = "downscaler/force-uptime"
 	annotationForceDowntime     = "downscaler/force-downtime"
 	annotationDownscaleReplicas = "downscaler/downscale-replicas"
+	annotationMinimumReplicas   = "downscaler/minimum-replicas"
 	annotationGracePeriod       = "downscaler/grace-period"
 	annotationScaleChildren     = "downscaler/scale-children"
 	annotationExclusionUpscale  = "downscaler/upscale-excluded"
@@ -80,6 +81,11 @@ func (s *Scope) ParseScopeFlags() {
 		&ReplicasValue{Replicas: &s.DownscaleReplicas},
 		"downtime-replicas",
 		"the replicas to scale down to (default: 0)",
+	)
+	flag.Var(
+		&ReplicasValue{Replicas: &s.MinimumReplicas},
+		"minimum-replicas",
+		"the minimum replicas a workload has to have to be scaled down (default: unset)",
 	)
 	flag.Var(
 		(*util.DurationValue)(&s.GracePeriod),
@@ -238,6 +244,19 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		}
 
 		s.DownscaleReplicas = *replicasVal.Replicas
+	}
+
+	if minimumReplicasString, ok := annotations[annotationMinimumReplicas]; ok {
+		minimumVal := ReplicasValue{Replicas: &s.MinimumReplicas}
+
+		if err = minimumVal.Set(minimumReplicasString); err != nil {
+			err = fmt.Errorf("failed to parse %q annotation: %w", annotationMinimumReplicas, err)
+			logEvent.ErrorInvalidAnnotation(annotationMinimumReplicas, err.Error(), ctx)
+
+			return err
+		}
+
+		s.MinimumReplicas = *minimumVal.Replicas
 	}
 
 	if gracePeriod, ok := annotations[annotationGracePeriod]; ok {

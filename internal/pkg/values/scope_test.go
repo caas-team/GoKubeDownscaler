@@ -1,12 +1,18 @@
 package values
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type noopResourceLogger struct{}
+
+func (noopResourceLogger) ErrorInvalidAnnotation(_, _ string, _ context.Context) {}
+func (noopResourceLogger) ErrorIncompatibleFields(_ string, _ context.Context)   {}
 
 func TestDefaultScopeIncompatible(t *testing.T) {
 	t.Parallel()
@@ -847,6 +853,115 @@ func TestGetWorkloadCreationTime(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestScope_GetScopeFromAnnotations_MinimumReplicas(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		annotations map[string]string
+		wantReplica Replicas
+		wantErr     bool
+	}{
+		{
+			name:        "absolute integer",
+			annotations: map[string]string{"downscaler/minimum-replicas": "3"},
+			wantReplica: AbsoluteReplicas(3),
+		},
+		{
+			name:        "zero",
+			annotations: map[string]string{"downscaler/minimum-replicas": "0"},
+			wantReplica: AbsoluteReplicas(0),
+		},
+		{
+			name:        "garbage rejected",
+			annotations: map[string]string{"downscaler/minimum-replicas": "foo"},
+			wantErr:     true,
+		},
+		{
+			name:        "unset",
+			annotations: map[string]string{},
+			wantReplica: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			scope := NewScope()
+			err := scope.GetScopeFromAnnotations(test.annotations, noopResourceLogger{}, t.Context())
+
+			if test.wantErr {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, test.wantReplica, scope.MinimumReplicas)
+		})
+	}
+}
+
+func TestScopes_GetMinimumReplicas(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		scopes      Scopes
+		wantReplica Replicas
+	}{
+		{
+			name: "none set",
+			scopes: Scopes{
+				NewScope(), NewScope(), NewScope(), NewScope(), GetDefaultScope(),
+			},
+			wantReplica: nil,
+		},
+		{
+			name: "set on cli",
+			scopes: Scopes{
+				NewScope(),
+				NewScope(),
+				&Scope{MinimumReplicas: AbsoluteReplicas(3)},
+				NewScope(),
+				GetDefaultScope(),
+			},
+			wantReplica: AbsoluteReplicas(3),
+		},
+		{
+			name: "workload overrides lower scopes",
+			scopes: Scopes{
+				&Scope{MinimumReplicas: AbsoluteReplicas(5)},
+				&Scope{MinimumReplicas: AbsoluteReplicas(4)},
+				&Scope{MinimumReplicas: AbsoluteReplicas(3)},
+				NewScope(),
+				GetDefaultScope(),
+			},
+			wantReplica: AbsoluteReplicas(5),
+		},
+		{
+			name: "namespace overrides cli",
+			scopes: Scopes{
+				NewScope(),
+				&Scope{MinimumReplicas: AbsoluteReplicas(4)},
+				&Scope{MinimumReplicas: AbsoluteReplicas(3)},
+				NewScope(),
+				GetDefaultScope(),
+			},
+			wantReplica: AbsoluteReplicas(4),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := test.scopes.GetMinimumReplicas()
+			assert.Equal(t, test.wantReplica, got)
 		})
 	}
 }

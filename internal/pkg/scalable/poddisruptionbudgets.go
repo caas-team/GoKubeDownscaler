@@ -114,7 +114,7 @@ func (p *podDisruptionBudget) ScaleUp() error {
 }
 
 // ScaleDown scales the resource down.
-func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, error) {
+func (p *podDisruptionBudget) ScaleDown(downscaleReplicas, _ values.Replicas) (*metrics.SavedResources, error) {
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {
 		if maxUnavailable.String() == downscaleReplicas.String() {

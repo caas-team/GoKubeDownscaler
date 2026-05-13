@@ -53,7 +53,11 @@ type Client interface {
 	// RegetWorkload gets the workload again to ensure the latest state
 	RegetWorkload(workload scalable.Workload, ctx context.Context) error
 	// DownscaleWorkload downscales the workload to the specified replicas
-	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context) (*metrics.SavedResources, error)
+	DownscaleWorkload(
+		replicas, minimumReplicas values.Replicas,
+		workload scalable.Workload,
+		ctx context.Context,
+	) (*metrics.SavedResources, error)
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
 	// ensureSecret ensures that the secret used for storing TLS certificates exists
@@ -238,13 +242,17 @@ func (c client) RegetWorkload(workload scalable.Workload, ctx context.Context) e
 //
 
 func (c client) DownscaleWorkload(
-	replicas values.Replicas,
+	replicas, minimumReplicas values.Replicas,
 	workload scalable.Workload,
 	ctx context.Context,
 ) (*metrics.SavedResources, error) {
-	savedResources, err := workload.ScaleDown(replicas)
+	savedResources, err := workload.ScaleDown(replicas, minimumReplicas)
 	if err != nil {
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
+	}
+
+	if savedResources == nil {
+		return nil, nil //nolint:nilnil // skipped, below minimum
 	}
 
 	if c.dryRun {

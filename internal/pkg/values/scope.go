@@ -47,6 +47,7 @@ func (s ScopeID) String() string {
 func NewScope() *Scope {
 	return &Scope{
 		DownscaleReplicas: nil,
+		MinimumReplicas:   nil,
 		GracePeriod:       util.Undefined,
 	}
 }
@@ -62,6 +63,7 @@ type Scope struct {
 	ForceUptime       timeSpans       // force workload into an uptime state when in one of the timespans
 	ForceDowntime     timeSpans       // force workload into a downtime state when in one of the timespans
 	DownscaleReplicas Replicas        // the replicas to scale down to
+	MinimumReplicas   Replicas        // the minimum replicas a workload has to have to be scaled down
 	GracePeriod       time.Duration   // grace period until new workloads will be scaled down
 	ScaleChildren     triStateBool    // ownerReference will immediately trigger scaling of children workloads, when applicable
 	UpscaleExcluded   triStateBool    // excluded workloads will be upscaled
@@ -80,6 +82,7 @@ func GetDefaultScope() *Scope {
 		ForceUptime:       nil,
 		ForceDowntime:     nil,
 		DownscaleReplicas: AbsoluteReplicas(0),
+		MinimumReplicas:   nil,
 		GracePeriod:       15 * time.Minute,
 		ScaleChildren:     triStateBool{isSet: false, value: false},
 		UpscaleExcluded:   triStateBool{isSet: false, value: false},
@@ -279,6 +282,19 @@ func (s Scopes) GetDownscaleReplicas() (Replicas, error) {
 	}
 
 	return nil, newValueNotSetError("downscaleReplicas")
+}
+
+// GetMinimumReplicas gets the minimum replicas of the first scope that implements minimum replicas.
+func (s Scopes) GetMinimumReplicas() Replicas {
+	for _, scope := range s {
+		if scope.MinimumReplicas == nil {
+			continue
+		}
+
+		return scope.MinimumReplicas
+	}
+
+	return nil
 }
 
 // GetScaleChildren gets the scale children of the first scope that implements scale children.

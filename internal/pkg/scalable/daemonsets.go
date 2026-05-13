@@ -54,7 +54,7 @@ func (d *daemonSet) ScaleUp() error {
 }
 
 // ScaleDown scales the resource down.
-func (d *daemonSet) ScaleDown(_ values.Replicas) (*metrics.SavedResources, error) {
+func (d *daemonSet) ScaleDown(_, _ values.Replicas) (*metrics.SavedResources, error) {
 	if d.Spec.Template.Spec.NodeSelector == nil {
 		d.Spec.Template.Spec.NodeSelector = map[string]string{}
 	}

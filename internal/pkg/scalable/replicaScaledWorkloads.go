@@ -63,8 +63,8 @@ func (r *replicaScaledWorkload) ScaleUp() error {
 
 // ScaleDown scales down the underlying replicaScaledResource.
 //
-
-func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, error) {
+//nolint:cyclop // mostly int32 conversions, can be cleaned up later
+func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas, minimumReplicas values.Replicas) (*metrics.SavedResources, error) {
 	downscaleReplicasInt32, err := downscaleReplicas.AsInt32()
 	if err != nil {
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to convert replicas to int32: %w", err)
@@ -78,6 +78,18 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (*m
 	currentReplicasInt32, err := currentReplicas.AsInt32()
 	if err != nil {
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to convert current replicas to int32: %w", err)
+	}
+
+	if minimumReplicas != nil {
+		minimumReplicasInt32, minErr := minimumReplicas.AsInt32()
+		if minErr != nil {
+			return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to convert minimum replicas to int32: %w", minErr)
+		}
+
+		if currentReplicasInt32 < minimumReplicasInt32 {
+			slog.Debug("workload is below minimum replicas, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
+			return nil, nil //nolint:nilnil // skipped, below minimum
+		}
 	}
 
 	if currentReplicasInt32 == downscaleReplicasInt32 {

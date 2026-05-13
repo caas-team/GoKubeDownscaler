@@ -126,7 +126,7 @@ type Workload interface {
 	// ScaleUp scales up the workload
 	ScaleUp() error
 	// ScaleDown scales down the workload
-	ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, error)
+	ScaleDown(downscaleReplicas, minimumReplicas values.Replicas) (*metrics.SavedResources, error)
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
 	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch

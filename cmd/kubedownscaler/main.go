@@ -414,6 +414,8 @@ func scaleWorkloads(
 }
 
 // scaleWorkload scales the given workload according to the given wanted scaling state.
+//
+//nolint:cyclop // one branch per Scaling state, splitting it up doesn't really help
 func scaleWorkload(
 	scaling values.Scaling,
 	workload scalable.Workload,
@@ -461,9 +463,18 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 			return fmt.Errorf("failed to get downscale replicas: %w", err)
 		}
 
-		savedResources, err := client.DownscaleWorkload(downscaleReplicas, workload, ctx)
+		minimumReplicas := scopes.GetMinimumReplicas()
+
+		savedResources, err := client.DownscaleWorkload(downscaleReplicas, minimumReplicas, workload, ctx)
 		if err != nil {
 			return fmt.Errorf("failed to downscale workload: %w", err)
+		}
+
+		if savedResources == nil {
+			slog.Debug("workload is below minimum replicas, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
+
+			return nil
 		}
 
 		workloadNamespaceMetrics.IncrementDownscaledWorkloadsCount()

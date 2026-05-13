@@ -100,8 +100,10 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 		replicas             values.Replicas
 		originalReplicas     values.Replicas
 		downtimeReplicas     values.Replicas
+		minimumReplicas      values.Replicas
 		wantOriginalReplicas values.Replicas
 		wantReplicas         values.Replicas
+		wantSkipped          bool
 		wantSavedCPU         float64 // in cores
 		wantSavedMemory      float64 // in bytes
 		wantErr              error
@@ -147,6 +149,38 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			wantSavedMemory:      0.0,
 			wantErr:              &values.InvalidReplicaTypeError{},
 		},
+		{
+			name:                 "above minimum replicas, scales down",
+			replicas:             values.AbsoluteReplicas(3),
+			originalReplicas:     nil,
+			downtimeReplicas:     values.AbsoluteReplicas(1),
+			minimumReplicas:      values.AbsoluteReplicas(2),
+			wantOriginalReplicas: values.AbsoluteReplicas(3),
+			wantReplicas:         values.AbsoluteReplicas(1),
+			wantSavedCPU:         0.2,               // (3-1) replicas × 0.1 cores
+			wantSavedMemory:      128 * 1024 * 1024, // (3-1) replicas × 64Mi
+		},
+		{
+			name:                 "at minimum replicas, scales down",
+			replicas:             values.AbsoluteReplicas(2),
+			originalReplicas:     nil,
+			downtimeReplicas:     values.AbsoluteReplicas(1),
+			minimumReplicas:      values.AbsoluteReplicas(2),
+			wantOriginalReplicas: values.AbsoluteReplicas(2),
+			wantReplicas:         values.AbsoluteReplicas(1),
+			wantSavedCPU:         0.1,              // (2-1) replicas × 0.1 cores
+			wantSavedMemory:      64 * 1024 * 1024, // (2-1) replicas × 64Mi
+		},
+		{
+			name:                 "below minimum replicas, skipped",
+			replicas:             values.AbsoluteReplicas(1),
+			originalReplicas:     nil,
+			downtimeReplicas:     values.AbsoluteReplicas(1),
+			minimumReplicas:      values.AbsoluteReplicas(2),
+			wantOriginalReplicas: nil,
+			wantReplicas:         values.AbsoluteReplicas(1),
+			wantSkipped:          true,
+		},
 	}
 
 	for _, test := range tests {
@@ -175,7 +209,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, workload)
 			}
 
-			savedResources, err := workload.ScaleDown(test.downtimeReplicas)
+			savedResources, err := workload.ScaleDown(test.downtimeReplicas, test.minimumReplicas)
 
 			if test.wantErr != nil {
 				var targetErr *values.InvalidReplicaTypeError
@@ -185,6 +219,20 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 			}
 
 			require.NoError(t, err)
+
+			if test.wantSkipped {
+				assert.Nil(t, savedResources)
+
+				gotReplicas, gerr := workload.getReplicas()
+				require.NoError(t, gerr)
+				assert.Equal(t, test.wantReplicas, gotReplicas)
+
+				_, origErr := getOriginalReplicas(workload)
+				var unsetErr *OriginalReplicasUnsetError
+				assert.ErrorAs(t, origErr, &unsetErr)
+
+				return
+			}
 
 			gotReplicas, err := workload.getReplicas()
 			require.NoError(t, err)

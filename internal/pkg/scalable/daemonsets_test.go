@@ -122,7 +122,7 @@ func TestDaemonSet_ScaleDown(t *testing.T) {
 				daemonset.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: labelMatchNoneValue}
 			}
 
-			savedResources, err := daemonset.ScaleDown(values.AbsoluteReplicas(0))
+			savedResources, err := daemonset.ScaleDown(values.AbsoluteReplicas(0), nil)
 			require.NoError(t, err)
 
 			_, ok := daemonset.Spec.Template.Spec.NodeSelector[labelMatchNone]

@@ -391,7 +391,9 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 			), err
 		}
 
-		response, err := mutateWorkload(workload, review, downscaleReplicas, dryRun, metricsEnabled, admissionMetrics)
+		minimumReplicas := scopes.GetMinimumReplicas()
+
+		response, err := mutateWorkload(workload, review, downscaleReplicas, minimumReplicas, dryRun, metricsEnabled, admissionMetrics)
 		if err != nil {
 			return response, err
 		}
@@ -479,6 +481,7 @@ func mutateWorkload(
 	workload scalable.Workload,
 	review *admissionv1.AdmissionReview,
 	downscaleReplicas values.Replicas,
+	minimumReplicas values.Replicas,
 	dryRun bool,
 	metricsEnabled bool,
 	admissionMetrics *metrics.AdmissionMetrics,
@@ -504,7 +507,7 @@ func mutateWorkload(
 		), err
 	}
 
-	_, err = workloadCopy.ScaleDown(downscaleReplicas)
+	_, err = workloadCopy.ScaleDown(downscaleReplicas, minimumReplicas)
 	if err != nil {
 		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
 

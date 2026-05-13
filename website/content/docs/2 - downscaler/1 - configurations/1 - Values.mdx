@@ -177,6 +177,16 @@ Here is a list of all values that can be set on the Downscaler.
 - Where to set: [CLI Scope](ref:docs-cli-scope#values), [Namespace Scope](ref:docs-namespace-scope#values),
   [Workload Scope](ref:docs-workload-scope#values)
 
+### Minimum Replicas
+
+- Type: [Replicas](ref:docs-replicas)
+- Default: unset
+- The minimum replicas a [workload](ref:docs-workload-types) has to have to be scaled down.
+  Workloads with fewer current replicas are skipped during downscaling.
+  Only applies to replica-scaled workloads.
+- Where to set: [CLI Scope](ref:docs-cli-scope#values), [Namespace Scope](ref:docs-namespace-scope#values),
+  [Workload Scope](ref:docs-workload-scope#values)
+
 ### Grace Period
 
 - Type: [Duration](ref:docs-duration)

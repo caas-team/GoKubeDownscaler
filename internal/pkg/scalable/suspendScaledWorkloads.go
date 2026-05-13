@@ -37,7 +37,7 @@ func (r *suspendScaledWorkload) ScaleUp() error {
 // ScaleDown scales down the underlying suspendScaledResource.
 //
 
-func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas) (*metrics.SavedResources, error) {
+func (r *suspendScaledWorkload) ScaleDown(_, _ values.Replicas) (*metrics.SavedResources, error) {
 	savedResources := r.getSavedResourcesRequests()
 
 	r.setSuspend(true)
