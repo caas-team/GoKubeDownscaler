@@ -80,7 +80,7 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (*m
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to convert current replicas to int32: %w", err)
 	}
 
-	if currentReplicasInt32 == downscaleReplicasInt32 {
+	if currentReplicasInt32 <= downscaleReplicasInt32 {
 		var originalReplicasInt32 int32
 		var isOriginalReplicasSet bool
 
@@ -90,7 +90,7 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (*m
 		}
 
 		if !isOriginalReplicasSet {
-			slog.Debug("workload is already at target scale down replicas, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
+			slog.Debug("workload is at or below target scale down replicas, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
 			return metrics.NewSavedResources(0, 0), nil
 		}
 
