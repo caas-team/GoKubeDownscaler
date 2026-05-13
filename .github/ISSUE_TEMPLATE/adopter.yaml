@@ -76,6 +76,5 @@ body:
       label: "Confirmation"
       options:
         - label: "I confirm I am authorized to provide this logo and consent to GoKubeDownscaler displaying it on the adopters page."
-          value: "consent"
     validations:
       required: true
