@@ -72,7 +72,7 @@ const config: Config = {
             "https://github.com/caas-team/GoKubeDownscaler/edit/main/website",
           showLastUpdateTime: true,
           versions: {
-            current: { label: "Next 🚧" },
+            current: { label: "Next 🚧", noIndex: true },
           },
         },
         blog: {
