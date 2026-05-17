@@ -95,7 +95,12 @@ const config: Config = {
           changefreq: "weekly",
           priority: 0.8,
           ignorePatterns: [
-              "/tags/**",
+              "blog/tags",
+              "blog/archive",
+              "blog/tags/**",
+              "/docs",
+              "/guides",
+              "/contributing",
               "/docs/v*/**",
               "/docs/next/**",
               "/guides/v*/**",
@@ -211,7 +216,6 @@ const config: Config = {
     },
   } satisfies Preset.ThemeConfig,
   headTags: [
-    // Global Open Graph tags (apply to every page)
     // Default favicon
     {
       tagName: "link",
@@ -260,6 +264,7 @@ const config: Config = {
         href: "/img/kubedownscaler-180x180.png",
       },
     },
+    // Global Open Graph tags (apply to every page)
     {
       tagName: "meta",
       attributes: {
@@ -329,16 +334,6 @@ const config: Config = {
         onload: "this.onload=null;this.rel='stylesheet'",
       },
     },
-    // Preload hero SVG for faster LCP (Largest Contentful Paint)
-    {
-      tagName: "link",
-      attributes: {
-        rel: "preload",
-        as: "image",
-        href: "/img/kubedownscaler.svg",
-        type: "image/svg+xml",
-      },
-    },
     {
       tagName: "noscript",
       innerHTML:
@@ -387,7 +382,12 @@ const config: Config = {
         description: "Official website with documentation and guides for GoKubeDownscaler, a Kubernetes horizontal autoscaler that reduces cloud costs by scaling workloads based on time schedules.",
         inLanguage: "en",
         publisher: { "@id": "https://kube-downscaler.io/#organization" },
-        mainEntity: { "@id": "https://kube-downscaler.io/#software" }
+        mainEntity: { "@id": "https://kube-downscaler.io/#software" },
+        potentialAction: {
+          "@type": "SearchAction",
+          "target": "https://kube-downscaler.io/search?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
       }),
     },
     // SoftwareApplication
