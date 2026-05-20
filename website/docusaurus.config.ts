@@ -16,7 +16,7 @@ import {
 } from "./plugins/first-doc-redirect.cts";
 
 const config: Config = {
-  title: "GoKubeDownscaler",
+  title: "Kube Downscaler",
   tagline: "A Horizontal Autoscaler For Kubernetes Workloads",
   favicon: "img/kubedownscaler.svg",
 
@@ -76,8 +76,8 @@ const config: Config = {
           },
         },
         blog: {
-          blogTitle: "GoKubeDownscaler Blog",
-          blogDescription: "The official blog of the GoKubeDownscaler",
+          blogTitle: "Kube Downscaler Blog",
+          blogDescription: "The official blog of Kube Downscaler",
           postsPerPage: "ALL",
           showReadingTime: true,
           editUrl:
@@ -127,7 +127,7 @@ const config: Config = {
     },
     navbar: {
       logo: {
-        alt: "Kubedownscaler Logo",
+        alt: "Kube Downscaler Logo",
         src: "img/kubedownscaler-name-dark.svg",
         srcDark: "img/kubedownscaler-name-light.svg",
         href: "/",
@@ -298,7 +298,7 @@ const config: Config = {
       tagName: "meta",
       attributes: {
         property: "og:image:alt",
-        content: "GoKubeDownscaler — Kubernetes Scheduled Autoscaler",
+        content: "Kube Downscaler — Kubernetes Scheduled Autoscaler",
       },
     },
     // Global Twitter Card type
