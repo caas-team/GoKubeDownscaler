@@ -4,7 +4,7 @@ metadata:
   name: {{ .Values.configMap.name }}
   namespace: {{ .Release.Namespace }}
 data:
-  EXCLUDE_NAMESPACES: '{{- join "," .Values.excludedNamespaces }}'
+  EXCLUDE_NAMESPACES: '{{ join "," (coalesce .Values.excludedNamespaces (list .Release.Namespace "kube-system")) }}'
   {{- if .Values.configMap.extraConfig }}
   {{- tpl .Values.configMap.extraConfig . | nindent 2 }}
   {{- end }}

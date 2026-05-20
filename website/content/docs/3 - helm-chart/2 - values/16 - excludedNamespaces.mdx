@@ -12,7 +12,11 @@ The `excludedNamespaces` value is a list of namespaces that will be excluded fro
 
 :::info
 
-The default value for `excludedNamespaces` is:
+When `excludedNamespaces` is empty, the chart defaults to excluding `kube-system` and the release namespace
+(the namespace where the chart is installed).
+When running the binary standalone (outside the chart), the built-in defaults are `kube-system` and `kube-downscaler`.
+
+Explicit default in `values.yaml`:
 
 ```yaml
 excludedNamespaces:
@@ -36,6 +40,14 @@ excludedNamespaces:
 ```
 
 Will result in all workloads in the namespaces `kube-downscaler`, `kube-system` and `namespace1` not being scaled down under any circumstance.
+
+:::
+
+:::note
+
+Setting `excludedNamespaces: []` does not clear the exclusion list.
+The chart substitutes `kube-system` and the release namespace as defaults via `coalesce`.
+To truly exclude nothing, set a regex that cannot match any namespace name, such as `["$^"]`.
 
 :::
 
