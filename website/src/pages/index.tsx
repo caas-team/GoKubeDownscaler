@@ -12,7 +12,6 @@ import Heading from "@theme/Heading";
 import Head from "@docusaurus/Head";
 
 function HomepageHeader() {
-  const { siteConfig } = useDocusaurusContext();
   return (
     <div className="relative overflow-x-hidden overflow-y-visible">
       <div className="transform bg-magenta -skew-y-6 xl:hidden h-full w-full absolute top-0 origin-top-left" />
@@ -39,7 +38,7 @@ function HomepageHeader() {
                 minHeight: "3.5rem",
               }}
             >
-              {siteConfig.title}
+              GoKubeDownscaler
             </Heading>
           </div>
           {/* Subtitle — Minimum height to prevent CLS */}
