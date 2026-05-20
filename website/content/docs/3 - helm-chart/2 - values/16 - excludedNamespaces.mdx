@@ -45,7 +45,8 @@ Will result in all workloads in the namespaces `kube-downscaler`, `kube-system` 
 :::note
 
 Setting `excludedNamespaces: []` does not clear the exclusion list.
-The chart substitutes `kube-system` and the release namespace as defaults via `coalesce`. To truly exclude nothing, set a regex that cannot match any namespace name, such as `["$^"]`.
+The chart substitutes `kube-system` and the release namespace as defaults via `coalesce`.
+To truly exclude nothing, set a regex that cannot match any namespace name, such as `["$^"]`.
 
 :::
 
