@@ -55,7 +55,7 @@ func (h *horizontalPodAutoscaler) setReplicas(replicas int32) error {
 
 	if replicas > h.Spec.MaxReplicas {
 		slog.Warn(
-			"target replicas greater than maxReplicas clamping to maxReplicas",
+			"target replicas greater than maxReplicas, clamping to maxReplicas",
 			"workload", h.Name,
 			"namespace", h.Namespace,
 			"targetReplicas", replicas,
