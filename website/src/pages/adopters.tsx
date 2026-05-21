@@ -16,7 +16,7 @@ function AdoptersHeader() {
                     <KubedownscalerSVG.default
                         className="animate-fade-down h-28 sm:h-36 md:h-44"
                         role="img"
-                        aria-label="Kube Downscaler Logo"
+                        aria-label="GoKubeDownscaler Logo"
                     />
                     <Heading
                         as="h1"
@@ -45,13 +45,13 @@ export default function Adopters(): JSX.Element {
     return (
         <Layout
             title="Adopters"
-            description="See which organizations use Kube Downscaler in production to reduce Kubernetes cloud costs. Are you an adopter? Let us know!"
+            description="See which organizations use GoKubeDownscaler in production to reduce Kubernetes cloud costs. Are you an adopter? Let us know!"
         >
             <Head>
-                <title>Adopters | Kube Downscaler</title>
+                <title>Adopters | GoKubeDownscaler</title>
                 <meta
                     name="description"
-                    content="See which organizations use Kube Downscaler in production to reduce Kubernetes cloud costs. Are you an adopter? Let us know!"
+                    content="See which organizations use GoKubeDownscaler in production to reduce Kubernetes cloud costs. Are you an adopter? Let us know!"
                 />
                 <meta
                     name="keywords"
@@ -61,22 +61,22 @@ export default function Adopters(): JSX.Element {
                 {/* Open Graph */}
                 <meta property="og:type" content="website" />
                 <meta property="og:url" content="https://kube-downscaler.io/adopters" />
-                <meta property="og:title" content="Adopters | Kube Downscaler" />
+                <meta property="og:title" content="Adopters | GoKubeDownscaler" />
                 <meta
                     property="og:description"
-                    content="See which organizations use Kube Downscaler in production to reduce Kubernetes cloud costs. Are you an adopter? Let us know!"
+                    content="See which organizations use GoKubeDownscaler in production to reduce Kubernetes cloud costs. Are you an adopter? Let us know!"
                 />
                 <meta property="og:image" content="https://kube-downscaler.io/img/social-preview.png" />
                 <meta property="og:image:width" content="1280" />
                 <meta property="og:image:height" content="640" />
-                <meta property="og:image:alt" content="Kube Downscaler — Kubernetes Scheduled Autoscaler" />
+                <meta property="og:image:alt" content="GoKubeDownscaler — Kubernetes Scheduled Autoscaler" />
 
                 {/* Twitter Card */}
                 <meta name="twitter:card" content="summary_large_image" />
-                <meta name="twitter:title" content="Adopters | Kube Downscaler" />
+                <meta name="twitter:title" content="Adopters | GoKubeDownscaler" />
                 <meta
                     name="twitter:description"
-                    content="See which organizations use Kube Downscaler in production to reduce Kubernetes cloud costs. Are you an adopter? Let us know!"
+                    content="See which organizations use GoKubeDownscaler in production to reduce Kubernetes cloud costs. Are you an adopter? Let us know!"
                 />
                 <meta name="twitter:image" content="https://kube-downscaler.io/img/social-preview.png" />
 

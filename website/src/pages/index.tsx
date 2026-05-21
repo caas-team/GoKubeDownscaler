@@ -12,6 +12,7 @@ import Heading from "@theme/Heading";
 import Head from "@docusaurus/Head";
 
 function HomepageHeader() {
+  const { siteConfig } = useDocusaurusContext();
   return (
     <div className="relative overflow-x-hidden overflow-y-visible">
       <div className="transform bg-magenta -skew-y-6 xl:hidden h-full w-full absolute top-0 origin-top-left" />
@@ -38,7 +39,7 @@ function HomepageHeader() {
                 minHeight: "3.5rem",
               }}
             >
-              GoKubeDownscaler
+              {siteConfig.title}
             </Heading>
           </div>
           {/* Subtitle — Minimum height to prevent CLS */}
@@ -77,7 +78,7 @@ export default function Home(): JSX.Element {
         <title>Kube Downscaler: Reduce Kubernetes Costs Off-Hours</title>
         <meta
           name="description"
-          content="Kube Downscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekends, holidays to reduce cloud costs."
+          content="GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekends, holidays to reduce cloud costs."
         />
         <meta
           name="keywords"
@@ -91,7 +92,7 @@ export default function Home(): JSX.Element {
         />
         <meta
           property="og:description"
-          content="Kube Downscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekends, holidays to reduce cloud costs."
+          content="GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekends, holidays to reduce cloud costs."
         />
         {/* Twitter — page-specific (twitter:card is global in docusaurus.config.ts; twitter:image injected by Docusaurus from themeConfig.image) */}
         <meta
@@ -100,7 +101,7 @@ export default function Home(): JSX.Element {
         />
         <meta
           name="twitter:description"
-          content="Kube Downscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekends, holidays to reduce cloud costs."
+          content="GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekends, holidays to reduce cloud costs."
         />
         <meta
           name="twitter:image"
