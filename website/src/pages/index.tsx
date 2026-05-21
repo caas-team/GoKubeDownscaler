@@ -26,7 +26,7 @@ function HomepageHeader() {
             <KubedownscalerSVG.default
               className="animate-fade-down h-full w-auto"
               role="img"
-              aria-label="Kube Downscaler Logo - Kubernetes Cost Optimization Tool"
+              aria-label="GoKubeDownscaler Logo - Kubernetes Cost Optimization Tool"
             />
           </div>
           {/* Name — Minimum height to prevent CLS */}
@@ -75,7 +75,7 @@ export default function Home(): JSX.Element {
   return (
     <Layout title={siteConfig.title} description={siteConfig.tagline}>
       <Head>
-        <title>Kube Downscaler: Reduce Kubernetes Costs Off-Hours</title>
+        <title>GoKubeDownscaler: Reduce Kubernetes Costs Off-Hours</title>
         <meta
           name="description"
           content="GoKubeDownscaler is a horizontal autoscaler that scales Kubernetes workloads down during off-hours like nights, weekends, holidays to reduce cloud costs."
@@ -88,7 +88,7 @@ export default function Home(): JSX.Element {
         <meta property="og:url" content="https://kube-downscaler.io/" />
         <meta
           property="og:title"
-          content="Kube Downscaler: Reduce Kubernetes Costs Off-Hours"
+          content="GoKubeDownscaler: Reduce Kubernetes Costs Off-Hours"
         />
         <meta
           property="og:description"
@@ -97,7 +97,7 @@ export default function Home(): JSX.Element {
         {/* Twitter — page-specific (twitter:card is global in docusaurus.config.ts; twitter:image injected by Docusaurus from themeConfig.image) */}
         <meta
           name="twitter:title"
-          content="Kube Downscaler: Reduce Kubernetes Costs Off-Hours"
+          content="GoKubeDownscaler: Reduce Kubernetes Costs Off-Hours"
         />
         <meta
           name="twitter:description"
