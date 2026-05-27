@@ -134,7 +134,7 @@ type Workload interface {
 }
 
 type Clientsets struct {
-	Kubernetes *kubernetes.Clientset
+	Kubernetes kubernetes.Interface
 	Keda       *keda.Clientset
 	Argo       *argo.Clientset
 	Zalando    *zalando.Clientset

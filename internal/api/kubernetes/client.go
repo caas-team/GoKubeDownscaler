@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -242,9 +243,29 @@ func (c client) DownscaleWorkload(
 	workload scalable.Workload,
 	ctx context.Context,
 ) (*metrics.SavedResources, error) {
+	original, copyErr := workload.Copy()
+	if copyErr != nil {
+		slog.Debug(
+			"failed to snapshot workload before scale down, will update unconditionally",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+			"error", copyErr,
+		)
+	}
+
 	savedResources, err := workload.ScaleDown(replicas)
 	if err != nil {
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
+	}
+
+	if original != nil && reflect.DeepEqual(original, workload) {
+		slog.Debug(
+			"workload already in desired scaled down state, skipping update",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+		)
+
+		return savedResources, nil
 	}
 
 	if c.dryRun {
@@ -269,9 +290,29 @@ func (c client) DownscaleWorkload(
 
 // UpscaleWorkload upscales the workload to the original replicas.
 func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
+	original, copyErr := workload.Copy()
+	if copyErr != nil {
+		slog.Debug(
+			"failed to snapshot workload before scale up, will update unconditionally",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+			"error", copyErr,
+		)
+	}
+
 	err := workload.ScaleUp()
 	if err != nil {
 		return fmt.Errorf("failed to set the workload into a scaled up state: %w", err)
+	}
+
+	if original != nil && reflect.DeepEqual(original, workload) {
+		slog.Debug(
+			"workload already in desired scaled up state, skipping update",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+		)
+
+		return nil
 	}
 
 	if c.dryRun {
