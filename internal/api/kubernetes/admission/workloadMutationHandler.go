@@ -504,7 +504,7 @@ func mutateWorkload(
 		), err
 	}
 
-	_, err = workloadCopy.ScaleDown(downscaleReplicas)
+	_, _, err = workloadCopy.ScaleDown(downscaleReplicas)
 	if err != nil {
 		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
 
