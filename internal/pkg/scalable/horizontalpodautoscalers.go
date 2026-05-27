@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -50,6 +51,21 @@ type horizontalPodAutoscaler struct {
 func (h *horizontalPodAutoscaler) setReplicas(replicas int32) error {
 	if replicas < 1 {
 		return errMinReplicasBoundsExceeded
+	}
+
+	if replicas > h.Spec.MaxReplicas {
+		slog.Warn(
+			"target replicas greater than maxReplicas, clamping to maxReplicas",
+			"workload", h.Name,
+			"namespace", h.Namespace,
+			"targetReplicas", replicas,
+			"actualMaxReplicas", h.Spec.MaxReplicas,
+		)
+
+		maxReplicas := h.Spec.MaxReplicas
+		h.Spec.MinReplicas = &maxReplicas
+
+		return nil
 	}
 
 	h.Spec.MinReplicas = &replicas

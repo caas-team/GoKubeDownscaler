@@ -44,6 +44,8 @@ Scales by setting the replica count to the [downscale replicas](ref:docs-values#
 
 Scales by setting the minReplicas to the [downscale replicas](ref:docs-values#downscale-replicas).
 If the [downscale replicas](ref:docs-values#downscale-replicas) are less than 1 it will throw an error.
+When restoring the original minReplicas value, if minReplicas happens to be greater than the current maxReplicas value,
+the downscaler will set minReplicas to the current maxReplicas value to avoid configuration errors.
 
 ### Jobs
 
