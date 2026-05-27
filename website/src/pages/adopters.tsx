@@ -61,7 +61,6 @@ export default function Adopters(): JSX.Element {
                 {/* Open Graph */}
                 <meta property="og:type" content="website" />
                 <meta property="og:url" content="https://kube-downscaler.io/adopters" />
-                <meta property="og:site_name" content="GoKubeDownscaler" />
                 <meta property="og:title" content="Adopters | GoKubeDownscaler" />
                 <meta
                     property="og:description"
