@@ -29,7 +29,7 @@
     "prism-react-renderer": "^2.4.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "ws": "^8.20.1"
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@docusaurus/eslint-plugin": "3.10.1",
@@ -45,7 +45,7 @@
     "tailwindcss": "^4.3.0",
     "tailwindcss-animated": "^2.1.0",
     "typescript": "~6.0.3",
-    "ws": "^8.20.1"
+    "ws": "^8.21.0"
   },
   "browserslist": {
     "production": [
