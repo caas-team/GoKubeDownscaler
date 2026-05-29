@@ -80,6 +80,15 @@ Create selector label for the webhook
 Create defined permissions for the webhook role
 */}}
 {{- define "go-kube-downscaler.webhookController.namespace.permissions" -}}
+# "create" cannot be restricted by resourceNames (the object does not exist yet, so the
+# API server ignores resourceNames-scoped rules for create). It must be a separate
+# unrestricted rule, scoped here only by the namespace of this Role.
+- apiGroups:
+    - ""
+  resources:
+    - secrets
+  verbs:
+    - create
 - apiGroups:
     - ""
   resources:
@@ -87,7 +96,6 @@ Create defined permissions for the webhook role
   resourceNames:
     - {{ include "go-kube-downscaler.fullname" . }}-webhook
   verbs:
-    - create
     - update
     - patch
     - get
