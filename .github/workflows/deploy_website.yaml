@@ -40,7 +40,7 @@ jobs:
 
     steps:
       - name: Delete deployment
-        uses: strumwolf/delete-deployment-environment@v3
+        uses: strumwolf/delete-deployment-environment@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           environment: github-pages
