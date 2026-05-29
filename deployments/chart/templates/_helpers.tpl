@@ -124,6 +124,16 @@ Create defined permissions for the webhook clusterrole
     - namespaces
   verbs:
     - get
+# "list"/"watch" cannot be restricted by resourceNames (the controller's reflector lists
+# the collection before watching), so they need an unrestricted rule. The name-scoped rule
+# below keeps the mutating verbs (get/patch/update) limited to our own webhook config.
+- apiGroups:
+    - admissionregistration.k8s.io
+  resources:
+    - mutatingwebhookconfigurations
+  verbs:
+    - list
+    - watch
 - apiGroups:
     - admissionregistration.k8s.io
   resources:
