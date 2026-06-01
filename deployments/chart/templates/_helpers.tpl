@@ -285,6 +285,16 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "postgresqls" }}
+- apiGroups:
+    - acid.zalan.do
+  resources:
+    - postgresqls
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -424,6 +434,17 @@ Create webhook resources
     - "UPDATE"
   resources:
     - autoscalingrunnersets
+{{ end -}}
+{{ if eq $resource "postgresqls" -}}
+- apiGroups:
+    - acid.zalan.do
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - postgresqls
 {{ end -}}
 {{ end -}}
 {{- end }}
@@ -590,6 +611,19 @@ resources include in annotationsCompliance
     - "UPDATE"
   resources:
     - autoscalingrunnersets
+{{ end -}}
+{{ if eq $resource "postgresqls" -}}
+- apiGroups:
+    - acid.zalan.do
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - postgresqls
 {{ end -}}
 {{ end -}}
 {{- end }}

@@ -19,6 +19,7 @@ import (
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	zalando "github.com/zalando-incubator/stackset-controller/pkg/clientset"
+	acidv1 "github.com/zalando/postgres-operator/pkg/apis/acid.zalan.do/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -148,6 +149,12 @@ func NewScheme() (*runtime.Scheme, error) {
 	err := actionsv1alpha1.AddToScheme(scheme)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add a scheme to generic client: %w", err)
+	}
+
+	// Zalando postgres-operator CRDs
+	err = acidv1.AddToScheme(scheme)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add acidv1 scheme to generic client: %w", err)
 	}
 
 	return scheme, nil
