@@ -17,6 +17,7 @@ const (
 	defaultKedaScaleTargetRefApiVersion = "apps/v1"
 	defaultKedaScaleTargetRefKind       = "Deployment"
 	kafkaStrimziGroup                   = "kafka.strimzi.io"
+	kafkaStrimziVersion                 = "v1"
 )
 
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads.

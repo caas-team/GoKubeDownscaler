@@ -18,7 +18,7 @@ import (
 
 //nolint:gochecknoglobals // package-level GVK required for unstructured client
 var kafkaBridgeGVK = schema.GroupVersionKind{
-	Group: kafkaStrimziGroup, Version: "v1", Kind: "KafkaBridge",
+	Group: kafkaStrimziGroup, Version: kafkaStrimziVersion, Kind: "KafkaBridge",
 }
 
 // kafkaBridge wraps an unstructured KafkaBridge CR. The unstructured approach
