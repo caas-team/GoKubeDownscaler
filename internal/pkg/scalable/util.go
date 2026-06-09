@@ -16,6 +16,7 @@ const (
 	annotationOriginalReplicas          = "downscaler/original-replicas"
 	defaultKedaScaleTargetRefApiVersion = "apps/v1"
 	defaultKedaScaleTargetRefKind       = "Deployment"
+	kafkaStrimziGroup                   = "kafka.strimzi.io"
 )
 
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads.
