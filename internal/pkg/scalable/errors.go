@@ -68,3 +68,23 @@ func newNilUnderlyingObjectError(workloadType string) error {
 func (o *NilUnderlyingObjectError) Error() string {
 	return o.workloadType + " not found"
 }
+
+type UnexpectedReplicasTypeError struct {
+	valType   string
+	kind      string
+	namespace string
+	name      string
+}
+
+func newUnexpectedReplicasTypeError(val any, kind, namespace, name string) error {
+	return &UnexpectedReplicasTypeError{
+		valType:   fmt.Sprintf("%T", val),
+		kind:      kind,
+		namespace: namespace,
+		name:      name,
+	}
+}
+
+func (e *UnexpectedReplicasTypeError) Error() string {
+	return fmt.Sprintf("unexpected type %s for spec.replicas on %s %s/%s", e.valType, e.kind, e.namespace, e.name)
+}

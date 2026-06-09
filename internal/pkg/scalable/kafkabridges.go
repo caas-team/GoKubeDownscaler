@@ -16,6 +16,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+//nolint:gochecknoglobals // package-level GVK required for unstructured client
 var kafkaBridgeGVK = schema.GroupVersionKind{
 	Group: "kafka.strimzi.io", Version: "v1", Kind: "KafkaBridge",
 }
@@ -82,7 +83,7 @@ func (k *kafkaBridge) getReplicas() (values.Replicas, error) {
 	case float64:
 		return values.AbsoluteReplicas(int32(v)), nil
 	default:
-		return nil, fmt.Errorf("unexpected type %T for spec.replicas on %s %s/%s", val, k.GetKind(), k.GetNamespace(), k.GetName())
+		return nil, newUnexpectedReplicasTypeError(val, k.GetKind(), k.GetNamespace(), k.GetName())
 	}
 }
 
