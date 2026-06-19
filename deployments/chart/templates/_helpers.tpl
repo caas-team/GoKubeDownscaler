@@ -143,7 +143,6 @@ Create defined permissions for the webhook clusterrole
     - webhook.kube-downscaler.k8s
   verbs:
     - get
-    - watch
     - patch
     - update
 {{- end }}
