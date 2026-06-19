@@ -25,7 +25,7 @@ repos:
       - id: go-deadcode
         args: ["--exclude-regex", "/website/node_modules/"]
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.8.3
+    rev: v3.8.4
     hooks:
       - id: prettier
         files: \.(md|mdx)$
