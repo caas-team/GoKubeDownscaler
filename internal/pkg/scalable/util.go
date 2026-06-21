@@ -294,12 +294,12 @@ func derefInt32(p *int32, def int32) int32 {
 // unstructuredReplicasToInt32 converts an unstructured replicas value to int32.
 // The Kubernetes JSON decoder returns numbers as float64; int64 is also accepted for robustness.
 // Returns false if the type is neither float64 nor int64.
-func unstructuredReplicasToInt32(val interface{}) (int32, bool) {
+func unstructuredReplicasToInt32(val any) (int32, bool) {
 	switch v := val.(type) {
 	case int64:
 		return int32(v), true //nolint:gosec // replica counts fit in int32
 	case float64:
-		return int32(v), true //nolint:gosec // replica counts fit in int32
+		return int32(v), true
 	default:
 		return 0, false
 	}
