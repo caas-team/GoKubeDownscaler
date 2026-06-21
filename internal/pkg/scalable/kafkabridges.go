@@ -66,7 +66,6 @@ func parseKafkaBridgeFromBytes(rawObject []byte) (Workload, error) {
 }
 
 // getReplicas gets the current amount of replicas of the resource.
-// JSON numbers from the Kubernetes API are decoded as float64, so both float64 and int64 are handled.
 func (k *kafkaBridge) getReplicas() (values.Replicas, error) {
 	val, found, err := unstructured.NestedFieldNoCopy(k.Object, "spec", "replicas")
 	if err != nil {
@@ -77,14 +76,12 @@ func (k *kafkaBridge) getReplicas() (values.Replicas, error) {
 		return nil, newNoReplicasError(k.GetKind(), k.GetName())
 	}
 
-	switch v := val.(type) {
-	case int64:
-		return values.AbsoluteReplicas(int32(v)), nil //nolint:gosec // temporary in-place conversion
-	case float64:
-		return values.AbsoluteReplicas(int32(v)), nil
-	default:
+	replicas, ok := unstructuredReplicasToInt32(val)
+	if !ok {
 		return nil, newUnexpectedReplicasTypeError(val, k.GetKind(), k.GetNamespace(), k.GetName())
 	}
+
+	return values.AbsoluteReplicas(replicas), nil
 }
 
 // setReplicas sets the amount of replicas on the resource.
