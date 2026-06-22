@@ -62,7 +62,7 @@ const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
     SvgLight: ZalandoSVG.default,
     SvgDark: ZalandoSVG.default,
     href: "https://opensource.zalando.com/",
-    supportedResources: ["Stacks"],
+    supportedResources: ["Stacks", "Postgresqls"],
   },
   {
     title: "GitHub Actions",

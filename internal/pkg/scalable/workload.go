@@ -36,6 +36,7 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"stacks":                   getStacks,
 		"prometheuses":             getPrometheuses,
 		"autoscalingrunnersets":    getAutoscalingRunnerSets,
+		"postgresqls":              getPostgresqls,
 	}
 
 	resourceFunc, exists := resourceFuncMap[resource]
@@ -71,6 +72,7 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"stack":                   parseStackFromBytes,
 		"prometheus":              parsePrometheusFromBytes,
 		"autoscalingrunnerset":    parseAutoscalingRunnerSetFromBytes,
+		"postgresql":              parsePostgresqlFromBytes,
 	}
 
 	parseFunc, exists := parseWorkloadFuncMap[resource]
