@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
 )
@@ -82,7 +83,10 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (*m
 		return savedResources, false, fmt.Errorf("failed to convert current replicas to int32: %w", err)
 	}
 
-	if currentReplicasInt32 <= downscaleReplicasInt32 {
+	// util.Undefined (-1) is a sentinel for "no current replicas set" (e.g. a ScaledObject without a
+	// paused-replicas annotation). It must not be treated as already being at or below the downtime target,
+	// otherwise such workloads would never be scaled down.
+	if currentReplicasInt32 != util.Undefined && currentReplicasInt32 <= downscaleReplicasInt32 {
 		var originalReplicasInt32 int32
 		var isOriginalReplicasSet bool
 
