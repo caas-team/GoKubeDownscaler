@@ -297,9 +297,20 @@ func derefInt32(p *int32, def int32) int32 {
 func unstructuredReplicasToInt32(val any) (int32, bool) {
 	switch v := val.(type) {
 	case int64:
-		return int32(v), true //nolint:gosec // replica counts fit in int32
-	case float64:
+		if v < math.MinInt32 || v > math.MaxInt32 {
+			return 0, false
+		}
 		return int32(v), true
+
+	case float64:
+		if v != math.Trunc(v) {
+			return 0, false
+		}
+		if v < math.MinInt32 || v > math.MaxInt32 {
+			return 0, false
+		}
+		return int32(v), true
+
 	default:
 		return 0, false
 	}
