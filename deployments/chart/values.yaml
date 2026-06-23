@@ -26,6 +26,7 @@ includedResources:
 #  - poddisruptionbudgets
 #  - prometheuses
 #  - autoscalingrunnersets
+#  - postgresqls
 
 fullnameOverride: ""
 nameOverride: ""

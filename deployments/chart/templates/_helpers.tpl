@@ -80,6 +80,18 @@ Create selector label for the webhook
 Create defined permissions for the webhook role
 */}}
 {{- define "go-kube-downscaler.webhookController.namespace.permissions" -}}
+# "create", "list" and "watch" cannot be restricted by resourceNames: create has no object
+# to name-match yet, and the controller's reflector lists+watches the collection before it
+# can filter by name. These must be unrestricted, scoped only by this Role's namespace. The
+# name-scoped rule keeps the verbs that act on our specific secret (get/update/patch).
+- apiGroups:
+    - ""
+  resources:
+    - secrets
+  verbs:
+    - create
+    - list
+    - watch
 - apiGroups:
     - ""
   resources:
@@ -87,12 +99,9 @@ Create defined permissions for the webhook role
   resourceNames:
     - {{ include "go-kube-downscaler.fullname" . }}-webhook
   verbs:
-    - create
+    - get
     - update
     - patch
-    - get
-    - watch
-    - list
 - apiGroups:
     - coordination.k8s.io
   resources:
@@ -116,6 +125,16 @@ Create defined permissions for the webhook clusterrole
     - namespaces
   verbs:
     - get
+# "list"/"watch" cannot be restricted by resourceNames (the controller's reflector lists
+# the collection before watching), so they need an unrestricted rule. The name-scoped rule
+# below keeps the mutating verbs (get/patch/update) limited to our own webhook config.
+- apiGroups:
+    - admissionregistration.k8s.io
+  resources:
+    - mutatingwebhookconfigurations
+  verbs:
+    - list
+    - watch
 - apiGroups:
     - admissionregistration.k8s.io
   resources:
@@ -124,7 +143,6 @@ Create defined permissions for the webhook clusterrole
     - webhook.kube-downscaler.k8s
   verbs:
     - get
-    - watch
     - patch
     - update
 {{- end }}
@@ -285,6 +303,16 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "postgresqls" }}
+- apiGroups:
+    - acid.zalan.do
+  resources:
+    - postgresqls
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -424,6 +452,17 @@ Create webhook resources
     - "UPDATE"
   resources:
     - autoscalingrunnersets
+{{ end -}}
+{{ if eq $resource "postgresqls" -}}
+- apiGroups:
+    - acid.zalan.do
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - postgresqls
 {{ end -}}
 {{ end -}}
 {{- end }}
@@ -590,6 +629,19 @@ resources include in annotationsCompliance
     - "UPDATE"
   resources:
     - autoscalingrunnersets
+{{ end -}}
+{{ if eq $resource "postgresqls" -}}
+- apiGroups:
+    - acid.zalan.do
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - postgresqls
 {{ end -}}
 {{ end -}}
 {{- end }}
