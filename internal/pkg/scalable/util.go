@@ -3,6 +3,7 @@ package scalable
 import (
 	"fmt"
 	"log/slog"
+	"math"
 	"slices"
 	"strings"
 
@@ -295,21 +296,24 @@ func derefInt32(p *int32, def int32) int32 {
 // The Kubernetes JSON decoder returns numbers as float64; int64 is also accepted for robustness.
 // Returns false if the type is neither float64 nor int64.
 func unstructuredReplicasToInt32(val any) (int32, bool) {
-	switch v := val.(type) {
+	switch value := val.(type) {
 	case int64:
-		if v < math.MinInt32 || v > math.MaxInt32 {
+		if value < math.MinInt32 || value > math.MaxInt32 {
 			return 0, false
 		}
-		return int32(v), true
+
+		return int32(value), true
 
 	case float64:
-		if v != math.Trunc(v) {
+		if value != math.Trunc(value) {
 			return 0, false
 		}
-		if v < math.MinInt32 || v > math.MaxInt32 {
+
+		if value < math.MinInt32 || value > math.MaxInt32 {
 			return 0, false
 		}
-		return int32(v), true
+
+		return int32(value), true
 
 	default:
 		return 0, false
