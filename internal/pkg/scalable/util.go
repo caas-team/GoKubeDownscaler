@@ -3,6 +3,7 @@ package scalable
 import (
 	"fmt"
 	"log/slog"
+	"math"
 	"slices"
 	"strings"
 
@@ -16,6 +17,8 @@ const (
 	annotationOriginalReplicas          = "downscaler/original-replicas"
 	defaultKedaScaleTargetRefApiVersion = "apps/v1"
 	defaultKedaScaleTargetRefKind       = "Deployment"
+	kafkaStrimziGroup                   = "kafka.strimzi.io"
+	kafkaStrimziVersion                 = "v1"
 )
 
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads.
@@ -287,4 +290,32 @@ func derefInt32(p *int32, def int32) int32 {
 	}
 
 	return def
+}
+
+// unstructuredReplicasToInt32 converts an unstructured replicas value to int32.
+// The Kubernetes JSON decoder returns numbers as float64; int64 is also accepted for robustness.
+// Returns false if the type is neither float64 nor int64.
+func unstructuredReplicasToInt32(val any) (int32, bool) {
+	switch value := val.(type) {
+	case int64:
+		if value < math.MinInt32 || value > math.MaxInt32 {
+			return 0, false
+		}
+
+		return int32(value), true
+
+	case float64:
+		if value != math.Trunc(value) {
+			return 0, false
+		}
+
+		if value < math.MinInt32 || value > math.MaxInt32 {
+			return 0, false
+		}
+
+		return int32(value), true
+
+	default:
+		return 0, false
+	}
 }
