@@ -37,6 +37,9 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"prometheuses":             getPrometheuses,
 		"autoscalingrunnersets":    getAutoscalingRunnerSets,
 		"postgresqls":              getPostgresqls,
+		"kafkaconnects":            getKafkaConnects,
+		"kafkamirrormaker2s":       getKafkaMirrorMaker2s,
+		"kafkabridges":             getKafkaBridges,
 	}
 
 	resourceFunc, exists := resourceFuncMap[resource]
@@ -73,6 +76,9 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"prometheus":              parsePrometheusFromBytes,
 		"autoscalingrunnerset":    parseAutoscalingRunnerSetFromBytes,
 		"postgresql":              parsePostgresqlFromBytes,
+		"kafkaconnect":            parseKafkaConnectFromBytes,
+		"kafkamirrormaker2":       parseKafkaMirrorMaker2FromBytes,
+		"kafkabridge":             parseKafkaBridgeFromBytes,
 	}
 
 	parseFunc, exists := parseWorkloadFuncMap[resource]
