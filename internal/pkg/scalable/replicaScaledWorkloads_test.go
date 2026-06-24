@@ -4,7 +4,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -223,6 +225,78 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 
 			assert.InDelta(t, test.wantSavedCPU, savedResources.TotalCPU(), 0.0001)    // CPU tolerance
 			assert.InDelta(t, test.wantSavedMemory, savedResources.TotalMemory(), 1e5) // Memory tolerance
+		})
+	}
+}
+
+// TestReplicaScaledWorkload_ScaleDown_ScaledObjectUndefinedReplicas ensures that a ScaledObject without a
+// paused-replicas annotation (getReplicas reports the util.Undefined sentinel) is still scaled down, instead
+// of being skipped as if it were already at or below the downtime target. It also covers the scale-up
+// round-trip: the undefined sentinel must be recorded as the original replicas and restored cleanly.
+func TestReplicaScaledWorkload_ScaleDown_ScaledObjectUndefinedReplicas(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name             string
+		downtimeReplicas values.Replicas
+		wantReplicas     values.Replicas
+	}{
+		{
+			name:             "downtime replicas 1",
+			downtimeReplicas: values.AbsoluteReplicas(1),
+			wantReplicas:     values.AbsoluteReplicas(1),
+		},
+		{
+			// the undefined sentinel (-1) must not be treated as already at/below the target,
+			// regardless of the configured downtime-replicas
+			name:             "downtime replicas 0",
+			downtimeReplicas: values.AbsoluteReplicas(0),
+			wantReplicas:     values.AbsoluteReplicas(0),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			workload := &replicaScaledWorkload{&scaledObject{&kedav1alpha1.ScaledObject{}}}
+
+			// no paused-replicas annotation means the current replicas are undefined
+			current, err := workload.getReplicas()
+			require.NoError(t, err)
+			currentInt32, err := current.AsInt32()
+			require.NoError(t, err)
+			require.Equal(t, int32(util.Undefined), currentInt32)
+
+			// scale down: the workload must be paused and the undefined sentinel recorded as the original replicas
+			_, updateNeeded, err := workload.ScaleDown(test.downtimeReplicas)
+			require.NoError(t, err)
+			assert.True(t, updateNeeded, "scaled object with undefined replicas should be scaled down")
+
+			gotReplicas, err := workload.getReplicas()
+			require.NoError(t, err)
+			assert.Equal(t, test.wantReplicas, gotReplicas)
+
+			gotOriginal, err := getOriginalReplicas(workload)
+			require.NoError(t, err)
+			assert.Equal(t, values.AbsoluteReplicas(util.Undefined), gotOriginal,
+				"the undefined sentinel must be recorded as the original replicas")
+
+			// scale up: the original (undefined) replicas must be restored, removing the paused-replicas annotation
+			updateNeeded, err = workload.ScaleUp()
+			require.NoError(t, err)
+			assert.True(t, updateNeeded, "scaled object should be scaled back up")
+
+			restored, err := workload.getReplicas()
+			require.NoError(t, err)
+			restoredInt32, err := restored.AsInt32()
+			require.NoError(t, err)
+			assert.Equal(t, int32(util.Undefined), restoredInt32,
+				"scale up must restore the undefined state (no paused-replicas annotation)")
+
+			_, hasOriginal := getOriginalReplicas(workload)
+			var unsetErr *OriginalReplicasUnsetError
+			assert.ErrorAs(t, hasOriginal, &unsetErr, "original-replicas annotation must be removed after scale up")
 		})
 	}
 }
