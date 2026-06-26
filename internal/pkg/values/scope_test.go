@@ -789,6 +789,17 @@ func TestScopes_GetExcluded(t *testing.T) {
 			},
 			wantExcluded: false,
 		},
+		{
+			name: "workload past exclude-until ignored, namespace future exclude-until applies",
+			scopes: Scopes{
+				&Scope{ExcludeUntil: nil},
+				&Scope{ExcludeUntil: &timeUntilTrue},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+			},
+			wantExcluded: true,
+		},
 	}
 
 	for _, test := range tests {
