@@ -89,32 +89,32 @@ type ReplicasValue struct {
 }
 
 func (r *ReplicasValue) Set(value string) error {
-	absoluteReplica, ok, err := parseAbsoluteReplicas(value)
-	if err != nil && !errors.Is(err, ErrReplicaFormatNotMatched) {
+	absoluteReplica, absoluteMatched, err := parseAbsoluteReplicas(value)
+	if isUnexpectedReplicaParseError(err) {
 		return err
 	}
 
-	if ok {
+	if absoluteMatched {
 		*r.Replicas = absoluteReplica
 		return nil
 	}
 
-	percentageReplica, ok, err := parsePercentageReplicas(value)
-	if err != nil && !errors.Is(err, ErrReplicaFormatNotMatched) {
+	percentageReplica, percentageMatched, err := parsePercentageReplicas(value)
+	if isUnexpectedReplicaParseError(err) {
 		return err
 	}
 
-	if ok {
+	if percentageMatched {
 		*r.Replicas = percentageReplica
 		return nil
 	}
 
-	booleanReplica, ok, err := parseBooleanReplicas(value)
-	if err != nil && !errors.Is(err, ErrReplicaFormatNotMatched) {
+	booleanReplica, booleanMatched, err := parseBooleanReplicas(value)
+	if isUnexpectedReplicaParseError(err) {
 		return err
 	}
 
-	if ok {
+	if booleanMatched {
 		*r.Replicas = booleanReplica
 		return nil
 	}
@@ -125,6 +125,11 @@ func (r *ReplicasValue) Set(value string) error {
 	}
 
 	return newInvalidReplicaTypeError("invalid replica value", value)
+}
+
+// isUnexpectedReplicaParseError filters out parser no-match sentinel errors so Set can continue trying the next parser.
+func isUnexpectedReplicaParseError(err error) bool {
+	return err != nil && !errors.Is(err, ErrReplicaFormatNotMatched)
 }
 
 // parseAbsoluteReplicas tries to parse value as an AbsoluteReplicas.
