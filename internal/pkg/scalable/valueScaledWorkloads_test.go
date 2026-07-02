@@ -58,6 +58,7 @@ func TestValueScaledWorkload_ScaleDown(t *testing.T) {
 		originalReplicas     values.Replicas
 		wantOriginalReplicas values.Replicas
 		wantTargetState      string
+		wantUpdateNeeded     bool
 	}{
 		{
 			name:                 "service scale down from LoadBalancer",
@@ -66,6 +67,7 @@ func TestValueScaledWorkload_ScaleDown(t *testing.T) {
 			originalReplicas:     nil,
 			wantOriginalReplicas: values.StatusReplicas(corev1.ServiceTypeLoadBalancer),
 			wantTargetState:      string(corev1.ServiceTypeClusterIP),
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "ingress scale down from nginx",
@@ -74,6 +76,7 @@ func TestValueScaledWorkload_ScaleDown(t *testing.T) {
 			originalReplicas:     nil,
 			wantOriginalReplicas: values.StatusReplicas("nginx"),
 			wantTargetState:      downscalerIngressClassConst,
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "gateway scale down from nginx",
@@ -82,6 +85,7 @@ func TestValueScaledWorkload_ScaleDown(t *testing.T) {
 			originalReplicas:     nil,
 			wantOriginalReplicas: values.StatusReplicas("nginx"),
 			wantTargetState:      downscalerGatewayClassConst,
+			wantUpdateNeeded:     true,
 		},
 		{
 			name:                 "service already at target ClusterIP",
@@ -90,6 +94,7 @@ func TestValueScaledWorkload_ScaleDown(t *testing.T) {
 			originalReplicas:     nil,
 			wantOriginalReplicas: nil,
 			wantTargetState:      string(corev1.ServiceTypeClusterIP),
+			wantUpdateNeeded:     false,
 		},
 		{
 			name:                 "ingress already at target class",
@@ -98,6 +103,7 @@ func TestValueScaledWorkload_ScaleDown(t *testing.T) {
 			originalReplicas:     nil,
 			wantOriginalReplicas: nil,
 			wantTargetState:      downscalerIngressClassConst,
+			wantUpdateNeeded:     false,
 		},
 		{
 			name:                 "gateway already at target class",
@@ -106,6 +112,7 @@ func TestValueScaledWorkload_ScaleDown(t *testing.T) {
 			originalReplicas:     nil,
 			wantOriginalReplicas: nil,
 			wantTargetState:      downscalerGatewayClassConst,
+			wantUpdateNeeded:     false,
 		},
 	}
 
@@ -121,9 +128,10 @@ func TestValueScaledWorkload_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, vsw)
 			}
 
-			saved, err := vsw.ScaleDown(values.AbsoluteReplicas(0))
+			saved, updateNeeded, err := vsw.ScaleDown(values.AbsoluteReplicas(0))
 			require.NoError(t, err)
 			require.NotNil(t, saved)
+			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
 
 			switch test.kind {
 			case ServiceKind:
@@ -196,7 +204,7 @@ func TestValueScaledWorkload_ScaleUp(t *testing.T) {
 			vsw := &valueScaledWorkload{w}
 			setOriginalReplicas(test.originalReplicas, vsw)
 
-			err := vsw.ScaleUp()
+			_, err := vsw.ScaleUp()
 			require.NoError(t, err)
 
 			switch test.kind {
