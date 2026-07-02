@@ -129,17 +129,16 @@ func (r *ReplicasValue) Set(value string) error {
 // parseAbsoluteReplicas tries to parse value as an AbsoluteReplicas.
 // Returns (replica, true, nil) on success, (nil, true, err) on validation error, (nil, false, nil) if not an integer.
 func parseAbsoluteReplicas(value string) (AbsoluteReplicas, bool, error) {
-	parsedValue, parseErr := strconv.ParseInt(value, 10, 32)
-	if parseErr != nil {
-		return 0, false, nil
+	if parsedValue, err := strconv.ParseInt(value, 10, 32); err == nil {
+		replica := AbsoluteReplicas(int32(parsedValue))
+		if int(replica) < 0 && int(replica) != util.Undefined {
+			return 0, true, newInvalidReplicaTypeError("downscale replicas has to be a positive integer", value)
+		}
+
+		return replica, true, nil
 	}
 
-	replica := AbsoluteReplicas(int32(parsedValue))
-	if int(replica) < 0 && int(replica) != util.Undefined {
-		return 0, true, newInvalidReplicaTypeError("downscale replicas has to be a positive integer", value)
-	}
-
-	return replica, true, nil
+	return 0, false, nil
 }
 
 // parsePercentageReplicas tries to parse value as a PercentageReplicas.
@@ -149,16 +148,15 @@ func parsePercentageReplicas(value string) (PercentageReplicas, bool, error) {
 		return 0, false, nil
 	}
 
-	percentageValue, parseErr := strconv.Atoi(strings.TrimSuffix(value, "%"))
-	if parseErr != nil {
-		return 0, false, nil
+	if percentageValue, err := strconv.Atoi(strings.TrimSuffix(value, "%")); err == nil {
+		if percentageValue < 0 || percentageValue > 100 {
+			return 0, true, newInvalidReplicaTypeError("downscale replicas must be a percentage between 0% and 100%", value)
+		}
+
+		return PercentageReplicas(percentageValue), true, nil
 	}
 
-	if percentageValue < 0 || percentageValue > 100 {
-		return 0, true, newInvalidReplicaTypeError("downscale replicas must be a percentage between 0% and 100%", value)
-	}
-
-	return PercentageReplicas(percentageValue), true, nil
+	return 0, false, nil
 }
 
 // parseBooleanReplicas tries to parse value as a BooleanReplicas.
