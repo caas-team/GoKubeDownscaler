@@ -1,6 +1,7 @@
 package values
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -88,33 +89,33 @@ type ReplicasValue struct {
 }
 
 func (r *ReplicasValue) Set(value string) error {
-	if replica, ok, err := parseAbsoluteReplicas(value); ok {
-		if err != nil {
-			return err
-		}
+	absoluteReplica, ok, err := parseAbsoluteReplicas(value)
+	if err != nil && !errors.Is(err, ErrReplicaFormatNotMatched) {
+		return err
+	}
 
-		*r.Replicas = replica
-
+	if ok {
+		*r.Replicas = absoluteReplica
 		return nil
 	}
 
-	if replica, ok, err := parsePercentageReplicas(value); ok {
-		if err != nil {
-			return err
-		}
+	percentageReplica, ok, err := parsePercentageReplicas(value)
+	if err != nil && !errors.Is(err, ErrReplicaFormatNotMatched) {
+		return err
+	}
 
-		*r.Replicas = replica
-
+	if ok {
+		*r.Replicas = percentageReplica
 		return nil
 	}
 
-	if replica, ok, err := parseBooleanReplicas(value); ok {
-		if err != nil {
-			return err
-		}
+	booleanReplica, ok, err := parseBooleanReplicas(value)
+	if err != nil && !errors.Is(err, ErrReplicaFormatNotMatched) {
+		return err
+	}
 
-		*r.Replicas = replica
-
+	if ok {
+		*r.Replicas = booleanReplica
 		return nil
 	}
 
@@ -127,7 +128,7 @@ func (r *ReplicasValue) Set(value string) error {
 }
 
 // parseAbsoluteReplicas tries to parse value as an AbsoluteReplicas.
-// Returns (replica, true, nil) on success, (nil, true, err) on validation error, (nil, false, nil) if not an integer.
+// Returns (replica, true, nil) on success, (0, true, err) on validation error, (0, false, ErrReplicaFormatNotMatched) if not an integer.
 func parseAbsoluteReplicas(value string) (AbsoluteReplicas, bool, error) {
 	if parsedValue, err := strconv.ParseInt(value, 10, 32); err == nil {
 		replica := AbsoluteReplicas(int32(parsedValue))
@@ -138,14 +139,14 @@ func parseAbsoluteReplicas(value string) (AbsoluteReplicas, bool, error) {
 		return replica, true, nil
 	}
 
-	return 0, false, nil
+	return 0, false, newReplicaFormatNotMatchedError()
 }
 
 // parsePercentageReplicas tries to parse value as a PercentageReplicas.
-// Returns (replica, true, nil) on success, (nil, true, err) on validation error, (nil, false, nil) if not a percentage.
+// Returns (replica, true, nil) on success, (0, true, err) on validation error, (0, false, ErrReplicaFormatNotMatched) if not a percentage.
 func parsePercentageReplicas(value string) (PercentageReplicas, bool, error) {
 	if !strings.HasSuffix(value, "%") {
-		return 0, false, nil
+		return 0, false, newReplicaFormatNotMatchedError()
 	}
 
 	if percentageValue, err := strconv.Atoi(strings.TrimSuffix(value, "%")); err == nil {
@@ -156,14 +157,14 @@ func parsePercentageReplicas(value string) (PercentageReplicas, bool, error) {
 		return PercentageReplicas(percentageValue), true, nil
 	}
 
-	return 0, false, nil
+	return 0, false, newReplicaFormatNotMatchedError()
 }
 
 // parseBooleanReplicas tries to parse value as a BooleanReplicas.
-// Returns (replica, true, nil) on success, (nil, true, err) on parse error, (nil, false, nil) if not a boolean.
+// Returns (replica, true, nil) on success, (false, true, err) on parse error, (false, false, ErrReplicaFormatNotMatched) if not a boolean.
 func parseBooleanReplicas(value string) (BooleanReplicas, bool, error) {
 	if !isBooleanString(value) {
-		return false, false, nil
+		return false, false, newReplicaFormatNotMatchedError()
 	}
 
 	parsed, err := strconv.ParseBool(strings.ToLower(strings.TrimSpace(value)))

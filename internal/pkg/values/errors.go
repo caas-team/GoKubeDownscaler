@@ -79,3 +79,17 @@ func newUndefinedDefaultError(reason string) error {
 func (u *UndefinedDefaultError) Error() string {
 	return fmt.Sprintf("undefined default value error: %q", u.reason)
 }
+
+type ReplicaFormatNotMatchedError struct {
+	reason string
+}
+
+var ErrReplicaFormatNotMatched = &ReplicaFormatNotMatchedError{reason: "replica format not matched"}
+
+func newReplicaFormatNotMatchedError() error {
+	return ErrReplicaFormatNotMatched
+}
+
+func (r *ReplicaFormatNotMatchedError) Error() string {
+	return fmt.Sprintf("replica format not matched error: %q", r.reason)
+}
