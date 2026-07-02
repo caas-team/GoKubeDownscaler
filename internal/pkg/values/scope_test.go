@@ -792,13 +792,24 @@ func TestScopes_GetExcluded(t *testing.T) {
 		{
 			name: "workload past exclude-until ignored, namespace future exclude-until applies",
 			scopes: Scopes{
-				&Scope{ExcludeUntil: nil},
+				&Scope{ExcludeUntil: &timeUntilFalse},
 				&Scope{ExcludeUntil: &timeUntilTrue},
 				&Scope{},
 				&Scope{},
 				&Scope{},
 			},
 			wantExcluded: true,
+		},
+		{
+			name: "exclude until past, not excluded",
+			scopes: Scopes{
+				&Scope{ExcludeUntil: &timeUntilFalse},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+				&Scope{},
+			},
+			wantExcluded: false,
 		},
 	}
 
