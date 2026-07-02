@@ -69,6 +69,10 @@ func (s BooleanReplicas) AsIntStr() intstr.IntOrString {
 
 type StatusReplicas string
 
+func (s StatusReplicas) AsBool() (bool, error) {
+	return false, newInvalidReplicaTypeError("status replicas cannot be converted to bool", s.String())
+}
+
 func (s StatusReplicas) String() string { return string(s) }
 
 func (s StatusReplicas) AsInt32() (int32, error) {
@@ -167,11 +171,6 @@ func isAlpha(s string) bool {
 	}
 
 	return true
-}
-
-func isBooleanString(s string) bool {
-	lower := strings.ToLower(s)
-	return lower == "true" || lower == "false"
 }
 
 func (r *ReplicasValue) String() string {
