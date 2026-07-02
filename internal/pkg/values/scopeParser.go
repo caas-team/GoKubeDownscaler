@@ -204,7 +204,9 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 			return err
 		}
 
-		s.ExcludeUntil = &excludeUntil
+		if excludeUntil.After(time.Now()) {
+			s.ExcludeUntil = &excludeUntil
+		}
 	}
 
 	if forceUptime, ok := annotations[annotationForceUptime]; ok {
