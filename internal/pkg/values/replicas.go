@@ -88,60 +88,92 @@ type ReplicasValue struct {
 }
 
 func (r *ReplicasValue) Set(value string) error {
-	if v, err := strconv.ParseInt(value, 10, 32); err == nil {
-		replica := AbsoluteReplicas(int32(v))
-
-		if int(replica) < 0 && int(replica) != util.Undefined {
-			return newInvalidReplicaTypeError(
-				"downscale replicas has to be a positive integer",
-				value,
-			)
-		}
-
-		*r.Replicas = replica
-
-		return nil
-	}
-
-	if strings.HasSuffix(value, "%") {
-		trimmed := strings.TrimSuffix(value, "%")
-		if p, err := strconv.Atoi(trimmed); err == nil {
-			replica := PercentageReplicas(p)
-
-			if p < 0 || p > 100 {
-				return newInvalidReplicaTypeError(
-					"downscale replicas must be a percentage between 0% and 100%",
-					value,
-				)
-			}
-
-			*r.Replicas = replica
-
-			return nil
-		}
-	}
-
-	if isBooleanString(value) {
-		valueLower := strings.ToLower(strings.TrimSpace(value))
-
-		parsedBooleanValue, err := strconv.ParseBool(valueLower)
+	if replica, ok, err := parseAbsoluteReplicas(value); ok {
 		if err != nil {
-			return newInvalidReplicaTypeError("invalid boolean replica value", value)
+			return err
 		}
-
-		replica := BooleanReplicas(parsedBooleanValue)
 
 		*r.Replicas = replica
 
 		return nil
 	}
 
-	if isAlpha(value) && !isBooleanString(value) {
+	if replica, ok, err := parsePercentageReplicas(value); ok {
+		if err != nil {
+			return err
+		}
+
+		*r.Replicas = replica
+
+		return nil
+	}
+
+	if replica, ok, err := parseBooleanReplicas(value); ok {
+		if err != nil {
+			return err
+		}
+
+		*r.Replicas = replica
+
+		return nil
+	}
+
+	if isAlpha(value) {
 		*r.Replicas = StatusReplicas(value)
 		return nil
 	}
 
 	return newInvalidReplicaTypeError("invalid replica value", value)
+}
+
+// parseAbsoluteReplicas tries to parse value as an AbsoluteReplicas.
+// Returns (replica, true, nil) on success, (nil, true, err) on validation error, (nil, false, nil) if not an integer.
+func parseAbsoluteReplicas(value string) (AbsoluteReplicas, bool, error) {
+	v, err := strconv.ParseInt(value, 10, 32)
+	if err != nil {
+		return 0, false, nil
+	}
+
+	replica := AbsoluteReplicas(int32(v))
+	if int(replica) < 0 && int(replica) != util.Undefined {
+		return 0, true, newInvalidReplicaTypeError("downscale replicas has to be a positive integer", value)
+	}
+
+	return replica, true, nil
+}
+
+// parsePercentageReplicas tries to parse value as a PercentageReplicas.
+// Returns (replica, true, nil) on success, (nil, true, err) on validation error, (nil, false, nil) if not a percentage.
+func parsePercentageReplicas(value string) (PercentageReplicas, bool, error) {
+	if !strings.HasSuffix(value, "%") {
+		return 0, false, nil
+	}
+
+	p, err := strconv.Atoi(strings.TrimSuffix(value, "%"))
+	if err != nil {
+		return 0, false, nil
+	}
+
+	if p < 0 || p > 100 {
+		return 0, true, newInvalidReplicaTypeError("downscale replicas must be a percentage between 0% and 100%", value)
+	}
+
+	return PercentageReplicas(p), true, nil
+}
+
+// parseBooleanReplicas tries to parse value as a BooleanReplicas.
+// Returns (replica, true, nil) on success, (nil, true, err) on parse error, (nil, false, nil) if not a boolean.
+func parseBooleanReplicas(value string) (BooleanReplicas, bool, error) {
+	if !isBooleanString(value) {
+		return false, false, nil
+	}
+
+	parsed, err := strconv.ParseBool(strings.ToLower(strings.TrimSpace(value)))
+	if err != nil {
+		return false, true, newInvalidReplicaTypeError("invalid boolean replica value", value)
+	}
+
+	return BooleanReplicas(parsed), true, nil
 }
 
 // NewReplicasFromIntOrStr parses a intstr.IntOrString to the correct specific replica type.
