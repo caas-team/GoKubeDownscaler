@@ -1,0 +1,39 @@
+
+{{- /*
+Print per-resource warnings when installing with constrained namespaces and the chart is configured to deploy
+cluster-scoped classes (GatewayClass / IngressClass). This prints a warning only for resources that are both
+included in `includedResources` and explicitly enabled via the `deploy*` flags in values.
+*/ -}}
+
+{{- $hasConstrained := not (empty .Values.constrainedNamespaces) -}}
+{{- $includedJson := toJson .Values.includedResources | default "" -}}
+
+{{- /* GatewayClass warning */ -}}
+{{- if and $hasConstrained (hasKey .Values "deployExtraResources") (.Values.deployExtraResources.gatewayClass) (contains "gateways" $includedJson) -}}
+WARNING: You have installed the chart in constrained mode (non-empty `constrainedNamespaces`) and `includedResources`
+contains "gateways", and you enabled `deployExtraResources.gatewayClass: true`. The chart will attempt to create a cluster-scoped
+`GatewayClass` resource.
+
+If the identity performing the installation does not have permission to create cluster-scoped resources, the GatewayClass
+creation may fail. To avoid this during installs where you cannot or do not want to grant cluster-wide permissions,
+set `deployExtraResources.gatewayClass: false` in your values to skip deploying the GatewayClass, or ask a cluster administrator to
+create the GatewayClass for you.
+
+See: https://caas-team.github.io/GoKubeDownscaler/docs/helm-chart/permissions
+
+{{- end -}}
+
+{{- /* IngressClass warning */ -}}
+{{- if and $hasConstrained (hasKey .Values "deployExtraResources") (.Values.deployExtraResources.ingressClass) (contains "ingresses" $includedJson) -}}
+WARNING: You have installed the chart in constrained mode (non-empty `constrainedNamespaces`) and `includedResources`
+contains "ingresses", and you enabled `deployExtraResources.ingressClass: true`. The chart will attempt to create a cluster-scoped
+`IngressClass` resource.
+
+If the identity performing the installation does not have permission to create cluster-scoped resources, the IngressClass
+creation may fail. To avoid this during installs where you cannot or do not want to grant cluster-wide permissions,
+set `deployExtraResources.ingressClass: false` in your values to skip deploying the IngressClass, or ask a cluster administrator to
+create the IngressClass for you.
+
+See: https://caas-team.github.io/GoKubeDownscaler/docs/helm-chart/permissions
+
+{{- end -}}

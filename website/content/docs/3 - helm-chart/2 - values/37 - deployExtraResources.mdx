@@ -1,0 +1,40 @@
+---
+title: deployExtraResources
+id: deployExtraResources
+globalReference: docs-helm-deploy-extra-resources
+description: How to deploy extra resources with the GoKubeDownscaler Helm Chart
+keywords: [deployExtraResources]
+---
+
+# deployExtraResources
+
+The `deployExtraResources` value allows you to deploy additional resources with the GoKubeDownscaler Helm Chart.
+These resources may be necessary for the GoKubeDownscaler to work properly in some environments,
+but they are not required in most cases.
+
+For example if you are using the GoKubeDownscaler in an environment where you need to downscale Ingresses or Gateways
+there may be external controllers (e.g. such as the AWS Load Balancer Controller) that require the presence of a certain
+`IngressClass` or a `GatewayClass` to work properly.
+The GoKubeDownscaler Helm Chart can deploy these resources for you if you set the corresponding fields to `true`.
+
+The following fields could be customized:
+
+- `gatewayClass` will deploy a `GatewayClass` named "kube-downscaler-gateway-class"
+- `ingressClass` will deploy an `IngressClass` named "kube-downscaler-ingress-class"
+
+If you do not have the permission to create these cluster-wide resources you can refer to the [permissions documentation](ref:docs-helm-permissions#special-permissions-for-gatewayclass-and-ingressclass)
+how can you set up the necessary permissions for the GoKubeDownscaler to create these resources.
+
+The default values for `deployExtraResources` are:
+
+:::info
+
+```yaml
+deployExtraResources:
+  gatewayClass: false
+  ingressClass: false
+```
+
+User must take care of configuring this object
+
+:::

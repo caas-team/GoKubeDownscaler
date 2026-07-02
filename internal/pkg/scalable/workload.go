@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 )
 
 // getResourceFunc is a function that gets a specific resource as a Workload.
@@ -36,6 +37,11 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"stacks":                   getStacks,
 		"prometheuses":             getPrometheuses,
 		"autoscalingrunnersets":    getAutoscalingRunnerSets,
+		"services":                 getServices,
+		"awsnlbservices":           getAWSNLBServices,
+		"awselbservices":           getAWSELBServices,
+		"ingresses":                getIngresses,
+		"gateways":                 getGateways,
 		"postgresqls":              getPostgresqls,
 		"kafkaconnects":            getKafkaConnects,
 		"kafkamirrormaker2s":       getKafkaMirrorMaker2s,
@@ -75,6 +81,11 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"stack":                   parseStackFromBytes,
 		"prometheus":              parsePrometheusFromBytes,
 		"autoscalingrunnerset":    parseAutoscalingRunnerSetFromBytes,
+		"services":                parseServiceFromBytes,
+		"awsnlbservice":           parseServiceFromBytes,
+		"awselbservice":           parseServiceFromBytes,
+		"ingresses":               parseIngressesFromBytes,
+		"gateways":                parseGatewaysFromBytes,
 		"postgresql":              parsePostgresqlFromBytes,
 		"kafkaconnect":            parseKafkaConnectFromBytes,
 		"kafkamirrormaker2":       parseKafkaMirrorMaker2FromBytes,
@@ -147,5 +158,6 @@ type Clientsets struct {
 	Argo       *argo.Clientset
 	Zalando    *zalando.Clientset
 	Monitoring *monitoring.Clientset
+	Gateway    *gatewayapi.Clientset
 	Client     ctrlclient.Client
 }
