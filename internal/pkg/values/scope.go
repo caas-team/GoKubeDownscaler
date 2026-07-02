@@ -320,7 +320,7 @@ func (s Scopes) GetExcluded(scopes Scopes) bool {
 			return true
 		}
 
-		break
+		// ExcludeUntil is expired, continue checking the next scope
 	}
 
 	return false
