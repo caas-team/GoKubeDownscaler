@@ -32,8 +32,8 @@ func getGateways(namespace string, clientsets *Clientsets, ctx context.Context) 
 	return results, nil
 }
 
-// parseIngressFromBytes parses the admission review and returns the gateway wrapped in a Workload.
-func parseGatewaysFromBytes(rawObject []byte) (Workload, error) {
+// parseGatewayFromBytes parses the admission review and returns the gateway wrapped in a Workload.
+func parseGatewayFromBytes(rawObject []byte) (Workload, error) {
 	var gtw gatewayv1.Gateway
 	if err := json.Unmarshal(rawObject, &gtw); err != nil {
 		return nil, fmt.Errorf("failed to decode Gateway: %w", err)
@@ -42,7 +42,7 @@ func parseGatewaysFromBytes(rawObject []byte) (Workload, error) {
 	return &valueScaledWorkload{&gateway{&gtw}}, nil
 }
 
-// ingress is a wrapper for ingress.networkingv1 to implement the Workload interface.
+// gateway is a wrapper for gateway.networkingv1 to implement the Workload interface.
 type gateway struct {
 	*gatewayv1.Gateway
 }
@@ -58,8 +58,8 @@ func (g *gateway) setValue(targetReplicas values.Replicas) error {
 //
 //nolint:nonamedreturns //required to better understand the function
 func (g *gateway) getValue() (currentValue, downscalingValue values.Replicas, err error) {
-	currentValue = values.StatusReplicas(g.Spec.GatewayClassName)
-	downscalingValue = values.StatusReplicas(downscalerGatewayClassConst)
+	currentValue = values.StringReplicas(g.Spec.GatewayClassName)
+	downscalingValue = values.StringReplicas(downscalerGatewayClassConst)
 
 	return currentValue, downscalingValue, nil
 }

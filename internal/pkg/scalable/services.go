@@ -103,8 +103,8 @@ func (s *service) setValue(value values.Replicas) error {
 //
 //nolint:nonamedreturns //required to better understand the function
 func (s *service) getValue() (currentValue, downscalingValue values.Replicas, err error) {
-	currentValue = values.StatusReplicas(s.Spec.Type)
-	downscalingValue = values.StatusReplicas(corev1.ServiceTypeClusterIP)
+	currentValue = values.StringReplicas(s.Spec.Type)
+	downscalingValue = values.StringReplicas(corev1.ServiceTypeClusterIP)
 
 	return currentValue, downscalingValue, nil
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/wI2L/jsondiff"
 )
 
-// valueScaledResource provides all the functions needed to scale a resource which is scaled by setting a suspend field.
+// valueScaledResource provides all the functions needed to scale a resource by setting a field to a particular value.
 type valueScaledResource interface {
 	scalableResource
 	// Update updates the resource with all changes made to it. It should only be called once on a resource

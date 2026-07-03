@@ -33,7 +33,7 @@ func getIngresses(namespace string, clientsets *Clientsets, ctx context.Context)
 }
 
 // parseIngressFromBytes parses the admission review and returns the ingress wrapped in a Workload.
-func parseIngressesFromBytes(rawObject []byte) (Workload, error) {
+func parseIngressFromBytes(rawObject []byte) (Workload, error) {
 	var ing networkingv1.Ingress
 	if err := json.Unmarshal(rawObject, &ing); err != nil {
 		return nil, fmt.Errorf("failed to decode Ingress: %w", err)
@@ -68,8 +68,8 @@ func (i *ingress) getValue() (currentValue, downscalingValue values.Replicas, er
 		return nil, nil, newIngressClassNameNilError(i.GetNamespace(), i.GetName())
 	}
 
-	currentValue = values.StatusReplicas(*i.Spec.IngressClassName)
-	downscalingValue = values.StatusReplicas(downscalerIngressClassConst)
+	currentValue = values.StringReplicas(*i.Spec.IngressClassName)
+	downscalingValue = values.StringReplicas(downscalerIngressClassConst)
 
 	return currentValue, downscalingValue, nil
 }

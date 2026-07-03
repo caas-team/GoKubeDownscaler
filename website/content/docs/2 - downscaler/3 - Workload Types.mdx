@@ -139,8 +139,8 @@ set to `nlb` are scaled.
 - id: ingresses
 - resource: ingresses.v1.networking.k8s.io
 
-Scales by setting the IngressClassName of the Gateway object to `downscaler-ingress-class`.
-In a constrained installation, the GatewayClass object with the name `downscaler-gateway-class` must
+Scales by setting the IngressClassName of the Ingress object to `downscaler-ingress-class`.
+In a constrained installation, the IngressClass object with the name `downscaler-ingress-class` must
 be provisioned by a cluster administrator having the necessary cluster-wide permissions
 
 ### Gateways

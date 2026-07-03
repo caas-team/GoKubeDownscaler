@@ -68,19 +68,19 @@ func (s BooleanReplicas) AsIntStr() intstr.IntOrString {
 	return intstr.FromString(strconv.FormatBool(bool(s)))
 }
 
-type StatusReplicas string
+type StringReplicas string
 
-func (s StatusReplicas) AsBool() (bool, error) {
-	return false, newInvalidReplicaTypeError("status replicas cannot be converted to bool", s.String())
+func (s StringReplicas) AsBool() (bool, error) {
+	return false, newInvalidReplicaTypeError("string replicas cannot be converted to bool", s.String())
 }
 
-func (s StatusReplicas) String() string { return string(s) }
+func (s StringReplicas) String() string { return string(s) }
 
-func (s StatusReplicas) AsInt32() (int32, error) {
-	return 0, newInvalidReplicaTypeError("status replicas cannot be converted to int32", s.String())
+func (s StringReplicas) AsInt32() (int32, error) {
+	return 0, newInvalidReplicaTypeError("string replicas cannot be converted to int32", s.String())
 }
 
-func (s StatusReplicas) AsIntStr() intstr.IntOrString {
+func (s StringReplicas) AsIntStr() intstr.IntOrString {
 	return intstr.FromString(string(s))
 }
 
@@ -120,7 +120,7 @@ func (r *ReplicasValue) Set(value string) error {
 	}
 
 	if isAlpha(value) {
-		*r.Replicas = StatusReplicas(value)
+		*r.Replicas = StringReplicas(value)
 		return nil
 	}
 

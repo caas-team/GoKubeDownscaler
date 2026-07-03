@@ -40,7 +40,7 @@ func TestReplicasValue_Set(t *testing.T) {
 		{
 			name:  "non numeric",
 			input: "LoadBalancer",
-			want:  StatusReplicas("LoadBalancer"),
+			want:  StringReplicas("LoadBalancer"),
 		},
 		{
 			name:  "non numeric and boolean",
