@@ -10,6 +10,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -103,6 +104,19 @@ type workloadIdentifier struct {
 	namespace string
 }
 
+// setGroupVersionKindIfEmpty preserves an existing GVK and only fills it when list/get decoding left TypeMeta empty.
+func setGroupVersionKindIfEmpty(obj runtime.Object, gvk schema.GroupVersionKind) {
+	if obj == nil {
+		return
+	}
+
+	if !obj.GetObjectKind().GroupVersionKind().Empty() {
+		return
+	}
+
+	obj.GetObjectKind().SetGroupVersionKind(gvk)
+}
+
 // getExternallyScaled returns identifiers for workloads which are being scaled externally and should therefore be excluded.
 func getExternallyScaled(workloads []Workload) []workloadIdentifier {
 	externallyScaled := make([]workloadIdentifier, 0, len(workloads))
@@ -150,24 +164,12 @@ func getExternallyScaled(workloads []Workload) []workloadIdentifier {
 
 // isExternallyScaled checks if the workload matches any of the given workload identifiers.
 func isExternallyScaled(workload Workload, externallyScaled []workloadIdentifier) bool {
-	for _, wid := range externallyScaled {
-		if wid.name != workload.GetName() {
-			continue
-		}
+	workloadGVK := workload.GroupVersionKind()
+	workloadName := workload.GetName()
+	workloadNamespace := workload.GetNamespace()
 
-		if wid.namespace != workload.GetNamespace() {
-			continue
-		}
-
-		if wid.gvk.Group != "" && wid.gvk.Group != workload.GroupVersionKind().Group {
-			continue
-		}
-
-		if wid.gvk.Version != "" && wid.gvk.Version != workload.GroupVersionKind().Version {
-			continue
-		}
-
-		if wid.gvk.Kind != "" && wid.gvk.Kind != workload.GroupVersionKind().Kind {
+	for i := range externallyScaled {
+		if !matchesWorkloadIdentifier(&externallyScaled[i], workloadName, workloadNamespace, workloadGVK) {
 			continue
 		}
 
@@ -175,6 +177,42 @@ func isExternallyScaled(workload Workload, externallyScaled []workloadIdentifier
 	}
 
 	return false
+}
+
+func matchesWorkloadIdentifier(
+	wid *workloadIdentifier,
+	workloadName, workloadNamespace string,
+	workloadGVK schema.GroupVersionKind,
+) bool {
+	if wid.name != workloadName || wid.namespace != workloadNamespace {
+		return false
+	}
+
+	if !matchesGVKField(wid.gvk.Group, workloadGVK.Group, false) {
+		return false
+	}
+
+	if !matchesGVKField(wid.gvk.Version, workloadGVK.Version, false) {
+		return false
+	}
+
+	if !matchesGVKField(wid.gvk.Kind, workloadGVK.Kind, true) {
+		return false
+	}
+
+	return true
+}
+
+func matchesGVKField(expected, actual string, caseInsensitive bool) bool {
+	if expected == "" || actual == "" {
+		return true
+	}
+
+	if caseInsensitive {
+		return strings.EqualFold(expected, actual)
+	}
+
+	return expected == actual
 }
 
 // getWorkloadAsScaledObject tries to get the given workload as a scaled object.

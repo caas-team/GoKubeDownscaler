@@ -22,6 +22,7 @@ func getStacks(namespace string, clientsets *Clientsets, ctx context.Context) ([
 
 	results := make([]Workload, 0, len(stacks.Items))
 	for i := range stacks.Items {
+		setGroupVersionKindIfEmpty(&stacks.Items[i], zalandov1.SchemeGroupVersion.WithKind("Stack"))
 		results = append(results, &replicaScaledWorkload{&stack{&stacks.Items[i]}})
 	}
 
@@ -67,6 +68,8 @@ func (s *stack) Reget(clientsets *Clientsets, ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get stack: %w", err)
 	}
+
+	setGroupVersionKindIfEmpty(s.Stack, zalandov1.SchemeGroupVersion.WithKind("Stack"))
 
 	return nil
 }

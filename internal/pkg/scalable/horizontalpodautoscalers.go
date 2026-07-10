@@ -26,6 +26,7 @@ func getHorizontalPodAutoscalers(namespace string, clientsets *Clientsets, ctx c
 
 	results := make([]Workload, 0, len(hpas.Items))
 	for i := range hpas.Items {
+		setGroupVersionKindIfEmpty(&hpas.Items[i], appsv1.SchemeGroupVersion.WithKind("HorizontalPodAutoscaler"))
 		results = append(results, &replicaScaledWorkload{&horizontalPodAutoscaler{&hpas.Items[i]}})
 	}
 
@@ -92,6 +93,8 @@ func (h *horizontalPodAutoscaler) Reget(clientsets *Clientsets, ctx context.Cont
 	if err != nil {
 		return fmt.Errorf("failed to get horizontalpodautoscaler: %w", err)
 	}
+
+	setGroupVersionKindIfEmpty(h.HorizontalPodAutoscaler, appsv1.SchemeGroupVersion.WithKind("HorizontalPodAutoscaler"))
 
 	return nil
 }

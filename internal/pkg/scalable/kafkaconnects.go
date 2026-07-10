@@ -48,7 +48,7 @@ func getKafkaConnects(namespace string, clientsets *Clientsets, ctx context.Cont
 	results := make([]Workload, 0, len(list.Items))
 	for i := range list.Items {
 		item := list.Items[i]
-		item.SetGroupVersionKind(kafkaConnectGVK)
+		setGroupVersionKindIfEmpty(&item, kafkaConnectGVK)
 		results = append(results, &replicaScaledWorkload{&kafkaConnect{&item}})
 	}
 
@@ -143,7 +143,7 @@ func (k *kafkaConnect) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 // Reget regets the workload to ensure the latest state.
 func (k *kafkaConnect) Reget(clientsets *Clientsets, ctx context.Context) error {
 	fresh := &unstructured.Unstructured{}
-	fresh.SetGroupVersionKind(kafkaConnectGVK)
+	setGroupVersionKindIfEmpty(fresh, kafkaConnectGVK)
 
 	err := clientsets.Client.Get(ctx, ctrlclient.ObjectKey{Namespace: k.GetNamespace(), Name: k.GetName()}, fresh)
 	if err != nil {

@@ -48,7 +48,7 @@ func getKafkaBridges(namespace string, clientsets *Clientsets, ctx context.Conte
 	results := make([]Workload, 0, len(list.Items))
 	for i := range list.Items {
 		item := list.Items[i]
-		item.SetGroupVersionKind(kafkaBridgeGVK)
+		setGroupVersionKindIfEmpty(&item, kafkaBridgeGVK)
 		results = append(results, &replicaScaledWorkload{&kafkaBridge{&item}})
 	}
 
@@ -143,7 +143,7 @@ func (k *kafkaBridge) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 // Reget regets the workload to ensure the latest state.
 func (k *kafkaBridge) Reget(clientsets *Clientsets, ctx context.Context) error {
 	fresh := &unstructured.Unstructured{}
-	fresh.SetGroupVersionKind(kafkaBridgeGVK)
+	setGroupVersionKindIfEmpty(fresh, kafkaBridgeGVK)
 
 	err := clientsets.Client.Get(ctx, ctrlclient.ObjectKey{Namespace: k.GetNamespace(), Name: k.GetName()}, fresh)
 	if err != nil {

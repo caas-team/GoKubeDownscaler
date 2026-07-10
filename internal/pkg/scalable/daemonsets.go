@@ -1,3 +1,4 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -28,6 +29,7 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 
 	results := make([]Workload, 0, len(daemonsets.Items))
 	for i := range daemonsets.Items {
+		setGroupVersionKindIfEmpty(&daemonsets.Items[i], appsv1.SchemeGroupVersion.WithKind("DaemonSet"))
 		results = append(results, &daemonSet{&daemonsets.Items[i]})
 	}
 
@@ -111,6 +113,8 @@ func (d *daemonSet) Reget(clientsets *Clientsets, ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get cronjob: %w", err)
 	}
+
+	setGroupVersionKindIfEmpty(d.DaemonSet, appsv1.SchemeGroupVersion.WithKind("DaemonSet"))
 
 	return nil
 }

@@ -1,3 +1,4 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -27,6 +28,7 @@ func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Cont
 
 	results := make([]Workload, 0, len(scaledobjects.Items))
 	for i := range scaledobjects.Items {
+		setGroupVersionKindIfEmpty(&scaledobjects.Items[i], kedav1alpha1.SchemeGroupVersion.WithKind("ScaledObject"))
 		results = append(results, &replicaScaledWorkload{&scaledObject{&scaledobjects.Items[i]}})
 	}
 
@@ -89,6 +91,8 @@ func (s *scaledObject) Reget(clientsets *Clientsets, ctx context.Context) error 
 	if err != nil {
 		return fmt.Errorf("failed to get scaledObject: %w", err)
 	}
+
+	setGroupVersionKindIfEmpty(s.ScaledObject, kedav1alpha1.SchemeGroupVersion.WithKind("ScaledObject"))
 
 	return nil
 }
