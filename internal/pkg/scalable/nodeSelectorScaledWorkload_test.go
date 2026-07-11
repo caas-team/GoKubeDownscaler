@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func TestDaemonSet_ScaleUp(t *testing.T) {
+func TestNodeSelectorScaledWorkload_ScaleUp(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -41,27 +41,27 @@ func TestDaemonSet_ScaleUp(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			deamonset := daemonSet{&appsv1.DaemonSet{}}
+			workload := &nodeSelectorScaledWorkload{nodeSelectorScaledResource: &daemonSet{&appsv1.DaemonSet{}}}
 
 			if test.labelSet {
-				deamonset.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: labelMatchNoneValue}
+				workload.setNodeSelector(map[string]string{labelMatchNone: labelMatchNoneValue})
 			}
 
 			if test.originalReplicas != nil {
-				setOriginalReplicas(test.originalReplicas, &deamonset)
+				setOriginalReplicas(test.originalReplicas, workload)
 			}
 
-			updateNeeded, err := deamonset.ScaleUp()
+			updateNeeded, err := workload.ScaleUp()
 			require.NoError(t, err)
 			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
 
-			_, ok := deamonset.Spec.Template.Spec.NodeSelector[labelMatchNone]
+			_, ok := workload.getNodeSelector()[labelMatchNone]
 			assert.Equal(t, test.wantLabelSet, ok)
 		})
 	}
 }
 
-func TestDaemonSet_ScaleDown(t *testing.T) {
+func TestNodeSelectorScaledWorkload_ScaleDown(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -132,10 +132,9 @@ func TestDaemonSet_ScaleDown(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			daemonset := daemonSet{&appsv1.DaemonSet{}}
-			daemonset.Status.CurrentNumberScheduled = test.currentScheduled
+			testDaemonSet := &daemonSet{&appsv1.DaemonSet{}}
+			testDaemonSet.Status.CurrentNumberScheduled = test.currentScheduled
 
-			// set container requests
 			if test.requestsCPU != "" || test.requestsMemory != "" {
 				reqs := corev1.ResourceList{}
 				if test.requestsCPU != "" {
@@ -146,24 +145,24 @@ func TestDaemonSet_ScaleDown(t *testing.T) {
 					reqs[corev1.ResourceMemory] = resource.MustParse(test.requestsMemory)
 				}
 
-				daemonset.Spec.Template.Spec.Containers = []corev1.Container{
-					{Resources: corev1.ResourceRequirements{Requests: reqs}},
-				}
+				testDaemonSet.Spec.Template.Spec.Containers = []corev1.Container{{Resources: corev1.ResourceRequirements{Requests: reqs}}}
 			}
 
+			workload := &nodeSelectorScaledWorkload{nodeSelectorScaledResource: testDaemonSet}
+
 			if test.labelSet {
-				daemonset.Spec.Template.Spec.NodeSelector = map[string]string{labelMatchNone: labelMatchNoneValue}
+				workload.setNodeSelector(map[string]string{labelMatchNone: labelMatchNoneValue})
 			}
 
 			if test.originalReplicas != nil {
-				setOriginalReplicas(test.originalReplicas, &daemonset)
+				setOriginalReplicas(test.originalReplicas, workload)
 			}
 
-			savedResources, updateNeeded, err := daemonset.ScaleDown(values.AbsoluteReplicas(0))
+			savedResources, updateNeeded, err := workload.ScaleDown(values.AbsoluteReplicas(0))
 			require.NoError(t, err)
 			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
 
-			_, ok := daemonset.Spec.Template.Spec.NodeSelector[labelMatchNone]
+			_, ok := workload.getNodeSelector()[labelMatchNone]
 			assert.Equal(t, test.wantLabelSet, ok)
 
 			assert.InDelta(t, test.wantSavedCPU, savedResources.TotalCPU(), 0.0001)
