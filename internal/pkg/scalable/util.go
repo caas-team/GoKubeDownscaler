@@ -179,6 +179,10 @@ func isExternallyScaled(workload Workload, externallyScaled []workloadIdentifier
 	return false
 }
 
+// matchesWorkloadIdentifier checks if the workload matches the given workload identifier.
+// Resources are uniquely identified by group, kind, name, and namespace in Kubernetes.
+// Version is not checked because multiple API versions can refer to the same resource,
+// so version doesn't affect resource identity.
 func matchesWorkloadIdentifier(
 	wid *workloadIdentifier,
 	workloadName, workloadNamespace string,
@@ -189,10 +193,6 @@ func matchesWorkloadIdentifier(
 	}
 
 	if !matchesGVKField(wid.gvk.Group, workloadGVK.Group, false) {
-		return false
-	}
-
-	if !matchesGVKField(wid.gvk.Version, workloadGVK.Version, false) {
 		return false
 	}
 
