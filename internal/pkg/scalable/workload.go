@@ -43,8 +43,10 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"kafkabridges":             getKafkaBridges,
 		"kruisestatefulsets":       getAdvancedStatefulSets,
 		"advancedstatefulsets":     getAdvancedStatefulSets,
+		"advancedcronjobs":         getAdvancedCronJobs,
+		"advanceddaemonsets":       getAdvancedDaemonSets,
+		"broadcastjobs":            getBroadcastJobs,
 		"clonesets":                getCloneSets,
-		"uniteddeployments":        getUnitedDeployments,
 	}
 
 	resourceFunc, exists := resourceFuncMap[resource]
@@ -84,9 +86,11 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"kafkaconnect":            parseKafkaConnectFromBytes,
 		"kafkamirrormaker2":       parseKafkaMirrorMaker2FromBytes,
 		"kafkabridge":             parseKafkaBridgeFromBytes,
+		"advancedcronjob":         parseAdvancedCronJobFromBytes,
+		"advanceddaemonset":       parseAdvancedDaemonSetFromBytes,
+		"broadcastjob":            parseBroadcastJobFromBytes,
 		"advancedstatefulsets":    parseKruiseStatefulSetFromBytes,
 		"clonesets":               parseCloneSetFromBytes,
-		"uniteddeployments":       parseUnitedDeploymentsFromBytes,
 	}
 
 	parseFunc, exists := parseWorkloadFuncMap[resource]

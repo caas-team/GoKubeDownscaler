@@ -12,6 +12,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -356,4 +357,34 @@ func unstructuredReplicasToInt32(val any) (int32, bool) {
 	default:
 		return 0, false
 	}
+}
+
+// broadcastParallelismToInt32 converts an IntOrString parallelism value to int32.
+func broadcastParallelismToInt32(parallelism *intstr.IntOrString, fallback int32) int32 {
+	if parallelism == nil {
+		if fallback > 0 {
+			return fallback
+		}
+
+		return 1
+	}
+
+	if parallelism.Type == intstr.Int {
+		value := parallelism.IntValue()
+		if value > 0 && value <= math.MaxInt32 {
+			return int32(value)
+		}
+
+		if fallback > 0 {
+			return fallback
+		}
+
+		return 1
+	}
+
+	if fallback > 0 {
+		return fallback
+	}
+
+	return 1
 }

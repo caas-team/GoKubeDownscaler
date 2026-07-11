@@ -4,20 +4,12 @@ package scalable
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
-	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	labelMatchNone      = "downscaler/match-none"
-	labelMatchNoneValue = "true"
 )
 
 // getDaemonSets is the getResourceFunc for DaemonSets.
@@ -30,7 +22,7 @@ func getDaemonSets(namespace string, clientsets *Clientsets, ctx context.Context
 	results := make([]Workload, 0, len(daemonsets.Items))
 	for i := range daemonsets.Items {
 		setGroupVersionKindIfEmpty(&daemonsets.Items[i], appsv1.SchemeGroupVersion.WithKind("DaemonSet"))
-		results = append(results, &daemonSet{&daemonsets.Items[i]})
+		results = append(results, &nodeSelectorScaledWorkload{nodeSelectorScaledResource: &daemonSet{&daemonsets.Items[i]}})
 	}
 
 	return results, nil
@@ -43,66 +35,22 @@ func parseDaemonSetFromBytes(rawObject []byte) (Workload, error) {
 		return nil, fmt.Errorf("failed to decode daemonset: %w", err)
 	}
 
-	return &daemonSet{&ds}, nil
+	return &nodeSelectorScaledWorkload{nodeSelectorScaledResource: &daemonSet{&ds}}, nil
 }
 
-// daemonSet is a wrapper for daemonset.v1.apps to implement the Workload interface.
+// daemonSet is a wrapper for daemonset.v1.apps to implement the nodeSelectorScaledResource interface.
 type daemonSet struct {
 	*appsv1.DaemonSet
 }
 
-// ScaleUp scales the resource up.
-func (d *daemonSet) ScaleUp() (bool, error) {
-	_, err := getOriginalReplicas(d)
-	if err != nil {
-		var originalReplicasUnsetErr *OriginalReplicasUnsetError
-		if errors.As(err, &originalReplicasUnsetErr) {
-			slog.Debug("original replicas is not set, skipping", "workload", d.GetName(), "namespace", d.GetNamespace())
-			return false, nil
-		}
-
-		return false, fmt.Errorf("failed to get original replicas for workload: %w", err)
-	}
-
-	delete(d.Spec.Template.Spec.NodeSelector, labelMatchNone)
-
-	removeOriginalReplicas(d)
-
-	return true, nil
+// getNodeSelector gets the node selector from the underlying DaemonSet.
+func (d *daemonSet) getNodeSelector() map[string]string {
+	return d.Spec.Template.Spec.NodeSelector
 }
 
-// ScaleDown scales the resource down.
-func (d *daemonSet) ScaleDown(_ values.Replicas) (*metrics.SavedResources, bool, error) {
-	if _, hasLabel := d.Spec.Template.Spec.NodeSelector[labelMatchNone]; hasLabel {
-		_, err := getOriginalReplicas(d)
-
-		var originalReplicasUnsetErr *OriginalReplicasUnsetError
-		if err != nil {
-			if !errors.As(err, &originalReplicasUnsetErr) {
-				return metrics.NewSavedResources(0, 0), false, fmt.Errorf("failed to get original replicas for workload: %w", err)
-			}
-
-			slog.Debug("workload is already at target scale down state, skipping", "workload", d.GetName(), "namespace", d.GetNamespace())
-
-			return metrics.NewSavedResources(0, 0), false, nil
-		}
-
-		slog.Debug("workload is already scaled down, skipping", "workload", d.GetName(), "namespace", d.GetNamespace())
-
-		return d.getResourcesRequests(d.Status.DesiredNumberScheduled), false, nil
-	}
-
-	if d.Spec.Template.Spec.NodeSelector == nil {
-		d.Spec.Template.Spec.NodeSelector = map[string]string{}
-	}
-
-	d.Spec.Template.Spec.NodeSelector[labelMatchNone] = labelMatchNoneValue
-
-	savedResources := d.getResourcesRequests(d.Status.DesiredNumberScheduled)
-
-	setOriginalReplicas(values.BooleanReplicas(false), d)
-
-	return savedResources, true, nil
+// setNodeSelector sets the node selector on the underlying DaemonSet.
+func (d *daemonSet) setNodeSelector(nodeSelector map[string]string) {
+	d.Spec.Template.Spec.NodeSelector = nodeSelector
 }
 
 // Reget regets the resource from the Kubernetes API.
@@ -157,14 +105,25 @@ func (d *daemonSet) Copy() (Workload, error) {
 
 	copied := d.DeepCopy()
 
-	return &daemonSet{DaemonSet: copied}, nil
+	return &nodeSelectorScaledWorkload{
+		nodeSelectorScaledResource: &daemonSet{
+			DaemonSet: copied,
+		},
+	}, nil
 }
 
 // Compare compares two daemonSet resources and returns the differences as a jsondiff.Patch.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (d *daemonSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
-	dsCopy, ok := workloadCopy.(*daemonSet)
+	nswCopy, ok := workloadCopy.(*nodeSelectorScaledWorkload)
 	if !ok {
-		return nil, newExpectTypeGotTypeError((*daemonSet)(nil), workloadCopy)
+		return nil, newExpectTypeGotTypeError((*nodeSelectorScaledWorkload)(nil), workloadCopy)
+	}
+
+	dsCopy, ok := nswCopy.nodeSelectorScaledResource.(*daemonSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*daemonSet)(nil), nswCopy.nodeSelectorScaledResource)
 	}
 
 	if d.DaemonSet == nil || dsCopy.DaemonSet == nil {
