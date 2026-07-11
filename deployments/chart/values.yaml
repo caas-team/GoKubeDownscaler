@@ -32,7 +32,9 @@ includedResources:
 #  - kafkabridges
 #  - advancedstatefulsets
 #  - clonesets
-#  - uniteddeployments
+#  - advancedcronjobs
+#  - broadcastjobs
+#  - advanceddaemonsets
 
 fullnameOverride: ""
 nameOverride: ""

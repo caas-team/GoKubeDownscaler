@@ -152,14 +152,28 @@ Scales by setting the replica count to the [downscale replicas](ref:docs-values#
 
 ### CloneSets
 
-- id: clonsets
-- resource: clonsets.v1alpha1.kruise.io
+- id: clonesets
+- resource: clonesets.v1beta1.kruise.io
 
 Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
 
-### UnitedDeployments
+### BroadcastJobs
 
-- id: uniteddeployments
-- resource: uniteddeployments.v1alpha1.kruise.io
+- id: broadcastjobs
+- resource: broadcastjobs.v1beta1.kruise.io
 
-Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+Scales by setting the suspend property to true, which stops the execution of the job until it is upscaled again.
+
+### AdvancedCronJobs
+
+- id: advancedcronjobs
+- resource: advancedcronjobs.v1beta1.kruise.io
+
+Scales by setting the cronjobs suspend property to true, which halts further scheduled runs of the Cronjob.
+
+### AdvancedDaemonSets
+
+- id: advanceddaemonsets
+- resource: advanceddaemonsets.v1beta1.kruise.io
+
+Scales by setting the node selector to match none of the nodes, which stops pods from running on any node.
