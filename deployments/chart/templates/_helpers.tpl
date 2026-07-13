@@ -407,11 +407,31 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
-{{- if eq $resource "uniteddeployments" }}
+{{- if eq $resource "advancedcronjobs" }}
 - apiGroups:
     - apps.kruise.io
   resources:
-    - uniteddeployments
+    - advancedcronjobs
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "broadcastjobs" }}
+- apiGroups:
+    - apps.kruise.io
+  resources:
+    - broadcastjobs
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "advanceddaemonsets" }}
+- apiGroups:
+    - apps.kruise.io
+  resources:
+    - advanceddaemonsets
   verbs:
     - get
     - list
@@ -659,6 +679,7 @@ Create webhook resources
 - apiGroups:
     - apps.kruise.io
   apiVersions:
+    - "v1beta1"
     - "v1alpha1"
   operations:
     - "CREATE"
@@ -666,16 +687,41 @@ Create webhook resources
   resources:
     - clonesets
 {{ end -}}
-{{ if eq $resource "uniteddeployments" -}}
+{{ if eq $resource "advancedcronjobs" -}}
 - apiGroups:
     - apps.kruise.io
   apiVersions:
+    - "v1beta1"
     - "v1alpha1"
   operations:
     - "CREATE"
     - "UPDATE"
   resources:
-    - uniteddeployments
+    - advancedcronjobs
+{{ end -}}
+{{ if eq $resource "broadcastjobs" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1beta1"
+    - "v1alpha1"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - broadcastjobs
+{{ end -}}
+{{ if eq $resource "advanceddaemonsets" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1beta1"
+    - "v1alpha1"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - advanceddaemonsets
 {{ end -}}
 {{ end -}}
 {{- end }}
@@ -924,7 +970,7 @@ resources include in annotationsCompliance
   resources:
     - clonesets
 {{ end -}}
-{{ if eq $resource "uniteddeployments" -}}
+{{ if eq $resource "advancedcronjobs" -}}
 - apiGroups:
     - apps.kruise.io
   apiVersions:
@@ -935,7 +981,33 @@ resources include in annotationsCompliance
   {{- end }}
     - "UPDATE"
   resources:
-    - uniteddeployments
+    - advancedcronjobs
+{{ end -}}
+{{ if eq $resource "broadcastjobs" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1alpha1"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - broadcastjobs
+{{ end -}}
+{{ if eq $resource "advanceddaemonsets" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1alpha1"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - advanceddaemonsets
 {{ end -}}
 {{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
 - apiGroups:
