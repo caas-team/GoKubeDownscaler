@@ -7,8 +7,8 @@ github.com/actions/actions-runner-controller v0.27.6 h1:Uklv1+6+/BQuhV6HoXIgPZrn
 github.com/actions/actions-runner-controller v0.27.6/go.mod h1:RTbTdRu8c55jyryUt9oYKT0gCSfc40VHZK+WxU4/2S8=
 github.com/antlr4-go/antlr/v4 v4.13.1 h1:SqQKkuVZ+zWkMMNkjy5FZe5mr5WURWnlpmOuzYWrPrQ=
 github.com/antlr4-go/antlr/v4 v4.13.1/go.mod h1:GKmUxMtwp6ZgGwZSva4eWPC5mS6vUAmOABFgjdkM7Nw=
-github.com/argoproj/argo-rollouts v1.9.0 h1:bXgBpwCByXyAUcgBnyP0fxkSW2CEot78InTFjFlag5g=
-github.com/argoproj/argo-rollouts v1.9.0/go.mod h1:jOalqf2kDSmCp7eQpFF4i3kHnlEqNE/Yjwz1q7CpPIU=
+github.com/argoproj/argo-rollouts v1.9.1 h1:+oZciUkeJYVb1vPMOhat4JQlk525j/aT2yizEkVkjLs=
+github.com/argoproj/argo-rollouts v1.9.1/go.mod h1:I1T5p2MknEsVyk7yD+35guW3cF0ebgjg2Taqvlzov8w=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/blang/semver/v4 v4.0.0 h1:1PFHFE6yCCTv8C1TeyNNarDzntLi7wMI5i/pzqYIsAM=
