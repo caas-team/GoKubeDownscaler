@@ -18,13 +18,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          ref: ${{ github.base_ref }}
           fetch-depth: 0
+
+      - name: Fetch PR head
+        run: |
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-head
 
       - name: Check for appVersion changes
         run: |
           echo "Checking for appVersion changes..."
-          if git diff origin/${{ github.base_ref }} -- deployments/chart/Chart.yaml | grep -qe "^[+-]appVersion: "; then
+          if git diff HEAD pr-head -- deployments/chart/Chart.yaml | grep -qe "^[+-]appVersion: "; then
             app_version_change=$(echo "version changed")
             echo "app_version_change=$app_version_change" >> $GITHUB_ENV
           else
@@ -35,7 +39,7 @@ jobs:
       - name: Validate semantic versioning
         if: ${{ env.app_version_change == 'version changed' }}
         run: |
-          app_version=$(yq e '.appVersion' ./deployments/chart/Chart.yaml)
+          app_version=$(git show pr-head:deployments/chart/Chart.yaml | yq e '.appVersion' -)
           if ! echo "$app_version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "::error::appVersion '$app_version' is not valid semantic versioning. Expected MAJOR.MINOR.PATCH (e.g. 1.3.0)"
             exit 1
@@ -81,13 +85,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          ref: ${{ github.base_ref }}
           fetch-depth: 0
+
+      - name: Fetch PR head
+        run: |
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-head
 
       - name: Extract appVersion
         id: extract_appversion
         run: |
-          appversion=$(yq e '.appVersion' ./deployments/chart/Chart.yaml | tr -d '\n' | tr -d '\r')
+          if git diff HEAD pr-head -- deployments/chart/Chart.yaml | grep -qe "^[+-]appVersion: "; then
+            appversion=$(git show pr-head:deployments/chart/Chart.yaml | yq e '.appVersion' - | tr -d '\n' | tr -d '\r')
+          else
+            appversion=$(yq e '.appVersion' ./deployments/chart/Chart.yaml | tr -d '\n' | tr -d '\r')
+          fi
           echo "appversion=$appversion" >> $GITHUB_ENV
 
       - name: Post warning comment
