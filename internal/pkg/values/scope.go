@@ -317,7 +317,7 @@ func (s Scopes) GetExcluded(scopes Scopes) bool {
 		}
 
 		if !scope.ExcludeUntil.After(time.Now()) {
-			// ExcludeUntil is expired, continue checking the next scope
+			// ExcludeUntil is expired, continue checking the next scop
 			continue
 		}
 
