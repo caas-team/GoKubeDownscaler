@@ -55,6 +55,7 @@ jobs:
           echo "appVersion '$app_version' correctly follows semantic versioning"
 
       - name: Remove new version label
+        continue-on-error: true
         if: ${{ env.app_version_change == 'No appVersion changes detected.' }}
         run: |
           echo "No appVersion changes detected. Removing new version label"
