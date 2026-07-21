@@ -316,11 +316,12 @@ func (s Scopes) GetExcluded(scopes Scopes) bool {
 			continue
 		}
 
-		if scope.ExcludeUntil.After(time.Now()) {
-			return true
+		if !scope.ExcludeUntil.After(time.Now()) {
+			// ExcludeUntil is expired, continue checking the next scope
+			continue
 		}
 
-		// ExcludeUntil is expired, continue checking the next scope
+		return true
 	}
 
 	return false
