@@ -73,7 +73,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Remove approval label
-        continue-on-error: true
         run: |
           gh pr edit "${{ github.event.pull_request.number }}" --remove-label "needs approval"
         env:
