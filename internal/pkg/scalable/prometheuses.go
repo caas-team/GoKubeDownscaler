@@ -22,6 +22,7 @@ func getPrometheuses(namespace string, clientsets *Clientsets, ctx context.Conte
 
 	results := make([]Workload, 0, len(prometheuses.Items))
 	for i := range prometheuses.Items {
+		setGroupVersionKindIfEmpty(&prometheuses.Items[i], monitoringv1.SchemeGroupVersion.WithKind("Prometheus"))
 		results = append(results, &replicaScaledWorkload{&prometheus{&prometheuses.Items[i]}})
 	}
 
@@ -65,6 +66,8 @@ func (p *prometheus) Reget(clientsets *Clientsets, ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get prometheus: %w", err)
 	}
+
+	setGroupVersionKindIfEmpty(singlePrometheus, monitoringv1.SchemeGroupVersion.WithKind("Prometheus"))
 
 	p.Prometheus = singlePrometheus
 

@@ -48,7 +48,7 @@ func getKafkaMirrorMaker2s(namespace string, clientsets *Clientsets, ctx context
 	results := make([]Workload, 0, len(list.Items))
 	for i := range list.Items {
 		item := list.Items[i]
-		item.SetGroupVersionKind(kafkaMirrorMaker2GVK)
+		setGroupVersionKindIfEmpty(&item, kafkaMirrorMaker2GVK)
 		results = append(results, &replicaScaledWorkload{&kafkaMirrorMaker2{&item}})
 	}
 
@@ -143,7 +143,7 @@ func (k *kafkaMirrorMaker2) Compare(workloadCopy Workload) (jsondiff.Patch, erro
 // Reget regets the workload to ensure the latest state.
 func (k *kafkaMirrorMaker2) Reget(clientsets *Clientsets, ctx context.Context) error {
 	fresh := &unstructured.Unstructured{}
-	fresh.SetGroupVersionKind(kafkaMirrorMaker2GVK)
+	setGroupVersionKindIfEmpty(fresh, kafkaMirrorMaker2GVK)
 
 	err := clientsets.Client.Get(ctx, ctrlclient.ObjectKey{Namespace: k.GetNamespace(), Name: k.GetName()}, fresh)
 	if err != nil {

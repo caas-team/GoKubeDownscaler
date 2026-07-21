@@ -1,3 +1,4 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -23,6 +24,7 @@ func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx conte
 
 	results := make([]Workload, 0, len(poddisruptionbudgets.Items))
 	for i := range poddisruptionbudgets.Items {
+		setGroupVersionKindIfEmpty(&poddisruptionbudgets.Items[i], policy.SchemeGroupVersion.WithKind("PodDisruptionBudget"))
 		results = append(results, &podDisruptionBudget{&poddisruptionbudgets.Items[i]})
 	}
 
@@ -154,6 +156,8 @@ func (p *podDisruptionBudget) Reget(clientsets *Clientsets, ctx context.Context)
 	if err != nil {
 		return fmt.Errorf("failed to get poddisruptionbudget: %w", err)
 	}
+
+	setGroupVersionKindIfEmpty(p.PodDisruptionBudget, policy.SchemeGroupVersion.WithKind("PodDisruptionBudget"))
 
 	return nil
 }

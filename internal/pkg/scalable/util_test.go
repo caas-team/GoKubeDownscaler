@@ -11,6 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func TestFilterExcluded(t *testing.T) { //nolint: maintidx// fine to read and understand
@@ -166,6 +167,31 @@ func TestFilterExcluded(t *testing.T) { //nolint: maintidx// fine to read and un
 			},
 		}},
 	}
+	ns6 := ns{
+		deployment1: &replicaScaledWorkload{&deployment{Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "Deployment",
+				Namespace: "Namespace6",
+			},
+		}}},
+		scaledObject: &replicaScaledWorkload{&scaledObject{ScaledObject: &v1alpha1.ScaledObject{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ScaledObject",
+				Namespace: "Namespace6",
+			},
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "keda.sh/v1alpha1",
+				Kind:       "ScaledObject",
+			},
+			Spec: v1alpha1.ScaledObjectSpec{
+				ScaleTargetRef: &v1alpha1.ScaleTarget{
+					Name:       "Deployment",
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
+				},
+			},
+		}}},
+	}
 
 	tests := []struct {
 		name                      string
@@ -289,6 +315,17 @@ func TestFilterExcluded(t *testing.T) { //nolint: maintidx// fine to read and un
 			},
 			want: []Workload{ns3.deployment1, ns3.scaledObject, ns1.deployment1, ns3.job2},
 		},
+		{
+			name:               "exclude scaled object target when workload typemeta is empty",
+			workloads:          []Workload{ns6.deployment1, ns6.scaledObject},
+			includeLabels:      nil,
+			excludedNamespaces: nil,
+			excludedWorkloads:  nil,
+			currentNamespaceToMetrics: map[string]*metrics.NamespaceMetricsHolder{
+				"Namespace6": {},
+			},
+			want: []Workload{ns6.scaledObject},
+		},
 	}
 
 	for _, test := range tests {
@@ -304,6 +341,52 @@ func TestFilterExcluded(t *testing.T) { //nolint: maintidx// fine to read and un
 			)
 
 			assert.Equal(t, test.want, got)
+		})
+	}
+}
+
+func TestIsExternallyScaled(t *testing.T) {
+	t.Parallel()
+
+	externallyScaled := []workloadIdentifier{
+		{
+			name:      "target",
+			namespace: "ns-1",
+			gvk: schema.GroupVersionKind{
+				Group:   "apps",
+				Version: "v1",
+				Kind:    "Deployment",
+			},
+		},
+	}
+
+	tests := []struct {
+		name     string
+		workload Workload
+		want     bool
+	}{
+		{
+			name: "matches by name/namespace when workload GVK is empty",
+			workload: &replicaScaledWorkload{&deployment{Deployment: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{Name: "target", Namespace: "ns-1"},
+			}}},
+			want: true,
+		},
+		{
+			name: "does not match when workload GVK is populated and mismatched",
+			workload: &replicaScaledWorkload{&deployment{Deployment: &appsv1.Deployment{
+				TypeMeta:   metav1.TypeMeta{APIVersion: "v1", Kind: "Pod"},
+				ObjectMeta: metav1.ObjectMeta{Name: "target", Namespace: "ns-1"},
+			}}},
+			want: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, test.want, isExternallyScaled(test.workload, externallyScaled))
 		})
 	}
 }

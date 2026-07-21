@@ -22,6 +22,7 @@ func getJobs(namespace string, clientsets *Clientsets, ctx context.Context) ([]W
 
 	results := make([]Workload, 0, len(jobs.Items))
 	for i := range jobs.Items {
+		setGroupVersionKindIfEmpty(&jobs.Items[i], batch.SchemeGroupVersion.WithKind("Job"))
 		results = append(results, &suspendScaledWorkload{&job{&jobs.Items[i]}})
 	}
 
@@ -69,6 +70,8 @@ func (j *job) Reget(clientsets *Clientsets, ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get job: %w", err)
 	}
+
+	setGroupVersionKindIfEmpty(j.Job, batch.SchemeGroupVersion.WithKind("Job"))
 
 	return nil
 }
