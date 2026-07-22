@@ -29,15 +29,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Checking for appVersion changes..."
-          if gh api \
-            "/repos/${GITHUB_REPOSITORY}/compare/${PR_BASE_SHA}...${PR_HEAD_SHA}" \
-            --jq '.files[]? | select(.filename == "deployments/chart/Chart.yaml") | .patch' | grep -qe "^[+-]appVersion: "; then
-            app_version_change=$(echo "version changed")
-            echo "app_version_change=$app_version_change" >> $GITHUB_ENV
+          base_app_version=$(gh api -H "Accept: application/vnd.github.raw" "/repos/${GITHUB_REPOSITORY}/contents/deployments/chart/Chart.yaml?ref=${PR_BASE_SHA}" | yq e '.appVersion' - | tr -d '\n\r')
+          head_app_version=$(gh api -H "Accept: application/vnd.github.raw" "/repos/${GITHUB_REPOSITORY}/contents/deployments/chart/Chart.yaml?ref=${PR_HEAD_SHA}" | yq e '.appVersion' - | tr -d '\n\r')
+
+          if [ "$base_app_version" != "$head_app_version" ]; then
+            app_version_change="version changed"
           else
-            app_version_change=$(echo "No appVersion changes detected.")
-            echo "app_version_change=$app_version_change" >> $GITHUB_ENV
+            app_version_change="No appVersion changes detected."
           fi
+
+          echo "app_version_change=$app_version_change" >> "$GITHUB_ENV"
 
       - name: Validate semantic versioning
         if: ${{ env.app_version_change == 'version changed' }}
@@ -100,13 +101,15 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if gh api \
-            "/repos/${GITHUB_REPOSITORY}/compare/${PR_BASE_SHA}...${PR_HEAD_SHA}" \
-            --jq '.files[]? | select(.filename == "deployments/chart/Chart.yaml") | .patch' | grep -qe "^[+-]appVersion: "; then
-            appversion=$(gh api -H "Accept: application/vnd.github.raw" "/repos/${GITHUB_REPOSITORY}/contents/deployments/chart/Chart.yaml?ref=${PR_HEAD_SHA}" | yq e '.appVersion' - | tr -d '\n\r')
+          base_app_version=$(gh api -H "Accept: application/vnd.github.raw" "/repos/${GITHUB_REPOSITORY}/contents/deployments/chart/Chart.yaml?ref=${PR_BASE_SHA}" | yq e '.appVersion' - | tr -d '\n\r')
+          head_app_version=$(gh api -H "Accept: application/vnd.github.raw" "/repos/${GITHUB_REPOSITORY}/contents/deployments/chart/Chart.yaml?ref=${PR_HEAD_SHA}" | yq e '.appVersion' - | tr -d '\n\r')
+
+          if [ "$base_app_version" != "$head_app_version" ]; then
+            appversion="$head_app_version"
           else
-            appversion=$(yq e '.appVersion' ./deployments/chart/Chart.yaml | tr -d '\n\r')
+            appversion="$base_app_version"
           fi
+
           echo "appversion=$appversion" >> $GITHUB_ENV
 
       - name: Post warning comment
