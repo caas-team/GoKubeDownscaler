@@ -21,6 +21,7 @@ func getAdvancedDaemonSets(namespace string, clientsets *Clientsets, ctx context
 
 	results := make([]Workload, 0, len(daemonsets.Items))
 	for i := range daemonsets.Items {
+		setGroupVersionKindIfEmpty(&daemonsets.Items[i], kruisev1beta1.SchemeGroupVersion.WithKind("AdvancedDaemonSet"))
 		results = append(results, &nodeSelectorScaledWorkload{nodeSelectorScaledResource: &advancedDaemonSet{&daemonsets.Items[i]}})
 	}
 
