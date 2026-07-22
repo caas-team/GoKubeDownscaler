@@ -6,8 +6,8 @@ keywords:
   - kube-downscaler
   - go
   - downscaling
-version: 1.3.4
-appVersion: 1.3.4
+version: 1.4.0
+appVersion: 1.4.0
 icon: https://raw.githubusercontent.com/caas-team/GoKubeDownscaler/refs/heads/main/logo/kubedownscaler.svg
 sources:
   - https://github.com/caas-team/GoKubeDownscaler
@@ -18,3 +18,6 @@ maintainers:
   - name: JTaeuber
     email: jan.taeuber@telekom.de
     url: https://github.com/JTaeuber
+  - name: samuel-esp
+    email: samuel-esp@hotmail.it
+    url: https://github.com/samuel-esp
