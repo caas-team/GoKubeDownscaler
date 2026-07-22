@@ -26,6 +26,7 @@ func getIngresses(namespace string, clientsets *Clientsets, ctx context.Context)
 
 	results := make([]Workload, 0, len(ingresses.Items))
 	for i := range ingresses.Items {
+		setGroupVersionKindIfEmpty(&ingresses.Items[i], networkingv1.SchemeGroupVersion.WithKind("Ingress"))
 		results = append(results, &valueScaledWorkload{&ingress{&ingresses.Items[i]}})
 	}
 

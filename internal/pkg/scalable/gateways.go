@@ -10,6 +10,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
@@ -26,6 +27,10 @@ func getGateways(namespace string, clientsets *Clientsets, ctx context.Context) 
 
 	results := make([]Workload, 0, len(gateways.Items))
 	for i := range gateways.Items {
+		setGroupVersionKindIfEmpty(&gateways.Items[i], schema.GroupVersion{
+			Group:   gatewayv1.GroupVersion.Group,
+			Version: gatewayv1.GroupVersion.Version,
+		}.WithKind("Gateway"))
 		results = append(results, &valueScaledWorkload{&gateway{&gateways.Items[i]}})
 	}
 
