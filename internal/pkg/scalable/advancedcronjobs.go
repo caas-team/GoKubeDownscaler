@@ -25,6 +25,7 @@ func getAdvancedCronJobs(namespace string, clientsets *Clientsets, ctx context.C
 
 	results := make([]Workload, 0, len(advancedCronJobs.Items))
 	for i := range advancedCronJobs.Items {
+		setGroupVersionKindIfEmpty(&advancedCronJobs.Items[i], kruisev1beta1.SchemeGroupVersion.WithKind("AdvancedCronJob"))
 		results = append(results, &suspendScaledWorkload{&advancedCronJob{&advancedCronJobs.Items[i]}})
 	}
 

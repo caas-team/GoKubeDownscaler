@@ -24,6 +24,7 @@ func getAdvancedStatefulSets(namespace string, clientsets *Clientsets, ctx conte
 
 	results := make([]Workload, 0, len(kruisestatefulset.Items))
 	for i := range kruisestatefulset.Items {
+		setGroupVersionKindIfEmpty(&kruisestatefulset.Items[i], kruisev1beta1.SchemeGroupVersion.WithKind("AdvancedStatefulSet"))
 		results = append(results, &replicaScaledWorkload{&advancedStatefulSet{&kruisestatefulset.Items[i]}})
 	}
 
