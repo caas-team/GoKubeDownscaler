@@ -9,11 +9,12 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	kruise "github.com/openkruise/kruise/apis/apps/v1alpha1"
+	kruisev1beta1 "github.com/openkruise/kruise/apis/apps/v1beta1"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getcloneSets is the getResourceFunc for cloneSets.
+// getCloneSets is the getResourceFunc for cloneSets.
 func getCloneSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	clonesets, err := clientsets.Kruise.AppsV1alpha1().CloneSets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -22,6 +23,7 @@ func getCloneSets(namespace string, clientsets *Clientsets, ctx context.Context)
 
 	results := make([]Workload, 0, len(clonesets.Items))
 	for i := range clonesets.Items {
+		setGroupVersionKindIfEmpty(&clonesets.Items[i], kruisev1beta1.SchemeGroupVersion.WithKind("CloneSet"))
 		results = append(results, &replicaScaledWorkload{&cloneSet{&clonesets.Items[i]}})
 	}
 

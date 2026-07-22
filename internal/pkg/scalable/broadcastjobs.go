@@ -22,6 +22,7 @@ func getBroadcastJobs(namespace string, clientsets *Clientsets, ctx context.Cont
 
 	results := make([]Workload, 0, len(broadcastJobs.Items))
 	for i := range broadcastJobs.Items {
+		setGroupVersionKindIfEmpty(&broadcastJobs.Items[i], kruisev1beta1.SchemeGroupVersion.WithKind("BroadcastJob"))
 		results = append(results, &suspendScaledWorkload{&broadcastJob{&broadcastJobs.Items[i]}})
 	}
 
