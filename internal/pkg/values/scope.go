@@ -213,6 +213,10 @@ func (s Scopes) GetDefaultTimeSpan() *time.Location {
 
 func (s Scopes) GetDefaultWeekdayFrom() *time.Weekday {
 	for _, scope := range s {
+		if scope.DefaultWeekFrame == nil {
+			continue
+		}
+
 		weekdayFrom := scope.DefaultWeekFrame.WeekdayFrom
 		if weekdayFrom == nil {
 			continue
@@ -226,6 +230,10 @@ func (s Scopes) GetDefaultWeekdayFrom() *time.Weekday {
 
 func (s Scopes) GetDefaultWeekdayTo() *time.Weekday {
 	for _, scope := range s {
+		if scope.DefaultWeekFrame == nil {
+			continue
+		}
+
 		weekdayTo := scope.DefaultWeekFrame.WeekdayTo
 		if weekdayTo == nil {
 			continue
