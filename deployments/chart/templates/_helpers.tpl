@@ -31,6 +31,24 @@ If replicaCount is greater than 1, leader election is enabled by default.
 {{- end }}
 
 {{/*
+Return true if "gateways" is present in .Values.includedResources
+*/}}
+{{- define "go-kube-downscaler.deployGatewayClass" -}}
+{{- if and (hasKey .Values "includedResources") (contains "gateways" (toJson .Values.includedResources)) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Return true if "ingresses" is present in .Values.includedResources
+*/}}
+{{- define "go-kube-downscaler.deployIngressClass" -}}
+{{- if and (hasKey .Values "includedResources") (contains "ingresses" (toJson .Values.includedResources)) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
 Common labels
 */}}
 {{- define "go-kube-downscaler.labels" -}}
@@ -80,10 +98,6 @@ Create selector label for the webhook
 Create defined permissions for the webhook role
 */}}
 {{- define "go-kube-downscaler.webhookController.namespace.permissions" -}}
-# "create", "list" and "watch" cannot be restricted by resourceNames: create has no object
-# to name-match yet, and the controller's reflector lists+watches the collection before it
-# can filter by name. These must be unrestricted, scoped only by this Role's namespace. The
-# name-scoped rule keeps the verbs that act on our specific secret (get/update/patch).
 - apiGroups:
     - ""
   resources:
@@ -125,9 +139,6 @@ Create defined permissions for the webhook clusterrole
     - namespaces
   verbs:
     - get
-# "list"/"watch" cannot be restricted by resourceNames (the controller's reflector lists
-# the collection before watching), so they need an unrestricted rule. The name-scoped rule
-# below keeps the mutating verbs (get/patch/update) limited to our own webhook config.
 - apiGroups:
     - admissionregistration.k8s.io
   resources:
@@ -298,6 +309,36 @@ Create defined permissions for roles
     - actions.github.com
   resources:
     - autoscalingrunnersets
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
+- apiGroups:
+    - ""
+  resources:
+    - services
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "ingresses"}}
+- apiGroups:
+    - networking.k8s.io
+  resources:
+    - ingresses
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "gateways"}}
+- apiGroups:
+    - gateway.networking.k8s.io
+  resources:
+    - gateways
   verbs:
     - get
     - list
@@ -494,6 +535,45 @@ Create webhook resources
   resources:
     - postgresqls
 {{ end -}}
+{{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
+- apiGroups:
+    - ""
+  resources:
+    - services
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "ingresses" }}
+- apiGroups:
+    - "networking.k8s.io"
+  resources:
+    - ingresses
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "gateways" }}
+- apiGroups:
+    - "gateway.networking.k8s.io"
+  resources:
+    - gateways
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{ if eq $resource "kafkaconnects" -}}
 - apiGroups:
     - kafka.strimzi.io
@@ -745,5 +825,44 @@ resources include in annotationsCompliance
   resources:
     - kafkabridges
 {{ end -}}
+{{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
+- apiGroups:
+    - ""
+  apiVersions:
+    - "*"
+  resources:
+    - services
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+{{- end }}
+{{- if eq $resource "ingresses" }}
+- apiGroups:
+    - "networking.k8s.io"
+  apiVersions:
+    - "*"
+  resources:
+    - ingresses
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+{{- end }}
+{{- if eq $resource "gateways" }}
+- apiGroups:
+    - "gateway.networking.k8s.io"
+  apiVersions:
+    - "*"
+  resources:
+    - gateways
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+{{- end }}
 {{ end -}}
 {{- end }}

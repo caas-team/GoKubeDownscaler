@@ -1,9 +1,11 @@
 package values
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -66,60 +68,116 @@ func (s BooleanReplicas) AsIntStr() intstr.IntOrString {
 	return intstr.FromString(strconv.FormatBool(bool(s)))
 }
 
+type StringReplicas string
+
+func (s StringReplicas) AsBool() (bool, error) {
+	return false, newInvalidReplicaTypeError("string replicas cannot be converted to bool", s.String())
+}
+
+func (s StringReplicas) String() string { return string(s) }
+
+func (s StringReplicas) AsInt32() (int32, error) {
+	return 0, newInvalidReplicaTypeError("string replicas cannot be converted to int32", s.String())
+}
+
+func (s StringReplicas) AsIntStr() intstr.IntOrString {
+	return intstr.FromString(string(s))
+}
+
 type ReplicasValue struct {
 	Replicas *Replicas
 }
 
 func (r *ReplicasValue) Set(value string) error {
-	if v, err := strconv.ParseInt(value, 10, 32); err == nil {
-		replica := AbsoluteReplicas(int32(v))
+	absoluteReplica, absoluteMatched, err := parseAbsoluteReplicas(value)
+	if isUnexpectedReplicaParseError(err) {
+		return err
+	}
 
-		if int(replica) < 0 && int(replica) != util.Undefined {
-			return newInvalidReplicaTypeError(
-				"downscale replicas has to be a positive integer",
-				value,
-			)
-		}
-
-		*r.Replicas = replica
-
+	if absoluteMatched {
+		*r.Replicas = absoluteReplica
 		return nil
 	}
 
-	if strings.HasSuffix(value, "%") {
-		trimmed := strings.TrimSuffix(value, "%")
-		if p, err := strconv.Atoi(trimmed); err == nil {
-			replica := PercentageReplicas(p)
-
-			if p < 0 || p > 100 {
-				return newInvalidReplicaTypeError(
-					"downscale replicas must be a percentage between 0% and 100%",
-					value,
-				)
-			}
-
-			*r.Replicas = replica
-
-			return nil
-		}
+	percentageReplica, percentageMatched, err := parsePercentageReplicas(value)
+	if isUnexpectedReplicaParseError(err) {
+		return err
 	}
 
-	if isBooleanString(value) {
-		valueLower := strings.ToLower(strings.TrimSpace(value))
+	if percentageMatched {
+		*r.Replicas = percentageReplica
+		return nil
+	}
 
-		parsedBooleanValue, err := strconv.ParseBool(valueLower)
-		if err != nil {
-			return newInvalidReplicaTypeError("invalid boolean replica value", value)
-		}
+	booleanReplica, booleanMatched, err := parseBooleanReplicas(value)
+	if isUnexpectedReplicaParseError(err) {
+		return err
+	}
 
-		replica := BooleanReplicas(parsedBooleanValue)
+	if booleanMatched {
+		*r.Replicas = booleanReplica
+		return nil
+	}
 
-		*r.Replicas = replica
-
+	if isAlpha(value) {
+		*r.Replicas = StringReplicas(value)
 		return nil
 	}
 
 	return newInvalidReplicaTypeError("invalid replica value", value)
+}
+
+// isUnexpectedReplicaParseError filters out parser no-match sentinel errors so Set can continue trying the next parser.
+func isUnexpectedReplicaParseError(err error) bool {
+	return err != nil && !errors.Is(err, ErrReplicaFormatNotMatched)
+}
+
+// parseAbsoluteReplicas tries to parse value as an AbsoluteReplicas.
+// Returns (replica, true, nil) on success, (0, true, err) on validation error, (0, false, ErrReplicaFormatNotMatched) if not an integer.
+func parseAbsoluteReplicas(value string) (AbsoluteReplicas, bool, error) {
+	if parsedValue, err := strconv.ParseInt(value, 10, 32); err == nil {
+		replica := AbsoluteReplicas(int32(parsedValue))
+		if int(replica) < 0 && int(replica) != util.Undefined {
+			return 0, true, newInvalidReplicaTypeError("downscale replicas has to be a positive integer", value)
+		}
+
+		return replica, true, nil
+	}
+
+	return 0, false, newReplicaFormatNotMatchedError()
+}
+
+// parsePercentageReplicas tries to parse value as a PercentageReplicas.
+// Returns (replica, true, nil) on success, (0, true, err) on validation error, (0, false, ErrReplicaFormatNotMatched) if not a percentage.
+func parsePercentageReplicas(value string) (PercentageReplicas, bool, error) {
+	if !strings.HasSuffix(value, "%") {
+		return 0, false, newReplicaFormatNotMatchedError()
+	}
+
+	if percentageValue, err := strconv.Atoi(strings.TrimSuffix(value, "%")); err == nil {
+		if percentageValue < 0 || percentageValue > 100 {
+			return 0, true, newInvalidReplicaTypeError("downscale replicas must be a percentage between 0% and 100%", value)
+		}
+
+		return PercentageReplicas(percentageValue), true, nil
+	}
+
+	return 0, false, newReplicaFormatNotMatchedError()
+}
+
+// parseBooleanReplicas tries to parse value as a BooleanReplicas.
+// Returns (replica, true, nil) on success, (false, true, err) on parse error, (false, false, ErrReplicaFormatNotMatched) if not a boolean.
+func parseBooleanReplicas(value string) (BooleanReplicas, bool, error) {
+	if !isBooleanString(value) {
+		return false, false, newReplicaFormatNotMatchedError()
+	}
+
+	parsed, err := strconv.ParseBool(strings.ToLower(strings.TrimSpace(value)))
+	if err != nil {
+		return false, true, newInvalidReplicaTypeError("invalid boolean replica value", value)
+	}
+
+	return BooleanReplicas(parsed), true, nil
 }
 
 // NewReplicasFromIntOrStr parses a intstr.IntOrString to the correct specific replica type.
@@ -139,6 +197,16 @@ func NewReplicasFromIntOrStr(intOrString *intstr.IntOrString) Replicas {
 	}
 
 	return nil
+}
+
+func isAlpha(s string) bool {
+	for _, r := range s {
+		if !unicode.IsLetter(r) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (r *ReplicasValue) String() string {
