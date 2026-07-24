@@ -52,7 +52,7 @@ type dayTime int
 
 func (d dayTime) String() string {
 	minute := d % Hour
-	hour := d - minute
+	hour := d / Hour
 
-	return fmt.Sprintf("%d:%d", hour, minute)
+	return fmt.Sprintf("%02d:%02d", hour, minute)
 }
