@@ -12,14 +12,14 @@ require (
 	github.com/prometheus/client_golang v1.24.0
 	github.com/stretchr/testify v1.11.1
 	github.com/wI2L/jsondiff v0.7.1
-	github.com/zalando-incubator/stackset-controller v1.4.136
+	github.com/zalando-incubator/stackset-controller v1.4.137
 	github.com/zalando/postgres-operator v1.15.1
 	go.uber.org/zap v1.28.0
-	k8s.io/api v0.36.2
-	k8s.io/apimachinery v0.36.2
-	k8s.io/apiserver v0.36.2
-	k8s.io/client-go v0.36.2
-	k8s.io/component-base v0.36.2
+	k8s.io/api v0.36.3
+	k8s.io/apimachinery v0.36.3
+	k8s.io/apiserver v0.36.3
+	k8s.io/client-go v0.36.3
+	k8s.io/component-base v0.36.3
 	sigs.k8s.io/controller-runtime v0.24.1
 )
 
