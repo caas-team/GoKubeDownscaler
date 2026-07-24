@@ -120,9 +120,12 @@ func (s *Scope) GetScopeFromEnv() error {
 		return fmt.Errorf("error while getting %q environment variable: %w", envDowntime, err)
 	}
 
-	if err = util.GetEnvValue(envTimezone, &util.TimezoneValue{Value: &s.DefaultTimezone}); err != nil {
+	timezoneValue := &util.TimezoneValue{}
+	if err = util.GetEnvValue(envTimezone, timezoneValue); err != nil {
 		return fmt.Errorf("error while getting %q environment variable: %w", envTimezone, err)
 	}
+
+	s.DefaultTimezone = timezoneValue.Value
 
 	if err = util.GetEnvValue(envWeekFrame, &util.WeekFrameValue{Value: &s.DefaultWeekFrame}); err != nil {
 		return fmt.Errorf("error while getting %q environment variable: %w", envWeekFrame, err)
