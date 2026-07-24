@@ -343,6 +343,56 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "advancedstatefulsets" }}
+- apiGroups:
+    - apps.kruise.io
+  resources:
+    - statefulsets
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "clonesets" }}
+- apiGroups:
+    - apps.kruise.io
+  resources:
+    - clonesets
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "advancedcronjobs" }}
+- apiGroups:
+    - apps.kruise.io
+  resources:
+    - advancedcronjobs
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "broadcastjobs" }}
+- apiGroups:
+    - apps.kruise.io
+  resources:
+    - broadcastjobs
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "advanceddaemonsets" }}
+- apiGroups:
+    - apps.kruise.io
+  resources:
+    - advanceddaemonsets
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -526,6 +576,66 @@ Create webhook resources
     - "UPDATE"
   resources:
     - kafkabridges
+{{ end -}}
+{{ if eq $resource "advancedstatefulsets" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1beta1"
+    - "v1alpha1"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - statefulsets
+{{ end -}}
+{{ if eq $resource "clonesets" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1beta1"
+    - "v1alpha1"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - clonesets
+{{ end -}}
+{{ if eq $resource "advancedcronjobs" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1beta1"
+    - "v1alpha1"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - advancedcronjobs
+{{ end -}}
+{{ if eq $resource "broadcastjobs" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1beta1"
+    - "v1alpha1"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - broadcastjobs
+{{ end -}}
+{{ if eq $resource "advanceddaemonsets" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1beta1"
+    - "v1alpha1"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - advanceddaemonsets
 {{ end -}}
 {{ end -}}
 {{- end }}
@@ -744,6 +854,71 @@ resources include in annotationsCompliance
     - "UPDATE"
   resources:
     - kafkabridges
+{{ end -}}
+{{ if eq $resource "advancedstatefulsets" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - statefulsets
+{{ end -}}
+{{ if eq $resource "clonesets" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1alpha1"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - clonesets
+{{ end -}}
+{{ if eq $resource "advancedcronjobs" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1alpha1"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - advancedcronjobs
+{{ end -}}
+{{ if eq $resource "broadcastjobs" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1alpha1"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - broadcastjobs
+{{ end -}}
+{{ if eq $resource "advanceddaemonsets" -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1alpha1"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - advanceddaemonsets
 {{ end -}}
 {{ end -}}
 {{- end }}

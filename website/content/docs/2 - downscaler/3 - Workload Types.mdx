@@ -142,3 +142,38 @@ the legacy `v1beta2` was removed in 1.0.0).
 Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
 Requires the [Strimzi Kafka Operator](https://strimzi.io/) `>=0.49` (the `v1` API was introduced in 0.49 and
 the legacy `v1beta2` was removed in 1.0.0).
+
+### KruiseStatefulSets
+
+- id: advancedstatefulsets
+- resource: statefulset.v1beta1.kruise.io
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+### CloneSets
+
+- id: clonesets
+- resource: clonesets.v1beta1.kruise.io
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+### BroadcastJobs
+
+- id: broadcastjobs
+- resource: broadcastjobs.v1beta1.kruise.io
+
+Scales by setting the suspend property to true, which stops the execution of the job until it is upscaled again.
+
+### AdvancedCronJobs
+
+- id: advancedcronjobs
+- resource: advancedcronjobs.v1beta1.kruise.io
+
+Scales by setting the cronjobs suspend property to true, which halts further scheduled runs of the Cronjob.
+
+### AdvancedDaemonSets
+
+- id: advanceddaemonsets
+- resource: advanceddaemonsets.v1beta1.kruise.io
+
+Scales by setting the node selector to match none of the nodes, which stops pods from running on any node.
