@@ -283,6 +283,14 @@ html[data-theme="dark"] .icon-rss {
   }
 }
 
+/* Prevent document-level paragraph styles from leaking into mermaid diagrams.*/
+.docusaurus-mermaid-container p {
+  font-size: unset !important;
+  line-height: unset !important;
+  letter-spacing: unset !important;
+  margin-bottom: 0 !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .theme-doc-markdown .faq-item,
   .theme-doc-markdown .faq-question::before,
