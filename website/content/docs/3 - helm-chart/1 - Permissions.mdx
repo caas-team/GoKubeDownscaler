@@ -56,3 +56,89 @@ These resources can be:
 - PodDisruptionBudgets
 - Prometheuses
 - AutoscalingRunnerSets
+- Services
+- Ingresses
+- Gateways
+
+## Special Permissions For GatewayClass and IngressClass
+
+When the GoKubeDownscaler is configured to scale `Gateway` or `Ingress` resources,
+some external operators (e.g. the AWS Load Balancer Controller) actively check the real existence
+of the `GatewayClass` and `IngressClass` specified by the users inside `Gateway` or `Ingress` templates.
+
+GoKubeDownscaler scales down `Gateway` and `Ingress` resources by changing the class name inside these templates to a non-existing class.
+And sometimes these external operators block this update with a validation error if the class does not exist in the cluster,
+preventing the GoKubeDownscaler from scaling down these resources.
+
+If you need these classes to be present in the cluster, you can either let the GoKubeDownscaler chart create these resources for you
+as described in the following [documentation page](ref:docs-helm-deploy-extra-resources), or, if you run the GoKubeDownscaler
+without having cluster-wide permissions to create these resources, see the instructions below.
+
+### Options 1
+
+If you run the GoKubeDownscaler in constrained mode, and you want to deploy these classes in the cluster,
+your identity needs to have these permissions to create `GatewayClass` and `IngressClass` resources in the cluster.
+You may ask your cluster administrator to grant you these permissions by creating a `ClusterRole` and a `ClusterRoleBinding`
+like the following:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kube-downscaler-class-manager-limited
+rules:
+  # Kube-Downscaler IngressClass permissions
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingressclasses"]
+    verbs: ["create", "list", "get", "patch", "update"]
+    # permissions are granted only for this class
+    resourceNames: ["kube-downscaler-ingress-class"]
+
+  # Kube-Downscaler GatewayClass permissions
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["gatewayclasses"]
+    verbs: ["create", "list", "get", "patch", "update"]
+    # permissions are granted only for this class
+    resourceNames: ["kube-downscaler-gateway-class"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: class-manager-limited-binding
+# list users or service accounts that needs to have permissions to install the chart
+subjects:
+  - kind: ServiceAccount
+    name: YOUR_SERVICE_ACCOUNT
+    namespace: YOUR_NAMESPACE
+  - kind: User
+    name: YOUR_USER
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: class-manager-limited
+  apiGroup: rbac.authorization.k8s.io
+```
+
+### Options 2
+
+Alternatively you can ask your cluster administrator to create these resources for you.
+GoKubeDownscaler does not need to read or work with these resources, it only needs them to be present in the cluster.
+These resources are just empty placeholders with no specific configuration
+
+```yaml title="kube-downscaler-gateway-class.yaml"
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: kube-downscaler-gateway-class
+spec:
+  controllerName: kube-downscaler.k8s/gateway-controller
+```
+
+```yaml title="kube-downscaler-ingress-class.yaml"
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: kube-downscaler-ingress-class
+spec:
+  controller: kube-downscaler.k8s/gateway-controller
+```
