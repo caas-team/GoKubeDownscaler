@@ -39,6 +39,7 @@ includedResources:
 #  - clonesets
 #  - advancedcronjobs
 #  - broadcastjobs
+#  - imagepulljobs
 #  - advanceddaemonsets
 
 fullnameOverride: ""

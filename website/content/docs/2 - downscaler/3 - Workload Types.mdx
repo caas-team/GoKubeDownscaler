@@ -205,14 +205,30 @@ Scales by setting the replica count to the [downscale replicas](ref:docs-values#
 - id: broadcastjobs
 - resource: broadcastjobs.v1beta1.kruise.io
 
-Scales by setting the suspend property to true, which stops the execution of the job until it is upscaled again.
+Scales by setting the suspend property to true.
+
+:::warning
+According to Kruise documentation, this won't stop the job from running,
+but it will prevent new pods from being created.
+:::
+
+### ImagePullJobs
+
+- id: imagepulljobs
+- resource: imagepulljobs.v1beta1.kruise.io
+
+:::warning
+Scales by setting the suspend property to true.
+According to Kruise documentation, this won't stop the job from running,
+but it will prevent new pods from being created.
+:::
 
 ### AdvancedCronJobs
 
 - id: advancedcronjobs
 - resource: advancedcronjobs.v1beta1.kruise.io
 
-Scales by setting the cronjobs suspend property to true, which halts further scheduled runs of the Cronjob.
+Scales by setting the suspend property to true, which halts further scheduled runs of the AdvancedCronJob.
 
 ### AdvancedDaemonSets
 
