@@ -231,6 +231,14 @@ func (c client) GetChildrenWorkloads(workload scalable.Workload, ctx context.Con
 			return nil, fmt.Errorf("failed to get children workloads: %w", err)
 		}
 
+		slog.Debug(
+			"retrieved children for workload",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+			"resourceType", workload.GroupVersionKind().Kind,
+			"childrenCount", len(children),
+		)
+
 		return children, nil
 	}
 

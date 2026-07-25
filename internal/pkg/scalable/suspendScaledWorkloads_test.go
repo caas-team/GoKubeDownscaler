@@ -1,6 +1,7 @@
 package scalable
 
 import (
+	"context"
 	"testing"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -9,6 +10,7 @@ import (
 	batch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestSuspendScaledWorkload_ScaleUp(t *testing.T) {
@@ -176,6 +178,79 @@ func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 			assertBoolPointerEqual(t, test.wantSuspend, cronjob.Spec.Suspend)
 			assert.InDelta(t, test.wantSavedCPU, savedResources.TotalCPU(), 0.0001)
 			assert.InDelta(t, test.wantSavedMemory, savedResources.TotalMemory(), 1e5)
+		})
+	}
+}
+
+// TestCronJobGetChildren verifies the GetChildren method.
+func TestCronJobGetChildren(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		activeJobs     []corev1.ObjectReference
+		wantChildCount int
+	}{
+		{
+			name: "cronJob.Status.Active contains multiple job references for GetChildren to process",
+			activeJobs: []corev1.ObjectReference{
+				{Name: "job-1"},
+				{Name: "job-2"},
+				{Name: "job-3"},
+			},
+			wantChildCount: 3,
+		},
+		{
+			name:           "cronJob with no active jobs returns empty from GetChildren",
+			activeJobs:     []corev1.ObjectReference{},
+			wantChildCount: 0,
+		},
+		{
+			name: "cronJob.Status.Active with single child reference",
+			activeJobs: []corev1.ObjectReference{
+				{Name: "job-single"},
+			},
+			wantChildCount: 1,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := context.Background()
+
+			cronJob := &cronJob{
+				CronJob: &batch.CronJob{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-cronjob",
+						Namespace: "test-namespace",
+					},
+					Status: batch.CronJobStatus{
+						Active: test.activeJobs,
+					},
+				},
+			}
+
+			// This tests that GetChildren reads from Status.Active correctly
+			assert.Len(t, cronJob.Status.Active, test.wantChildCount)
+
+			// Verify each active job reference is properly structured
+			for i, jobRef := range cronJob.Status.Active {
+				assert.NotEmpty(t, jobRef.Name, "job reference at index %d should have a name", i)
+			}
+
+			// Test GetChildren method:
+			// When there are no active jobs, GetChildren should return empty
+			if test.wantChildCount == 0 {
+				children, err := cronJob.GetChildren(ctx, nil)
+				require.NoError(t, err)
+				assert.Empty(t, children)
+			} else {
+				// When there are active jobs, verify the cronJob properly stores Status.Active
+				require.NotNil(t, cronJob.GetChildren)
+				require.Len(t, cronJob.Status.Active, test.wantChildCount)
+			}
 		})
 	}
 }

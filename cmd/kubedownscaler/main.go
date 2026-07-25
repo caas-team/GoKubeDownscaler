@@ -377,6 +377,12 @@ func scanWorkload(
 			return fmt.Errorf("failed to get children workloads: %w", err)
 		}
 
+		slog.Debug(
+			"scaling children workloads",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+			"childrenCount", len(childrenWorkloads),
+		)
 		scaleWorkloads(scaling, childrenWorkloads, scopes, workloadNamespaceMetrics, client, ctx, config)
 	}
 
