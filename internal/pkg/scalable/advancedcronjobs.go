@@ -62,34 +62,15 @@ func (c *advancedCronJob) GetChildren(ctx context.Context, clientsets *Clientset
 		go func(activeJob v1.ObjectReference) {
 			defer waitGroup.Done()
 
-			if c.Status.Type == kruisev1beta1.BroadcastJobTemplate {
-				singleBroadcastJob, err := clientsets.Kruise.AppsV1beta1().BroadcastJobs(c.Namespace).Get(ctx, activeJob.Name, metav1.GetOptions{})
-				if err != nil {
-					errChannel <- fmt.Errorf("failed to get broadcastjob %s: %w", activeJob.Name, err)
-					return
-				}
-
-				setGroupVersionKindIfEmpty(singleBroadcastJob, kruisev1beta1.SchemeGroupVersion.WithKind("BroadcastJob"))
-
-				mutex.Lock()
-
-				results = append(results, &suspendScaledWorkload{&broadcastJob{singleBroadcastJob}})
-				mutex.Unlock()
-
-				return
-			}
-
-			singleJob, err := clientsets.Kubernetes.BatchV1().Jobs(c.Namespace).Get(ctx, activeJob.Name, metav1.GetOptions{})
+			child, err := c.getChildWorkload(ctx, clientsets, &activeJob)
 			if err != nil {
-				errChannel <- fmt.Errorf("failed to get job %s: %w", activeJob.Name, err)
+				errChannel <- err
 				return
 			}
-
-			setGroupVersionKindIfEmpty(singleJob, kruisev1beta1.SchemeGroupVersion.WithKind("Job"))
 
 			mutex.Lock()
 
-			results = append(results, &suspendScaledWorkload{&job{singleJob}})
+			results = append(results, child)
 			mutex.Unlock()
 		}(activeJob)
 	}
@@ -109,6 +90,43 @@ func (c *advancedCronJob) GetChildren(ctx context.Context, clientsets *Clientset
 	return results, nil
 }
 
+func (c *advancedCronJob) getChildWorkload(
+	ctx context.Context,
+	clientsets *Clientsets,
+	activeJob *v1.ObjectReference,
+) (Workload, error) {
+	if c.Spec.Template.BroadcastJobTemplate != nil {
+		singleBroadcastJob, err := clientsets.Kruise.AppsV1beta1().BroadcastJobs(c.Namespace).Get(ctx, activeJob.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get broadcastjob %s: %w", activeJob.Name, err)
+		}
+
+		setGroupVersionKindIfEmpty(singleBroadcastJob, kruisev1beta1.SchemeGroupVersion.WithKind("BroadcastJob"))
+
+		return &suspendScaledWorkload{&broadcastJob{singleBroadcastJob}}, nil
+	}
+
+	if c.Spec.Template.ImageListPullJobTemplate != nil {
+		singleImagePullJob, err := clientsets.Kruise.AppsV1beta1().ImagePullJobs(c.Namespace).Get(ctx, activeJob.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get imagepulljob %s: %w", activeJob.Name, err)
+		}
+
+		setGroupVersionKindIfEmpty(singleImagePullJob, kruisev1beta1.SchemeGroupVersion.WithKind("ImagePullJob"))
+
+		return &replicaScaledWorkload{&imagePullJob{singleImagePullJob}}, nil
+	}
+
+	singleJob, err := clientsets.Kubernetes.BatchV1().Jobs(c.Namespace).Get(ctx, activeJob.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get job %s: %w", activeJob.Name, err)
+	}
+
+	setGroupVersionKindIfEmpty(singleJob, kruisev1beta1.SchemeGroupVersion.WithKind("Job"))
+
+	return &suspendScaledWorkload{&job{singleJob}}, nil
+}
+
 // Reget regets the resource from the Kubernetes API.
 func (c *advancedCronJob) Reget(clientsets *Clientsets, ctx context.Context) error {
 	var err error
@@ -123,39 +141,41 @@ func (c *advancedCronJob) Reget(clientsets *Clientsets, ctx context.Context) err
 
 // getSavedResourcesRequests calculates the total saved resources requests when downscaling the AdvancedCronJob.
 func (c *advancedCronJob) getSavedResourcesRequests() *metrics.SavedResources {
-	var totalSavedCPU, totalSavedMemory float64
-
-	if c.Spec.Template.JobTemplate != nil {
-		for i := range c.Spec.Template.JobTemplate.Spec.Template.Spec.Containers {
-			container := &c.Spec.Template.JobTemplate.Spec.Template.Spec.Containers[i]
-			if container.Resources.Requests != nil {
-				totalSavedCPU += container.Resources.Requests.Cpu().AsApproximateFloat64()
-				totalSavedMemory += container.Resources.Requests.Memory().AsApproximateFloat64()
-			}
-		}
-
-		parallelism := derefInt32(c.Spec.Template.JobTemplate.Spec.Parallelism, 1)
-		totalSavedCPU *= float64(parallelism)
-		totalSavedMemory *= float64(parallelism)
-
-		return metrics.NewSavedResources(totalSavedCPU, totalSavedMemory)
-	}
-
 	if c.Spec.Template.BroadcastJobTemplate != nil {
-		for i := range c.Spec.Template.BroadcastJobTemplate.Spec.Template.Spec.Containers {
-			container := &c.Spec.Template.BroadcastJobTemplate.Spec.Template.Spec.Containers[i]
-			if container.Resources.Requests != nil {
-				totalSavedCPU += container.Resources.Requests.Cpu().AsApproximateFloat64()
-				totalSavedMemory += container.Resources.Requests.Memory().AsApproximateFloat64()
-			}
-		}
+		totalSavedCPU, totalSavedMemory := sumContainerRequests(c.Spec.Template.BroadcastJobTemplate.Spec.Template.Spec.Containers)
+		parallelism := kruiseParallelismToInt32(c.Spec.Template.BroadcastJobTemplate.Spec.Parallelism, 1)
 
-		parallelism := broadcastParallelismToInt32(c.Spec.Template.BroadcastJobTemplate.Spec.Parallelism, 1)
-		totalSavedCPU *= float64(parallelism)
-		totalSavedMemory *= float64(parallelism)
+		return metrics.NewSavedResources(totalSavedCPU*float64(parallelism), totalSavedMemory*float64(parallelism))
 	}
 
-	return metrics.NewSavedResources(totalSavedCPU, totalSavedMemory)
+	if c.Spec.Template.ImageListPullJobTemplate != nil {
+		// ImageListPullJob/ImagePullJob templates do not define container resource requests in spec.
+		return metrics.NewSavedResources(0, 0)
+	}
+
+	if c.Spec.Template.JobTemplate == nil {
+		return metrics.NewSavedResources(0, 0)
+	}
+
+	totalSavedCPU, totalSavedMemory := sumContainerRequests(c.Spec.Template.JobTemplate.Spec.Template.Spec.Containers)
+	parallelism := derefInt32(c.Spec.Template.JobTemplate.Spec.Parallelism, 1)
+
+	return metrics.NewSavedResources(totalSavedCPU*float64(parallelism), totalSavedMemory*float64(parallelism))
+}
+
+// sumContainerRequests sums the CPU and memory requests of the given containers and returns the total saved CPU and memory.
+//
+//nolint:nonamedreturns //required for function clarity
+func sumContainerRequests(containers []v1.Container) (totalSavedCPU, totalSavedMemory float64) {
+	for i := range containers {
+		container := &containers[i]
+		if container.Resources.Requests != nil {
+			totalSavedCPU += container.Resources.Requests.Cpu().AsApproximateFloat64()
+			totalSavedMemory += container.Resources.Requests.Memory().AsApproximateFloat64()
+		}
+	}
+
+	return totalSavedCPU, totalSavedMemory
 }
 
 // nolint: nonamedreturns // getSuspend gets the current value of the paused field and the target downscale state.

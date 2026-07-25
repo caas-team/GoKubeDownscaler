@@ -81,7 +81,7 @@ func (b *broadcastJob) getSavedResourcesRequests() *metrics.SavedResources {
 		}
 	}
 
-	parallelism := broadcastParallelismToInt32(b.Spec.Parallelism, b.Status.Desired)
+	parallelism := kruiseParallelismToInt32(b.Spec.Parallelism, b.Status.Desired)
 	totalSavedCPU *= float64(parallelism)
 	totalSavedMemory *= float64(parallelism)
 

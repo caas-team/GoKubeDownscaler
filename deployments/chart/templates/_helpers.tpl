@@ -244,7 +244,7 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
-{{- if eq $resource "jobs" }}
+{{- if or (eq $resource "jobs") (eq $resource "advancedcronjobs") }}
 - apiGroups:
     - batch
   resources:
@@ -417,11 +417,21 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
-{{- if eq $resource "broadcastjobs" }}
+{{- if or (eq $resource "broadcastjobs") (eq $resource "advancedcronjobs") }}
 - apiGroups:
     - apps.kruise.io
   resources:
     - broadcastjobs
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if or (eq $resource "imagepulljobs") (eq $resource "advancedcronjobs") }}
+- apiGroups:
+    - apps.kruise.io
+  resources:
+    - imagepulljobs
   verbs:
     - get
     - list
@@ -500,7 +510,7 @@ Create webhook resources
   resources:
     - horizontalpodautoscalers
 {{ end -}}
-{{ if eq $resource "jobs" -}}
+{{ if or (eq $resource "jobs") (eq $resource "advancedcronjobs") }}
 - apiGroups:
     - batch
   apiVersions:
@@ -699,7 +709,7 @@ Create webhook resources
   resources:
     - advancedcronjobs
 {{ end -}}
-{{ if eq $resource "broadcastjobs" -}}
+{{ if or (eq $resource "broadcastjobs") (eq $resource "advancedcronjobs") -}}
 - apiGroups:
     - apps.kruise.io
   apiVersions:
@@ -710,6 +720,18 @@ Create webhook resources
     - "UPDATE"
   resources:
     - broadcastjobs
+{{ end -}}
+{{ if or (eq $resource "imagepulljobs") (eq $resource "advancedcronjobs") -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1beta1"
+    - "v1alpha1"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - imagepulljobs
 {{ end -}}
 {{ if eq $resource "advanceddaemonsets" -}}
 - apiGroups:
@@ -798,7 +820,7 @@ resources include in annotationsCompliance
   resources:
     - horizontalpodautoscalers
 {{ end -}}
-{{ if eq $resource "jobs" -}}
+{{ if or (eq $resource "jobs") (eq $resource "advancedcronjobs") -}}
 - apiGroups:
     - batch
   apiVersions:
@@ -948,7 +970,8 @@ resources include in annotationsCompliance
 - apiGroups:
     - apps.kruise.io
   apiVersions:
-    - "*"
+    - "v1beta1"
+    - "v1alpha1"
   operations:
   {{- if $createUpdate }}
     - "CREATE"
@@ -961,6 +984,7 @@ resources include in annotationsCompliance
 - apiGroups:
     - apps.kruise.io
   apiVersions:
+    - "v1beta1"
     - "v1alpha1"
   operations:
   {{- if $createUpdate }}
@@ -974,6 +998,7 @@ resources include in annotationsCompliance
 - apiGroups:
     - apps.kruise.io
   apiVersions:
+    - "v1beta1"
     - "v1alpha1"
   operations:
   {{- if $createUpdate }}
@@ -983,10 +1008,11 @@ resources include in annotationsCompliance
   resources:
     - advancedcronjobs
 {{ end -}}
-{{ if eq $resource "broadcastjobs" -}}
+{{ if or (eq $resource "broadcastjobs") (eq $resource "advancedcronjobs") -}}
 - apiGroups:
     - apps.kruise.io
   apiVersions:
+    - "v1beta1"
     - "v1alpha1"
   operations:
   {{- if $createUpdate }}
@@ -996,10 +1022,25 @@ resources include in annotationsCompliance
   resources:
     - broadcastjobs
 {{ end -}}
+{{ if or (eq $resource "imagepulljobs") (eq $resource "advancedcronjobs") -}}
+- apiGroups:
+    - apps.kruise.io
+  apiVersions:
+    - "v1beta1"
+    - "v1alpha1"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - imagepulljobs
+{{ end -}}
 {{ if eq $resource "advanceddaemonsets" -}}
 - apiGroups:
     - apps.kruise.io
   apiVersions:
+    - "v1beta1"
     - "v1alpha1"
   operations:
   {{- if $createUpdate }}

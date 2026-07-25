@@ -359,8 +359,8 @@ func unstructuredReplicasToInt32(val any) (int32, bool) {
 	}
 }
 
-// broadcastParallelismToInt32 converts an IntOrString parallelism value to int32.
-func broadcastParallelismToInt32(parallelism *intstr.IntOrString, fallback int32) int32 {
+// kruiseParallelismToInt32 converts an IntOrString parallelism value to int32.
+func kruiseParallelismToInt32(parallelism *intstr.IntOrString, fallback int32) int32 {
 	if parallelism == nil {
 		if fallback > 0 {
 			return fallback

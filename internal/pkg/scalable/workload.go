@@ -52,6 +52,7 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"advancedcronjobs":         getAdvancedCronJobs,
 		"advanceddaemonsets":       getAdvancedDaemonSets,
 		"broadcastjobs":            getBroadcastJobs,
+		"imagepulljobs":            getImagePullJobs,
 		"clonesets":                getCloneSets,
 	}
 
@@ -100,6 +101,7 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"advancedcronjob":         parseAdvancedCronJobFromBytes,
 		"advanceddaemonset":       parseAdvancedDaemonSetFromBytes,
 		"broadcastjob":            parseBroadcastJobFromBytes,
+		"imagepulljob":            parseImagePullJobFromBytes,
 		"advancedstatefulsets":    parseKruiseStatefulSetFromBytes,
 		"clonesets":               parseCloneSetFromBytes,
 	}
