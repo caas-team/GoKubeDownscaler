@@ -62,17 +62,34 @@ func (c *advancedCronJob) GetChildren(ctx context.Context, clientsets *Clientset
 		go func(activeJob v1.ObjectReference) {
 			defer waitGroup.Done()
 
-			singleBroadcastJob, err := clientsets.Kruise.AppsV1beta1().BroadcastJobs(c.Namespace).Get(ctx, activeJob.Name, metav1.GetOptions{})
-			if err != nil {
-				errChannel <- fmt.Errorf("failed to get broadcastjob %s: %w", activeJob.Name, err)
+			if c.Status.Type == kruisev1beta1.BroadcastJobTemplate {
+				singleBroadcastJob, err := clientsets.Kruise.AppsV1beta1().BroadcastJobs(c.Namespace).Get(ctx, activeJob.Name, metav1.GetOptions{})
+				if err != nil {
+					errChannel <- fmt.Errorf("failed to get broadcastjob %s: %w", activeJob.Name, err)
+					return
+				}
+
+				setGroupVersionKindIfEmpty(singleBroadcastJob, kruisev1beta1.SchemeGroupVersion.WithKind("BroadcastJob"))
+
+				mutex.Lock()
+
+				results = append(results, &suspendScaledWorkload{&broadcastJob{singleBroadcastJob}})
+				mutex.Unlock()
+
 				return
 			}
 
-			setGroupVersionKindIfEmpty(singleBroadcastJob, kruisev1beta1.SchemeGroupVersion.WithKind("BroadcastJob"))
+			singleJob, err := clientsets.Kubernetes.BatchV1().Jobs(c.Namespace).Get(ctx, activeJob.Name, metav1.GetOptions{})
+			if err != nil {
+				errChannel <- fmt.Errorf("failed to get job %s: %w", activeJob.Name, err)
+				return
+			}
+
+			setGroupVersionKindIfEmpty(singleJob, kruisev1beta1.SchemeGroupVersion.WithKind("Job"))
 
 			mutex.Lock()
 
-			results = append(results, &suspendScaledWorkload{&broadcastJob{singleBroadcastJob}})
+			results = append(results, &suspendScaledWorkload{&job{singleJob}})
 			mutex.Unlock()
 		}(activeJob)
 	}
