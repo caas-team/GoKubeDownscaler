@@ -37,14 +37,14 @@
     "@docusaurus/tsconfig": "3.10.2",
     "@docusaurus/types": "3.10.2",
     "@typescript-eslint/eslint-plugin": "^8.65.0",
-    "@typescript-eslint/parser": "^8.60.0",
-    "eslint": "^10.7.0",
+    "@typescript-eslint/parser": "^8.65.0",
+    "eslint": "^10.8.0",
     "eslint-plugin-markdown": "^5.1.0",
     "json-loader": "^0.5.7",
-    "postcss": "^8.5.22",
-    "tailwindcss": "^4.3.0",
+    "postcss": "^8.5.23",
+    "tailwindcss": "^4.3.3",
     "tailwindcss-animated": "^2.1.0",
-    "typescript": "~6.0.3",
+    "typescript": "~5.9.3",
     "ws": "^8.21.1"
   },
   "browserslist": {
@@ -67,11 +67,13 @@
     "serialize-javascript": "7.0.5",
     "sockjs": {
       "uuid": "11.1.1"
-    }
+    },
+    "brace-expansion": "5.0.8"
   },
   "_notes": {
     "mermaid-override": "override mermaid to fix security vulnerabilities (classDef HTML/CSS injection, Gantt DoS) in versions <= 11.14.0.",
     "serialize-javascript-override": "override serialize-javascript to fix a security vulnerability in older versions pulled in by transitive dependencies.",
-    "uuid-override": "override uuid in sockjs to fix buffer bounds check vulnerability (GHSA-w5hq-g745-h8pq)."
+    "uuid-override": "override uuid in sockjs to fix buffer bounds check vulnerability (GHSA-w5hq-g745-h8pq).",
+    "brace-expansion-override": "override brace-expansion to fix DoS via unbounded expansion length (GHSA-mh99-v99m-4gvg) in versions <= 5.0.7."
   }
 }

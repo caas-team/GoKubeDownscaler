@@ -283,6 +283,39 @@ html[data-theme="dark"] .icon-rss {
   }
 }
 
+/* Make the hierarchy diagram use the available content width. */
+.hierarchy-diagram-mermaid .docusaurus-mermaid-container {
+  width: min(100%, 900px);
+  margin: 0 auto;
+}
+.hierarchy-diagram-mermaid .docusaurus-mermaid-container svg {
+  width: 100% !important;
+  height: auto !important;
+}
+/* Keep highlighted scope names white. */
+.hierarchy-diagram-mermaid .node.highlighted .label,
+.hierarchy-diagram-mermaid .node.highlighted .label p,
+.hierarchy-diagram-mermaid .node.highlighted .label span,
+.hierarchy-diagram-mermaid .node.highlighted text {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+/* Soften non-highlighted scope labels (avoid pure white). */
+[data-theme="light"] .hierarchy-diagram-mermaid .node:not(.highlighted) .label,
+[data-theme="light"] .hierarchy-diagram-mermaid .node:not(.highlighted) .label p,
+[data-theme="light"] .hierarchy-diagram-mermaid .node:not(.highlighted) .label span,
+[data-theme="light"] .hierarchy-diagram-mermaid .node:not(.highlighted) text {
+  color: #1f2937 !important;
+  fill: #1f2937 !important;
+}
+[data-theme="dark"] .hierarchy-diagram-mermaid .node:not(.highlighted) .label,
+[data-theme="dark"] .hierarchy-diagram-mermaid .node:not(.highlighted) .label p,
+[data-theme="dark"] .hierarchy-diagram-mermaid .node:not(.highlighted) .label span,
+[data-theme="dark"] .hierarchy-diagram-mermaid .node:not(.highlighted) text {
+  color: #c0c6d4 !important;
+  fill: #c0c6d4 !important;
+}
+
 /* Prevent document-level paragraph styles from leaking into mermaid diagrams.*/
 .docusaurus-mermaid-container p {
   font-size: unset !important;
