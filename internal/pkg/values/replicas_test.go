@@ -38,9 +38,14 @@ func TestReplicasValue_Set(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			name:      "invalid non numeric",
-			input:     "abc",
-			expectErr: true,
+			name:  "non numeric",
+			input: "LoadBalancer",
+			want:  StringReplicas("LoadBalancer"),
+		},
+		{
+			name:  "non numeric and boolean",
+			input: "false",
+			want:  BooleanReplicas(false),
 		},
 		{
 			name:  "valid boolean true",

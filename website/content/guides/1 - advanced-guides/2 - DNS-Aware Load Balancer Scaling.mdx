@@ -1,0 +1,262 @@
+---
+title: DNS-Aware Load Balancer Scaling
+id: dns-aware-load-balancer-scaling
+globalReference: guides-dns-aware-load-balancer-scaling
+description: How to configure DNS-aware load balancer scaling for GoKubeDownscaler
+keywords: [dns, load balancer, scaling, optimizing resources]
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+<script type="application/ld+json">
+  {JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "@id":
+      "https://kube-downscaler.io/guides/dns-aware-load-balancer-scaling#techarticle",
+    headline: "DNS-Aware Load Balancer Scaling",
+    description:
+      "How to scale services and gateways using ExternalDNS together with GoKubeDownscaler.",
+    articleSection: "Guides - DNS-Aware Load Balancer Scaling",
+    keywords: ["dns", "external-dns", "load balancer", "kubernetes", "scaling"],
+    url: "https://kube-downscaler.io/guides/dns-aware-load-balancer-scaling",
+    image: "https://kube-downscaler.io/img/social-preview.png",
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id":
+        "https://kube-downscaler.io/guides/dns-aware-load-balancer-scaling",
+    },
+    about: { "@id": "https://kube-downscaler.io/#software" },
+    author: { "@id": "https://kube-downscaler.io/#organization" },
+    publisher: { "@id": "https://kube-downscaler.io/#organization" },
+    isPartOf: { "@id": "https://kube-downscaler.io/#website" },
+  })}
+</script>
+
+# DNS-Aware Load Balancer Scaling
+
+This guide shows a simple pattern to scale Kubernetes services while keeping DNS records in sync through ExternalDNS.
+
+The idea is:
+
+- ExternalDNS manages public DNS records from Kubernetes resources.
+- GoKubeDownscaler controls when your gateway/service workloads are up or down.
+
+## Prerequisites
+
+First you need to have ExternalDNS installed in your cluster and configured for your cloud provider.
+
+<Tabs>
+  <TabItem value="AWS" label="AWS Route 53/EKS" default>
+
+    Install ExternalDNS on AWS/EKS:
+
+    - [ExternalDNS with Service Controller](https://kubernetes-sigs.github.io/external-dns/latest/docs/tutorials/aws/): this guide
+      shows how to set up ExternalDNS with AWS Route 53 and the default AWS Service Controller for EKS.
+      This guide works only for `Services`.
+    - [ExternalDNS AWS LB Controller](https://kubernetes-sigs.github.io/external-dns/latest/docs/tutorials/aws-load-balancer-controller/):
+      this guide shows how to set up ExternalDNS with AWS Route 53 and the AWS Load Balancer Controller for EKS.
+      This guide works for `Services`, `Ingress`, and (soon) `Gateway` resources.
+
+  </TabItem>
+  <TabItem value="Azure" label="Azure DNS/AKS">
+
+    Install ExternalDNS for Azure/AKS.
+
+    - [ExternalDNS with Azure Service Controller](https://kubernetes-sigs.github.io/external-dns/latest/docs/tutorials/azure/): this guide will
+      show you how to set up ExternalDNS with Azure DNS and the default Azure Service Controller for AKS.
+      This guide works for `Service`, `Ingress` and (soon) `Gateway` resources.
+
+  </TabItem>
+  <TabItem value="GCP" label="Google Cloud DNS/GKE">
+
+    Install ExternalDNS for Google Cloud DNS managed zones.
+
+    - [ExternalDNS with Google Service Controller](https://kubernetes-sigs.github.io/external-dns/latest/docs/tutorials/gke/): this guide will
+      show you how to set up ExternalDNS with Google Cloud DNS for GKE.
+      This guide works for `Service`, `Ingress` and (soon) `Gateway` resources.
+    - [ExternalDNS with Nginx Ingress Controller](https://kubernetes-sigs.github.io/external-dns/latest/docs/tutorials/gke/): this guide will
+      show you how to set up ExternalDNS with Nginx Ingress Controller for GKE.
+      This guide works for `Service`, `Ingress` and (soon) `Gateway` resources.
+
+  </TabItem>
+</Tabs>
+
+:::info
+This guide also works with other DNS providers supported by ExternalDNS, such as Cloudflare, DigitalOcean, and others.
+You can even build a custom webhook yourself if you are using a custom solution.
+Check the ExternalDNS documentation for provider-specific setup instructions.
+:::
+
+General references:
+
+- ExternalDNS docs: [kubernetes-sigs.github.io/external-dns](https://kubernetes-sigs.github.io/external-dns/latest/)
+- Annotations reference: [ExternalDNS annotations](https://kubernetes-sigs.github.io/external-dns/latest/docs/annotations/)
+
+## Set ExternalDNS Annotations
+
+ExternalDNS commonly watches a `Service` of type `LoadBalancer` and creates/updates DNS records from annotations.
+To set up DNS-aware scaling, you need to annotate your public service with the desired hostname and TTL.
+You can do this either by editing the service manifest or by using `kubectl annotate`.
+
+<Tabs>
+    <TabItem value="kubectl" label="kubectl" default>
+        Add ExternalDNS annotations with kubectl:
+
+        ```bash
+        kubectl annotate svc public-gateway -n edge \
+          external-dns.alpha.kubernetes.io/hostname=api.example.com \
+          external-dns.alpha.kubernetes.io/ttl=60
+        ```
+
+    </TabItem>
+    <TabItem value="manifest" label="Edit manifest">
+        Edit the service manifest and add the annotations:
+
+        ```yaml title="gateway-service.yaml"
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: public-gateway
+          namespace: edge
+          annotations:
+            # highlight-start
+            external-dns.alpha.kubernetes.io/hostname: api.example.com
+            external-dns.alpha.kubernetes.io/ttl: "60"
+            # highlight-end
+        spec:
+          type: LoadBalancer
+          selector:
+            app: public-gateway
+          ports:
+            - name: https
+              port: 443
+              targetPort: 8443
+        ```
+
+    </TabItem>
+
+</Tabs>
+
+Alternatively, if your setup allows it, you can annotate `Ingress` or `Gateway` resources instead of `Service`.
+The following
+example shows how to annotate an `Ingress`:
+
+<Tabs>
+    <TabItem value="kubectl" label="kubectl" default>
+        Add ExternalDNS annotations with kubectl:
+
+        ```bash
+        kubectl annotate ingress echoserver -n edge \
+          external-dns.alpha.kubernetes.io/hostname=api.example.com \
+          external-dns.alpha.kubernetes.io/ttl=60
+        ```
+
+    </TabItem>
+    <TabItem value="manifest" label="Edit manifest">
+        Edit the ingress manifest and add the annotations:
+
+        ```yaml title="ingress.yaml"
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        metadata:
+          name: echoserver
+          namespace: edge
+          annotations:
+            # highlight-start
+            external-dns.alpha.kubernetes.io/hostname: api.example.com
+            # highlight-end
+        spec:
+          ingressClassName: alb
+          rules:
+            - http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: public-gateway
+                        port:
+                          number: 80
+        ```
+
+    </TabItem>
+
+</Tabs>
+
+## Apply Downtime
+
+Finally, you can apply downtime clusterwide, to the service's namespace or the service itself using GoKubeDownscaler.
+Make sure to include `services` (or `ingresses`, `gateways`) in your targeted resources by using the `--include-resources`
+flag on the Downscaler deployment.
+
+<Tabs>
+    <TabItem value="Environment Variable" label="Environment Variable" default>
+
+        If you want to add a cluster-wide downtime with environment variables
+        you can add them inside the [values.yaml](repo:deployments/chart/values.yaml) file.
+
+        There you have to add it to the `configMap.extraConfig` field:
+
+        ```yaml title="values.yaml"
+        # ...
+
+        configMap:
+          name: go-kube-downscaler
+          extraConfig: |
+            DEFAULT_DOWNTIME: "Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
+
+        # ...
+        ```
+    </TabItem>
+    <TabItem value="Cli Argument" label="Cli Argument">
+
+        If you want to use a cli argument for the cluster-wide downtime
+        you can add them inside the [values.yaml](repo:deployments/chart/values.yaml) file.
+
+        There you have to add it to the `arguments` field:
+
+        ```yaml title="values.yaml"
+        # ...
+
+        arguments:
+          - --default-downtime="Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
+        # ...
+        ```
+    </TabItem>
+    <TabItem value="kubectl annotate namespace" label="Namespace" default>
+        Adding the downtime with kubectl is a single command:
+
+        ```bash
+        kubectl annotate ns my-namespace downscaler/downtime="Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
+        ```
+
+    </TabItem>
+    <TabItem value="kubectl annotate service" label="Workload" default>
+        Adding the downtime with kubectl is a single command:
+
+        ```bash
+        kubectl annotate deployment my-deployment downscaler/downtime="Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
+        ```
+
+    </TabItem>
+
+</Tabs>
+
+You will now observe that:
+
+- When the downtime is active, the service will be scaled down to `ClusterIP` and ExternalDNS will remove the DNS
+  record from your public DNS provider
+- When the downtime ends, the service will scale back up to `LoadBalancer` (or `Ingress`/`Gateway`)
+  and ExternalDNS will recreate the DNS record.
+
+:::tip
+
+- Keep TTL low (for example `60`) for faster DNS convergence during scale events.
+- Explore [ExternalDNS](https://kubernetes-sigs.github.io/external-dns/) to fine tune your DNS management,
+  including provider-specific configurations and advanced features.
+- Explore [ExternalDNS annotations](https://kubernetes-sigs.github.io/external-dns/latest/docs/annotations/).
+- Validate behavior in a non-production namespace before applying cluster-wide schedules.
+
+  :::
