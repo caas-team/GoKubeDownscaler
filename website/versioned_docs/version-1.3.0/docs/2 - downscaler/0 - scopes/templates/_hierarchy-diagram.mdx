@@ -1,5 +1,6 @@
 import Mermaid from "@theme/Mermaid";
 
+<div className="hierarchy-diagram-mermaid">
 <Mermaid value= {`
     block-beta
       columns 9
@@ -10,6 +11,9 @@ import Mermaid from "@theme/Mermaid";
       space   b("Environment"):7 space
               a("Default"):9
 
-      ${props.highlight ? `style ${props.highlight} stroke:none,fill:#e20074,color:#ffffff` : ''}
+      ${props.highlight ? `classDef highlighted fill:#e20074,stroke:#ad0058,stroke-width:2px,color:#ffffff,font-weight:700
+      class ${props.highlight} highlighted` : ''}
 
 `}/>
+
+</div>
