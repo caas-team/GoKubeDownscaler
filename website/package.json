@@ -20,32 +20,29 @@
     "@docusaurus/preset-classic": "3.10.2",
     "@docusaurus/theme-mermaid": "^3.10.2",
     "@easyops-cn/docusaurus-search-local": "^0.55.2",
-    "@eslint/compat": "^2.1.0",
-    "@eslint/eslintrc": "^3.3.6",
-    "@eslint/js": "^10.0.1",
     "@mdx-js/react": "^3.1.1",
     "@tailwindcss/postcss": "^4.3.3",
     "clsx": "^2.1.1",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "ws": "^8.21.1"
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@docusaurus/eslint-plugin": "3.10.2",
     "@docusaurus/module-type-aliases": "3.10.2",
     "@docusaurus/tsconfig": "3.10.2",
     "@docusaurus/types": "3.10.2",
+    "@eslint/compat": "^2.1.0",
+    "@eslint/eslintrc": "^3.3.6",
+    "@eslint/js": "^10.0.1",
     "@typescript-eslint/eslint-plugin": "^8.65.0",
     "@typescript-eslint/parser": "^8.65.0",
     "eslint": "^10.8.0",
     "eslint-plugin-markdown": "^5.1.0",
-    "json-loader": "^0.5.7",
     "postcss": "^8.5.23",
     "tailwindcss": "^4.3.3",
     "tailwindcss-animated": "^2.1.0",
-    "typescript": "~5.9.3",
-    "ws": "^8.21.1"
+    "typescript": "~5.9.3"
   },
   "browserslist": {
     "production": [
@@ -64,7 +61,7 @@
   },
   "overrides": {
     "mermaid": "11.16.0",
-    "serialize-javascript": "7.0.5",
+    "serialize-javascript": "7.0.7",
     "sockjs": {
       "uuid": "11.1.1"
     },
