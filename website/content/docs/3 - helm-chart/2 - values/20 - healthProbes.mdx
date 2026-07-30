@@ -2,7 +2,9 @@
 title: healthProbes
 id: healthProbes
 globalReference: docs-helm-health-probes
-description: Learn how to customize the liveness and readiness health probes for GoKubeDownscaler Deployment using the healthProbes Helm chart value in Kubernetes clusters.
+description: >
+  Learn how to customize the liveness and readiness health probes for GoKubeDownscaler Deployment
+  using the healthProbes Helm chart value in Kubernetes clusters.
 keywords: [healthProbes, livenessProbe, readinessProbe, startupProbe]
 ---
 
@@ -35,7 +37,7 @@ healthProbes:
   startupProbe:
     enabled: true
     failureThreshold: 3
-    initialDelaySeconds:
+    initialDelaySeconds: 5
     periodSeconds: 3
     timeoutSeconds: 2
     successThreshold: 1
