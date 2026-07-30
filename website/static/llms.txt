@@ -1,0 +1,44 @@
+# GoKubeDownscaler
+
+GoKubeDownscaler is a Kubernetes controller that automatically scales workloads down on schedules to reduce cloud costs.
+
+Use these docs in this order:
+- `docs` for concepts and reference material.
+- `guides` for step-by-step usage.
+- `contributing` for local development and repository maintenance.
+
+## Start here
+- [Documentation home](https://kube-downscaler.io/docs) — introduction, architecture, and the main docs entry point.
+- [Guides home](https://kube-downscaler.io/guides) — installation and common usage patterns.
+- [Contributing home](https://kube-downscaler.io/contributing) — developer and maintainer workflows.
+
+## Core documentation
+- [Introduction](https://kube-downscaler.io/docs) — what the project does, how it works, what's the benefit, and when to use it.
+- [Components](https://kube-downscaler.io/docs/components) — overview of the Downscaler and Webhook components.
+- [Downscaler Concepts](https://kube-downscaler.io/docs/downscaler) — scaling scopes, supported workload types, configurations, types,
+  and metrics.
+- [Helm Chart Documentation](https://kube-downscaler.io/docs/helm-chart-documentation) — chart components, permissions, and values.
+- [FAQ](https://kube-downscaler.io/docs/faq) — common questions and answers.
+
+## Practical guides
+- [Getting Started](https://kube-downscaler.io/guides) — entry point for installation and common patterns.
+- [Installation](https://kube-downscaler.io/guides/installation) — install with Helm or manifests.
+- [Basic Night Time Saving](https://kube-downscaler.io/guides/basic-night-time-saving) — schedule off-hours scale-down pattern.
+- [Scaling Down for Holidays](https://kube-downscaler.io/guides/scaling-down-for-holidays) — holiday and long-weekend downtime pattern.
+- [On Demand Startup](https://kube-downscaler.io/guides/on-demand-startup) — keep workloads down until they are needed pattern.
+- [Migrating from Py-Kube-Downscaler](https://kube-downscaler.io/guides/migrating) — migration notes and breaking changes.
+- [Advanced Guides](https://kube-downscaler.io/guides/advanced-guides) - advanced guides like concurrency and dns aware scaling.
+
+## Contributing and development
+- [Developing](https://kube-downscaler.io/contributing) — set up the repository locally.
+- [Downscaler development](https://kube-downscaler.io/contributing/downscaler) — local development and testing for the project.
+- [Website development](https://kube-downscaler.io/contributing/website) — how the Docusaurus site is structured and built.
+- [Helm chart development](https://kube-downscaler.io/contributing/helm-chart) — chart authoring, testing, and versioning.
+- [Maintaining the repository](https://kube-downscaler.io/contributing/maintaining-the-repository) — release process and maintainer tasks.
+- [GitHub Workflows](https://kube-downscaler.io/contributing/github-workflows) — CI, release, and deployment automation.
+- [Docker Image](https://kube-downscaler.io/contributing/docker-image) — cosign image verification and release details.
+
+## Useful project links
+- [GitHub repository](https://github.com/caas-team/GoKubeDownscaler)
+- [Helm Chart On Artifact Hub](https://artifacthub.io/packages/helm/py-kube-downscaler/go-kube-downscaler)
+- [Community Slack](https://inviter.co/kube-downscaler)
