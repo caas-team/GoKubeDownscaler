@@ -2,7 +2,9 @@
 title: podMonitor
 id: podMonitor
 globalReference: docs-pod-monitor
-description: Learn how to enable and configure a Prometheus PodMonitor for GoKubeDownscaler to automatically scrape downscaler metrics in your Kubernetes cluster setup.
+description: >
+  Learn how to enable and configure a Prometheus PodMonitor for GoKubeDownscaler to automatically
+  scrape downscaler metrics in your Kubernetes cluster setup.
 keywords: [podmonitor]
 ---
 
@@ -10,7 +12,7 @@ keywords: [podmonitor]
 
 A `PodMonitor` is a custom resource used by Prometheus Operator to discover and scrape metrics from Kubernetes pods.
 It defines how Prometheus should find pods, which endpoints to scrape, and what labels or relabeling rules to apply.
-The downscaler chart is able to automatically deploy a PodMonitor when requested
+The downscaler chart is able to automatically deploy a PodMonitor when requested.
 
 The following fields could be customized:
 
