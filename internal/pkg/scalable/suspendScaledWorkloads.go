@@ -33,6 +33,21 @@ type suspendScaledWorkload struct {
 	suspendScaledResource
 }
 
+// GetChildren delegates child discovery to the wrapped resource when it supports ParentWorkload.
+func (r *suspendScaledWorkload) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error) {
+	parent, ok := r.suspendScaledResource.(ParentWorkload)
+	if !ok {
+		return nil, nil
+	}
+
+	children, err := parent.GetChildren(ctx, clientsets)
+	if err != nil {
+		return nil, fmt.Errorf("get children from parent workload: %w", err)
+	}
+
+	return children, nil
+}
+
 // ScaleUp scales up the underlying suspendScaledResource.
 func (r *suspendScaledWorkload) ScaleUp() (bool, error) {
 	originalState, err := getOriginalReplicas(r)

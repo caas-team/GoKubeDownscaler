@@ -259,6 +259,9 @@ Create defined permissions for roles
     - batch
   resources:
     - cronjobs
+{{- if and (not (has "jobs" $.Values.includedResources)) (or (has "--scale-children" $.Values.arguments) (has "--scale-children=true" $.Values.arguments) (has "--scale-children" $.Values.extraArguments) (has "--scale-children=true" $.Values.extraArguments)) }}
+    - jobs
+{{- end }}
   verbs:
     - get
     - list
@@ -468,6 +471,9 @@ Create webhook resources
     - "UPDATE"
   resources:
     - cronjobs
+{{- if and (not (has "jobs" $.Values.includedResources)) (or (has "--scale-children" $.Values.arguments) (has "--scale-children=true" $.Values.arguments) (has "--scale-children" $.Values.extraArguments) (has "--scale-children=true" $.Values.extraArguments)) }}
+    - jobs
+{{- end }}
 {{ end -}}
 {{ if eq $resource "scaledobjects" -}}
 - apiGroups:
@@ -707,6 +713,9 @@ resources include in annotationsCompliance
     - "UPDATE"
   resources:
     - cronjobs
+{{- if and (not (has "jobs" $.Values.includedResources)) (or (has "--scale-children" $.Values.arguments) (has "--scale-children=true" $.Values.arguments) (has "--scale-children" $.Values.extraArguments) (has "--scale-children=true" $.Values.extraArguments)) }}
+    - jobs
+{{- end }}
 {{ end -}}
 {{ if eq $resource "scaledobjects" -}}
 - apiGroups:
