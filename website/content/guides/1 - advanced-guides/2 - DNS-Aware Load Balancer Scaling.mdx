@@ -2,7 +2,7 @@
 title: DNS-Aware Load Balancer Scaling
 id: dns-aware-load-balancer-scaling
 globalReference: guides-dns-aware-load-balancer-scaling
-description: How to configure DNS-aware load balancer scaling for GoKubeDownscaler
+description: Learn how to scale Kubernetes Services with GoKubeDownscaler and ExternalDNS to reduce load balancer costs while maintaining DNS records in sync.
 keywords: [dns, load balancer, scaling, optimizing resources]
 ---
 
@@ -17,7 +17,7 @@ import TabItem from "@theme/TabItem";
       "https://kube-downscaler.io/guides/dns-aware-load-balancer-scaling#techarticle",
     headline: "DNS-Aware Load Balancer Scaling",
     description:
-      "How to scale services and gateways using ExternalDNS together with GoKubeDownscaler.",
+      "Learn how to scale Kubernetes Services using ExternalDNS together with GoKubeDownscaler.",
     articleSection: "Guides - DNS-Aware Load Balancer Scaling",
     keywords: ["dns", "external-dns", "load balancer", "kubernetes", "scaling"],
     url: "https://kube-downscaler.io/guides/dns-aware-load-balancer-scaling",
@@ -45,7 +45,9 @@ The idea is:
 
 ## Prerequisites
 
-First you need to have ExternalDNS installed in your cluster and configured for your cloud provider.
+## Prerequisites: Setting Up ExternalDNS for Kubernetes
+
+Before implementing DNS-aware scaling, you must have ExternalDNS deployed and properly configured for your cloud provider and DNS infrastructure.
 
 <Tabs>
   <TabItem value="AWS" label="AWS Route 53/EKS" default>
@@ -94,7 +96,7 @@ General references:
 - ExternalDNS docs: [kubernetes-sigs.github.io/external-dns](https://kubernetes-sigs.github.io/external-dns/latest/)
 - Annotations reference: [ExternalDNS annotations](https://kubernetes-sigs.github.io/external-dns/latest/docs/annotations/)
 
-## Set ExternalDNS Annotations
+## Set ExternalDNS Annotations On Your Service, Ingress or Gateway
 
 ExternalDNS commonly watches a `Service` of type `LoadBalancer` and creates/updates DNS records from annotations.
 To set up DNS-aware scaling, you need to annotate your public service with the desired hostname and TTL.
@@ -185,7 +187,7 @@ example shows how to annotate an `Ingress`:
 
 </Tabs>
 
-## Apply Downtime
+## Apply Scaling Schedules with GoKubeDownscaler
 
 Finally, you can apply downtime clusterwide, to the service's namespace or the service itself using GoKubeDownscaler.
 Make sure to include `services` (or `ingresses`, `gateways`) in your targeted resources by using the `--include-resources`
@@ -251,7 +253,7 @@ You will now observe that:
 - When the downtime ends, the service will scale back up to `LoadBalancer` (or `Ingress`/`Gateway`)
   and ExternalDNS will recreate the DNS record.
 
-:::tip
+:::tip[Best Practices for DNS-Aware Kubernetes Scaling]
 
 - Keep TTL low (for example `60`) for faster DNS convergence during scale events.
 - Explore [ExternalDNS](https://kubernetes-sigs.github.io/external-dns/) to fine tune your DNS management,
@@ -259,4 +261,4 @@ You will now observe that:
 - Explore [ExternalDNS annotations](https://kubernetes-sigs.github.io/external-dns/latest/docs/annotations/).
 - Validate behavior in a non-production namespace before applying cluster-wide schedules.
 
-  :::
+:::
