@@ -21,6 +21,11 @@ jobs:
         env:
           APP_VERSION: ${{ inputs.appVersion }}
         run: |
+          if [[ ! "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "::error::Invalid appVersion: $APP_VERSION"
+          exit 1
+          fi
+
           IFS='.' read -r major minor patch <<< "$APP_VERSION"
 
           if [ "$patch" != "0" ]; then
