@@ -41,21 +41,21 @@ func TestNodeSelectorScaledWorkload_ScaleUp(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			workload := &nodeSelectorScaledWorkload{nodeSelectorScaledResource: &daemonSet{&appsv1.DaemonSet{}}}
+			testDaemonset := &nodeSelectorScaledWorkload{nodeSelectorScaledResource: &daemonSet{&appsv1.DaemonSet{}}}
 
 			if test.labelSet {
-				workload.setNodeSelector(map[string]string{labelMatchNone: labelMatchNoneValue})
+				testDaemonset.setNodeSelector(map[string]string{labelMatchNone: labelMatchNoneValue})
 			}
 
 			if test.originalReplicas != nil {
-				setOriginalReplicas(test.originalReplicas, workload)
+				setOriginalReplicas(test.originalReplicas, testDaemonset)
 			}
 
-			updateNeeded, err := workload.ScaleUp()
+			updateNeeded, err := testDaemonset.ScaleUp()
 			require.NoError(t, err)
 			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
 
-			_, ok := workload.getNodeSelector()[labelMatchNone]
+			_, ok := testDaemonset.getNodeSelector()[labelMatchNone]
 			assert.Equal(t, test.wantLabelSet, ok)
 		})
 	}
