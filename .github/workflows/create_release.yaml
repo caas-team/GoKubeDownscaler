@@ -21,7 +21,7 @@ jobs:
         env:
           APP_VERSION: ${{ inputs.appVersion }}
         run: |
-          separator='.' read -r major minor patch <<< "$APP_VERSION"
+          IFS='.' read -r major minor patch <<< "$APP_VERSION"
 
           if [ "$patch" != "0" ]; then
             echo "Patch release ${APP_VERSION}; no dedicated release branch needed."
