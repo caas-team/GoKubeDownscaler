@@ -244,7 +244,7 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
-{{- if or (eq $resource "jobs") (eq $resource "advancedcronjobs") }}
+{{- if eq $resource "jobs" }}
 - apiGroups:
     - batch
   resources:
@@ -412,12 +412,18 @@ Create defined permissions for roles
     - apps.kruise.io
   resources:
     - advancedcronjobs
+{{- if and (not (has "broadcastjobs" $.Values.includedResources)) (or (has "--scale-children" $.Values.arguments) (has "--scale-children=true" $.Values.arguments) (has "--scale-children" $.Values.extraArguments) (has "--scale-children=true" $.Values.extraArguments)) }}
+    - broadcastjobs
+{{- end }}
+{{- if and (not (has "imagepulljobs" $.Values.includedResources)) (or (has "--scale-children" $.Values.arguments) (has "--scale-children=true" $.Values.arguments) (has "--scale-children" $.Values.extraArguments) (has "--scale-children=true" $.Values.extraArguments)) }}
+    - imagepulljobs
+{{- end }}
   verbs:
     - get
     - list
     - update
 {{- end }}
-{{- if or (eq $resource "broadcastjobs") (eq $resource "advancedcronjobs") }}
+{{- if eq $resource "broadcastjobs" }}
 - apiGroups:
     - apps.kruise.io
   resources:
@@ -427,7 +433,7 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
-{{- if or (eq $resource "imagepulljobs") (eq $resource "advancedcronjobs") }}
+{{- if eq $resource "imagepulljobs" }}
 - apiGroups:
     - apps.kruise.io
   resources:
@@ -510,7 +516,7 @@ Create webhook resources
   resources:
     - horizontalpodautoscalers
 {{ end -}}
-{{ if or (eq $resource "jobs") (eq $resource "advancedcronjobs") }}
+{{ if eq $resource "jobs" -}}
 - apiGroups:
     - batch
   apiVersions:
@@ -708,8 +714,14 @@ Create webhook resources
     - "UPDATE"
   resources:
     - advancedcronjobs
+{{- if and (not (has "broadcastjobs" $.Values.includedResources)) (or (has "--scale-children" $.Values.arguments) (has "--scale-children=true" $.Values.arguments) (has "--scale-children" $.Values.extraArguments) (has "--scale-children=true" $.Values.extraArguments)) }}
+    - broadcastjobs
+{{- end }}
+{{- if and (not (has "imagepulljobs" $.Values.includedResources)) (or (has "--scale-children" $.Values.arguments) (has "--scale-children=true" $.Values.arguments) (has "--scale-children" $.Values.extraArguments) (has "--scale-children=true" $.Values.extraArguments)) }}
+    - imagepulljobs
+{{- end }}
 {{ end -}}
-{{ if or (eq $resource "broadcastjobs") (eq $resource "advancedcronjobs") -}}
+{{ if eq $resource "broadcastjobs" -}}
 - apiGroups:
     - apps.kruise.io
   apiVersions:
@@ -721,7 +733,7 @@ Create webhook resources
   resources:
     - broadcastjobs
 {{ end -}}
-{{ if or (eq $resource "imagepulljobs") (eq $resource "advancedcronjobs") -}}
+{{ if eq $resource "imagepulljobs" -}}
 - apiGroups:
     - apps.kruise.io
   apiVersions:
@@ -820,7 +832,7 @@ resources include in annotationsCompliance
   resources:
     - horizontalpodautoscalers
 {{ end -}}
-{{ if or (eq $resource "jobs") (eq $resource "advancedcronjobs") -}}
+{{ if eq $resource "jobs" -}}
 - apiGroups:
     - batch
   apiVersions:
@@ -1006,9 +1018,15 @@ resources include in annotationsCompliance
   {{- end }}
     - "UPDATE"
   resources:
+{{- if and (not (has "broadcastjobs" $.Values.includedResources)) (or (has "--scale-children" $.Values.arguments) (has "--scale-children=true" $.Values.arguments) (has "--scale-children" $.Values.extraArguments) (has "--scale-children=true" $.Values.extraArguments)) }}
+    - broadcastjobs
+{{- end }}
+{{- if and (not (has "imagepulljobs" $.Values.includedResources)) (or (has "--scale-children" $.Values.arguments) (has "--scale-children=true" $.Values.arguments) (has "--scale-children" $.Values.extraArguments) (has "--scale-children=true" $.Values.extraArguments)) }}
+    - imagepulljobs
+{{- end }}
     - advancedcronjobs
 {{ end -}}
-{{ if or (eq $resource "broadcastjobs") (eq $resource "advancedcronjobs") -}}
+{{ if eq $resource "broadcastjobs" -}}
 - apiGroups:
     - apps.kruise.io
   apiVersions:
@@ -1022,7 +1040,7 @@ resources include in annotationsCompliance
   resources:
     - broadcastjobs
 {{ end -}}
-{{ if or (eq $resource "imagepulljobs") (eq $resource "advancedcronjobs") -}}
+{{ if eq $resource "imagepulljobs" -}}
 - apiGroups:
     - apps.kruise.io
   apiVersions:
