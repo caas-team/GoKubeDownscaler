@@ -1,0 +1,9 @@
+{
+  "repoOwner": "caas-team",
+  "repoName": "GoKubeDownscaler",
+  "targetPRLabels": ["backport"],
+  "copySourcePRLabels": true,
+  "branchLabelMapping": {
+    "^backport-to-(release/.+)$": "$1"
+  }
+}
