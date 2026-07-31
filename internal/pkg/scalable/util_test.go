@@ -1,6 +1,7 @@
 package scalable
 
 import (
+	"math"
 	"regexp"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	v1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestFilterExcluded(t *testing.T) { //nolint: maintidx// fine to read and understand
@@ -389,4 +391,56 @@ func TestIsExternallyScaled(t *testing.T) {
 			assert.Equal(t, test.want, isExternallyScaled(test.workload, externallyScaled))
 		})
 	}
+}
+
+func TestBroadcastJobParallelism(t *testing.T) {
+	t.Parallel()
+
+	limit := intstr.FromInt32(3)
+	aboveDesired := intstr.FromInt32(10)
+	percentage := intstr.FromString("50%")
+	zero := intstr.FromInt32(0)
+	invalid := intstr.FromString("invalid")
+
+	tests := []struct {
+		name        string
+		parallelism *intstr.IntOrString
+		desired     int32
+		want        int32
+	}{
+		{name: "omitted means unlimited", desired: 5, want: 5},
+		{name: "integer limits concurrency", parallelism: &limit, desired: 5, want: 3},
+		{name: "limit is capped by desired", parallelism: &aboveDesired, desired: 5, want: 5},
+		{name: "percentage is relative to desired and rounded up", parallelism: &percentage, desired: 5, want: 3},
+		{name: "zero pauses job", parallelism: &zero, desired: 5, want: 0},
+		{name: "invalid value uses unlimited semantics", parallelism: &invalid, desired: 5, want: 5},
+		{name: "no desired pods", parallelism: &limit, desired: 0, want: 0},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, test.want, broadcastJobParallelism(test.parallelism, test.desired))
+		})
+	}
+}
+
+func TestImagePullJobParallelism(t *testing.T) {
+	t.Parallel()
+
+	configured := intstr.FromInt32(5)
+	numericString := intstr.FromString("5")
+	zero := intstr.FromInt32(0)
+	maximum := intstr.FromInt32(math.MaxInt32)
+	negative := intstr.FromInt32(-1)
+	invalidString := intstr.FromString("invalid")
+
+	assert.Equal(t, int32(1), imagePullJobParallelism(nil))
+	assert.Equal(t, int32(5), imagePullJobParallelism(&configured))
+	assert.Equal(t, int32(5), imagePullJobParallelism(&numericString))
+	assert.Equal(t, int32(0), imagePullJobParallelism(&zero))
+	assert.Equal(t, int32(math.MaxInt32), imagePullJobParallelism(&maximum))
+	assert.Equal(t, int32(1), imagePullJobParallelism(&negative))
+	assert.Equal(t, int32(1), imagePullJobParallelism(&invalidString))
 }

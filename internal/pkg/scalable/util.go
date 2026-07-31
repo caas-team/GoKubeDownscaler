@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"math"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
@@ -359,32 +360,52 @@ func unstructuredReplicasToInt32(val any) (int32, bool) {
 	}
 }
 
-// kruiseParallelismToInt32 converts an IntOrString parallelism value to int32.
-func kruiseParallelismToInt32(parallelism *intstr.IntOrString, fallback int32) int32 {
+// broadcastJobParallelism returns the maximum number of concurrently running pods.
+// An omitted value means unlimited, and percentages are relative to the desired pod count.
+func broadcastJobParallelism(parallelism *intstr.IntOrString, desired int32) int32 {
+	if desired <= 0 {
+		return 0
+	}
+
+	unlimited := intstr.FromInt32(math.MaxInt32)
+
+	value, err := intstr.GetScaledValueFromIntOrPercent(intstr.ValueOrDefault(parallelism, unlimited), int(desired), true)
+	if err != nil || value < 0 {
+		return desired
+	}
+
+	if value > math.MaxInt32 {
+		return desired
+	}
+
+	return min(int32(value), desired)
+}
+
+// imagePullJobParallelism returns the configured parallelism using the same default as the Kruise controller.
+func imagePullJobParallelism(parallelism *intstr.IntOrString) int32 {
 	if parallelism == nil {
-		if fallback > 0 {
-			return fallback
-		}
-
 		return 1
 	}
 
-	if parallelism.Type == intstr.Int {
-		value := parallelism.IntValue()
-		if value > 0 && value <= math.MaxInt32 {
-			return int32(value)
+	var value int64
+
+	switch parallelism.Type {
+	case intstr.Int:
+		value = int64(parallelism.IntVal)
+	case intstr.String:
+		parsed, err := strconv.ParseInt(parallelism.StrVal, 10, 32)
+		if err != nil {
+			return 1
 		}
 
-		if fallback > 0 {
-			return fallback
-		}
-
+		value = parsed
+	default:
 		return 1
 	}
 
-	if fallback > 0 {
-		return fallback
+	if value < 0 {
+		return 1
 	}
 
-	return 1
+	return int32(value)
 }

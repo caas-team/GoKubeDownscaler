@@ -55,7 +55,7 @@ func (i *imagePullJob) setReplicas(replicas int32) error {
 
 // getReplicas gets the current parallelism of the resource.
 func (i *imagePullJob) getReplicas() (values.Replicas, error) {
-	parallelism := kruiseParallelismToInt32(i.Spec.Parallelism, i.Status.Desired)
+	parallelism := imagePullJobParallelism(i.Spec.Parallelism)
 
 	return values.AbsoluteReplicas(parallelism), nil
 }
