@@ -165,11 +165,21 @@ webhookController:
   extraArguments:
   #  - --interval=60
 
+  imagePullSecrets: []
+
   podAnnotations: {}
 
   podLabels: {}
 
   extraEnv: []
+
+  securityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    privileged: false
+    capabilities:
+      drop:
+        - ALL
 
   healthProbes:
     readinessProbe:

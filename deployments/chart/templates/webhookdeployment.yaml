@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "go-kube-downscaler.labels" . | nindent 4 }}
     {{- with .Values.webhookController.podLabels }}
@@ -58,7 +59,8 @@ spec:
             - containerPort: 443
             - containerPort: 8080
           {{- if .Values.metrics.enabled }}
-            - containerPort: 8085
+            - name: metrics
+              containerPort: 8085
           {{- end }}
           envFrom:
             - configMapRef:
@@ -71,7 +73,7 @@ spec:
           resources:
             {{- toYaml .Values.webhookController.resources | nindent 12 }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.webhookController.securityContext | nindent 12 }}
           volumeMounts:
             - name: tls
               mountPath: "/etc/webhook/tls"
@@ -114,6 +116,10 @@ spec:
           secret:
             secretName: {{ include "go-kube-downscaler.webhookController.fullname" . }}
             optional: true
+      {{- with .Values.webhookController.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
     {{- with .Values.webhookController.nodeSelector }}
