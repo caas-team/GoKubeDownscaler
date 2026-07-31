@@ -41,21 +41,21 @@ func TestNodeSelectorScaledWorkload_ScaleUp(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			testDaemonset := &nodeSelectorScaledWorkload{nodeSelectorScaledResource: &daemonSet{&appsv1.DaemonSet{}}}
+			daemonset := &nodeSelectorScaledWorkload{nodeSelectorScaledResource: &daemonSet{&appsv1.DaemonSet{}}}
 
 			if test.labelSet {
-				testDaemonset.setNodeSelector(map[string]string{labelMatchNone: labelMatchNoneValue})
+				daemonset.setNodeSelector(map[string]string{labelMatchNone: labelMatchNoneValue})
 			}
 
 			if test.originalReplicas != nil {
-				setOriginalReplicas(test.originalReplicas, testDaemonset)
+				setOriginalReplicas(test.originalReplicas, daemonset)
 			}
 
-			updateNeeded, err := testDaemonset.ScaleUp()
+			updateNeeded, err := daemonset.ScaleUp()
 			require.NoError(t, err)
 			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
 
-			_, ok := testDaemonset.getNodeSelector()[labelMatchNone]
+			_, ok := daemonset.getNodeSelector()[labelMatchNone]
 			assert.Equal(t, test.wantLabelSet, ok)
 		})
 	}
@@ -132,8 +132,8 @@ func TestNodeSelectorScaledWorkload_ScaleDown(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			testDaemonSet := &daemonSet{&appsv1.DaemonSet{}}
-			testDaemonSet.Status.CurrentNumberScheduled = test.currentScheduled
+			daemonset := &daemonSet{&appsv1.DaemonSet{}}
+			daemonset.Status.CurrentNumberScheduled = test.currentScheduled
 
 			if test.requestsCPU != "" || test.requestsMemory != "" {
 				reqs := corev1.ResourceList{}
@@ -145,10 +145,10 @@ func TestNodeSelectorScaledWorkload_ScaleDown(t *testing.T) {
 					reqs[corev1.ResourceMemory] = resource.MustParse(test.requestsMemory)
 				}
 
-				testDaemonSet.Spec.Template.Spec.Containers = []corev1.Container{{Resources: corev1.ResourceRequirements{Requests: reqs}}}
+				daemonset.Spec.Template.Spec.Containers = []corev1.Container{{Resources: corev1.ResourceRequirements{Requests: reqs}}}
 			}
 
-			workload := &nodeSelectorScaledWorkload{nodeSelectorScaledResource: testDaemonSet}
+			workload := &nodeSelectorScaledWorkload{nodeSelectorScaledResource: daemonset}
 
 			if test.labelSet {
 				workload.setNodeSelector(map[string]string{labelMatchNone: labelMatchNoneValue})
