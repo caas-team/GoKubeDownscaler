@@ -307,6 +307,10 @@
 		  "type": ["array", "null"],
 		  "items": { "type": "string" }
 		},
+		"imagePullSecrets": {
+		  "type": "array",
+		  "items": { "$ref": "#/$defs/imagePullSecret" }
+		},
 		"podAnnotations": { "$ref": "#/$defs/stringMap" },
 		"podLabels": { "$ref": "#/$defs/stringMap" },
 		"extraEnv": {
@@ -324,6 +328,27 @@
 		  "required": ["readinessProbe", "livenessProbe", "startupProbe"]
 		},
 		"resources": { "$ref": "#/$defs/resources" },
+		"securityContext": {
+		  "type": "object",
+		  "additionalProperties": false,
+		  "properties": {
+			"readOnlyRootFilesystem": { "type": "boolean" },
+			"allowPrivilegeEscalation": { "type": "boolean" },
+			"privileged": { "type": "boolean" },
+			"capabilities": {
+			  "type": "object",
+			  "additionalProperties": false,
+			  "properties": {
+				"drop": {
+				  "type": "array",
+				  "items": { "type": "string" }
+				}
+			  },
+			  "required": ["drop"]
+			}
+		  },
+		  "required": ["readOnlyRootFilesystem", "allowPrivilegeEscalation", "privileged", "capabilities"]
+		},
 		"nodeSelector": { "$ref": "#/$defs/stringMap" },
 		"tolerations": {
 		  "type": "array",
@@ -403,6 +428,7 @@
 		"extraEnv",
 		"healthProbes",
 		"resources",
+		"securityContext",
 		"nodeSelector",
 		"tolerations",
 		"affinity",

@@ -101,7 +101,7 @@ Create the name of the webhook service account to use
 Create selector label for the webhook
 */}}
 {{- define "go-kube-downscaler.webhookController.selectorLabels" -}}
-{{ include "go-kube-downscaler.selectorLabels" . }}-webhook
+application: {{ include "go-kube-downscaler.webhookController.fullname" . }}
 {{- end }}
 
 

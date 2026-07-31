@@ -1,4 +1,4 @@
-{{- if and (.Values.webhookController.enabled) }}
+{{- if .Values.webhookController.enabled }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
