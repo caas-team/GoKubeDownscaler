@@ -14,6 +14,30 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Create release branch for major/minor releases
+        env:
+          APP_VERSION: ${{ inputs.appVersion }}
+        run: |
+          separator='.' read -r major minor patch <<< "$APP_VERSION"
+
+          if [ "$patch" != "0" ]; then
+            echo "Patch release ${APP_VERSION}; no dedicated release branch needed."
+            exit 0
+          fi
+
+          branch="release/${major}.${minor}"
+
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            echo "Branch ${branch} already exists; leaving it unchanged."
+            exit 0
+          fi
+
+          git switch --create "$branch"
+          git push --set-upstream origin "$branch"
+
       - name: Create GitHub Release
         id: create_release
         uses: ncipollo/release-action@v1
