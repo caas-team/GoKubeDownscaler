@@ -21,6 +21,6 @@ roleRef:
   name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
 subjects:
   - kind: ServiceAccount
-    name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
+    name: {{ include "go-kube-downscaler.webhookController.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 {{- end }}
