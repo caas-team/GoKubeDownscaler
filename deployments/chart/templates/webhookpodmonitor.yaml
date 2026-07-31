@@ -5,6 +5,9 @@ metadata:
   name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
   labels:
     {{- include "go-kube-downscaler.labels" . | nindent 4 }}
+    {{- with .Values.webhookController.podMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- with .Values.webhookController.podMonitor.namespace }}
   namespace: {{ . }}
   {{- end }}
@@ -20,11 +23,11 @@ spec:
     {{- end }}
     {{- with .Values.webhookController.podMonitor.relabelings }}
       relabelings:
-{{ toYaml . | indent 4 }}
+{{- toYaml . | nindent 8 }}
     {{- end }}
     {{- with .Values.webhookController.podMonitor.metricRelabelings }}
       metricRelabelings:
-    {{- toYaml . | nindent 4 }}
+{{- toYaml . | nindent 8 }}
     {{- end }}
   namespaceSelector:
     matchNames:
