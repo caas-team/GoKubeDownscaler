@@ -71,6 +71,9 @@ The installation process is on [our website](https://caas-team.github.io/GoKubeD
 ## Versioning
 
 New releases are automatically created when the appVersion in the Chart.yaml is updated in the main branch.
+For major and minor releases, the release workflow also creates a dedicated branch named `release/<Major>.<Minor>`.
+To cherry-pick a merged change from `main` into a release branch, add a label like `backport-to-release/1.4` to the pull request before
+merging.
 To merge a pull request which when merged would result in a new release,
 the [`new release` label](https://github.com/caas-team/GoKubeDownscaler/labels/new%20release) has to be set on the PR.
 
