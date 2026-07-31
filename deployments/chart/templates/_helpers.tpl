@@ -87,6 +87,17 @@ Create webhook controller full name
 {{- end }}
 
 {{/*
+Create the name of the webhook service account to use
+*/}}
+{{- define "go-kube-downscaler.webhookController.serviceAccountName" -}}
+{{- if .Values.webhookController.serviceAccount.create }}
+{{- default (include "go-kube-downscaler.webhookController.fullname" .) .Values.webhookController.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.webhookController.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
 Create selector label for the webhook
 */}}
 {{- define "go-kube-downscaler.webhookController.selectorLabels" -}}

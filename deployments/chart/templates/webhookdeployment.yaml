@@ -5,7 +5,7 @@ metadata:
   name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
   labels:
     {{- include "go-kube-downscaler.labels" . | nindent 4 }}
-    {{- with .Values.podLabels }}
+    {{- with .Values.webhookController.podLabels }}
     {{- toYaml . | nindent 8 }}
     {{- end }}
 spec:
@@ -27,7 +27,7 @@ spec:
         {{- end }}
       {{- end }}
     spec:
-      serviceAccountName: {{ include "go-kube-downscaler.webhookController.fullname" . }}
+      serviceAccountName: {{ include "go-kube-downscaler.webhookController.serviceAccountName" . }}
       {{- if .Values.webhookController.priorityClassName }}
       priorityClassName: {{ .Values.webhookController.priorityClassName }}
       {{- end }}
@@ -65,7 +65,7 @@ spec:
                 name: {{ .Values.configMap.name }}
                 optional: true
           env:
-            {{- with .Values.extraEnv }}
+            {{- with .Values.webhookController.extraEnv }}
             {{- toYaml . | nindent 10 }}
             {{- end }}
           resources:
@@ -87,7 +87,7 @@ spec:
             timeoutSeconds: {{ .Values.webhookController.healthProbes.readinessProbe.timeoutSeconds }}
             successThreshold: {{ .Values.webhookController.healthProbes.readinessProbe.successThreshold }}
           {{- end }}
-          {{- if .Values.webhookController.healthProbes.readinessProbe.enabled }}
+          {{- if .Values.webhookController.healthProbes.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
               path: /healthz

@@ -79,7 +79,7 @@ spec:
             timeoutSeconds: {{ .Values.healthProbes.readinessProbe.timeoutSeconds }}
             successThreshold: {{ .Values.healthProbes.readinessProbe.successThreshold }}
           {{- end }}
-          {{- if .Values.healthProbes.readinessProbe.enabled }}
+          {{- if .Values.healthProbes.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
               path: /healthz

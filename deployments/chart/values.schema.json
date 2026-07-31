@@ -293,6 +293,16 @@
 		"image": { "$ref": "#/$defs/image" },
 		"replicaCount": { "type": "integer", "minimum": 0 },
 		"priorityClassName": { "type": "string" },
+		"serviceAccount": {
+		  "type": "object",
+		  "additionalProperties": false,
+		  "properties": {
+			"create": { "type": "boolean" },
+			"annotations": { "$ref": "#/$defs/stringMap" },
+			"name": { "type": "string" }
+		  },
+		  "required": ["create", "annotations", "name"]
+		},
 		"extraArguments": {
 		  "type": ["array", "null"],
 		  "items": { "type": "string" }
@@ -387,6 +397,7 @@
 		"image",
 		"replicaCount",
 		"priorityClassName",
+		"serviceAccount",
 		"podAnnotations",
 		"podLabels",
 		"extraEnv",
