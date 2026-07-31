@@ -143,7 +143,7 @@ func (c *advancedCronJob) Reget(clientsets *Clientsets, ctx context.Context) err
 func (c *advancedCronJob) getSavedResourcesRequests() *metrics.SavedResources {
 	if c.Spec.Template.BroadcastJobTemplate != nil {
 		totalSavedCPU, totalSavedMemory := sumContainerRequests(c.Spec.Template.BroadcastJobTemplate.Spec.Template.Spec.Containers)
-		parallelism := kruiseParallelismToInt32(c.Spec.Template.BroadcastJobTemplate.Spec.Parallelism, 1)
+		parallelism := broadcastJobParallelism(c.Spec.Template.BroadcastJobTemplate.Spec.Parallelism, 1)
 
 		return metrics.NewSavedResources(totalSavedCPU*float64(parallelism), totalSavedMemory*float64(parallelism))
 	}
