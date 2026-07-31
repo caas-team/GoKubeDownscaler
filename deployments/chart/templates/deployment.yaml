@@ -53,7 +53,8 @@ spec:
           {{- end }}
           {{- if .Values.metrics.enabled }}
           ports:
-            - containerPort: 8085
+            - name: metrics
+              containerPort: 8085
           {{- end }}
           envFrom:
           - configMapRef:
