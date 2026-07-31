@@ -217,8 +217,9 @@ but it will prevent new pods from being created.
 - id: imagepulljobs
 - resource: imagepulljobs.v1beta1.kruise.io
 
-:::warning
 Scales by setting the suspend property to true.
+
+:::warning
 According to Kruise documentation, this won't stop the job from running,
 but it will prevent new pods from being created.
 :::
