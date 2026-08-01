@@ -162,8 +162,7 @@ webhookController:
     # If not set and create is true, a name is generated using the webhook fullname template.
     name: ""
 
-  extraArguments:
-  #  - --interval=60
+  extraArguments: []
 
   imagePullSecrets: []
 
