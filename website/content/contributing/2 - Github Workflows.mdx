@@ -33,7 +33,7 @@ The workflow checks if the app version or Helm chart version in the Chart.yaml c
 This would result in a new release if the pull request were to be merged.
 
 If merging the PR would result in a new release the <GithubLabel label="needs approval"/> label will be added to it.
-Additionally a message warning about this and explaining the steps needed to merge will be sent in the pull request.
+Additionally, a message warning about this and explaining the steps needed to merge will be sent in the pull request.
 
 The pull request can not be merged until the <GithubLabel label="new release"/> label gets added to the PR.
 After that the <GithubLabel label="needs approval"/> label will get removed automatically and the PR can be merged.
@@ -86,12 +86,13 @@ Info:
 This workflow automatically cherry-picks merged pull requests from `main` into release branches.
 
 It uses the [Backport GitHub Action](https://github.com/sorenlouv/backport-github-action) and watches for labels like `backport-to-release/1.4`.
-When such a label is present on a pull request, the merged changes are backported to the matching `release/1.4` branch.
+When such a label is present on a pull request and the PR is merged, the changes are backported to the matching `release/1.4` branch.
+Works even if the PR was already merged before the label was added.
 
 Info:
 
 - File: `backport.yaml`
-- Runs on: pull_request_target.labeled, pull_request_target.closed
+- Runs on: `pull_request_target` events (`labeled`, `closed`)
 
 ## Deploy Website
 
@@ -126,8 +127,8 @@ Info:
 This workflow builds the helm chart for the downscaler when called.
 
 The workflow installs Helm as it's needed to build the helm chart,
-lints the helm chart, packages the helm chart and pushes it to the GitHub Container Registry(GHCR).
-Additionally it also triggers a repository dispatch event on
+lints the helm chart, packages the helm chart, signs the helm chart and pushes it to the GitHub Container Registry(GHCR).
+Additionally, it also triggers a repository dispatch event on
 the [helm-charts repo](https://github.com/caas-team/helm-charts) which adds the new helm chart to the helm-charts repo.
 
 Info:

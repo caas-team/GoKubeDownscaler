@@ -1,10 +1,10 @@
 ---
-title: DNS-Aware Load Balancer Scaling
+title: DNS-Aware Load Balancer Scaling with ExternalDNS
 id: dns-aware-load-balancer-scaling
 globalReference: guides-dns-aware-load-balancer-scaling
 description: >
   Learn how to scale Kubernetes Services with GoKubeDownscaler and ExternalDNS to reduce load
-  balancer costs while maintaining DNS records in sync.
+  balancer costs while keeping DNS records in sync.
 keywords: [dns, load balancer, scaling, optimizing resources]
 ---
 
@@ -17,10 +17,10 @@ import TabItem from "@theme/TabItem";
     "@type": "TechArticle",
     "@id":
       "https://kube-downscaler.io/guides/dns-aware-load-balancer-scaling#techarticle",
-    headline: "DNS-Aware Load Balancer Scaling",
+    headline: "DNS-Aware Load Balancer Scaling with ExternalDNS",
     description:
       "Learn how to scale Kubernetes Services with GoKubeDownscaler and ExternalDNS to reduce load " +
-      "balancer costs while maintaining DNS records in sync.",
+      "balancer costs while keeping DNS records in sync.",
     articleSection: "Guides - DNS-Aware Load Balancer Scaling",
     keywords: ["dns", "external-dns", "load balancer", "kubernetes", "scaling"],
     url: "https://kube-downscaler.io/guides/dns-aware-load-balancer-scaling",
@@ -50,7 +50,8 @@ The idea is:
 
 ## Prerequisites: Setting Up ExternalDNS for Kubernetes
 
-Before implementing DNS-aware scaling, you must have ExternalDNS deployed and properly configured for your cloud provider and DNS infrastructure.
+Before implementing DNS-aware Load Balancer scaling on Kubernetes, you must have ExternalDNS deployed and properly configured for
+your cloud provider and DNS infrastructure.
 
 <Tabs>
   <TabItem value="AWS" label="AWS Route 53/EKS" default>
