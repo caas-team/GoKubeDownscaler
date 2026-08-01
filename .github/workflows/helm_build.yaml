@@ -9,6 +9,13 @@ on:
       appVersion:
         required: true
         type: string
+    secrets:
+        GPG_PRIVATE_KEY:
+            required: true
+        GPG_PASSPHRASE:
+            required: true
+        GPG_KEY_ID:
+            required: true
 
 jobs:
   build_and_push:
@@ -19,6 +26,38 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v7
+
+      - name: Import GPG key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          GNUPGHOME="$RUNNER_TEMP/gnupg"
+          SECRET_KEYRING="$RUNNER_TEMP/secring.gpg"
+          PUBLIC_KEYRING="$RUNNER_TEMP/pubring.gpg"
+          PASSPHRASE_FILE="$RUNNER_TEMP/gpg-passphrase"
+
+          mkdir -p "$GNUPGHOME"
+          chmod 700 "$GNUPGHOME"
+          printf '%s' "$GPG_PASSPHRASE" > "$PASSPHRASE_FILE"
+          chmod 600 "$PASSPHRASE_FILE"
+
+          printf '%s' "$GPG_PRIVATE_KEY" |
+            GNUPGHOME="$GNUPGHOME" gpg --batch --import
+
+          GNUPGHOME="$GNUPGHOME" gpg \
+            --batch \
+            --pinentry-mode loopback \
+            --passphrase-file "$PASSPHRASE_FILE" \
+            --export-secret-keys "$GPG_KEY_ID" > "$SECRET_KEYRING"
+
+          GNUPGHOME="$GNUPGHOME" gpg \
+            --batch \
+            --export "$GPG_KEY_ID" > "$PUBLIC_KEYRING"
+
+          test -s "$SECRET_KEYRING"
+          test -s "$PUBLIC_KEYRING"
 
       - name: Set up Helm
         run: |
@@ -32,14 +71,37 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Helm Lint, Package, and Push
+      - name: Helm Lint, Package, Sign, and Push
+        env:
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
+          PASSPHRASE_FILE="$RUNNER_TEMP/gpg-passphrase"
+          SECRET_KEYRING="$RUNNER_TEMP/secring.gpg"
+          PUBLIC_KEYRING="$RUNNER_TEMP/pubring.gpg"
+
+          test -s "$PASSPHRASE_FILE"
+          test -s "$SECRET_KEYRING"
+          test -s "$PUBLIC_KEYRING"
+
           cd deployments/chart
           helm lint .
-          helm package . --version ${{ inputs.version }} --app-version ${{ inputs.appVersion }}
-          helm push $(ls *.tgz | head -1) oci://ghcr.io/caas-team/charts
-        env:
-          REPO: caas
+          helm package . \
+            --version ${{ inputs.version }} \
+            --app-version ${{ inputs.appVersion }} \
+            --sign \
+            --key "$GPG_KEY_ID" \
+            --keyring "$SECRET_KEYRING" \
+            --passphrase-file "$PASSPHRASE_FILE"
+
+          CHART=$(ls *.tgz | head -1)
+          PROV="${CHART}.prov"
+
+          test -s "$CHART"
+          test -s "$PROV"
+
+          helm verify "$CHART" --keyring "$PUBLIC_KEYRING"
+          helm push "${CHART}" oci://ghcr.io/caas-team/charts
 
       - name: Dispatch Event to Helm-Charts Repo
         uses: peter-evans/repository-dispatch@v4
