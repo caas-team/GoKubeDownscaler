@@ -1,16 +1,19 @@
 apiVersion: v2
 name: go-kube-downscaler
-description: A Helm chart for deploying the go-kube-downscaler
+description: A Helm chart for deploying the go-kube-downscaler, a Kubernetes controller that automatically scales workloads down during inactive periods to reduce resource consumption and costs.
 type: application
 keywords:
   - kube-downscaler
   - go
   - downscaling
-version: 1.4.0
-appVersion: 1.4.0
+  - cost-optimization
+  - autoscaling
+version: 1.3.4
+appVersion: 1.3.4
 icon: https://raw.githubusercontent.com/caas-team/GoKubeDownscaler/refs/heads/main/logo/kubedownscaler.svg
 sources:
   - https://github.com/caas-team/GoKubeDownscaler
+home: https://kube-downscaler.io
 maintainers:
   - name: jonathan-mayer
     email: jonathan.mayer@telekom.de
@@ -21,3 +24,18 @@ maintainers:
   - name: samuel-esp
     email: samuel-esp@hotmail.it
     url: https://github.com/samuel-esp
+annotations:
+  artifacthub.io/category: integration-delivery
+  artifacthub.io/license: GPL-3.0-only
+  artifacthub.io/links: |
+    - name: source
+      url: https://github.com/caas-team/GoKubeDownscaler
+    - name: support
+      url: https://github.com/caas-team/GoKubeDownscaler/issues
+    - name: website
+      url: https://kube-downscaler.io
+    - name: community
+      url: https://inviter.co/kube-downscaler
+  artifacthub.io/signKey: |
+    fingerprint: __GPG_FINGERPRINT__
+    url: https://github.com/caas-team.gpg
