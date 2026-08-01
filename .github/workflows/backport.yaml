@@ -7,9 +7,20 @@ on:
       - main
 
 jobs:
+  # Only run the backport job if the PR is merged, does not have the 'backport' label,
+  # and either the PR is closed or the 'backport-to-*' label is added.
   backport:
     name: Backport PR
-    if: github.event.pull_request.merged == true && !(contains(github.event.pull_request.labels.*.name, 'backport'))
+    if: >-
+      github.event.pull_request.merged == true &&
+      !contains(github.event.pull_request.labels.*.name, 'backport') &&
+      (
+        github.event.action == 'closed' ||
+        (
+          github.event.action == 'labeled' &&
+          startsWith(github.event.label.name, 'backport-to-')
+        )
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: write
