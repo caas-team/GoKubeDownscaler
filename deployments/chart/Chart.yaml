@@ -1,6 +1,6 @@
 apiVersion: v2
 name: go-kube-downscaler
-description: A Helm chart for deploying the go-kube-downscaler, a Kubernetes controller that automatically scales workloads down during inactive periods to reduce resource consumption and costs.
+description: A Helm chart for deploying the go-kube-downscaler, a controller that automatically scales Kubernetes workloads down to zero during inactive periods to optimize cloud costs.
 type: application
 keywords:
   - kube-downscaler
