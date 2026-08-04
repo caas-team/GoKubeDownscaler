@@ -123,8 +123,8 @@ github.com/jonboulle/clockwork v0.5.0 h1:Hyh9A8u51kptdkR+cqRpT1EebBwTn1oK9YfGYbd
 github.com/jonboulle/clockwork v0.5.0/go.mod h1:3mZlmanh0g2NDKO5TWZVJAfofYk64M7XN3SzBPjZF60=
 github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
-github.com/kedacore/keda/v2 v2.20.1 h1:0Bb2zX/s+RSPtU2W+/Jk24A/aFl8MO79UuU0C4lA8ts=
-github.com/kedacore/keda/v2 v2.20.1/go.mod h1:wrV1MP6buZQ1S5/J/R7UyBeJr857x92E43LADVoSajs=
+github.com/kedacore/keda/v2 v2.20.2 h1:SR60v8uIcelbveS8n/1jcl8tLdBBIbHMxmdOHw8tKqA=
+github.com/kedacore/keda/v2 v2.20.2/go.mod h1:wrV1MP6buZQ1S5/J/R7UyBeJr857x92E43LADVoSajs=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/compress v1.19.1 h1:VsB4HPswih7mmZ8WleSFQ75c/Ui1M4trX5oAsJnhSlk=
