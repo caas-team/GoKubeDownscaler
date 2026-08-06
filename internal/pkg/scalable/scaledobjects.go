@@ -28,7 +28,7 @@ func getScaledObjects(namespace string, clientsets *Clientsets, ctx context.Cont
 
 	results := make([]Workload, 0, len(scaledobjects.Items))
 	for i := range scaledobjects.Items {
-		setGroupVersionKindIfEmpty(&scaledobjects.Items[i], kedav1alpha1.SchemeGroupVersion.WithKind("ScaledObject"))
+		setGroupVersionKindIfEmpty(&scaledobjects.Items[i], kedav1alpha1.SchemeGroupVersion.WithKind(scaledObjectKind))
 		results = append(results, &replicaScaledWorkload{&scaledObject{&scaledobjects.Items[i]}})
 	}
 
@@ -92,7 +92,7 @@ func (s *scaledObject) Reget(clientsets *Clientsets, ctx context.Context) error 
 		return fmt.Errorf("failed to get scaledObject: %w", err)
 	}
 
-	setGroupVersionKindIfEmpty(s.ScaledObject, kedav1alpha1.SchemeGroupVersion.WithKind("ScaledObject"))
+	setGroupVersionKindIfEmpty(s.ScaledObject, kedav1alpha1.SchemeGroupVersion.WithKind(scaledObjectKind))
 
 	return nil
 }

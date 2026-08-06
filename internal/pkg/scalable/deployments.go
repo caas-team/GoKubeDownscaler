@@ -22,7 +22,7 @@ func getDeployments(namespace string, clientsets *Clientsets, ctx context.Contex
 
 	results := make([]Workload, 0, len(deployments.Items))
 	for i := range deployments.Items {
-		setGroupVersionKindIfEmpty(&deployments.Items[i], appsv1.SchemeGroupVersion.WithKind("Deployment"))
+		setGroupVersionKindIfEmpty(&deployments.Items[i], appsv1.SchemeGroupVersion.WithKind(deploymentKind))
 		results = append(results, &replicaScaledWorkload{&deployment{&deployments.Items[i]}})
 	}
 
@@ -69,7 +69,7 @@ func (d *deployment) Reget(clientsets *Clientsets, ctx context.Context) error {
 		return fmt.Errorf("failed to get cronjob: %w", err)
 	}
 
-	setGroupVersionKindIfEmpty(d.Deployment, appsv1.SchemeGroupVersion.WithKind("Deployment"))
+	setGroupVersionKindIfEmpty(d.Deployment, appsv1.SchemeGroupVersion.WithKind(deploymentKind))
 
 	return nil
 }

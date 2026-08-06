@@ -25,7 +25,7 @@ func getCronJobs(namespace string, clientsets *Clientsets, ctx context.Context) 
 
 	results := make([]Workload, 0, len(cronjobs.Items))
 	for i := range cronjobs.Items {
-		setGroupVersionKindIfEmpty(&cronjobs.Items[i], batch.SchemeGroupVersion.WithKind("CronJob"))
+		setGroupVersionKindIfEmpty(&cronjobs.Items[i], batch.SchemeGroupVersion.WithKind(cronJobKind))
 		results = append(results, &suspendScaledWorkload{&cronJob{&cronjobs.Items[i]}})
 	}
 
@@ -69,7 +69,7 @@ func (c *cronJob) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Wo
 				return
 			}
 
-			setGroupVersionKindIfEmpty(singleJob, batch.SchemeGroupVersion.WithKind("Job"))
+			setGroupVersionKindIfEmpty(singleJob, batch.SchemeGroupVersion.WithKind(jobKind))
 
 			mutex.Lock()
 
@@ -103,7 +103,7 @@ func (c *cronJob) Reget(clientsets *Clientsets, ctx context.Context) error {
 		return fmt.Errorf("failed to get cronjob: %w", err)
 	}
 
-	setGroupVersionKindIfEmpty(c.CronJob, batch.SchemeGroupVersion.WithKind("CronJob"))
+	setGroupVersionKindIfEmpty(c.CronJob, batch.SchemeGroupVersion.WithKind(cronJobKind))
 
 	return nil
 }

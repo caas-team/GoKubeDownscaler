@@ -15,34 +15,30 @@ import (
 )
 
 const (
-	annotationOriginalReplicas          = "downscaler/original-replicas"
-	defaultKedaScaleTargetRefApiVersion = "apps/v1"
-	defaultKedaScaleTargetRefKind       = "Deployment"
-	kafkaStrimziGroup                   = "kafka.strimzi.io"
-	kafkaStrimziVersion                 = "v1"
+	annotationOriginalReplicas  = "downscaler/original-replicas"
+	deploymentGroupVersion      = "apps/v1"
+	deploymentKind              = "Deployment"
+	autoscalingRunnerSetKind    = "AutoscalingRunnerSet"
+	cronJobKind                 = "CronJob"
+	daemonSetKind               = "DaemonSet"
+	gatewayKind                 = "Gateway"
+	horizontalPodAutoscalerKind = "HorizontalPodAutoscaler"
+	ingressKind                 = "Ingress"
+	jobKind                     = "Job"
+	kafkaStrimziGroup           = "kafka.strimzi.io"
+	kafkaStrimziVersion         = "v1"
+	kafkaBridgeKind             = "KafkaBridge"
+	kafkaConnectKind            = "KafkaConnect"
+	kafkaMirrorMaker2Kind       = "KafkaMirrorMaker2"
+	podDisruptionBudgetKind     = "PodDisruptionBudget"
+	postgresqlKind              = "postgresql" // lowercase for postgresqlKind is intentional
+	prometheusKind              = "Prometheus"
+	rolloutKind                 = "Rollout"
+	scaledObjectKind            = "ScaledObject"
+	serviceKind                 = "Service"
+	stackKind                   = "Stack"
+	statefulSetKind             = "StatefulSet"
 )
-
-var supportedOwnerKinds = map[string]struct{}{
-	"AutoscalingRunnerSet":    {},
-	"CronJob":                 {},
-	"DaemonSet":               {},
-	"Deployment":              {},
-	"Gateway":                 {},
-	"HorizontalPodAutoscaler": {},
-	"Ingress":                 {},
-	"Job":                     {},
-	"KafkaBridge":             {},
-	"KafkaConnect":            {},
-	"KafkaMirrorMaker2":       {},
-	"PodDisruptionBudget":     {},
-	"Postgresql":              {},
-	"Prometheus":              {},
-	"Rollout":                 {},
-	"ScaledObject":            {},
-	"Service":                 {},
-	"Stack":                   {},
-	"StatefulSet":             {},
-}
 
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads.
 func FilterExcluded(
@@ -154,11 +150,11 @@ func getExternallyScaled(workloads []Workload) []workloadIdentifier {
 		kind := scaledobject.Spec.ScaleTargetRef.Kind
 
 		if apiVersion == "" {
-			apiVersion = defaultKedaScaleTargetRefApiVersion
+			apiVersion = deploymentGroupVersion
 		}
 
 		if kind == "" {
-			kind = defaultKedaScaleTargetRefKind
+			kind = deploymentKind
 		}
 
 		apiVersionSlice := strings.SplitN(apiVersion, "/", 2)
@@ -294,8 +290,32 @@ func isWorkloadExcluded(
 	return excludedWorkloads.CheckMatchesAny(workload.GetName())
 }
 
-// isSupportedOwnerKind checks whether the owner kind is supported by the scalable package.
+// isSupportedOwnerKind checks whether the owner kind is supported.
+// The lookup set is built locally (instead of as a package-level global) to avoid
+// mutable package state; construction cost is negligible compared to the owning API calls.
 func isSupportedOwnerKind(kind string) bool {
+	supportedOwnerKinds := map[string]struct{}{
+		autoscalingRunnerSetKind:    {},
+		cronJobKind:                 {},
+		daemonSetKind:               {},
+		deploymentKind:              {},
+		gatewayKind:                 {},
+		horizontalPodAutoscalerKind: {},
+		ingressKind:                 {},
+		jobKind:                     {},
+		kafkaBridgeKind:             {},
+		kafkaConnectKind:            {},
+		kafkaMirrorMaker2Kind:       {},
+		podDisruptionBudgetKind:     {},
+		postgresqlKind:              {},
+		prometheusKind:              {},
+		rolloutKind:                 {},
+		scaledObjectKind:            {},
+		serviceKind:                 {},
+		stackKind:                   {},
+		statefulSetKind:             {},
+	}
+
 	_, supported := supportedOwnerKinds[kind]
 
 	return supported
