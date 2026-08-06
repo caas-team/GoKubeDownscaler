@@ -22,6 +22,28 @@ const (
 	kafkaStrimziVersion                 = "v1"
 )
 
+var supportedOwnerKinds = map[string]struct{}{
+	"AutoscalingRunnerSet":    {},
+	"CronJob":                 {},
+	"DaemonSet":               {},
+	"Deployment":              {},
+	"Gateway":                 {},
+	"HorizontalPodAutoscaler": {},
+	"Ingress":                 {},
+	"Job":                     {},
+	"KafkaBridge":             {},
+	"KafkaConnect":            {},
+	"KafkaMirrorMaker2":       {},
+	"PodDisruptionBudget":     {},
+	"Postgresql":              {},
+	"Prometheus":              {},
+	"Rollout":                 {},
+	"ScaledObject":            {},
+	"Service":                 {},
+	"Stack":                   {},
+	"StatefulSet":             {},
+}
+
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads.
 func FilterExcluded(
 	workloads []Workload,
@@ -272,12 +294,25 @@ func isWorkloadExcluded(
 	return excludedWorkloads.CheckMatchesAny(workload.GetName())
 }
 
+// isSupportedOwnerKind checks whether the owner kind is supported by the scalable package.
+func isSupportedOwnerKind(kind string) bool {
+	_, supported := supportedOwnerKinds[kind]
+
+	return supported
+}
+
 // isManagedByOwnerReference checks if the workload is managed by an owner reference that is in the includedResources list.
 func isManagedByOwnerReference(workload Workload) bool {
 	for _, ownerReference := range workload.GetOwnerReferences() {
-		if ownerReference.Controller != nil && *ownerReference.Controller {
-			return true
+		if ownerReference.Controller == nil || !*ownerReference.Controller {
+			continue
 		}
+
+		if !isSupportedOwnerKind(ownerReference.Kind) {
+			continue
+		}
+
+		return true
 	}
 
 	return false
