@@ -93,6 +93,37 @@
 	"secretTemplate": {
 	  "type": "object",
 	  "additionalProperties": true
+	},
+	"podDisruptionBudgetValue": {
+	  "oneOf": [
+		{ "type": "integer", "minimum": 0 },
+		{ "type": "string", "pattern": "^(|[0-9]+%?)$" }
+	  ]
+	},
+	"podDisruptionBudget": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"enabled": { "type": "boolean" },
+		"minAvailable": { "$ref": "#/$defs/podDisruptionBudgetValue" },
+		"maxUnavailable": { "$ref": "#/$defs/podDisruptionBudgetValue" }
+	  },
+	  "not": {
+		"allOf": [
+		  {
+			"required": ["minAvailable"],
+			"properties": {
+			  "minAvailable": { "not": { "const": "" } }
+			}
+		  },
+		  {
+			"required": ["maxUnavailable"],
+			"properties": {
+			  "maxUnavailable": { "not": { "const": "" } }
+			}
+		  }
+		]
+	  }
 	}
   },
   "properties": {
@@ -229,6 +260,7 @@
 	  "required": ["name", "extraConfig"]
 	},
 	"forceRestartOnConfigChange": { "type": "boolean" },
+	"podDisruptionBudget": { "$ref": "#/$defs/podDisruptionBudget" },
 	"deployExtraResources": {
 	  "type": "object",
 	  "additionalProperties": false,
@@ -364,6 +396,7 @@
 		  },
 		  "required": ["timeoutSeconds", "failurePolicy"]
 		},
+		"podDisruptionBudget": { "$ref": "#/$defs/podDisruptionBudget" },
 		"clusterDomain": { "type": "string" },
 		"certManager": {
 		  "type": "object",
@@ -433,6 +466,7 @@
 		"tolerations",
 		"affinity",
 		"mutatingWebhookConfiguration",
+		"podDisruptionBudget",
 		"clusterDomain",
 		"certManager",
 		"podMonitor"
