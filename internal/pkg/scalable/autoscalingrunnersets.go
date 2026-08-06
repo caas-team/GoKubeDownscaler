@@ -24,7 +24,7 @@ func getAutoscalingRunnerSets(namespace string, clientsets *Clientsets, ctx cont
 
 	results := make([]Workload, 0, len(runnerSets.Items))
 	for i := range runnerSets.Items {
-		setGroupVersionKindIfEmpty(&runnerSets.Items[i], actionsv1alpha1.GroupVersion.WithKind("AutoscalingRunnerSet"))
+		setGroupVersionKindIfEmpty(&runnerSets.Items[i], actionsv1alpha1.GroupVersion.WithKind(autoscalingRunnerSetKind))
 		results = append(results, &replicaScaledWorkload{&autoscalingRunnerSet{&runnerSets.Items[i]}})
 	}
 
@@ -52,7 +52,7 @@ func (a *autoscalingRunnerSet) Reget(clientsets *Clientsets, ctx context.Context
 		return fmt.Errorf("failed to get autoscalingrunnerset: %w", err)
 	}
 
-	setGroupVersionKindIfEmpty(a.AutoscalingRunnerSet, actionsv1alpha1.GroupVersion.WithKind("AutoscalingRunnerSet"))
+	setGroupVersionKindIfEmpty(a.AutoscalingRunnerSet, actionsv1alpha1.GroupVersion.WithKind(autoscalingRunnerSetKind))
 
 	return nil
 }
