@@ -291,8 +291,6 @@ func isWorkloadExcluded(
 }
 
 // isSupportedOwnerKind checks whether the owner kind is supported.
-// The lookup set is built locally (instead of as a package-level global) to avoid
-// mutable package state; construction cost is negligible compared to the owning API calls.
 func isSupportedOwnerKind(kind string) bool {
 	supportedOwnerKinds := map[string]struct{}{
 		autoscalingRunnerSetKind:    {},
