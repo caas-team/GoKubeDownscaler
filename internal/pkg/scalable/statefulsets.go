@@ -22,7 +22,7 @@ func getStatefulSets(namespace string, clientsets *Clientsets, ctx context.Conte
 
 	results := make([]Workload, 0, len(statefulsets.Items))
 	for i := range statefulsets.Items {
-		setGroupVersionKindIfEmpty(&statefulsets.Items[i], appsv1.SchemeGroupVersion.WithKind("StatefulSet"))
+		setGroupVersionKindIfEmpty(&statefulsets.Items[i], appsv1.SchemeGroupVersion.WithKind(statefulSetKind))
 		results = append(results, &replicaScaledWorkload{&statefulSet{&statefulsets.Items[i]}})
 	}
 
@@ -69,7 +69,7 @@ func (s *statefulSet) Reget(clientsets *Clientsets, ctx context.Context) error {
 		return fmt.Errorf("failed to get statefulset: %w", err)
 	}
 
-	setGroupVersionKindIfEmpty(s.StatefulSet, appsv1.SchemeGroupVersion.WithKind("StatefulSet"))
+	setGroupVersionKindIfEmpty(s.StatefulSet, appsv1.SchemeGroupVersion.WithKind(statefulSetKind))
 
 	return nil
 }

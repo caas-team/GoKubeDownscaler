@@ -30,7 +30,7 @@ func getGateways(namespace string, clientsets *Clientsets, ctx context.Context) 
 		setGroupVersionKindIfEmpty(&gateways.Items[i], schema.GroupVersion{
 			Group:   gatewayv1.GroupVersion.Group,
 			Version: gatewayv1.GroupVersion.Version,
-		}.WithKind("Gateway"))
+		}.WithKind(gatewayKind))
 		results = append(results, &valueScaledWorkload{&gateway{&gateways.Items[i]}})
 	}
 

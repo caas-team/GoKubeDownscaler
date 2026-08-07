@@ -25,7 +25,7 @@ func getPostgresqls(namespace string, clientsets *Clientsets, ctx context.Contex
 
 	results := make([]Workload, 0, len(postgresqls.Items))
 	for i := range postgresqls.Items {
-		setGroupVersionKindIfEmpty(&postgresqls.Items[i], acidv1.SchemeGroupVersion.WithKind("postgresql"))
+		setGroupVersionKindIfEmpty(&postgresqls.Items[i], acidv1.SchemeGroupVersion.WithKind(postgresqlKind))
 		results = append(results, &replicaScaledWorkload{&postgresql{&postgresqls.Items[i]}})
 	}
 
@@ -53,7 +53,7 @@ func (p *postgresql) Reget(clientsets *Clientsets, ctx context.Context) error {
 		return fmt.Errorf("failed to get postgresql: %w", err)
 	}
 
-	setGroupVersionKindIfEmpty(p.Postgresql, acidv1.SchemeGroupVersion.WithKind("postgresql"))
+	setGroupVersionKindIfEmpty(p.Postgresql, acidv1.SchemeGroupVersion.WithKind(postgresqlKind))
 
 	return nil
 }
