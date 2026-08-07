@@ -1,0 +1,64 @@
+---
+title: webhookController.podDisruptionBudget
+id: webhookControllerPodDisruptionBudget
+globalReference: docs-helm-webhook-controller-pod-disruption-budget
+description: >
+  Learn how to configure a Kubernetes PodDisruptionBudget for the Admission Controller
+  using the webhookController podDisruptionBudget Helm chart value.
+keywords: [webhookControllerPodDisruptionBudget, PodDisruptionBudget]
+---
+
+# webhookController.podDisruptionBudget
+
+A `PodDisruptionBudget` limits the number of pods from the Admission Controller Webhook Deployment that
+can be voluntarily disrupted at the same time.
+This helps keep the webhook available during operations
+such as node draining or cluster maintenance.
+
+The following fields could be customized:
+
+- `minAvailable` specifies the minimum number or percentage of webhook pods that must remain available.
+- `maxUnavailable` specifies the maximum number or percentage of webhook pods that can be unavailable.
+
+Only one of `minAvailable` or `maxUnavailable` should be configured.
+The PodDisruptionBudget is not
+created when both values are empty.
+
+The webhook controller must also be enabled with `webhookController.enabled: true`.
+
+:::info
+
+The default values for `webhookController.podDisruptionBudget` are:
+
+```yaml
+webhookController:
+  podDisruptionBudget:
+    minAvailable: ""
+    maxUnavailable: ""
+```
+
+:::
+
+For example, to ensure that at least one webhook controller pod remains available:
+
+```yaml
+webhookController:
+  podDisruptionBudget:
+    minAvailable: 1
+```
+
+Alternatively, a percentage can be used:
+
+```yaml
+webhookController:
+  podDisruptionBudget:
+    minAvailable: 50%
+```
+
+To configure the maximum number of unavailable webhook controller pods instead:
+
+```yaml
+webhookController:
+  podDisruptionBudget:
+    maxUnavailable: 1
+```
