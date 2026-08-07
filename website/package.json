@@ -42,7 +42,7 @@
     "postcss": "^8.5.25",
     "tailwindcss": "^4.3.3",
     "tailwindcss-animated": "^2.1.0",
-    "typescript": "~5.9.3"
+    "typescript": "~7.0.2"
   },
   "browserslist": {
     "production": [
