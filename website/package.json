@@ -60,7 +60,7 @@
     "node": ">=18.0"
   },
   "overrides": {
-    "mermaid": "11.16.0",
+    "mermaid": "11.16.1",
     "serialize-javascript": "7.0.7",
     "sockjs": {
       "uuid": "11.1.1"
@@ -68,7 +68,7 @@
     "brace-expansion": "5.0.9"
   },
   "_notes": {
-    "mermaid-override": "override mermaid to fix security vulnerabilities (classDef HTML/CSS injection, Gantt DoS) in versions <= 11.14.0.",
+    "mermaid-override": "override mermaid to fix security vulnerabilities (classDef HTML/CSS injection, Gantt DoS) in versions <= 11.16.0.",
     "serialize-javascript-override": "override serialize-javascript to fix a security vulnerability in older versions pulled in by transitive dependencies.",
     "uuid-override": "override uuid in sockjs to fix buffer bounds check vulnerability (GHSA-w5hq-g745-h8pq).",
     "brace-expansion-override": "override brace-expansion to fix DoS via unbounded expansion length (GHSA-mh99-v99m-4gvg) in versions <= 5.0.8."
