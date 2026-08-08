@@ -209,7 +209,7 @@ func startScanning(
 
 		namespaceScopes, errs := client.GetNamespacesScopes(workloads, ctx)
 		if len(errs) > 0 {
-			handleNamespaceScopeParsingErrors(errs, currentNamespaceToMetrics)
+			handleNamespaceScopeParsingErrors(errs, config, currentNamespaceToMetrics)
 		}
 
 		var waitGroup sync.WaitGroup
@@ -261,16 +261,29 @@ func startScanning(
 	return nil
 }
 
-func handleNamespaceScopeParsingErrors(errs []error, currentNamespaceToMetrics map[string]*metrics.NamespaceMetricsHolder) {
+func handleNamespaceScopeParsingErrors(
+	errs []error,
+	config *runtimeConfiguration,
+	currentNamespaceToMetrics map[string]*metrics.NamespaceMetricsHolder,
+) {
 	for _, err := range errs {
 		slog.Error("failed to get namespace annotations", "error", err)
 
 		var namespaceScopeErr *kubernetes.NamespaceScopeError
-		if errors.As(err, &namespaceScopeErr) {
-			if namespaceMetrics, exists := currentNamespaceToMetrics[namespaceScopeErr.Namespace()]; exists {
-				namespaceMetrics.MarkParsingNamespaceScopeError()
-			}
+		if !errors.As(err, &namespaceScopeErr) {
+			continue
 		}
+
+		namespaceMetrics, metricsErr := getNamespaceMetrics(config, namespaceScopeErr.Namespace(), currentNamespaceToMetrics)
+		if metricsErr != nil {
+			if !errors.Is(metricsErr, ErrMetricsDisabled) {
+				slog.Error("failed to get namespace metrics", "error", metricsErr, "namespace", namespaceScopeErr.Namespace())
+			}
+
+			continue
+		}
+
+		namespaceMetrics.MarkParsingNamespaceScopeError()
 	}
 }
 
@@ -534,6 +547,23 @@ func getWorkloadNamespaceMetrics(
 	}
 
 	return workloadNamespaceMetrics, nil
+}
+
+func getNamespaceMetrics(
+	config *runtimeConfiguration,
+	namespace string,
+	currentNamespaceToMetrics map[string]*metrics.NamespaceMetricsHolder,
+) (*metrics.NamespaceMetricsHolder, error) {
+	if !config.MetricsEnabled {
+		return nil, ErrMetricsDisabled
+	}
+
+	namespaceMetrics, ok := currentNamespaceToMetrics[namespace]
+	if !ok {
+		return nil, NewMetricHolderNotFoundError(namespace)
+	}
+
+	return namespaceMetrics, nil
 }
 
 // newNamespaceToMetrics creates a new map for namespace to metrics holder if metrics are enabled.
