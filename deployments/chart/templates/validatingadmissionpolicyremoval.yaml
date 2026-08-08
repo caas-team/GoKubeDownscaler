@@ -57,7 +57,7 @@ spec:
     - messageExpression: '"The removal of annotations starting with \"downscaler/\" from " + request.resource.resource + " " + request.name + " is prohibited for user: " + request.userInfo.username'
       reason: Forbidden
       expression: 'has(object.metadata.annotations) && has(oldObject.metadata.annotations) && oldObject.metadata.annotations.all(l, !l.startsWith("downscaler/") || (l in object.metadata.annotations))'
-  failurePolicy: {{ default "Fail" .Values.annotationsCompliance.failurePolicy }}
+  failurePolicy: {{ default "Ignore" .Values.annotationsCompliance.failurePolicy }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicyBinding
