@@ -38,6 +38,10 @@ The following values can be configured:
   from workloads upon creation or update.
   If set to false, a ValidatingAdmissionPolicy will be used instead to block the creation or update of workloads
   with unauthorized downscaler annotations.
+- `failurePolicy` controls what happens if a policy expression cannot be evaluated.
+  It defaults to `Fail` so that evaluation errors
+  cannot bypass annotation compliance.
+  Set it to `Ignore` only when admission availability is more important than enforcement.
 - `validationActions` array that indicates the type of actions to take when an unauthorized annotation is found.
   Possible values are
   `Audit`, `Warn`, and `Deny`.
@@ -45,7 +49,9 @@ The following values can be configured:
 - `authorizedNamespacesToServiceAccountsRegex` map contains key-value pairs where the key is a namespace regex and the value is a regex
   that matches service accounts in that namespace that are authorized to set downscaler annotations.
 - `authorizedUsersRegex` array of regex strings that match users that are authorized to set downscaler annotations.
+- `authorizedGroupsRegex` array of regex strings that match groups that are authorized to set downscaler annotations.
 - `onWorkloads.enabled` indicates whether the policy should be applied to workloads (Deployments, StatefulSets, etc.).
+  At least one `includedResources` entry is required when workload compliance or removal prevention is enabled.
 - `onWorkloads.preventRemoval` indicates whether to deploy a separate MutatingAdmissionPolicy to prevent the removal of downscaler
   annotations from workloads.
 - `onNamespace.enabled` indicates whether the policy should be applied to Namespace resources.
@@ -58,6 +64,7 @@ The default values for `preventUnauthorizedAnnotations` are:
 ```yaml
 annotationsCompliance:
   mutateUnauthorizedAnnotationsAddition: false
+  failurePolicy: Fail
   validationActions: [Deny]
   authorizedNamespacesToServiceAccountsRegex: {}
   authorizedUsersRegex: []
@@ -84,13 +91,15 @@ object.metadata.annotations.exists(
     l,
     l.startsWith("downscaler/") &&
     (
-        oldObject != null ||
+        oldObject == null ||
         !has(oldObject.metadata.annotations) ||
         !(l in oldObject.metadata.annotations) ||
         object.metadata.annotations[l] != oldObject.metadata.annotations[l]
     )
 ) &&
-request.userInfo.username!="system:serviceaccount:{{ .Release.Namespace }}:{{ include \"go-kube-downscaler.webhookController.fullname\" . }}"
+request.userInfo.username !=
+  "system:serviceaccount:{{ .Release.Namespace }}:" +
+  "{{ include \"go-kube-downscaler.webhookController.serviceAccountName\" . }}"
 ```
 
 ```cel
@@ -99,7 +108,7 @@ has(object.metadata.annotations) &&
     l,
     l.startsWith("downscaler/") &&
     (
-        oldObject != null ||
+        oldObject == null ||
         !has(oldObject.metadata.annotations) ||
         !(l in oldObject.metadata.annotations) ||
         object.metadata.annotations[l] != oldObject.metadata.annotations[l]
@@ -113,7 +122,7 @@ has(object.metadata.annotations) &&
   object.metadata.annotations.exists(
     l,
     l.startsWith("downscaler/") &&
-      (oldObject != null ||
+      (oldObject == null ||
         !has(oldObject.metadata.annotations) ||
         !(l in oldObject.metadata.annotations) ||
         object.metadata.annotations[l] != oldObject.metadata.annotations[l]
@@ -128,7 +137,7 @@ object.metadata.annotations.exists(
     l,
     l.startsWith("downscaler/") &&
     (
-        oldObject != null ||
+        oldObject == null ||
         !has(oldObject.metadata.annotations) ||
         !(l in oldObject.metadata.annotations) ||
         object.metadata.annotations[l] != oldObject.metadata.annotations[l]
@@ -151,7 +160,9 @@ paragraph explains how to prevent the removal of downscaler annotations.
 :::
 
 When `onWorkloads.preventRemoval` and/or `onNamespace.preventRemoval` is true, the following expressions are evaluated
-to prevent the removal of downscaler annotations from Namespace resources:
+to prevent the removal of downscaler annotations from the configured resources.
+In mutating mode, the mutator restores removed
+annotations and the validating policy remains installed as a fail-closed fallback if mutation does not restore them.
 
 ```cel
 oldObject != null &&
@@ -172,7 +183,9 @@ object != null &&
         l.startsWith("downscaler/") && !(l in object.metadata.annotations)
     )
 ) &&
-request.userInfo.username!="system:serviceaccount:{{ .Release.Namespace }}:{{ include \"go-kube-downscaler.webhookController.fullname\" . }}"
+request.userInfo.username !=
+  "system:serviceaccount:{{ .Release.Namespace }}:" +
+  "{{ include \"go-kube-downscaler.webhookController.serviceAccountName\" . }}"
 ```
 
 ```cel
@@ -259,10 +272,10 @@ This is an example of how to configure the `annotationsCompliance` object:
 ```yaml
 annotationsCompliance:
   mutateUnauthorizedAnnotationsAddition: false
+  failurePolicy: Fail
   validationActions: [Deny]
   authorizedNamespacesToServiceAccountsRegex:
-    namespace1:
-      - sa1
+    namespace1: "sa1"
   authorizedUsersRegex:
     - "^user1.*"
   authorizedGroupsRegex: []
