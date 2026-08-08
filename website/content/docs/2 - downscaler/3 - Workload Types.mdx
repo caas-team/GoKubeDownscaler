@@ -2,19 +2,49 @@
 title: Workload Types
 id: workload-types
 globalReference: docs-workload-types
-description: List of all the workload types supported by the GoKubeDownscaler and how they are scaled.
+description: >
+  Explore Kubernetes resources that can be scaled down to zero by KubeDownscaler,
+  including Deployments, StatefulSets, Jobs, and more, with their scaling behavior.
 keywords: [workloads, supported workloads, supported crds]
 ---
 
+<script type="application/ld+json">
+  {JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "@id": "https://kube-downscaler.io/docs/workload-types#techarticle",
+    headline: "Workload Types — GoKubeDownscaler",
+    description:
+      "Explore Kubernetes resources that can be scaled down to zero by GoKubeDownscaler, " +
+      "including Deployments, StatefulSets, Jobs, and more.",
+    articleSection: "Downscaler - Workload Types",
+    keywords: [
+      "workloads",
+      "supported workloads",
+      "supported crds",
+      "kubernetes resources",
+    ],
+    url: "https://kube-downscaler.io/docs/workload-types",
+    image: "https://kube-downscaler.io/img/social-preview.png",
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": "https://kube-downscaler.io/docs/workload-types",
+    },
+    author: { "@id": "https://kube-downscaler.io/#organization" },
+    publisher: { "@id": "https://kube-downscaler.io/#organization" },
+    about: { "@id": "https://kube-downscaler.io/#software" },
+  })}
+</script>
+
 # Workload Types
 
-Valid values for the workload type are the case-insensitive kubernetes resource names of the workloads.
+Valid values for the workload type are the case-insensitive Kubernetes resource names of the workloads.
 Workload types to be included in the scaling process can be specified using the
 [`--include-resources`](ref:docs-runtime-configuration#include-resources) argument at the [CLI Scope](ref:docs-cli-scope#runtime-configuration)
 
 ## List of Workload Types
 
-Here is a list of all the workload types supported by the Downscaler and how they are scaled.
+Here is a list of all the workload types supported by KubeDownscaler and how they are scaled.
 
 ### Cronjobs
 

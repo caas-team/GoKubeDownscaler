@@ -125,12 +125,17 @@ configMap:
 # Force pod restart when the configuration changes
 forceRestartOnConfigChange: true
 
+podDisruptionBudget:
+  minAvailable: ""
+  maxUnavailable: ""
+
 deployExtraResources:
   gatewayClass: false
   ingressClass: false
 
 annotationsCompliance:
   mutateUnauthorizedAnnotationsAddition: false
+  failurePolicy: Fail
   validationActions: [Deny]
   authorizedNamespacesToServiceAccountsRegex: { }
   authorizedUsersRegex: [ ]
@@ -155,14 +160,30 @@ webhookController:
 
   priorityClassName: ""
 
-  extraArguments:
-  #  - --interval=60
+  serviceAccount:
+    create: true
+    annotations: {}
+    # The name of the service account to use for the webhook controller.
+    # If not set and create is true, a name is generated using the webhook fullname template.
+    name: ""
+
+  extraArguments: []
+
+  imagePullSecrets: []
 
   podAnnotations: {}
 
   podLabels: {}
 
   extraEnv: []
+
+  securityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    privileged: false
+    capabilities:
+      drop:
+        - ALL
 
   healthProbes:
     readinessProbe:
@@ -207,6 +228,9 @@ webhookController:
     timeoutSeconds: 10
     failurePolicy: Ignore
 
+  podDisruptionBudget:
+    minAvailable: ""
+    maxUnavailable: ""
 
   clusterDomain: cluster.local
 

@@ -1,6 +1,7 @@
 # Go Kubernetes Downscaler - Helm Chart
 
-This is the official Helm Chart for the `GoKubeDownscaler`.
+This is the official Helm Chart for the `GoKubeDownscaler`, a controller that automatically scales Kubernetes
+workloads down to zero during inactive periods to optimize cloud costs.
 
 In order to install the GoKubeDownscaler using our Helm Chart
 you only need to have Helm installed on a system and have access to a Kubernetes cluster in some kind of way.
@@ -33,4 +34,4 @@ helm install go-kube-downscaler caas-team/go-kube-downscaler
 
 Our Helm Chart offers a lot of customizable values for your installation of the GoKubeDownscaler.
 
-You can find information on how to adjust the chart to your needs on our [documentation page](https://kube-downscaler.io).
+You can find information on how to adjust the chart to your needs on our [helm documentation page](https://kube-downscaler.io/docs/helm-chart).
