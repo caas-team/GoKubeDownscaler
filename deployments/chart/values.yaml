@@ -135,7 +135,7 @@ deployExtraResources:
 
 annotationsCompliance:
   mutateUnauthorizedAnnotationsAddition: false
-  failurePolicy: Fail
+  failurePolicy: Ignore
   validationActions: [Deny]
   authorizedNamespacesToServiceAccountsRegex: { }
   authorizedUsersRegex: [ ]

@@ -61,7 +61,7 @@ spec:
     - messageExpression: '"The editing of annotations starting with \"downscaler/\" is prohibited for user: " + request.userInfo.username'
       reason: Forbidden
       expression: '!has(object.metadata.annotations) ||  object.metadata.annotations.all(l, !l.startsWith("downscaler/") || (oldObject != null && has(oldObject.metadata.annotations) && (l in oldObject.metadata.annotations) && object.metadata.annotations[l] == oldObject.metadata.annotations[l]))'
-  failurePolicy: {{ default "Fail" .Values.annotationsCompliance.failurePolicy }}
+  failurePolicy: {{ default "Ignore" .Values.annotationsCompliance.failurePolicy }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicyBinding

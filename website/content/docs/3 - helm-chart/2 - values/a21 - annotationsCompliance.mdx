@@ -39,8 +39,7 @@ The following values can be configured:
   If set to false, a ValidatingAdmissionPolicy will be used instead to block the creation or update of workloads
   with unauthorized downscaler annotations.
 - `failurePolicy` controls what happens if a policy expression cannot be evaluated.
-  It defaults to `Fail` so that evaluation errors
-  cannot bypass annotation compliance.
+  It defaults to `Ignore` but it is recommended to set `Fail` to ensure that evaluation errors cannot bypass annotations compliance.
   Set it to `Ignore` only when admission availability is more important than enforcement.
 - `validationActions` array that indicates the type of actions to take when an unauthorized annotation is found.
   Possible values are
@@ -272,7 +271,7 @@ This is an example of how to configure the `annotationsCompliance` object:
 ```yaml
 annotationsCompliance:
   mutateUnauthorizedAnnotationsAddition: false
-  failurePolicy: Fail
+  failurePolicy: Ignore
   validationActions: [Deny]
   authorizedNamespacesToServiceAccountsRegex:
     namespace1: "sa1"
