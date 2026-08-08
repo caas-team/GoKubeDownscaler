@@ -207,9 +207,9 @@ func startScanning(
 		)
 		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 
-		namespaceScopes, err := client.GetNamespacesScopes(workloads, ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get namespace annotations: %w", err)
+		namespaceScopes, errs := client.GetNamespacesScopes(workloads, ctx)
+		if len(errs) > 0 {
+			handleNamespaceScopeParsingErrors(errs, currentNamespaceToMetrics)
 		}
 
 		var waitGroup sync.WaitGroup
@@ -259,6 +259,19 @@ func startScanning(
 	}
 
 	return nil
+}
+
+func handleNamespaceScopeParsingErrors(errs []error, currentNamespaceToMetrics map[string]*metrics.NamespaceMetricsHolder) {
+	for _, err := range errs {
+		slog.Error("failed to get namespace annotations", "error", err)
+
+		var namespaceScopeErr *kubernetes.NamespaceScopeError
+		if errors.As(err, &namespaceScopeErr) {
+			if namespaceMetrics, exists := currentNamespaceToMetrics[namespaceScopeErr.Namespace()]; exists {
+				namespaceMetrics.MarkParsingNamespaceScopeError()
+			}
+		}
+	}
 }
 
 // attemptScaling handles retries for scaling a workload in case of conflicts.
@@ -323,6 +336,7 @@ func scanWorkload(
 
 	scopeWorkload := values.NewScope()
 	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
+		workloadNamespaceMetrics.IncrementParsingWorkloadScopeErrorsCount()
 		return fmt.Errorf("failed to parse workload scope from annotations: %w", err)
 	}
 

@@ -8,10 +8,12 @@ import (
 )
 
 const (
-	namespace                 = "namespace"
-	invalidScalingValueErrors = "invalid_scaling_value_errors"
-	conflictErrors            = "conflict_errors"
-	genericErrors             = "generic_errors"
+	namespace                   = "namespace"
+	invalidScalingValueErrors   = "invalid_scaling_value_errors"
+	conflictErrors              = "conflict_errors"
+	genericErrors               = "generic_errors"
+	parsingWorkloadScopeErrors  = "parsing_workload_scope_errors"
+	parsingNamespaceScopeErrors = "parsing_namespace_scope_errors"
 )
 
 type Metrics struct {
@@ -123,6 +125,9 @@ func (m *Metrics) UpdateMetrics(
 		m.scalingErrorWorkloadGauge.WithLabelValues(currentNamespace, invalidScalingValueErrors).Set(metricsRecord.InvalidScalingValueErrors())
 		m.scalingErrorWorkloadGauge.WithLabelValues(currentNamespace, conflictErrors).Set(metricsRecord.ConflictErrors())
 		m.scalingErrorWorkloadGauge.WithLabelValues(currentNamespace, genericErrors).Set(metricsRecord.GenericErrors())
+		m.scalingErrorWorkloadGauge.WithLabelValues(currentNamespace, parsingWorkloadScopeErrors).Set(metricsRecord.ParsingWorkloadScopeErrors())
+		m.scalingErrorWorkloadGauge.WithLabelValues(currentNamespace, parsingNamespaceScopeErrors).Set(
+			metricsRecord.ParsingNamespaceScopeErrors())
 		m.savedMemoryGauge.WithLabelValues(currentNamespace).Set(metricsRecord.SavedMemoryBytes())
 		m.savedCPUGauge.WithLabelValues(currentNamespace).Set(metricsRecord.SavedCPUCores())
 	}

@@ -47,7 +47,7 @@ type Client interface {
 	// GetNamespacesAsSet gets all namespaces or a specific list of namespace
 	GetNamespacesAsSet() (map[string]struct{}, error)
 	// GetNamespacesScopes gets the namespaces scopes from the namespaces annotations
-	GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error)
+	GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, []error)
 	// GetNamespaceScope gets the namespace scope from its annotations
 	GetNamespaceScope(namespace string, ctx context.Context) (*values.Scope, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
@@ -437,7 +437,7 @@ func (c client) GetNamespacesAsSet() (map[string]struct{}, error) {
 }
 
 // GetNamespacesScopes gets the namespaces scopes from the namespaces annotations.
-func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, error) {
+func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, []error) {
 	var waitGroup sync.WaitGroup
 
 	namespaceSet := make(map[string]struct{})
@@ -464,7 +464,7 @@ func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.C
 
 			namespaceScope, err := c.GetNamespaceScope(namespace, ctx)
 			if err != nil {
-				errChan <- fmt.Errorf("failed to get namespace scope for namespace %s: %w", namespace, err)
+				errChan <- newNamespaceScopeError(namespace, err)
 				return
 			}
 
@@ -478,9 +478,11 @@ func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.C
 	close(resultChan)
 	close(errChan)
 
+	var errs []error
+
 	for err := range errChan {
 		if err != nil {
-			return nil, err
+			errs = append(errs, err)
 		}
 	}
 
@@ -490,7 +492,7 @@ func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.C
 		}
 	}
 
-	return namespaceScopes, nil
+	return namespaceScopes, errs
 }
 
 func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*values.Scope, error) {
