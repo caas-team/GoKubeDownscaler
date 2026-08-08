@@ -11,7 +11,7 @@ func newNamespaceScopeRetrieveError(namespace string) error {
 }
 
 func (n *NamespaceScopeRetrieveError) Error() string {
-	return fmt.Sprintf("failed to get namespace scope for namespace %q", n.namespace)
+	return fmt.Sprintf("failed to parse namespace scope for namespace %q", n.namespace)
 }
 
 type MaxRetriesExceededError struct {
