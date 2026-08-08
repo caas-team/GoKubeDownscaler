@@ -301,7 +301,7 @@ func attemptScaling(
 		err := scaleWorkload(scaling, workload, scopes, workloadNamespaceMetrics, client, ctx)
 		if err != nil {
 			if !strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
-				workloadNamespaceMetrics.IncrementGenericErrorsCount()
+				recordScalingError(err, workloadNamespaceMetrics)
 				return fmt.Errorf("failed to scale workload: %w", err)
 			}
 
@@ -324,6 +324,16 @@ func attemptScaling(
 	slog.Error("failed to scale workload", "attempts", config.MaxRetriesOnConflict+1)
 
 	return newMaxRetriesExceeded(config.MaxRetriesOnConflict)
+}
+
+func recordScalingError(err error, workloadNamespaceMetrics *metrics.NamespaceMetricsHolder) {
+	var scalingInvalidErr *ScalingInvalidError
+	if errors.As(err, &scalingInvalidErr) {
+		workloadNamespaceMetrics.IncrementInvalidScalingValueErrorsCount()
+		return
+	}
+
+	workloadNamespaceMetrics.IncrementGenericErrorsCount()
 }
 
 // scanWorkload runs a scan on the workload, determining the scaling and scaling the workload.
@@ -477,8 +487,6 @@ func scaleWorkload(
 	}
 
 	if scaling == values.ScalingMultiple {
-		workloadNamespaceMetrics.IncrementInvalidScalingValueErrorsCount()
-
 		return newScalingInvalidError(
 			`scaling values matched to multiple states.
 this is the result of a faulty configuration where on a scope there is multiple values with the same priority
