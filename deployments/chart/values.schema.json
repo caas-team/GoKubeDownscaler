@@ -275,17 +275,25 @@
 	  "additionalProperties": false,
 	  "properties": {
 		"mutateUnauthorizedAnnotationsAddition": { "type": "boolean" },
+		"failurePolicy": { "type": "string", "enum": ["Fail", "Ignore"] },
 		"validationActions": {
 		  "type": "array",
+		  "minItems": 1,
+		  "maxItems": 3,
+		  "uniqueItems": true,
 		  "items": { "type": "string", "enum": ["Audit", "Warn", "Deny"] }
 		},
 		"authorizedNamespacesToServiceAccountsRegex": { "$ref": "#/$defs/stringMap" },
 		"authorizedUsersRegex": {
 		  "type": "array",
+		  "maxItems": 60,
+		  "uniqueItems": true,
 		  "items": { "type": "string" }
 		},
 		"authorizedGroupsRegex": {
 		  "type": "array",
+		  "maxItems": 60,
+		  "uniqueItems": true,
 		  "items": { "type": "string" }
 		},
 		"onWorkloads": {

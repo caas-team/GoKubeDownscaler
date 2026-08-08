@@ -886,3 +886,31 @@ resources include in annotationsCompliance
 {{- end }}
 {{ end -}}
 {{- end }}
+
+{{/*
+Validate annotationsCompliance combinations that JSON Schema cannot express.
+*/}}
+{{- define "go-kube-downscaler.annotationsCompliance.validate" -}}
+{{- $enabled := or .Values.annotationsCompliance.onWorkloads.enabled .Values.annotationsCompliance.onNamespace.enabled .Values.annotationsCompliance.onWorkloads.preventRemoval .Values.annotationsCompliance.onNamespace.preventRemoval -}}
+{{- if $enabled -}}
+  {{- if and (or .Values.annotationsCompliance.onWorkloads.enabled .Values.annotationsCompliance.onWorkloads.preventRemoval) (eq (len .Values.includedResources) 0) -}}
+    {{- fail "annotationsCompliance on workloads requires at least one includedResources entry" -}}
+  {{- end -}}
+  {{- if and (has "Deny" .Values.annotationsCompliance.validationActions) (has "Warn" .Values.annotationsCompliance.validationActions) -}}
+    {{- fail "annotationsCompliance.validationActions cannot contain both Deny and Warn" -}}
+  {{- end -}}
+  {{- $conditionCount := add 2 (len .Values.annotationsCompliance.authorizedNamespacesToServiceAccountsRegex) (len .Values.annotationsCompliance.authorizedUsersRegex) (len .Values.annotationsCompliance.authorizedGroupsRegex) -}}
+  {{- if gt ($conditionCount | int) 64 -}}
+    {{- fail "annotationsCompliance configures more than Kubernetes' limit of 64 match conditions" -}}
+  {{- end -}}
+  {{- range $namespaceRegex, $serviceAccountRegex := .Values.annotationsCompliance.authorizedNamespacesToServiceAccountsRegex -}}
+    {{- $_ := mustRegexMatch (printf "^system:serviceaccount:%s:%s" $namespaceRegex $serviceAccountRegex) "" -}}
+  {{- end -}}
+  {{- range $regex := .Values.annotationsCompliance.authorizedUsersRegex -}}
+    {{- $_ := mustRegexMatch $regex "" -}}
+  {{- end -}}
+  {{- range $regex := .Values.annotationsCompliance.authorizedGroupsRegex -}}
+    {{- $_ := mustRegexMatch $regex "" -}}
+  {{- end -}}
+{{- end -}}
+{{- end }}
