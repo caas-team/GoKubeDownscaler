@@ -39,7 +39,7 @@
     "@typescript-eslint/parser": "^8.65.0",
     "eslint": "^10.8.0",
     "eslint-plugin-markdown": "^5.1.0",
-    "postcss": "^8.5.25",
+    "postcss": "^8.5.26",
     "tailwindcss": "^4.3.3",
     "tailwindcss-animated": "^2.1.0",
     "typescript": "~5.9.3"
