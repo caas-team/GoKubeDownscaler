@@ -37,7 +37,7 @@
     "@eslint/js": "^10.0.1",
     "@typescript-eslint/eslint-plugin": "^8.67.0",
     "@typescript-eslint/parser": "^8.65.0",
-    "eslint": "^10.8.1",
+    "eslint": "^10.9.0",
     "eslint-plugin-markdown": "^5.1.0",
     "postcss": "^8.5.26",
     "tailwindcss": "^4.3.3",
