@@ -1,6 +1,6 @@
 module github.com/caas-team/gokubedownscaler
 
-go 1.26.5
+go 1.26.6
 
 require (
 	github.com/actions/actions-runner-controller v0.27.6
