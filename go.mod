@@ -12,7 +12,7 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/stretchr/testify v1.12.1
 	github.com/wI2L/jsondiff v0.7.1
-	github.com/zalando-incubator/stackset-controller v1.4.139
+	github.com/zalando-incubator/stackset-controller v1.4.140
 	github.com/zalando/postgres-operator v1.15.1
 	go.uber.org/zap v1.28.0
 	k8s.io/api v0.37.0
@@ -20,8 +20,8 @@ require (
 	k8s.io/apiserver v0.37.0
 	k8s.io/client-go v0.37.0
 	k8s.io/component-base v0.37.0
-	sigs.k8s.io/controller-runtime v0.24.1
-	sigs.k8s.io/gateway-api v1.6.1
+	sigs.k8s.io/controller-runtime v0.25.0
+	sigs.k8s.io/gateway-api v1.6.2
 )
 
 require (
@@ -78,10 +78,10 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v1.20.99 // indirect
 	github.com/prometheus/procfs v0.21.1 // indirect
-	github.com/sirupsen/logrus v1.10.1 // indirect
+	github.com/sirupsen/logrus v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
-	github.com/szuecs/routegroup-client v0.36.3 // indirect
+	github.com/szuecs/routegroup-client v0.36.4 // indirect
 	github.com/tidwall/gjson v1.19.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
@@ -121,7 +121,7 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/apiextensions-apiserver v0.36.3 // indirect
+	k8s.io/apiextensions-apiserver v0.37.0 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260821135717-be32def86098 // indirect
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3 // indirect
