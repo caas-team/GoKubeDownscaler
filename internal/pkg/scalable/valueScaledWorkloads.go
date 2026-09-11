@@ -22,8 +22,10 @@ type valueScaledResource interface {
 	getValue() (values.Replicas, values.Replicas, error)
 	// getSavedResourcesRequests returns the saved CPU and memory requests for the workload based on the downscale replicas.
 	getSavedResourcesRequests() *metrics.SavedResources
-	logUpscaleSuccessful(summary ScalingSummary, dryRun bool)
-	logDownscaleSuccessful(summary ScalingSummary, dryRun bool)
+	// logUpscaleSuccessful logs a successful upscale operations or dry-run upscale operations.
+	logUpscaleSuccessful(summary *ScalingSummary, dryRun bool)
+	// logDownscaleSuccessful logs a successful downscale operations or dry-run downscale operations.
+	logDownscaleSuccessful(summary *ScalingSummary, dryRun bool)
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
 	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
@@ -36,12 +38,12 @@ type valueScaledWorkload struct {
 }
 
 // LogUpscaleSuccessful delegates resource-specific upscale logging.
-func (v *valueScaledWorkload) LogUpscaleSuccessful(summary ScalingSummary, dryRun bool) {
+func (v *valueScaledWorkload) LogUpscaleSuccessful(summary *ScalingSummary, dryRun bool) {
 	v.logUpscaleSuccessful(summary, dryRun)
 }
 
 // LogDownscaleSuccessful delegates resource-specific downscale logging.
-func (v *valueScaledWorkload) LogDownscaleSuccessful(summary ScalingSummary, dryRun bool) {
+func (v *valueScaledWorkload) LogDownscaleSuccessful(summary *ScalingSummary, dryRun bool) {
 	v.logDownscaleSuccessful(summary, dryRun)
 }
 

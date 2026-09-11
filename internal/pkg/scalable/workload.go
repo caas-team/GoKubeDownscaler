@@ -170,9 +170,9 @@ type Workload interface {
 	// ScaleDown scales down the workload
 	ScaleDown(downscaleReplicas values.Replicas) (ScalingSummary, error)
 	// LogUpscaleSuccessful logs a successful upscale, including dry-run operations.
-	LogUpscaleSuccessful(summary ScalingSummary, dryRun bool)
+	LogUpscaleSuccessful(summary *ScalingSummary, dryRun bool)
 	// LogDownscaleSuccessful logs a successful downscale, including dry-run operations.
-	LogDownscaleSuccessful(summary ScalingSummary, dryRun bool)
+	LogDownscaleSuccessful(summary *ScalingSummary, dryRun bool)
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
 	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch

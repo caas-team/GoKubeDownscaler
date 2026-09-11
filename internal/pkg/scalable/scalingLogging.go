@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func logWorkloadScalingMessage(action, attribute string, workload scalableResource, summary ScalingSummary, dryRun bool) {
+func logWorkloadScalingMessage(action, attribute string, workload scalableResource, summary *ScalingSummary, dryRun bool) {
 	kind := strings.ToLower(workload.GroupVersionKind().Kind)
 	if kind == "" {
 		kind = "workload"
@@ -21,7 +21,7 @@ func logWorkloadScalingMessage(action, attribute string, workload scalableResour
 	logWorkloadMessage(message, attribute, workload, summary, dryRun)
 }
 
-func logWorkloadMessage(message, attribute string, workload scalableResource, summary ScalingSummary, dryRun bool) {
+func logWorkloadMessage(message, attribute string, workload scalableResource, summary *ScalingSummary, dryRun bool) {
 	args := []any{
 		"kind", workload.GroupVersionKind().Kind,
 		"workload", workload.GetName(),

@@ -70,12 +70,12 @@ func (g *gateway) getValue() (currentValue, downscalingValue values.Replicas, er
 }
 
 // LogUpscaleSuccessful logs the gateway class transition for an upscale.
-func (g *gateway) logUpscaleSuccessful(summary ScalingSummary, dryRun bool) {
+func (g *gateway) logUpscaleSuccessful(summary *ScalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled up", "gateway class", g, summary, dryRun)
 }
 
 // LogDownscaleSuccessful logs the gateway class transition for a downscale.
-func (g *gateway) logDownscaleSuccessful(summary ScalingSummary, dryRun bool) {
+func (g *gateway) logDownscaleSuccessful(summary *ScalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled down", "gateway class", g, summary, dryRun)
 }
 

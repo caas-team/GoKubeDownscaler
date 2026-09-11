@@ -35,12 +35,12 @@ type replicaScaledWorkload struct {
 }
 
 // LogUpscaleSuccessful logs a successful upscale using the original workload message style.
-func (r *replicaScaledWorkload) LogUpscaleSuccessful(summary ScalingSummary, dryRun bool) {
+func (r *replicaScaledWorkload) LogUpscaleSuccessful(summary *ScalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled up", "replicas", r, summary, dryRun)
 }
 
 // LogDownscaleSuccessful logs a successful downscale using the original workload message style.
-func (r *replicaScaledWorkload) LogDownscaleSuccessful(summary ScalingSummary, dryRun bool) {
+func (r *replicaScaledWorkload) LogDownscaleSuccessful(summary *ScalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled down", "replicas", r, summary, dryRun)
 }
 
