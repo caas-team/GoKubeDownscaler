@@ -118,7 +118,7 @@ func (p *podDisruptionBudget) ScaleUp() (ScalingSummary, error) {
 		removeOriginalReplicas(p)
 
 		return ScalingSummary{
-			IsUpdateNeeded: true, FromReplicas: maxUnavailable, ToReplicas: originalReplicas, Attribute: maxUnavailableAttribute,
+			IsUpdateNeeded: true, From: maxUnavailable, To: originalReplicas, Attribute: maxUnavailableAttribute,
 		}, nil
 	}
 
@@ -128,7 +128,7 @@ func (p *podDisruptionBudget) ScaleUp() (ScalingSummary, error) {
 		removeOriginalReplicas(p)
 
 		return ScalingSummary{
-			IsUpdateNeeded: true, FromReplicas: minAvailable, ToReplicas: originalReplicas, Attribute: minAvailableAttribute,
+			IsUpdateNeeded: true, From: minAvailable, To: originalReplicas, Attribute: minAvailableAttribute,
 		}, nil
 	}
 
@@ -145,7 +145,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (Scal
 			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
 
 			return ScalingSummary{
-				SavedResources: summary.SavedResources, FromReplicas: maxUnavailable, ToReplicas: downscaleReplicas, Attribute: maxUnavailableAttribute,
+				SavedResources: summary.SavedResources, From: maxUnavailable, To: downscaleReplicas, Attribute: maxUnavailableAttribute,
 			}, nil
 		}
 
@@ -153,7 +153,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (Scal
 		setOriginalReplicas(maxUnavailable, p)
 
 		return ScalingSummary{
-			SavedResources: summary.SavedResources, IsUpdateNeeded: true, FromReplicas: maxUnavailable, ToReplicas: downscaleReplicas,
+			SavedResources: summary.SavedResources, IsUpdateNeeded: true, From: maxUnavailable, To: downscaleReplicas,
 			Attribute: maxUnavailableAttribute,
 		}, nil
 	}
@@ -164,7 +164,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (Scal
 			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
 
 			return ScalingSummary{
-				SavedResources: summary.SavedResources, FromReplicas: minAvailable, ToReplicas: downscaleReplicas, Attribute: minAvailableAttribute,
+				SavedResources: summary.SavedResources, From: minAvailable, To: downscaleReplicas, Attribute: minAvailableAttribute,
 			}, nil
 		}
 
@@ -172,7 +172,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (Scal
 		setOriginalReplicas(minAvailable, p)
 
 		return ScalingSummary{
-			SavedResources: summary.SavedResources, IsUpdateNeeded: true, FromReplicas: minAvailable, ToReplicas: downscaleReplicas,
+			SavedResources: summary.SavedResources, IsUpdateNeeded: true, From: minAvailable, To: downscaleReplicas,
 			Attribute: minAvailableAttribute,
 		}, nil
 	}

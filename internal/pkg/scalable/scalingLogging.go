@@ -38,8 +38,8 @@ func logWorkloadMessage(message, attribute string, workload scalableResource, su
 	}
 
 	args = append(args,
-		"from", summary.FromReplicas,
-		"to", summary.ToReplicas,
+		"from", summary.From,
+		"to", summary.To,
 	)
 
 	slog.Info(message, args...)
