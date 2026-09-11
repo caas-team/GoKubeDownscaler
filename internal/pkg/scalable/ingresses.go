@@ -75,6 +75,16 @@ func (i *ingress) getValue() (currentValue, downscalingValue values.Replicas, er
 	return currentValue, downscalingValue, nil
 }
 
+// LogUpscaleSuccessful logs the ingress class transition for an upscale.
+func (i *ingress) logUpscaleSuccessful(summary ScalingSummary, dryRun bool) {
+	logWorkloadScalingMessage("scaled up", "ingress class", i, summary, dryRun)
+}
+
+// LogDownscaleSuccessful logs the ingress class transition for a downscale.
+func (i *ingress) logDownscaleSuccessful(summary ScalingSummary, dryRun bool) {
+	logWorkloadScalingMessage("scaled down", "ingress class", i, summary, dryRun)
+}
+
 // Reget regets the resource from the Kubernetes API.
 func (i *ingress) Reget(clientsets *Clientsets, ctx context.Context) error {
 	var err error

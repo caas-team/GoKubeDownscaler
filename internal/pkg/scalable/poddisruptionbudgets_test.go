@@ -142,9 +142,9 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, pdb)
 			}
 
-			updateNeeded, err := pdb.ScaleUp()
+			summary, err := pdb.ScaleUp()
 			require.NoError(t, err)
-			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
+			assert.Equal(t, test.wantUpdateNeeded, summary.IsUpdateNeeded)
 
 			if test.wantMaxUnavailable != nil {
 				if assert.NotNil(t, pdb.Spec.MaxUnavailable) {
@@ -302,9 +302,9 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, pdb)
 			}
 
-			_, updateNeeded, err := pdb.ScaleDown(values.AbsoluteReplicas(0))
+			summary, err := pdb.ScaleDown(values.AbsoluteReplicas(0))
 			require.NoError(t, err)
-			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
+			assert.Equal(t, test.wantUpdateNeeded, summary.IsUpdateNeeded)
 
 			if test.wantMaxUnavailable != nil {
 				if assert.NotNil(t, pdb.Spec.MaxUnavailable) {

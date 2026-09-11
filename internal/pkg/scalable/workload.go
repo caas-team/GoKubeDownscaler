@@ -127,6 +127,15 @@ type PercentageWorkload interface {
 	AllowPercentageReplicas() bool
 }
 
+// ScalingSummary contains the result of a scaling operation.
+type ScalingSummary struct {
+	SavedResources *metrics.SavedResources
+	IsUpdateNeeded bool
+	FromReplicas   values.Replicas
+	ToReplicas     values.Replicas
+	Attribute      string
+}
+
 // scalableResource provides all functions needed to scale any type of resource.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource
@@ -156,10 +165,14 @@ type Workload interface {
 	scalableResource
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
 	Update(clientsets *Clientsets, ctx context.Context) error
-	// ScaleUp scales up the workload
-	ScaleUp() (bool, error)
+	// ScaleUp scales up the workload.
+	ScaleUp() (ScalingSummary, error)
 	// ScaleDown scales down the workload
-	ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, bool, error)
+	ScaleDown(downscaleReplicas values.Replicas) (ScalingSummary, error)
+	// LogUpscaleSuccessful logs a successful upscale, including dry-run operations.
+	LogUpscaleSuccessful(summary ScalingSummary, dryRun bool)
+	// LogDownscaleSuccessful logs a successful downscale, including dry-run operations.
+	LogDownscaleSuccessful(summary ScalingSummary, dryRun bool)
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
 	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
