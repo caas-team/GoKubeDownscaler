@@ -35,6 +35,12 @@ includedResources:
 #  - kafkaconnects
 #  - kafkamirrormaker2s
 #  - kafkabridges
+#  - advancedstatefulsets
+#  - clonesets
+#  - advancedcronjobs
+#  - broadcastjobs
+#  - imagepulljobs
+#  - advanceddaemonsets
 
 fullnameOverride: ""
 nameOverride: ""
