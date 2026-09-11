@@ -207,9 +207,9 @@ func startScanning(
 		)
 		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
 
-		namespaceScopes, err := client.GetNamespacesScopes(workloads, ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get namespace annotations: %w", err)
+		namespaceScopes, errs := client.GetNamespacesScopes(workloads, ctx)
+		if len(errs) > 0 {
+			handleNamespaceScopeParsingErrors(errs, config, currentNamespaceToMetrics)
 		}
 
 		var waitGroup sync.WaitGroup
@@ -261,6 +261,32 @@ func startScanning(
 	return nil
 }
 
+func handleNamespaceScopeParsingErrors(
+	errs []error,
+	config *runtimeConfiguration,
+	currentNamespaceToMetrics map[string]*metrics.NamespaceMetricsHolder,
+) {
+	for _, err := range errs {
+		slog.Error("failed to get namespace annotations", "error", err)
+
+		var namespaceScopeErr *kubernetes.NamespaceScopeError
+		if !errors.As(err, &namespaceScopeErr) {
+			continue
+		}
+
+		namespaceMetrics, metricsErr := getNamespaceMetrics(config, namespaceScopeErr.Namespace(), currentNamespaceToMetrics)
+		if metricsErr != nil {
+			if !errors.Is(metricsErr, ErrMetricsDisabled) {
+				slog.Error("failed to get namespace metrics", "error", metricsErr, "namespace", namespaceScopeErr.Namespace())
+			}
+
+			continue
+		}
+
+		namespaceMetrics.MarkParsingNamespaceScopeError()
+	}
+}
+
 // attemptScaling handles retries for scaling a workload in case of conflicts.
 func attemptScaling(
 	client kubernetes.Client,
@@ -275,7 +301,7 @@ func attemptScaling(
 		err := scaleWorkload(scaling, workload, scopes, workloadNamespaceMetrics, client, ctx)
 		if err != nil {
 			if !strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
-				workloadNamespaceMetrics.IncrementGenericErrorsCount()
+				recordScalingError(err, workloadNamespaceMetrics)
 				return fmt.Errorf("failed to scale workload: %w", err)
 			}
 
@@ -298,6 +324,16 @@ func attemptScaling(
 	slog.Error("failed to scale workload", "attempts", config.MaxRetriesOnConflict+1)
 
 	return newMaxRetriesExceeded(config.MaxRetriesOnConflict)
+}
+
+func recordScalingError(err error, workloadNamespaceMetrics *metrics.NamespaceMetricsHolder) {
+	var scalingInvalidErr *ScalingInvalidError
+	if errors.As(err, &scalingInvalidErr) {
+		workloadNamespaceMetrics.IncrementInvalidScalingValueErrorsCount()
+		return
+	}
+
+	workloadNamespaceMetrics.IncrementGenericErrorsCount()
 }
 
 // scanWorkload runs a scan on the workload, determining the scaling and scaling the workload.
@@ -323,6 +359,7 @@ func scanWorkload(
 
 	scopeWorkload := values.NewScope()
 	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
+		workloadNamespaceMetrics.IncrementParsingWorkloadScopeErrorsCount()
 		return fmt.Errorf("failed to parse workload scope from annotations: %w", err)
 	}
 
@@ -450,8 +487,6 @@ func scaleWorkload(
 	}
 
 	if scaling == values.ScalingMultiple {
-		workloadNamespaceMetrics.IncrementInvalidScalingValueErrorsCount()
-
 		return newScalingInvalidError(
 			`scaling values matched to multiple states.
 this is the result of a faulty configuration where on a scope there is multiple values with the same priority
@@ -520,6 +555,23 @@ func getWorkloadNamespaceMetrics(
 	}
 
 	return workloadNamespaceMetrics, nil
+}
+
+func getNamespaceMetrics(
+	config *runtimeConfiguration,
+	namespace string,
+	currentNamespaceToMetrics map[string]*metrics.NamespaceMetricsHolder,
+) (*metrics.NamespaceMetricsHolder, error) {
+	if !config.MetricsEnabled {
+		return nil, ErrMetricsDisabled
+	}
+
+	namespaceMetrics, ok := currentNamespaceToMetrics[namespace]
+	if !ok {
+		return nil, NewMetricHolderNotFoundError(namespace)
+	}
+
+	return namespaceMetrics, nil
 }
 
 // newNamespaceToMetrics creates a new map for namespace to metrics holder if metrics are enabled.
