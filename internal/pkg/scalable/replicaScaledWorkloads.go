@@ -76,7 +76,7 @@ func (r *replicaScaledWorkload) ScaleUp() (ScalingSummary, error) {
 
 	removeOriginalReplicas(r)
 
-	return ScalingSummary{IsUpdateNeeded: true, FromReplicas: currentReplicas, ToReplicas: originalReplicas}, nil
+	return ScalingSummary{IsUpdateNeeded: true, From: currentReplicas, To: originalReplicas}, nil
 }
 
 // ScaleDown scales down the underlying replicaScaledResource.
@@ -115,8 +115,8 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (Sc
 		if !isOriginalReplicasSet {
 			slog.Debug("workload is at or below target scale down replicas, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
 
-			summary.FromReplicas = currentReplicas
-			summary.ToReplicas = downscaleReplicas
+			summary.From = currentReplicas
+			summary.To = downscaleReplicas
 
 			return summary, nil
 		}
@@ -125,8 +125,8 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (Sc
 
 		slog.Debug("workload is already scaled down, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
 
-		summary.FromReplicas = currentReplicas
-		summary.ToReplicas = downscaleReplicas
+		summary.From = currentReplicas
+		summary.To = downscaleReplicas
 
 		return summary, nil
 	}
@@ -141,8 +141,8 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (Sc
 	setOriginalReplicas(currentReplicas, r)
 
 	summary.IsUpdateNeeded = true
-	summary.FromReplicas = currentReplicas
-	summary.ToReplicas = downscaleReplicas
+	summary.From = currentReplicas
+	summary.To = downscaleReplicas
 
 	return summary, nil
 }

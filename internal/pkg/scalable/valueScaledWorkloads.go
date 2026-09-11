@@ -72,14 +72,14 @@ func (v *valueScaledWorkload) ScaleUp() (ScalingSummary, error) {
 
 	removeOriginalReplicas(v)
 
-	return ScalingSummary{IsUpdateNeeded: true, FromReplicas: currentState, ToReplicas: originalState}, nil
+	return ScalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState}, nil
 }
 
 // ScaleDown scales down the underlying valueScaledResource.
 func (v *valueScaledWorkload) ScaleDown(_ values.Replicas) (ScalingSummary, error) {
 	currentState, targetScaleDownState, err := v.getValue()
 
-	summary := ScalingSummary{SavedResources: metrics.NewSavedResources(0, 0), FromReplicas: currentState, ToReplicas: targetScaleDownState}
+	summary := ScalingSummary{SavedResources: metrics.NewSavedResources(0, 0), From: currentState, To: targetScaleDownState}
 	if err != nil {
 		return summary, err
 	}
