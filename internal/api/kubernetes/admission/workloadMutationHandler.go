@@ -323,6 +323,7 @@ func evaluateWorkloadScalingConditions(
 		slog.Debug(
 			"scaling configuration incomplete missing values in timespan, skipping",
 			"workload", workload.GetName(),
+			"kind", workload.GroupVersionKind().Kind,
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun,
 		)
@@ -349,6 +350,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 		slog.Debug(
 			"scaling configuration is invalid for workload",
 			"error", err, "workload", workload.GetName(),
+			"kind", workload.GroupVersionKind().Kind,
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun,
 		)
@@ -367,6 +369,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 		slog.Info(
 			"mutating workload matching scaling down condition",
 			"workload", workload.GetName(),
+			"kind", workload.GroupVersionKind().Kind,
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun,
 		)
@@ -376,6 +379,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 			slog.Debug("failed to get downscale replicas from scopes",
 				"error", err,
 				"workload", workload.GetName(),
+				"kind", workload.GroupVersionKind().Kind,
 				"namespace", workload.GetNamespace(),
 				"dryRun", dryRun)
 
@@ -402,6 +406,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	if scaling == values.ScalingUp {
 		slog.Debug("workload matches scaling up conditions, skipping",
 			"workload", workload.GetName(),
+			"kind", workload.GroupVersionKind().Kind,
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun)
 
@@ -417,6 +422,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 
 	slog.Debug("workload doesn't match any scaling condition, skipping",
 		"workload", workload.GetName(),
+		"kind", workload.GroupVersionKind().Kind,
 		"namespace", workload.GetNamespace(),
 		"dryRun", dryRun)
 
@@ -447,6 +453,7 @@ func (v *WorkloadMutationHandler) evaluateWorkloadExternalScalingCondition(
 			"error", err,
 			"namespace", workload.GetNamespace(),
 			"workload", workload.GetName(),
+			"kind", workload.GroupVersionKind().Kind,
 			"dryRun", v.dryRun,
 		)
 
@@ -489,6 +496,7 @@ func mutateWorkload(
 		slog.Error("failed to deep copy workload",
 			"error", err,
 			"workload", workload.GetName(),
+			"kind", workload.GroupVersionKind().Kind,
 			"namespace", workload.GetNamespace(),
 			"dryRun", dryRun)
 

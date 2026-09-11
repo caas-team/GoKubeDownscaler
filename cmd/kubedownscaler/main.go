@@ -217,23 +217,38 @@ func startScanning(
 			waitGroup.Add(1)
 
 			go func(workload scalable.Workload) {
-				slog.Debug("scanning workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+				slog.Debug(
+					"scanning workload", "kind", workloadResourceKind(workload),
+					"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+				)
 
 				defer waitGroup.Done()
 
 				workloadNamespaceMetrics, err := getWorkloadNamespaceMetrics(config, workload, currentNamespaceToMetrics)
 				if err != nil && !errors.Is(err, ErrMetricsDisabled) {
-					slog.Error("failed to get namespace metrics", "error", err, "namespace", workload.GetNamespace())
+					slog.Error(
+						"failed to get namespace metrics", "error", err,
+						"kind", workloadResourceKind(workload), "namespace", workload.GetNamespace(),
+					)
+
 					return
 				}
 
 				err = scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceScopes, workloadNamespaceMetrics, config)
 				if err != nil {
-					slog.Error("failed to scan workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+					slog.Error(
+						"failed to scan workload", "error", err,
+						"kind", workloadResourceKind(workload),
+						"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+					)
+
 					return
 				}
 
-				slog.Debug("successfully scanned workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+				slog.Debug(
+					"successfully scanned workload", "kind", workloadResourceKind(workload),
+					"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+				)
 			}(workload)
 		}
 
@@ -305,7 +320,11 @@ func attemptScaling(
 				return fmt.Errorf("failed to scale workload: %w", err)
 			}
 
-			slog.Warn("workload modified, retrying", "attempt", retry+1, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+			slog.Warn(
+				"workload modified, retrying", "attempt", retry+1,
+				"kind", workloadResourceKind(workload),
+				"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+			)
 
 			err = client.RegetWorkload(workload, ctx)
 			if err != nil {
@@ -315,13 +334,20 @@ func attemptScaling(
 			continue
 		}
 
-		slog.Info("successfully scaled workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Info(
+			"successfully scaled workload", "kind", workloadResourceKind(workload),
+			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+		)
 
 		return nil
 	}
 
 	workloadNamespaceMetrics.IncrementConflictErrorsCount()
-	slog.Error("failed to scale workload", "attempts", config.MaxRetriesOnConflict+1)
+	slog.Error(
+		"failed to scale workload", "attempts", config.MaxRetriesOnConflict+1,
+		"kind", workloadResourceKind(workload),
+		"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+	)
 
 	return newMaxRetriesExceeded(config.MaxRetriesOnConflict)
 }
@@ -353,6 +379,7 @@ func scanWorkload(
 	slog.Debug(
 		"parsing workload scope from annotations",
 		"annotations", workload.GetAnnotations(),
+		"kind", workloadResourceKind(workload),
 		"name", workload.GetName(),
 		"namespace", workload.GetNamespace(),
 	)
@@ -370,7 +397,11 @@ func scanWorkload(
 
 	scopes := values.Scopes{scopeWorkload, scopeNamespace, scopeCli, scopeEnv, scopeDefault}
 
-	slog.Debug("finished parsing all scopes", "scopes", scopes, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	slog.Debug(
+		"finished parsing all scopes", "scopes", scopes,
+		"kind", workloadResourceKind(workload),
+		"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+	)
 
 	isInGracePeriod, err := scopes.IsInGracePeriod(
 		config.TimeAnnotation,
@@ -385,7 +416,10 @@ func scanWorkload(
 	}
 
 	if isInGracePeriod {
-		slog.Debug("workload is on grace period, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Debug(
+			"workload is on grace period, skipping", "kind", workloadResourceKind(workload),
+			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+		)
 		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
 
 		return nil
@@ -395,7 +429,10 @@ func scanWorkload(
 	upscaleOnExclusion := scopes.GetUpscaleExcluded()
 
 	if excluded && !upscaleOnExclusion {
-		slog.Debug("workload is excluded, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Debug(
+			"workload is excluded, skipping", "kind", workloadResourceKind(workload),
+			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+		)
 		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
 
 		return nil
@@ -416,6 +453,7 @@ func scanWorkload(
 
 		slog.Debug(
 			"scaling children workloads",
+			"kind", workloadResourceKind(workload),
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
 			"childrenCount", len(childrenWorkloads),
@@ -426,9 +464,26 @@ func scanWorkload(
 	return nil
 }
 
+func workloadResourceKind(workload scalable.Workload) string {
+	kind := "workload"
+
+	func() {
+		defer func() { _ = recover() }()
+
+		if resourceKind := workload.GroupVersionKind().Kind; resourceKind != "" {
+			kind = resourceKind
+		}
+	}()
+
+	return kind
+}
+
 func getCurrentScaling(workload scalable.Workload, excluded, upscaleOnExclusion bool, scopes *values.Scopes) values.Scaling {
 	if upscaleOnExclusion && excluded {
-		slog.Debug("upscaling excluded workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Debug(
+			"upscaling excluded workload", "kind", workloadResourceKind(workload),
+			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+		)
 
 		return values.ScalingUp
 	}
@@ -450,7 +505,11 @@ func scaleWorkloads(
 		go func(workload scalable.Workload) {
 			err := attemptScaling(client, ctx, scaling, workload, scopes, workloadNamespaceMetrics, config)
 			if err != nil {
-				slog.Error("failed to scale workload", "error", err, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+				slog.Error(
+					"failed to scale workload", "error", err,
+					"kind", workloadResourceKind(workload),
+					"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+				)
 			}
 		}(workload)
 	}
@@ -466,21 +525,30 @@ func scaleWorkload(
 	ctx context.Context,
 ) error {
 	if scaling == values.ScalingNone {
-		slog.Debug("scaling is not set by any scope, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Debug(
+			"scaling is not set by any scope, skipping", "kind", workloadResourceKind(workload),
+			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+		)
 		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
 
 		return nil
 	}
 
 	if scaling == values.ScalingIgnore {
-		slog.Debug("scaling is ignored, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Debug(
+			"scaling is ignored, skipping", "kind", workloadResourceKind(workload),
+			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+		)
 		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
 
 		return nil
 	}
 
 	if scaling == values.ScalingIncomplete {
-		slog.Warn("scaling times cannot be determined, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Warn(
+			"scaling times cannot be determined, skipping", "kind", workloadResourceKind(workload),
+			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+		)
 		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
 
 		return nil
@@ -495,7 +563,10 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	}
 
 	if scaling == values.ScalingDown {
-		slog.Info("downscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Info(
+			"downscaling workload", "kind", workloadResourceKind(workload),
+			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+		)
 
 		downscaleReplicas, err := scopes.GetDownscaleReplicas()
 		if err != nil {
@@ -512,7 +583,10 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	}
 
 	if scaling == values.ScalingUp {
-		slog.Info("upscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Info(
+			"upscaling workload", "kind", workloadResourceKind(workload),
+			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+		)
 
 		err := client.UpscaleWorkload(workload, ctx)
 		if err != nil {

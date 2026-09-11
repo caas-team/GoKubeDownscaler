@@ -6,9 +6,13 @@ import (
 )
 
 func logWorkloadScalingMessage(action, attribute string, workload scalableResource, summary ScalingSummary, dryRun bool) {
-	resource := workloadKind(workload)
-	message := "successfully " + action + " " + resource
-	dryRunMessage := "running in dry run mode, would have sent update " + resource + " request to " + action + " " + resource
+	kind := strings.ToLower(workload.GroupVersionKind().Kind)
+	if kind == "" {
+		kind = "workload"
+	}
+
+	message := "successfully " + action + " " + kind
+	dryRunMessage := "running in dry run mode, would have sent update " + kind + " request to " + action + " " + kind
 
 	if dryRun {
 		message = dryRunMessage
@@ -17,18 +21,9 @@ func logWorkloadScalingMessage(action, attribute string, workload scalableResour
 	logWorkloadMessage(message, attribute, workload, summary, dryRun)
 }
 
-func workloadKind(workload scalableResource) string {
-	resource := strings.ToLower(workload.GroupVersionKind().Kind)
-	if resource == "" {
-		return "workload"
-	}
-
-	return resource
-}
-
 func logWorkloadMessage(message, attribute string, workload scalableResource, summary ScalingSummary, dryRun bool) {
 	args := []any{
-		"resource", workload.GroupVersionKind().Kind,
+		"kind", workload.GroupVersionKind().Kind,
 		"workload", workload.GetName(),
 		"namespace", workload.GetNamespace(),
 		"dry run", dryRun,

@@ -57,7 +57,11 @@ func (r *replicaScaledWorkload) ScaleUp() (ScalingSummary, error) {
 	if err != nil {
 		var originalReplicasUnsetErr *OriginalReplicasUnsetError
 		if ok := errors.As(err, &originalReplicasUnsetErr); ok {
-			slog.Debug("original replicas is not set, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
+			slog.Debug(
+				"original replicas is not set, skipping", "kind", r.GroupVersionKind().Kind,
+				"workload", r.GetName(), "namespace", r.GetNamespace(),
+			)
+
 			return summary, nil
 		}
 
@@ -113,7 +117,10 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (Sc
 		}
 
 		if !isOriginalReplicasSet {
-			slog.Debug("workload is at or below target scale down replicas, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
+			slog.Debug(
+				"workload is at or below target scale down replicas, skipping", "kind", r.GroupVersionKind().Kind,
+				"workload", r.GetName(), "namespace", r.GetNamespace(),
+			)
 
 			summary.From = currentReplicas
 			summary.To = downscaleReplicas
@@ -123,7 +130,10 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (Sc
 
 		summary.SavedResources = r.getSavedResourcesRequests(originalReplicasInt32 - downscaleReplicasInt32)
 
-		slog.Debug("workload is already scaled down, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
+		slog.Debug(
+			"workload is already scaled down, skipping", "kind", r.GroupVersionKind().Kind,
+			"workload", r.GetName(), "namespace", r.GetNamespace(),
+		)
 
 		summary.From = currentReplicas
 		summary.To = downscaleReplicas
