@@ -285,7 +285,7 @@ func (c client) DownscaleWorkload(
 	}
 
 	if c.dryRun {
-		workload.LogDownscaleSuccessful(scalingSummary, true)
+		workload.LogDownscaleSuccessful(&scalingSummary, true)
 
 		return metrics.NewSavedResources(0, 0), nil
 	}
@@ -295,7 +295,7 @@ func (c client) DownscaleWorkload(
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to update the workload: %w", err)
 	}
 
-	workload.LogDownscaleSuccessful(scalingSummary, false)
+	workload.LogDownscaleSuccessful(&scalingSummary, false)
 
 	return scalingSummary.SavedResources, nil
 }
@@ -318,7 +318,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 	}
 
 	if c.dryRun {
-		workload.LogUpscaleSuccessful(scalingSummary, true)
+		workload.LogUpscaleSuccessful(&scalingSummary, true)
 
 		return nil
 	}
@@ -328,7 +328,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 		return fmt.Errorf("failed to update the workload: %w", err)
 	}
 
-	workload.LogUpscaleSuccessful(scalingSummary, false)
+	workload.LogUpscaleSuccessful(&scalingSummary, false)
 
 	return nil
 }

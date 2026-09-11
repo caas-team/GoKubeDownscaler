@@ -114,12 +114,12 @@ func (s *service) getValue() (currentValue, downscalingValue values.Replicas, er
 }
 
 // LogUpscaleSuccessful logs the ServiceType transition for an upscale.
-func (s *service) logUpscaleSuccessful(summary ScalingSummary, dryRun bool) {
+func (s *service) logUpscaleSuccessful(summary *ScalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled up", "service type", s, summary, dryRun)
 }
 
 // LogDownscaleSuccessful logs the ServiceType transition for a downscale.
-func (s *service) logDownscaleSuccessful(summary ScalingSummary, dryRun bool) {
+func (s *service) logDownscaleSuccessful(summary *ScalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled down", "service type", s, summary, dryRun)
 }
 

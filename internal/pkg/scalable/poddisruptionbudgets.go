@@ -51,12 +51,12 @@ type podDisruptionBudget struct {
 }
 
 // LogUpscaleSuccessful logs the PodDisruptionBudget availability transition.
-func (p *podDisruptionBudget) LogUpscaleSuccessful(summary ScalingSummary, dryRun bool) {
+func (p *podDisruptionBudget) LogUpscaleSuccessful(summary *ScalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled up", summary.Attribute, p, summary, dryRun)
 }
 
 // LogDownscaleSuccessful logs the PodDisruptionBudget availability transition.
-func (p *podDisruptionBudget) LogDownscaleSuccessful(summary ScalingSummary, dryRun bool) {
+func (p *podDisruptionBudget) LogDownscaleSuccessful(summary *ScalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled down", summary.Attribute, p, summary, dryRun)
 }
 

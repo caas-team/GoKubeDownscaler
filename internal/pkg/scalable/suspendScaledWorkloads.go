@@ -34,12 +34,12 @@ type suspendScaledWorkload struct {
 }
 
 // LogUpscaleSuccessful logs a successful upscale using the original workload message style.
-func (r *suspendScaledWorkload) LogUpscaleSuccessful(summary ScalingSummary, dryRun bool) {
+func (r *suspendScaledWorkload) LogUpscaleSuccessful(summary *ScalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("unsuspended", "suspend", r, summary, dryRun)
 }
 
 // LogDownscaleSuccessful logs a successful downscale using the original workload message style.
-func (r *suspendScaledWorkload) LogDownscaleSuccessful(summary ScalingSummary, dryRun bool) {
+func (r *suspendScaledWorkload) LogDownscaleSuccessful(summary *ScalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("suspended", "suspend", r, summary, dryRun)
 }
 
