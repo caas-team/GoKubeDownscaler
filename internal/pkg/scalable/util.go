@@ -15,11 +15,29 @@ import (
 )
 
 const (
-	annotationOriginalReplicas          = "downscaler/original-replicas"
-	defaultKedaScaleTargetRefApiVersion = "apps/v1"
-	defaultKedaScaleTargetRefKind       = "Deployment"
-	kafkaStrimziGroup                   = "kafka.strimzi.io"
-	kafkaStrimziVersion                 = "v1"
+	annotationOriginalReplicas  = "downscaler/original-replicas"
+	deploymentGroupVersion      = "apps/v1"
+	deploymentKind              = "Deployment"
+	autoscalingRunnerSetKind    = "AutoscalingRunnerSet"
+	cronJobKind                 = "CronJob"
+	daemonSetKind               = "DaemonSet"
+	gatewayKind                 = "Gateway"
+	horizontalPodAutoscalerKind = "HorizontalPodAutoscaler"
+	ingressKind                 = "Ingress"
+	jobKind                     = "Job"
+	kafkaStrimziGroup           = "kafka.strimzi.io"
+	kafkaStrimziVersion         = "v1"
+	kafkaBridgeKind             = "KafkaBridge"
+	kafkaConnectKind            = "KafkaConnect"
+	kafkaMirrorMaker2Kind       = "KafkaMirrorMaker2"
+	podDisruptionBudgetKind     = "PodDisruptionBudget"
+	postgresqlKind              = "postgresql" // lowercase for postgresqlKind is intentional
+	prometheusKind              = "Prometheus"
+	rolloutKind                 = "Rollout"
+	scaledObjectKind            = "ScaledObject"
+	serviceKind                 = "Service"
+	stackKind                   = "Stack"
+	statefulSetKind             = "StatefulSet"
 )
 
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads.
@@ -132,11 +150,11 @@ func getExternallyScaled(workloads []Workload) []workloadIdentifier {
 		kind := scaledobject.Spec.ScaleTargetRef.Kind
 
 		if apiVersion == "" {
-			apiVersion = defaultKedaScaleTargetRefApiVersion
+			apiVersion = deploymentGroupVersion
 		}
 
 		if kind == "" {
-			kind = defaultKedaScaleTargetRefKind
+			kind = deploymentKind
 		}
 
 		apiVersionSlice := strings.SplitN(apiVersion, "/", 2)
@@ -272,12 +290,47 @@ func isWorkloadExcluded(
 	return excludedWorkloads.CheckMatchesAny(workload.GetName())
 }
 
+// isSupportedOwnerKind checks whether the owner kind is supported.
+func isSupportedOwnerKind(kind string) bool {
+	supportedOwnerKinds := map[string]struct{}{
+		autoscalingRunnerSetKind:    {},
+		cronJobKind:                 {},
+		daemonSetKind:               {},
+		deploymentKind:              {},
+		gatewayKind:                 {},
+		horizontalPodAutoscalerKind: {},
+		ingressKind:                 {},
+		jobKind:                     {},
+		kafkaBridgeKind:             {},
+		kafkaConnectKind:            {},
+		kafkaMirrorMaker2Kind:       {},
+		podDisruptionBudgetKind:     {},
+		postgresqlKind:              {},
+		prometheusKind:              {},
+		rolloutKind:                 {},
+		scaledObjectKind:            {},
+		serviceKind:                 {},
+		stackKind:                   {},
+		statefulSetKind:             {},
+	}
+
+	_, supported := supportedOwnerKinds[kind]
+
+	return supported
+}
+
 // isManagedByOwnerReference checks if the workload is managed by an owner reference that is in the includedResources list.
 func isManagedByOwnerReference(workload Workload) bool {
 	for _, ownerReference := range workload.GetOwnerReferences() {
-		if ownerReference.Controller != nil && *ownerReference.Controller {
-			return true
+		if ownerReference.Controller == nil || !*ownerReference.Controller {
+			continue
 		}
+
+		if !isSupportedOwnerKind(ownerReference.Kind) {
+			continue
+		}
+
+		return true
 	}
 
 	return false

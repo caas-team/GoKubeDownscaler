@@ -18,7 +18,7 @@ import (
 
 //nolint:gochecknoglobals // package-level GVK required for unstructured client
 var kafkaMirrorMaker2GVK = schema.GroupVersionKind{
-	Group: kafkaStrimziGroup, Version: kafkaStrimziVersion, Kind: "KafkaMirrorMaker2",
+	Group: kafkaStrimziGroup, Version: kafkaStrimziVersion, Kind: kafkaMirrorMaker2Kind,
 }
 
 // kafkaMirrorMaker2 wraps an unstructured KafkaMirrorMaker2 CR. The unstructured approach

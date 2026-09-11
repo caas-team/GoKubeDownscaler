@@ -22,7 +22,7 @@ func getRollouts(namespace string, clientsets *Clientsets, ctx context.Context) 
 
 	results := make([]Workload, 0, len(rollouts.Items))
 	for i := range rollouts.Items {
-		setGroupVersionKindIfEmpty(&rollouts.Items[i], argov1alpha1.SchemeGroupVersion.WithKind("Rollout"))
+		setGroupVersionKindIfEmpty(&rollouts.Items[i], argov1alpha1.SchemeGroupVersion.WithKind(rolloutKind))
 		results = append(results, &replicaScaledWorkload{&rollout{&rollouts.Items[i]}})
 	}
 
@@ -69,7 +69,7 @@ func (r *rollout) Reget(clientsets *Clientsets, ctx context.Context) error {
 		return fmt.Errorf("failed to get rollout: %w", err)
 	}
 
-	setGroupVersionKindIfEmpty(r.Rollout, argov1alpha1.SchemeGroupVersion.WithKind("Rollout"))
+	setGroupVersionKindIfEmpty(r.Rollout, argov1alpha1.SchemeGroupVersion.WithKind(rolloutKind))
 
 	return nil
 }

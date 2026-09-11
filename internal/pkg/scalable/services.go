@@ -45,7 +45,7 @@ func getAWSELBServices(namespace string, clientsets *Clientsets, ctx context.Con
 		svc := &services.Items[i]
 
 		if val, ok := svc.Annotations[AWSLoadBalancerAnnotation]; !ok || !strings.EqualFold(val, "nlb") {
-			setGroupVersionKindIfEmpty(&services.Items[i], corev1.SchemeGroupVersion.WithKind("Service"))
+			setGroupVersionKindIfEmpty(&services.Items[i], corev1.SchemeGroupVersion.WithKind(serviceKind))
 
 			results = append(results, &valueScaledWorkload{&service{svc}})
 		}
@@ -66,7 +66,7 @@ func getAWSNLBServices(namespace string, clientsets *Clientsets, ctx context.Con
 		svc := &services.Items[i]
 
 		if val, ok := svc.Annotations[AWSLoadBalancerAnnotation]; ok && strings.EqualFold(val, "nlb") {
-			setGroupVersionKindIfEmpty(&services.Items[i], corev1.SchemeGroupVersion.WithKind("Service"))
+			setGroupVersionKindIfEmpty(&services.Items[i], corev1.SchemeGroupVersion.WithKind(serviceKind))
 
 			results = append(results, &valueScaledWorkload{&service{svc}})
 		}
