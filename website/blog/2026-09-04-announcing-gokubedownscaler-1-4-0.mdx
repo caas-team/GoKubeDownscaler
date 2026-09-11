@@ -1,0 +1,76 @@
+---
+title: Announcing GoKubeDownscaler 1.4.0
+description: This blog post announces the release of GoKubeDownscaler version 1.4.0, highlighting new features, improvements, and bug fixes.
+slug: announcing-gokubedownscaler-1-4-0
+authors:
+  - GoKubeDownscalerTeam
+tags: [release, 1.4.0, go-kube-downscaler, kube-downscaler]
+---
+
+# Announcing GoKubeDownscaler 1.4.0
+
+We are pleased to announce the release of version 1.4.0 of GoKubeDownscaler.
+This release focuses on introducing brand-new features, improving the scaling process,
+adding new resources and CRDs that can be managed within the Kubernetes cluster and fixing unexpected bugs and behaviors.
+{/* truncate */}
+If you like the project, giving us a star would mean a lot to us!
+Reaching 300 stars would bring us one step closer to our goal and enable us to apply for inclusion in the CNCF Landscape.
+
+## New Features
+
+Over the past few months, we have been working hard to add several features we are thrilled to announce today.
+
+- **LoadBalancer Scaling**: Kubernetes Services of type LoadBalancer, as well as Ingresses and Gateway API resources can now be
+  scaled down along with all other resources!
+  This new feature takes the cost optimization of the cluster to the next level.
+  LoadBalancers from cloud providers are among the most expensive resources in a Kubernetes cluster,
+  and they are often left idle during off-hours.
+  An average LoadBalancer from a cloud provider costs around $20 per month.
+  Considering a 40-hour work week, users can now save up to 70% of the cost of a single LoadBalancer by
+  scaling it down during off-hours.
+  We recommend combining GoKubeDownscaler with ExternalDNS to enable seamless scale-down automation while automatically
+  handling DNS changes, so users don’t have to worry about restoring DNS records when LoadBalancers are scaled back up.
+  You can find more information about the feature in this [dedicated guide](ref:guides-dns-aware-load-balancer-scaling).
+- **Directional Timespan**: this new timespan allows users to specify a target point in time relative to a specific timestamp,
+  either before or after it.
+  A common example would be `downscaler/downtime: from 2026-09-01T08:30:00Z`
+  or `downscaler/exclude: until 2026-09-01T08:30:00Z`
+- **New Resources**: New resources have been added to the list of scalable resources, including Strimzi Kafka CRDs
+  (`KafkaBridges`, `KafkaConnects`, `KafkaMirrorMakers`), `PostgreSQLs` from Zalando, and Kruise CRDs
+  (`AdvancedCronJobs`, `AdvancedStatefulSets`, `AdvancedDaemonSets`, `CloneSets`, `BroadcastJobs`, `ImagePullJobs`).
+  As mentioned
+  in the first bullet point also `Services`, `Ingresses`, and `Gateway API` resources can now be scaled down.
+
+Along with these features, we have also introduced several bug fixes and improvements to key behaviors:
+
+- Fixed the `GetChildrenWorkloads` behavior to correctly handle and identify child workloads.
+- Fixed the `DEFAULT_TIMEZONE` configuration so the configured timezone is correctly applied.
+- Fixed scanner mode to avoid scaling KEDA `ScaledObject` targets when the workload's TypeMeta is missing.
+- Fixed the algorithm to continue processing when a broken annotation is encountered instead of stopping.
+- Updated owner-reference handling to consider owner references only for scalable resources.
+- Updated the behavior of `downscaler/exclude-until` annotations.
+  Past dates are no longer considered valid and will not be taken into account when populating scopes.
+
+## Conclusion & Future Developments
+
+The development team sincerely thanks everyone who took part in the development of this release, volunteering their time,
+offering ideas, suggestions, and pull requests.
+We would like to extend our gratitude to all the users who waited patiently
+for this release which, unfortunately, took longer than expected.
+In the coming months we expect to add mainly features to support GitOps workflows on Argo and Flux, while we continue
+to improve the stability and performance of the GoKubeDownscaler.
+
+## How To Migrate From PyKubeDownscaler
+
+To migrate from PyKubeDownscaler, you can follow the dedicated guide in our documentation at [this link](/guides/migrating).
+We expect the migration to be quick and with only a few changes required.
+We recommend reading the guide carefully to avoid missing any details.
+The development team is available to answer any questions or address any issues within the "Issues" or "Discussions" sections
+of the GitHub repository.
+
+## Adopters
+
+If your company actively uses the GoKubeDownscaler, you can contact us through our [slack channel](https://inviter.co/kube-downscaler)
+to add your logo to our showcase carousel in the homepage of our website.
+Alternately, you can also open a PR on
+[Github](https://github.com/caas-team/GoKubeDownscaler) to add your logo to the [adopters page](https://kube-downscaler.io/adopters).
