@@ -5,12 +5,15 @@ metadata:
   name: {{ include "go-kube-downscaler.fullname" . }}
   labels:
     {{- include "go-kube-downscaler.labels" . | nindent 4 }}
+    {{- with .Values.podMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- with .Values.podMonitor.namespace }}
   namespace: {{ . }}
   {{- end }}
 spec:
   podMetricsEndpoints:
-    - port: 8085
+    - port: metrics
       path: /metrics
     {{- with .Values.podMonitor.interval }}
       interval: {{ . }}
@@ -20,11 +23,11 @@ spec:
     {{- end }}
     {{- with .Values.podMonitor.relabelings }}
       relabelings:
-{{ toYaml . | indent 4 }}
+{{- toYaml . | nindent 8 }}
     {{- end }}
     {{- with .Values.podMonitor.metricRelabelings }}
       metricRelabelings:
-    {{- toYaml . | nindent 4 }}
+{{- toYaml . | nindent 8 }}
     {{- end }}
   namespaceSelector:
     matchNames:

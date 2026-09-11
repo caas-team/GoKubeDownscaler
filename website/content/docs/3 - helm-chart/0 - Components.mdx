@@ -2,7 +2,9 @@
 title: Helm Chart Components
 id: helm-chart-components
 globalReference: docs-helm-components
-description: List of All GoKubeDownscaler Helm Chart Components
+description: >
+  Complete list of all Kubernetes components deployed by the GoKubeDownscaler Helm chart, including
+  Deployments, Services, RBAC roles, and webhook resources.
 keywords: [components, helm chart components]
 ---
 
@@ -14,6 +16,12 @@ The following Kubernetes Objects can be created with our Helm Chart:
 
 The [deployment.yaml](repo:deployments/chart/templates/deployment.yaml) file creates the main Deployment of the GoKubeDownscaler
 with a reference to the provided ServiceAccount and ConfigMap.
+
+## Poddisruptionbudget
+
+The [poddisruptionbudget.yaml](repo:deployments/chart/templates/poddisruptionbudget.yaml) file creates a
+PodDisruptionBudget for the main GoKubeDownscaler Deployment.
+This resource is created when either `podDisruptionBudget.minAvailable` or
 
 ## Serviceaccount
 
@@ -46,6 +54,14 @@ if [`--leader-election`](ref:docs-runtime-configuration#leader-election) is enab
 The [webhookdeployment.yaml](repo:deployments/chart/templates/webhookdeployment.yaml) file creates the Deployment
 for the Admission Controller Webhook.
 This resource is created only if the `webhookController.enabled` value is set to `true`.
+
+## Webhookpoddisruptionbudget
+
+The [webhookpoddisruptionbudget.yaml](repo:deployments/chart/templates/webhookpoddisruptionbudget.yaml) file creates a
+PodDisruptionBudget for the Admission Controller Webhook Deployment.
+This resource is created only if the `webhookController.enabled` value is set to `true` and either
+`webhookController.podDisruptionBudget.minAvailable` or
+`webhookController.podDisruptionBudget.maxUnavailable` is configured.
 
 ## Webhookservice
 

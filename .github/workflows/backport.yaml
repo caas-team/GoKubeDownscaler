@@ -1,0 +1,42 @@
+name: Automatic backport
+
+on:
+  pull_request_target:
+    types: ["labeled", "closed"]
+    branches:
+      - main
+
+jobs:
+  # Only run the backport job if the PR is merged, does not have the 'backport' label,
+  # and either the PR is closed or the 'backport-to-*' label is added.
+  backport:
+    name: Backport PR
+    if: >-
+      github.event.pull_request.merged == true &&
+      !contains(github.event.pull_request.labels.*.name, 'backport') &&
+      (
+        github.event.action == 'closed' ||
+        (
+          github.event.action == 'labeled' &&
+          startsWith(github.event.label.name, 'backport-to-')
+        )
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Backport Action
+        uses: sorenlouv/backport-github-action@v12
+        with:
+          github_token: ${{ secrets.BACKPORT_TOKEN }}
+          auto_backport_label_prefix: backport-to-
+
+      - name: Info log
+        if: ${{ success() }}
+        run: cat ~/.backport/backport.info.log
+
+      - name: Debug log
+        if: ${{ failure() }}
+        run: cat ~/.backport/backport.debug.log

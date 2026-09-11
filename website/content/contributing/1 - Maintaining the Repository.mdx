@@ -2,7 +2,9 @@
 title: Maintaining the Repository
 id: maintaining-the-repository
 globalReference: contributing-maintaining-repo
-description: Learn how the repository is maintained and how to release a new version.
+description: >
+  Learn how the GoKubeDownscaler repository is maintained, how to manage releases and
+  changelogs, and how to contribute as a maintainer to this open-source project.
 keywords: [repository, contributing]
 ---
 
@@ -22,6 +24,9 @@ All you need to do is to bump the [semver](https://semver.org) of either
 the Helm chart version(`.version`) or the app version(`.appVersion`)
 within the [Chart.yaml](repo:deployments/chart/Chart.yaml)(`./deployments/chart/Chart.yaml`).
 Once merged into main the [workflows](ref:contributing-github-workflows) will automatically start releasing the new version.
+For major and minor releases, the release workflow also creates a dedicated branch named `release/<Major>.<Minor>`.
+To cherry-pick a change from `main` into one of those release branches, add a label like `backport-to-release/1.4`
+to the pull request before merging.
 
 :::info
 
