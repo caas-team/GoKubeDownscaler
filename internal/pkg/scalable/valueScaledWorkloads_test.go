@@ -128,10 +128,10 @@ func TestValueScaledWorkload_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, vsw)
 			}
 
-			saved, updateNeeded, err := vsw.ScaleDown(values.AbsoluteReplicas(0))
+			summary, err := vsw.ScaleDown(values.AbsoluteReplicas(0))
 			require.NoError(t, err)
-			require.NotNil(t, saved)
-			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
+			require.NotNil(t, summary.SavedResources)
+			assert.Equal(t, test.wantUpdateNeeded, summary.IsUpdateNeeded)
 
 			switch test.kind {
 			case ServiceKind:

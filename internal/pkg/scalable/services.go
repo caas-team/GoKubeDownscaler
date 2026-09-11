@@ -113,6 +113,16 @@ func (s *service) getValue() (currentValue, downscalingValue values.Replicas, er
 	return currentValue, downscalingValue, nil
 }
 
+// LogUpscaleSuccessful logs the ServiceType transition for an upscale.
+func (s *service) logUpscaleSuccessful(summary ScalingSummary, dryRun bool) {
+	logWorkloadScalingMessage("scaled up", "service type", s, summary, dryRun)
+}
+
+// LogDownscaleSuccessful logs the ServiceType transition for a downscale.
+func (s *service) logDownscaleSuccessful(summary ScalingSummary, dryRun bool) {
+	logWorkloadScalingMessage("scaled down", "service type", s, summary, dryRun)
+}
+
 // getSavedResourcesRequests gets the amount of resources that are requested to be saved by downscaling this resource.
 func (s *service) getSavedResourcesRequests() *metrics.SavedResources {
 	return metrics.NewSavedResources(0, 0)

@@ -212,16 +212,16 @@ func TestPostgresql_ScaleDownScaleUp(t *testing.T) {
 	workload := &replicaScaledWorkload{&postgresql{pgResource}}
 
 	// Scale down to zero.
-	saved, updateNeeded, err := workload.ScaleDown(values.AbsoluteReplicas(0))
+	summary, err := workload.ScaleDown(values.AbsoluteReplicas(0))
 	require.NoError(t, err)
-	assert.True(t, updateNeeded)
+	assert.True(t, summary.IsUpdateNeeded)
 
 	gotReplicas, err := workload.getReplicas()
 	require.NoError(t, err)
 	assert.Equal(t, values.AbsoluteReplicas(0), gotReplicas)
 
-	assert.InDelta(t, 0.5, saved.TotalCPU(), 0.0001)                     // 5 × 0.1 cores
-	assert.InDelta(t, float64(5*64*1024*1024), saved.TotalMemory(), 1e5) // 5 × 64Mi
+	assert.InDelta(t, 0.5, summary.SavedResources.TotalCPU(), 0.0001)                     // 5 × 0.1 cores
+	assert.InDelta(t, float64(5*64*1024*1024), summary.SavedResources.TotalMemory(), 1e5) // 5 × 64Mi
 
 	// Original replicas were recorded.
 	original, err := getOriginalReplicas(workload)
@@ -229,9 +229,9 @@ func TestPostgresql_ScaleDownScaleUp(t *testing.T) {
 	assert.Equal(t, values.AbsoluteReplicas(5), original)
 
 	// Scale back up restores the original instance count.
-	updateNeeded, err = workload.ScaleUp()
+	summary, err = workload.ScaleUp()
 	require.NoError(t, err)
-	assert.True(t, updateNeeded)
+	assert.True(t, summary.IsUpdateNeeded)
 
 	gotReplicas, err = workload.getReplicas()
 	require.NoError(t, err)

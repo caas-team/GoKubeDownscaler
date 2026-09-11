@@ -69,6 +69,16 @@ func (g *gateway) getValue() (currentValue, downscalingValue values.Replicas, er
 	return currentValue, downscalingValue, nil
 }
 
+// LogUpscaleSuccessful logs the gateway class transition for an upscale.
+func (g *gateway) logUpscaleSuccessful(summary ScalingSummary, dryRun bool) {
+	logWorkloadScalingMessage("scaled up", "gateway class", g, summary, dryRun)
+}
+
+// LogDownscaleSuccessful logs the gateway class transition for a downscale.
+func (g *gateway) logDownscaleSuccessful(summary ScalingSummary, dryRun bool) {
+	logWorkloadScalingMessage("scaled down", "gateway class", g, summary, dryRun)
+}
+
 // getSavedResourcesRequests gets the amount of resources that are requested to be saved by downscaling this resource.
 func (g *gateway) getSavedResourcesRequests() *metrics.SavedResources {
 	return metrics.NewSavedResources(0, 0)

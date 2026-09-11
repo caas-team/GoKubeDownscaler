@@ -58,9 +58,9 @@ func TestSuspendScaledWorkload_ScaleUp(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, &suspendedWorkload)
 			}
 
-			updateNeeded, err := suspendedWorkload.ScaleUp()
+			summary, err := suspendedWorkload.ScaleUp()
 			require.NoError(t, err)
-			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
+			assert.Equal(t, test.wantUpdateNeeded, summary.IsUpdateNeeded)
 			assertBoolPointerEqual(t, test.wantSuspend, cronjob.Spec.Suspend)
 		})
 	}
@@ -171,13 +171,13 @@ func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, &suspendedWorkload)
 			}
 
-			savedResources, updateNeeded, err := suspendedWorkload.ScaleDown(nil)
+			summary, err := suspendedWorkload.ScaleDown(nil)
 			require.NoError(t, err)
 
-			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
+			assert.Equal(t, test.wantUpdateNeeded, summary.IsUpdateNeeded)
 			assertBoolPointerEqual(t, test.wantSuspend, cronjob.Spec.Suspend)
-			assert.InDelta(t, test.wantSavedCPU, savedResources.TotalCPU(), 0.0001)
-			assert.InDelta(t, test.wantSavedMemory, savedResources.TotalMemory(), 1e5)
+			assert.InDelta(t, test.wantSavedCPU, summary.SavedResources.TotalCPU(), 0.0001)
+			assert.InDelta(t, test.wantSavedMemory, summary.SavedResources.TotalMemory(), 1e5)
 		})
 	}
 }

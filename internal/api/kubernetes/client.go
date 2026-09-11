@@ -269,27 +269,23 @@ func (c client) DownscaleWorkload(
 	workload scalable.Workload,
 	ctx context.Context,
 ) (*metrics.SavedResources, error) {
-	savedResources, isUpdateNeeded, err := workload.ScaleDown(replicas)
+	scalingSummary, err := workload.ScaleDown(replicas)
 	if err != nil {
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
 	}
 
-	if !isUpdateNeeded {
+	if !scalingSummary.IsUpdateNeeded {
 		slog.Debug(
 			"workload is already in a scaled down state, no update needed",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
 		)
 
-		return savedResources, nil
+		return scalingSummary.SavedResources, nil
 	}
 
 	if c.dryRun {
-		slog.Info(
-			"running in dry run mode, would have sent update workload request to scale down workload",
-			"workload", workload.GetName(),
-			"namespace", workload.GetNamespace(),
-		)
+		workload.LogDownscaleSuccessful(scalingSummary, true)
 
 		return metrics.NewSavedResources(0, 0), nil
 	}
@@ -299,19 +295,19 @@ func (c client) DownscaleWorkload(
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to update the workload: %w", err)
 	}
 
-	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	workload.LogDownscaleSuccessful(scalingSummary, false)
 
-	return savedResources, nil
+	return scalingSummary.SavedResources, nil
 }
 
 // UpscaleWorkload upscales the workload to the original replicas.
 func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
-	isUpdateNeeded, err := workload.ScaleUp()
+	scalingSummary, err := workload.ScaleUp()
 	if err != nil {
 		return fmt.Errorf("failed to set the workload into a scaled up state: %w", err)
 	}
 
-	if !isUpdateNeeded {
+	if !scalingSummary.IsUpdateNeeded {
 		slog.Debug(
 			"workload is already in a scaled up state, no update needed",
 			"workload", workload.GetName(),
@@ -322,11 +318,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 	}
 
 	if c.dryRun {
-		slog.Info(
-			"running in dry run mode, would have sent update workload request to scale up workload",
-			"workload", workload.GetName(),
-			"namespace", workload.GetNamespace(),
-		)
+		workload.LogUpscaleSuccessful(scalingSummary, true)
 
 		return nil
 	}
@@ -336,7 +328,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 		return fmt.Errorf("failed to update the workload: %w", err)
 	}
 
-	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	workload.LogUpscaleSuccessful(scalingSummary, false)
 
 	return nil
 }

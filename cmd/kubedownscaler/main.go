@@ -315,7 +315,7 @@ func attemptScaling(
 			continue
 		}
 
-		slog.Debug("successfully scaled workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Info("successfully scaled workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 		return nil
 	}
@@ -480,7 +480,7 @@ func scaleWorkload(
 	}
 
 	if scaling == values.ScalingIncomplete {
-		slog.Debug("scaling times cannot be determined, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Warn("scaling times cannot be determined, skipping", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
 
 		return nil
@@ -495,7 +495,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	}
 
 	if scaling == values.ScalingDown {
-		slog.Debug("downscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Info("downscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 		downscaleReplicas, err := scopes.GetDownscaleReplicas()
 		if err != nil {
@@ -512,7 +512,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	}
 
 	if scaling == values.ScalingUp {
-		slog.Debug("upscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+		slog.Info("upscaling workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
 
 		err := client.UpscaleWorkload(workload, ctx)
 		if err != nil {
