@@ -72,8 +72,14 @@ func initComponent() (config *runtimeConfiguration, scopeDefault, scopeCli, scop
 
 	scopeDefault, scopeCli, scopeEnv = values.InitScopes()
 
+	logLevel := slog.LevelInfo
+	if config.Debug || config.DryRun {
+		logLevel = slog.LevelDebug
+	}
+
 	if config.JsonLogs {
 		opts := &slog.HandlerOptions{
+			Level: logLevel,
 			ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
 				if a.Key == slog.LevelKey {
 					a.Key = "severity"

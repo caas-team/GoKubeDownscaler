@@ -58,7 +58,11 @@ func (v *valueScaledWorkload) ScaleUp() (ScalingSummary, error) {
 	if err != nil {
 		var originalReplicasUnsetError *OriginalReplicasUnsetError
 		if ok := errors.As(err, &originalReplicasUnsetError); ok {
-			slog.Debug("original replicas is not set, skipping", "workload", v.GetName(), "namespace", v.GetNamespace())
+			slog.Debug(
+				"original replicas is not set, skipping", "kind", v.GroupVersionKind().Kind,
+				"workload", v.GetName(), "namespace", v.GetNamespace(),
+			)
+
 			return summary, nil
 		}
 
@@ -93,12 +97,18 @@ func (v *valueScaledWorkload) ScaleDown(_ values.Replicas) (ScalingSummary, erro
 				return summary, err
 			}
 
-			slog.Debug("workload is already at target scale down state, skipping", "workload", v.GetName(), "namespace", v.GetNamespace())
+			slog.Debug(
+				"workload is already at target scale down state, skipping", "kind", v.GroupVersionKind().Kind,
+				"workload", v.GetName(), "namespace", v.GetNamespace(),
+			)
 
 			return summary, nil
 		}
 
-		slog.Debug("workload is already scaled down, skipping", "workload", v.GetName(), "namespace", v.GetNamespace())
+		slog.Debug(
+			"workload is already scaled down, skipping", "kind", v.GroupVersionKind().Kind,
+			"workload", v.GetName(), "namespace", v.GetNamespace(),
+		)
 
 		return summary, nil
 	}

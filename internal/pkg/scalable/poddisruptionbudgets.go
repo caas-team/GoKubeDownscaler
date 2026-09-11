@@ -105,7 +105,11 @@ func (p *podDisruptionBudget) ScaleUp() (ScalingSummary, error) {
 	if err != nil {
 		var originalReplicasUnsetErr *OriginalReplicasUnsetError
 		if ok := errors.As(err, &originalReplicasUnsetErr); ok {
-			slog.Debug("original replicas is not set, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
+			slog.Debug(
+				"original replicas is not set, skipping", "kind", p.GroupVersionKind().Kind,
+				"workload", p.GetName(), "namespace", p.GetNamespace(),
+			)
+
 			return summary, nil
 		}
 
@@ -142,7 +146,10 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (Scal
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {
 		if maxUnavailable.String() == downscaleReplicas.String() {
-			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
+			slog.Debug(
+				"workload is already scaled down, skipping", "kind", p.GroupVersionKind().Kind,
+				"workload", p.GetName(), "namespace", p.GetNamespace(),
+			)
 
 			return ScalingSummary{
 				SavedResources: summary.SavedResources, From: maxUnavailable, To: downscaleReplicas, Attribute: maxUnavailableAttribute,
@@ -161,7 +168,10 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (Scal
 	minAvailable := p.getMinAvailable()
 	if minAvailable != nil {
 		if minAvailable.String() == downscaleReplicas.String() {
-			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
+			slog.Debug(
+				"workload is already scaled down, skipping", "kind", p.GroupVersionKind().Kind,
+				"workload", p.GetName(), "namespace", p.GetNamespace(),
+			)
 
 			return ScalingSummary{
 				SavedResources: summary.SavedResources, From: minAvailable, To: downscaleReplicas, Attribute: minAvailableAttribute,
