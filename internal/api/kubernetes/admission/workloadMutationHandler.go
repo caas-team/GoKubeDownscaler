@@ -259,9 +259,17 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 		), nil
 	}
 
-	scaling := scopes.GetCurrentScaling()
+	decision := scopes.GetCurrentScaling()
 
-	response, err := evaluateWorkloadScalingConditions(scaling, workload, scopes, review, v.dryRun, metricsEnabled, v.admissionMetrics)
+	response, err := evaluateWorkloadScalingConditions(
+		decision.Scaling,
+		workload,
+		scopes,
+		review,
+		v.dryRun,
+		metricsEnabled,
+		v.admissionMetrics,
+	)
 	if err != nil {
 		return response, err
 	}
