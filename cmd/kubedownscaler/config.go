@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
@@ -110,4 +112,37 @@ func initComponent() (config *runtimeConfiguration, scopeDefault, scopeCli, scop
 	)
 
 	return config, scopeDefault, scopeCli, scopeEnv
+}
+
+// String gets the string representation of the runtime configuration.
+func (c *runtimeConfiguration) String() string {
+	if c == nil {
+		return "<nil>"
+	}
+
+	var builder strings.Builder
+
+	builder.WriteString("[")
+
+	fmt.Fprintf(&builder, "dryRun:%t ", c.DryRun)
+	fmt.Fprintf(&builder, "debug:%t ", c.Debug)
+	fmt.Fprintf(&builder, "includeNamespaces:%v ", c.IncludeNamespaces)
+	fmt.Fprintf(&builder, "includeResources:%v ", c.IncludeResources)
+	fmt.Fprintf(&builder, "excludeNamespaces:%v ", c.ExcludeNamespaces)
+	fmt.Fprintf(&builder, "excludeWorkloads:%v ", c.ExcludeWorkloads)
+	fmt.Fprintf(&builder, "includeLabels:%v ", c.IncludeLabels)
+	fmt.Fprintf(&builder, "timeAnnotation:%q ", c.TimeAnnotation)
+	fmt.Fprintf(&builder, "metricsEnabled:%t ", c.MetricsEnabled)
+	fmt.Fprintf(&builder, "jsonLogs:%t ", c.JsonLogs)
+	fmt.Fprintf(&builder, "qps:%g ", c.Qps)
+	fmt.Fprintf(&builder, "burst:%d ", c.Burst)
+	fmt.Fprintf(&builder, "kubeconfig:%q ", c.Kubeconfig)
+	fmt.Fprintf(&builder, "once:%t ", c.Once)
+	fmt.Fprintf(&builder, "leaderElection:%t ", c.LeaderElection)
+	fmt.Fprintf(&builder, "interval:%s ", c.Interval)
+	fmt.Fprintf(&builder, "maxRetriesOnConflict:%d", c.MaxRetriesOnConflict)
+
+	builder.WriteString("]")
+
+	return builder.String()
 }

@@ -31,6 +31,8 @@ const (
 func main() {
 	config, scopeDefault, scopeCli, scopeEnv := initComponent()
 
+	slog.Info("started downscaler", "config", config.String(), "cliScope", scopeCli, "envScope", scopeEnv)
+
 	slog.Debug("getting client for kubernetes")
 
 	client, err := kubernetes.NewClient(config.Kubeconfig, config.DryRun, config.Qps, config.Burst)
@@ -188,8 +190,6 @@ func startScanning(
 	previousNamespacesToMetrics := newNamespaceToMetrics(config)
 
 	for {
-		slog.Info("scanning workloads")
-
 		start := time.Now()
 		currentNamespaceToMetrics := newNamespaceToMetrics(config)
 
@@ -205,7 +205,7 @@ func startScanning(
 			config.ExcludeWorkloads,
 			currentNamespaceToMetrics,
 		)
-		slog.Info("scanning over workloads matching filters", "amount", len(workloads))
+		slog.Debug("scanning over workloads matching filters", "amount", len(workloads))
 
 		namespaceScopes, errs := client.GetNamespacesScopes(workloads, ctx)
 		if len(errs) > 0 {
@@ -246,14 +246,14 @@ func startScanning(
 				}
 
 				slog.Debug(
-					"successfully scanned workload", "kind", workloadResourceKind(workload),
+					"successfully processed workload", "kind", workloadResourceKind(workload),
 					"workload", workload.GetName(), "namespace", workload.GetNamespace(),
 				)
 			}(workload)
 		}
 
 		waitGroup.Wait()
-		slog.Info("successfully scanned all workloads")
+		slog.Debug("successfully scanned all workloads in target")
 
 		downscalerMetrics.UpdateMetrics(
 			config.MetricsEnabled,
@@ -317,7 +317,7 @@ func attemptScaling(
 		if err != nil {
 			if !strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
 				recordScalingError(err, workloadNamespaceMetrics)
-				return fmt.Errorf("failed to scale workload: %w", err)
+				return err
 			}
 
 			slog.Warn(
@@ -442,7 +442,7 @@ func scanWorkload(
 
 	err = attemptScaling(client, ctx, scaling, workload, scopes, workloadNamespaceMetrics, config)
 	if err != nil {
-		return fmt.Errorf("failed to scale workload: %w", err)
+		return err
 	}
 
 	if scopes.GetScaleChildren() {
@@ -506,7 +506,7 @@ func scaleWorkloads(
 			err := attemptScaling(client, ctx, scaling, workload, scopes, workloadNamespaceMetrics, config)
 			if err != nil {
 				slog.Error(
-					"failed to scale workload", "error", err,
+					"scaling operation failed", "error", err,
 					"kind", workloadResourceKind(workload),
 					"workload", workload.GetName(), "namespace", workload.GetNamespace(),
 				)
@@ -563,7 +563,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	}
 
 	if scaling == values.ScalingDown {
-		slog.Info(
+		slog.Debug(
 			"downscaling workload", "kind", workloadResourceKind(workload),
 			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
 		)
@@ -583,7 +583,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	}
 
 	if scaling == values.ScalingUp {
-		slog.Info(
+		slog.Debug(
 			"upscaling workload", "kind", workloadResourceKind(workload),
 			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
 		)
