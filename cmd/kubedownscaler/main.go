@@ -306,14 +306,14 @@ func handleNamespaceScopeParsingErrors(
 func attemptScaling(
 	client kubernetes.Client,
 	ctx context.Context,
-	scaling values.Scaling,
+	decision values.ScalingDecision,
 	workload scalable.Workload,
 	scopes values.Scopes,
 	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
 	config *runtimeConfiguration,
 ) error {
 	for retry := range config.MaxRetriesOnConflict + 1 {
-		err := scaleWorkload(scaling, workload, scopes, workloadNamespaceMetrics, client, ctx)
+		err := scaleWorkload(decision.Scaling, workload, scopes, workloadNamespaceMetrics, client, ctx)
 		if err != nil {
 			if !strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
 				recordScalingError(err, workloadNamespaceMetrics)
@@ -335,7 +335,11 @@ func attemptScaling(
 		}
 
 		slog.Info(
-			"successfully scaled workload", "kind", workloadResourceKind(workload),
+			"successfully scaled workload",
+			"kind", workloadResourceKind(workload),
+			"scalingDecision", decision.Scaling.String(),
+			"decidingScope", decision.Scope.String(),
+			"decisionValue", decision.Value,
 			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
 		)
 
@@ -344,9 +348,14 @@ func attemptScaling(
 
 	workloadNamespaceMetrics.IncrementConflictErrorsCount()
 	slog.Error(
-		"failed to scale workload", "attempts", config.MaxRetriesOnConflict+1,
+		"failed to scale workload",
+		"attempts", config.MaxRetriesOnConflict+1,
+		"scalingDecision", decision.Scaling.String(),
+		"decidingScope", decision.Scope.String(),
+		"decisionValue", decision.Value,
 		"kind", workloadResourceKind(workload),
-		"workload", workload.GetName(), "namespace", workload.GetNamespace(),
+		"workload", workload.GetName(),
+		"namespace", workload.GetNamespace(),
 	)
 
 	return newMaxRetriesExceeded(config.MaxRetriesOnConflict)
@@ -438,9 +447,9 @@ func scanWorkload(
 		return nil
 	}
 
-	scaling := getCurrentScaling(workload, excluded, upscaleOnExclusion, &scopes)
+	decision := getCurrentScaling(workload, excluded, upscaleOnExclusion, &scopes)
 
-	err = attemptScaling(client, ctx, scaling, workload, scopes, workloadNamespaceMetrics, config)
+	err = attemptScaling(client, ctx, decision, workload, scopes, workloadNamespaceMetrics, config)
 	if err != nil {
 		return err
 	}
@@ -458,7 +467,7 @@ func scanWorkload(
 			"namespace", workload.GetNamespace(),
 			"childrenCount", len(childrenWorkloads),
 		)
-		scaleWorkloads(scaling, childrenWorkloads, scopes, workloadNamespaceMetrics, client, ctx, config)
+		scaleWorkloads(decision, childrenWorkloads, scopes, workloadNamespaceMetrics, client, ctx, config)
 	}
 
 	return nil
@@ -478,14 +487,18 @@ func workloadResourceKind(workload scalable.Workload) string {
 	return kind
 }
 
-func getCurrentScaling(workload scalable.Workload, excluded, upscaleOnExclusion bool, scopes *values.Scopes) values.Scaling {
+func getCurrentScaling(workload scalable.Workload, excluded, upscaleOnExclusion bool, scopes *values.Scopes) values.ScalingDecision {
 	if upscaleOnExclusion && excluded {
 		slog.Debug(
 			"upscaling excluded workload", "kind", workloadResourceKind(workload),
 			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
 		)
 
-		return values.ScalingUp
+		return values.ScalingDecision{
+			Scaling: values.ScalingUp,
+			Scope:   values.ScopeNone,
+			Value:   true,
+		}
 	}
 
 	return scopes.GetCurrentScaling()
@@ -493,7 +506,7 @@ func getCurrentScaling(workload scalable.Workload, excluded, upscaleOnExclusion 
 
 // scaleWorkloads scales the given workloads to the specified scaling asynchronously.
 func scaleWorkloads(
-	scaling values.Scaling,
+	decision values.ScalingDecision,
 	workloads []scalable.Workload,
 	scopes values.Scopes,
 	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
@@ -503,10 +516,13 @@ func scaleWorkloads(
 ) {
 	for _, workload := range workloads {
 		go func(workload scalable.Workload) {
-			err := attemptScaling(client, ctx, scaling, workload, scopes, workloadNamespaceMetrics, config)
+			err := attemptScaling(client, ctx, decision, workload, scopes, workloadNamespaceMetrics, config)
 			if err != nil {
 				slog.Error(
 					"scaling operation failed", "error", err,
+					"scalingDecision", decision.Scaling.String(),
+					"decidingScope", decision.Scope.String(),
+					"decisionValue", decision.Value,
 					"kind", workloadResourceKind(workload),
 					"workload", workload.GetName(), "namespace", workload.GetNamespace(),
 				)

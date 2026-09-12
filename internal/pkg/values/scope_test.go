@@ -390,6 +390,7 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 		name        string
 		scopes      Scopes
 		wantScaling Scaling
+		wantScope   ScopeID
 	}{
 		{
 			name: "ignore false forcing *time",
@@ -401,6 +402,7 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 				&Scope{},
 			},
 			wantScaling: ScalingUp,
+			wantScope:   ScopeNamespace,
 		},
 		{
 			name: "never stops fallthrough",
@@ -412,6 +414,7 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 				&Scope{},
 			},
 			wantScaling: ScalingUp,
+			wantScope:   ScopeNamespace,
 		},
 		{
 			name: "force *time never doesn't stop fallthrough",
@@ -423,6 +426,7 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 				&Scope{},
 			},
 			wantScaling: ScalingDown,
+			wantScope:   ScopeEnvironment,
 		},
 		{
 			name: "none set",
@@ -434,6 +438,7 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 				&Scope{},
 			},
 			wantScaling: ScalingNone,
+			wantScope:   ScopeNone,
 		},
 		{
 			name: "shorter timespan and no timezone and weekframes defined ",
@@ -445,6 +450,7 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 				GetDefaultScope(),
 			},
 			wantScaling: ScalingIncomplete,
+			wantScope:   ScopeWorkload,
 		},
 	}
 
@@ -452,8 +458,9 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			scaling := test.scopes.GetCurrentScaling()
-			assert.Equal(t, test.wantScaling, scaling)
+			decision := test.scopes.GetCurrentScaling()
+			assert.Equal(t, test.wantScaling, decision.Scaling)
+			assert.Equal(t, test.wantScope, decision.Scope)
 		})
 	}
 }

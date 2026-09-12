@@ -21,8 +21,29 @@ const (
 	ScalingIncomplete                // not enough information to perform scaling, e.g. due to timespan being incomplete
 )
 
+// String gets the string representation of the scaling decision.
+func (s Scaling) String() string {
+	return map[Scaling]string{
+		ScalingNone:       "ScalingNone",
+		ScalingIgnore:     "ScalingIgnore",
+		ScalingDown:       "ScalingDown",
+		ScalingUp:         "ScalingUp",
+		ScalingMultiple:   "ScalingMultiple",
+		ScalingIncomplete: "ScalingIncomplete",
+	}[s]
+}
+
+// ScalingDecision describes the scaling state selected by a scope and the value that selected it.
+type ScalingDecision struct {
+	Scaling Scaling
+	Scope   ScopeID
+	Value   any
+}
+
 // ScopeID is an enum that describes the current Scope.
 type ScopeID int
+
+const ScopeNone ScopeID = -1
 
 const (
 	ScopeWorkload    ScopeID = iota // identifies the scope present in the workload
@@ -35,6 +56,7 @@ const (
 // String gets the string representation of the ScopeID.
 func (s ScopeID) String() string {
 	return map[ScopeID]string{
+		ScopeNone:        "ScopeNone",
 		ScopeWorkload:    "ScopeWorkload",
 		ScopeNamespace:   "ScopeNamespace",
 		ScopeCli:         "ScopeCli",
@@ -196,6 +218,38 @@ func (s *Scope) getForceScaling(scopes Scopes) Scaling {
 	return ScalingNone
 }
 
+func forceScalingValue(scope *Scope) any {
+	if scope.ForceDowntime != nil && scope.ForceUptime != nil {
+		return []any{scope.ForceDowntime, scope.ForceUptime}
+	}
+
+	if scope.ForceDowntime != nil {
+		return scope.ForceDowntime
+	}
+
+	return scope.ForceUptime
+}
+
+func scalingValue(scope *Scope) any {
+	if scope.DownTime != nil {
+		return scope.DownTime
+	}
+
+	if scope.UpTime != nil {
+		return scope.UpTime
+	}
+
+	if scope.DownscalePeriod != nil && scope.UpscalePeriod != nil {
+		return []any{scope.DownscalePeriod, scope.UpscalePeriod}
+	}
+
+	if scope.DownscalePeriod != nil {
+		return scope.DownscalePeriod
+	}
+
+	return scope.UpscalePeriod
+}
+
 type Scopes [5]*Scope
 
 func (s Scopes) GetDefaultTimeSpan() *time.Location {
@@ -245,31 +299,40 @@ func (s Scopes) GetDefaultWeekdayTo() *time.Weekday {
 	return nil
 }
 
-// GetCurrentScaling gets the current scaling of the first scope that implements scaling.
-func (s Scopes) GetCurrentScaling() Scaling {
-	var result Scaling
+// GetCurrentScaling gets the current scaling decision of the first scope that implements scaling.
+func (s Scopes) GetCurrentScaling() ScalingDecision {
+	result := ScalingDecision{Scaling: ScalingNone, Scope: ScopeNone}
 
-	for _, scope := range s {
+	for scopeID, scope := range s {
 		forcedScaling := scope.getForceScaling(s)
 		if forcedScaling == ScalingNone {
 			continue // scope doesnt implement forced scaling; falling through
 		}
 
+		decision := ScalingDecision{
+			Scaling: forcedScaling,
+			Scope:   ScopeID(scopeID),
+			Value:   forceScalingValue(scope),
+		}
 		if forcedScaling == ScalingIgnore {
-			result = ScalingIgnore // default to ScalingIgnore instead of ScalingNone for correct log message
-			break                  // break out since forced scaling is set, but just inactive
+			result = decision // default to ScalingIgnore instead of ScalingNone for correct log message
+			break             // break out since forced scaling is set, but just inactive
 		}
 
-		return forcedScaling
+		return decision
 	}
 
-	for _, scope := range s {
-		scopeScaling := scope.getCurrentScaling(s)
-		if scopeScaling == ScalingNone {
+	for scopeID, scope := range s {
+		scaling := scope.getCurrentScaling(s)
+		if scaling == ScalingNone {
 			continue // scope doesnt implement scaling; falling through
 		}
 
-		return scopeScaling
+		return ScalingDecision{
+			Scaling: scaling,
+			Scope:   ScopeID(scopeID),
+			Value:   scalingValue(scope),
+		}
 	}
 
 	return result
