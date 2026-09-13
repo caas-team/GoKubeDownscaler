@@ -28,6 +28,7 @@ func getServices(namespace string, clientsets *Clientsets, ctx context.Context) 
 
 	results := make([]Workload, 0, len(services.Items))
 	for i := range services.Items {
+		setGroupVersionKindIfEmpty(&services.Items[i], corev1.SchemeGroupVersion.WithKind(serviceKind))
 		results = append(results, &valueScaledWorkload{&service{&services.Items[i]}})
 	}
 
@@ -83,6 +84,8 @@ func parseServiceFromBytes(rawObject []byte) (Workload, error) {
 		return nil, fmt.Errorf("failed to decode Service: %w", err)
 	}
 
+	setGroupVersionKindIfEmpty(&svc, corev1.SchemeGroupVersion.WithKind(serviceKind))
+
 	return &valueScaledWorkload{&service{&svc}}, nil
 }
 
@@ -137,6 +140,8 @@ func (s *service) Reget(clientsets *Clientsets, ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get service: %w", err)
 	}
+
+	setGroupVersionKindIfEmpty(s.Service, corev1.SchemeGroupVersion.WithKind(serviceKind))
 
 	return nil
 }
