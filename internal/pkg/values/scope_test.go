@@ -614,7 +614,7 @@ func TestScopes_GetUpscaleExcluded(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			gotUpscaleExclusion := test.scopes.GetUpscaleExcluded()
+			gotUpscaleExclusion, _ := test.scopes.GetUpscaleExcluded()
 			assert.Equal(t, test.wantUpscaleExclusion, gotUpscaleExclusion)
 		})
 	}
