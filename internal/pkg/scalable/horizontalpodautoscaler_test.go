@@ -53,7 +53,7 @@ func TestHorizontalPodAutoscaler_ScaleUp(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, workload)
 			}
 
-			_, err := workload.ScaleUp()
+			_, err := workload.ScaleUp(nil)
 			require.NoError(t, err)
 
 			gotReplicas, err := workload.getReplicas()

@@ -39,10 +39,14 @@ type nodeSelectorScaledWorkload struct {
 }
 
 // ScaleUp scales up the underlying nodeSelectorScaledResource.
-func (r *nodeSelectorScaledWorkload) ScaleUp() (scalingSummary, error) {
+func (r *nodeSelectorScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	summary := scalingSummary{From: values.BooleanReplicas(true), To: values.BooleanReplicas(false)}
 
-	updateNeeded, err := r.scaleUp()
+	updateNeeded, err := r.scaleUp(logger)
 	if err != nil {
 		return summary, err
 	}
@@ -53,8 +57,12 @@ func (r *nodeSelectorScaledWorkload) ScaleUp() (scalingSummary, error) {
 }
 
 // ScaleDown scales down the underlying nodeSelectorScaledResource.
-func (r *nodeSelectorScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (scalingSummary, error) {
-	savedResources, updateNeeded, err := r.scaleDown(downscaleReplicas)
+func (r *nodeSelectorScaledWorkload) ScaleDown(downscaleReplicas values.Replicas, logger *slog.Logger) (scalingSummary, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
+	savedResources, updateNeeded, err := r.scaleDown(downscaleReplicas, logger)
 	if err != nil {
 		return scalingSummary{}, err
 	}
@@ -68,21 +76,25 @@ func (r *nodeSelectorScaledWorkload) ScaleDown(downscaleReplicas values.Replicas
 }
 
 // LogUpscaleSuccessful logs a successful upscale using the node selector message style.
-func (r *nodeSelectorScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool) {
-	logWorkloadScalingMessage("scaled up", "node selector", r, summary, dryRun)
+func (r *nodeSelectorScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled up", "nodeSelector", r, summary, dryRun, logger)
 }
 
 // LogDownscaleSuccessful logs a successful downscale using the node selector message style.
-func (r *nodeSelectorScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool) {
-	logWorkloadScalingMessage("scaled down", "node selector", r, summary, dryRun)
+func (r *nodeSelectorScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled down", "nodeSelector", r, summary, dryRun, logger)
 }
 
-func (r *nodeSelectorScaledWorkload) scaleUp() (bool, error) {
+func (r *nodeSelectorScaledWorkload) scaleUp(logger *slog.Logger) (bool, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	_, err := getOriginalReplicas(r)
 	if err != nil {
 		var originalReplicasUnsetErr *OriginalReplicasUnsetError
 		if errors.As(err, &originalReplicasUnsetErr) {
-			slog.Debug("original replicas is not set, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
+			logger.Debug("original replicas is not set, skipping")
 			return false, nil
 		}
 
@@ -98,7 +110,11 @@ func (r *nodeSelectorScaledWorkload) scaleUp() (bool, error) {
 	return true, nil
 }
 
-func (r *nodeSelectorScaledWorkload) scaleDown(_ values.Replicas) (*metrics.SavedResources, bool, error) {
+func (r *nodeSelectorScaledWorkload) scaleDown(_ values.Replicas, logger *slog.Logger) (*metrics.SavedResources, bool, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	if _, hasLabel := r.getNodeSelector()[labelMatchNone]; hasLabel {
 		_, err := getOriginalReplicas(r)
 
@@ -108,12 +124,12 @@ func (r *nodeSelectorScaledWorkload) scaleDown(_ values.Replicas) (*metrics.Save
 				return metrics.NewSavedResources(0, 0), false, fmt.Errorf("failed to get original replicas for workload: %w", err)
 			}
 
-			slog.Debug("workload is already at target scale down state, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
+			logger.Debug("workload is already at target scale down state, skipping")
 
 			return metrics.NewSavedResources(0, 0), false, nil
 		}
 
-		slog.Debug("workload is already scaled down, skipping", "workload", r.GetName(), "namespace", r.GetNamespace())
+		logger.Debug("workload is already scaled down, skipping")
 
 		return r.getResourcesRequests(0), false, nil
 	}

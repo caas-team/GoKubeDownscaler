@@ -23,9 +23,9 @@ type valueScaledResource interface {
 	// getSavedResourcesRequests returns the saved CPU and memory requests for the workload based on the downscale replicas.
 	getSavedResourcesRequests() *metrics.SavedResources
 	// logUpscaleSuccessful logs a successful upscale operations or dry-run upscale operations.
-	logUpscaleSuccessful(summary *scalingSummary, dryRun bool)
+	logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
 	// logDownscaleSuccessful logs a successful downscale operations or dry-run downscale operations.
-	logDownscaleSuccessful(summary *scalingSummary, dryRun bool)
+	logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
 	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
@@ -38,17 +38,20 @@ type valueScaledWorkload struct {
 }
 
 // LogUpscaleSuccessful delegates resource-specific upscale logging.
-func (v *valueScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool) {
-	v.logUpscaleSuccessful(summary, dryRun)
+func (v *valueScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	v.logUpscaleSuccessful(summary, dryRun, logger)
 }
 
 // LogDownscaleSuccessful delegates resource-specific downscale logging.
-func (v *valueScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool) {
-	v.logDownscaleSuccessful(summary, dryRun)
+func (v *valueScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	v.logDownscaleSuccessful(summary, dryRun, logger)
 }
 
 // ScaleUp scales up the underlying valueScaledResource.
-func (v *valueScaledWorkload) ScaleUp() (scalingSummary, error) {
+func (v *valueScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
 	var summary scalingSummary
 
 	currentState, _, err := v.getValue()
@@ -60,10 +63,7 @@ func (v *valueScaledWorkload) ScaleUp() (scalingSummary, error) {
 	if err != nil {
 		var originalReplicasUnsetError *OriginalReplicasUnsetError
 		if ok := errors.As(err, &originalReplicasUnsetError); ok {
-			slog.Debug(
-				"original replicas is not set, skipping", "kind", v.GroupVersionKind().Kind,
-				"workload", v.GetName(), "namespace", v.GetNamespace(),
-			)
+			logger.Debug("original replicas is not set, skipping")
 
 			return summary, nil
 		}
@@ -82,7 +82,11 @@ func (v *valueScaledWorkload) ScaleUp() (scalingSummary, error) {
 }
 
 // ScaleDown scales down the underlying valueScaledResource.
-func (v *valueScaledWorkload) ScaleDown(_ values.Replicas) (scalingSummary, error) {
+func (v *valueScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger) (scalingSummary, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	currentState, targetScaleDownState, err := v.getValue()
 
 	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0), From: currentState, To: targetScaleDownState}
@@ -99,18 +103,12 @@ func (v *valueScaledWorkload) ScaleDown(_ values.Replicas) (scalingSummary, erro
 				return summary, err
 			}
 
-			slog.Debug(
-				"workload is already at target scale down state, skipping", "kind", v.GroupVersionKind().Kind,
-				"workload", v.GetName(), "namespace", v.GetNamespace(),
-			)
+			logger.Debug("workload is already at target scale down state, skipping")
 
 			return summary, nil
 		}
 
-		slog.Debug(
-			"workload is already scaled down, skipping", "kind", v.GroupVersionKind().Kind,
-			"workload", v.GetName(), "namespace", v.GetNamespace(),
-		)
+		logger.Debug("workload is already scaled down, skipping")
 
 		return summary, nil
 	}

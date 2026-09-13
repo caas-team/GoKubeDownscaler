@@ -51,7 +51,7 @@ func TestNodeSelectorScaledWorkload_ScaleUp(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, daemonset)
 			}
 
-			updateNeeded, err := daemonset.scaleUp()
+			updateNeeded, err := daemonset.scaleUp(nil)
 			require.NoError(t, err)
 			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
 
@@ -158,7 +158,7 @@ func TestNodeSelectorScaledWorkload_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, workload)
 			}
 
-			savedResources, updateNeeded, err := workload.scaleDown(values.AbsoluteReplicas(0))
+			savedResources, updateNeeded, err := workload.scaleDown(values.AbsoluteReplicas(0), nil)
 			require.NoError(t, err)
 			assert.Equal(t, test.wantUpdateNeeded, updateNeeded)
 

@@ -142,7 +142,7 @@ func TestPodDisruptionBudget_ScaleUp(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, pdb)
 			}
 
-			summary, err := pdb.ScaleUp()
+			summary, err := pdb.ScaleUp(nil)
 			require.NoError(t, err)
 			assert.Equal(t, test.wantUpdateNeeded, summary.IsUpdateNeeded)
 
@@ -302,7 +302,7 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, pdb)
 			}
 
-			summary, err := pdb.ScaleDown(values.AbsoluteReplicas(0))
+			summary, err := pdb.ScaleDown(values.AbsoluteReplicas(0), nil)
 			require.NoError(t, err)
 			assert.Equal(t, test.wantUpdateNeeded, summary.IsUpdateNeeded)
 

@@ -58,7 +58,7 @@ func TestSuspendScaledWorkload_ScaleUp(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, &suspendedWorkload)
 			}
 
-			summary, err := suspendedWorkload.ScaleUp()
+			summary, err := suspendedWorkload.ScaleUp(nil)
 			require.NoError(t, err)
 			assert.Equal(t, test.wantUpdateNeeded, summary.IsUpdateNeeded)
 			assertBoolPointerEqual(t, test.wantSuspend, cronjob.Spec.Suspend)
@@ -171,7 +171,7 @@ func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, &suspendedWorkload)
 			}
 
-			summary, err := suspendedWorkload.ScaleDown(nil)
+			summary, err := suspendedWorkload.ScaleDown(nil, nil)
 			require.NoError(t, err)
 
 			assert.Equal(t, test.wantUpdateNeeded, summary.IsUpdateNeeded)

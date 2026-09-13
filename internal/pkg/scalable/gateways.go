@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -70,13 +71,13 @@ func (g *gateway) getValue() (currentValue, downscalingValue values.Replicas, er
 }
 
 // LogUpscaleSuccessful logs the gateway class transition for an upscale.
-func (g *gateway) logUpscaleSuccessful(summary *scalingSummary, dryRun bool) {
-	logWorkloadScalingMessage("scaled up", "gateway class", g, summary, dryRun)
+func (g *gateway) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled up", "gatewayClass", g, summary, dryRun, logger)
 }
 
 // LogDownscaleSuccessful logs the gateway class transition for a downscale.
-func (g *gateway) logDownscaleSuccessful(summary *scalingSummary, dryRun bool) {
-	logWorkloadScalingMessage("scaled down", "gateway class", g, summary, dryRun)
+func (g *gateway) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled down", "gatewayClass", g, summary, dryRun, logger)
 }
 
 // getSavedResourcesRequests gets the amount of resources that are requested to be saved by downscaling this resource.

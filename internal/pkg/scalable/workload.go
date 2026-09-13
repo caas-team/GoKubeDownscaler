@@ -3,6 +3,7 @@ package scalable
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -156,13 +157,13 @@ type Workload interface {
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
 	Update(clientsets *Clientsets, ctx context.Context) error
 	// ScaleUp scales up the workload.
-	ScaleUp() (scalingSummary, error)
+	ScaleUp(logger *slog.Logger) (scalingSummary, error)
 	// ScaleDown scales down the workload
-	ScaleDown(downscaleReplicas values.Replicas) (scalingSummary, error)
+	ScaleDown(downscaleReplicas values.Replicas, logger *slog.Logger) (scalingSummary, error)
 	// LogUpscaleSuccessful logs a successful upscale, including dry-run operations.
-	LogUpscaleSuccessful(summary *scalingSummary, dryRun bool)
+	LogUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
 	// LogDownscaleSuccessful logs a successful downscale, including dry-run operations.
-	LogDownscaleSuccessful(summary *scalingSummary, dryRun bool)
+	LogDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
 	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch

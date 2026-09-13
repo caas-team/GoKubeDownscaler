@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
@@ -114,13 +115,13 @@ func (s *service) getValue() (currentValue, downscalingValue values.Replicas, er
 }
 
 // LogUpscaleSuccessful logs the ServiceType transition for an upscale.
-func (s *service) logUpscaleSuccessful(summary *scalingSummary, dryRun bool) {
-	logWorkloadScalingMessage("scaled up", "service type", s, summary, dryRun)
+func (s *service) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled up", "serviceType", s, summary, dryRun, logger)
 }
 
 // LogDownscaleSuccessful logs the ServiceType transition for a downscale.
-func (s *service) logDownscaleSuccessful(summary *scalingSummary, dryRun bool) {
-	logWorkloadScalingMessage("scaled down", "service type", s, summary, dryRun)
+func (s *service) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled down", "serviceType", s, summary, dryRun, logger)
 }
 
 // getSavedResourcesRequests gets the amount of resources that are requested to be saved by downscaling this resource.

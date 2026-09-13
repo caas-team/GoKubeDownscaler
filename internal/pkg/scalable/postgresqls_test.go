@@ -212,7 +212,7 @@ func TestPostgresql_ScaleDownScaleUp(t *testing.T) {
 	workload := &replicaScaledWorkload{&postgresql{pgResource}}
 
 	// Scale down to zero.
-	summary, err := workload.ScaleDown(values.AbsoluteReplicas(0))
+	summary, err := workload.ScaleDown(values.AbsoluteReplicas(0), nil)
 	require.NoError(t, err)
 	assert.True(t, summary.IsUpdateNeeded)
 
@@ -229,7 +229,7 @@ func TestPostgresql_ScaleDownScaleUp(t *testing.T) {
 	assert.Equal(t, values.AbsoluteReplicas(5), original)
 
 	// Scale back up restores the original instance count.
-	summary, err = workload.ScaleUp()
+	summary, err = workload.ScaleUp(nil)
 	require.NoError(t, err)
 	assert.True(t, summary.IsUpdateNeeded)
 

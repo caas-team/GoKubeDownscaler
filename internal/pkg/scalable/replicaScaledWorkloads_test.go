@@ -73,7 +73,7 @@ func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, deployment)
 			}
 
-			summary, err := deployment.ScaleUp()
+			summary, err := deployment.ScaleUp(nil)
 			var invalidReplicaTypeError *values.InvalidReplicaTypeError
 
 			if errors.As(test.wantErr, &invalidReplicaTypeError) {
@@ -198,7 +198,7 @@ func TestReplicaScaledWorkload_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, workload)
 			}
 
-			summary, err := workload.ScaleDown(test.downtimeReplicas)
+			summary, err := workload.ScaleDown(test.downtimeReplicas, nil)
 
 			if test.wantErr != nil {
 				var targetErr *values.InvalidReplicaTypeError
@@ -269,7 +269,7 @@ func TestReplicaScaledWorkload_ScaleDown_ScaledObjectUndefinedReplicas(t *testin
 			require.Equal(t, int32(util.Undefined), currentInt32)
 
 			// scale down: the workload must be paused and the undefined sentinel recorded as the original replicas
-			summary, err := workload.ScaleDown(test.downtimeReplicas)
+			summary, err := workload.ScaleDown(test.downtimeReplicas, nil)
 			require.NoError(t, err)
 			assert.True(t, summary.IsUpdateNeeded, "scaled object with undefined replicas should be scaled down")
 
@@ -283,7 +283,7 @@ func TestReplicaScaledWorkload_ScaleDown_ScaledObjectUndefinedReplicas(t *testin
 				"the undefined sentinel must be recorded as the original replicas")
 
 			// scale up: the original (undefined) replicas must be restored, removing the paused-replicas annotation
-			summary, err = workload.ScaleUp()
+			summary, err = workload.ScaleUp(nil)
 			require.NoError(t, err)
 			assert.True(t, summary.IsUpdateNeeded, "scaled object should be scaled back up")
 
