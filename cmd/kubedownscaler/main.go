@@ -31,7 +31,12 @@ const (
 func main() {
 	config, scopeDefault, scopeCli, scopeEnv := initComponent()
 
-	slog.Info("started downscaler", "config", config.String(), "cliScope", scopeCli, "envScope", scopeEnv)
+	slog.Info(
+		"started downscaler",
+		"config", config.String(),
+		"cliScope", fmt.Sprintf("%+v", scopeCli),
+		"envScope", fmt.Sprintf("%+v", scopeEnv),
+	)
 
 	slog.Debug("getting client for kubernetes")
 
