@@ -334,14 +334,25 @@ func attemptScaling(
 			continue
 		}
 
-		slog.Info(
-			"successfully scaled workload",
+		processedWorkloadLogArgs := []any{
 			"kind", workloadResourceKind(workload),
-			"scalingDecision", decision.Scaling.String(),
 			"decidingScope", decision.Scope.String(),
-			"decisionValue", decision.Value,
-			"workload", workload.GetName(), "namespace", workload.GetNamespace(),
-		)
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+		}
+
+		if decision.Reason == values.DecisionReasonUpscaleOnExclusion {
+			upscaleOnExclusion := false
+			if decision.Value.Bool != nil {
+				upscaleOnExclusion = *decision.Value.Bool
+			}
+
+			processedWorkloadLogArgs = append(processedWorkloadLogArgs, "upscaleOnExclusion", upscaleOnExclusion)
+		} else {
+			processedWorkloadLogArgs = append(processedWorkloadLogArgs, "decisionValue", decision.Value)
+		}
+
+		slog.Debug("successfully processed workload state", processedWorkloadLogArgs...)
 
 		return nil
 	}
@@ -350,7 +361,6 @@ func attemptScaling(
 	slog.Error(
 		"failed to scale workload",
 		"attempts", config.MaxRetriesOnConflict+1,
-		"scalingDecision", decision.Scaling.String(),
 		"decidingScope", decision.Scope.String(),
 		"decisionValue", decision.Value,
 		"kind", workloadResourceKind(workload),
@@ -503,6 +513,7 @@ func getCurrentScaling(
 			Scaling: values.ScalingUp,
 			Scope:   upscaleScope,
 			Value:   values.NewBooleanScalingValue(true),
+			Reason:  values.DecisionReasonUpscaleOnExclusion,
 		}
 	}
 

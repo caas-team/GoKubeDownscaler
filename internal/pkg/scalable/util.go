@@ -481,13 +481,8 @@ type scalingSummary struct {
 }
 
 func logWorkloadScalingMessage(action, attribute string, workload scalableResource, summary *scalingSummary, dryRun bool) {
-	kind := strings.ToLower(workload.GroupVersionKind().Kind)
-	if kind == "" {
-		kind = "workload"
-	}
-
-	message := "successfully " + action + " " + kind
-	dryRunMessage := "running in dry run mode, would have sent update " + kind + " request to " + action + " " + kind
+	message := "successfully " + action + " workload"
+	dryRunMessage := "running in dry run mode, would have sent update request to " + action + " workload"
 
 	if dryRun {
 		message = dryRunMessage
@@ -501,10 +496,10 @@ func logWorkloadMessage(message, attribute string, workload scalableResource, su
 		"kind", workload.GroupVersionKind().Kind,
 		"workload", workload.GetName(),
 		"namespace", workload.GetNamespace(),
-		"dry run", dryRun,
+		"dryRun", dryRun,
 	}
 	if attribute != "" {
-		args = append(args, "changed attribute", attribute)
+		args = append(args, "changedAttribute", attribute)
 	}
 
 	args = append(args,
