@@ -128,7 +128,7 @@ func TestValueScaledWorkload_ScaleDown(t *testing.T) {
 				setOriginalReplicas(test.originalReplicas, vsw)
 			}
 
-			summary, err := vsw.ScaleDown(values.AbsoluteReplicas(0))
+			summary, err := vsw.ScaleDown(values.AbsoluteReplicas(0), nil)
 			require.NoError(t, err)
 			require.NotNil(t, summary.SavedResources)
 			assert.Equal(t, test.wantUpdateNeeded, summary.IsUpdateNeeded)
@@ -204,7 +204,7 @@ func TestValueScaledWorkload_ScaleUp(t *testing.T) {
 			vsw := &valueScaledWorkload{w}
 			setOriginalReplicas(test.originalReplicas, vsw)
 
-			_, err := vsw.ScaleUp()
+			_, err := vsw.ScaleUp(nil)
 			require.NoError(t, err)
 
 			switch test.kind {

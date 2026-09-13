@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -357,7 +358,7 @@ func TestEvaluateMutation(t *testing.T) {
 			input, _ := parseAdmissionReviewFromRequest(req)
 			workload, _ := scalable.ParseWorkloadFromRawObject("deployment", input.Request.Object.Raw)
 
-			resp, err := handler.evaluateWorkloadMutation(context.Background(), workload, input, false)
+			resp, err := handler.evaluateWorkloadMutation(context.Background(), workload, input, false, slog.Default())
 			require.NoError(t, err)
 			require.Equal(t, currentTest.expectedCode, resp.Response.Result.Code)
 			require.Contains(t, resp.Response.Result.Message, currentTest.expectedMessage)

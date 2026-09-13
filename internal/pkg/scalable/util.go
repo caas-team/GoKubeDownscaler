@@ -480,7 +480,13 @@ type scalingSummary struct {
 	Attribute      string
 }
 
-func logWorkloadScalingMessage(action, attribute string, workload scalableResource, summary *scalingSummary, dryRun bool) {
+func logWorkloadScalingMessage(
+	action, changedAttribute string,
+	workload scalableResource,
+	summary *scalingSummary,
+	dryRun bool,
+	logger *slog.Logger,
+) {
 	message := "successfully " + action + " workload"
 	dryRunMessage := "running in dry run mode, would have sent update request to " + action + " workload"
 
@@ -488,18 +494,21 @@ func logWorkloadScalingMessage(action, attribute string, workload scalableResour
 		message = dryRunMessage
 	}
 
-	logWorkloadMessage(message, attribute, workload, summary, dryRun)
+	logWorkloadMessage(message, changedAttribute, workload, summary, dryRun, logger)
 }
 
-func logWorkloadMessage(message, attribute string, workload scalableResource, summary *scalingSummary, dryRun bool) {
+func logWorkloadMessage(
+	message, changedAttribute string,
+	workload scalableResource,
+	summary *scalingSummary,
+	dryRun bool,
+	logger *slog.Logger,
+) {
 	args := []any{
-		"kind", workload.GroupVersionKind().Kind,
-		"workload", workload.GetName(),
-		"namespace", workload.GetNamespace(),
 		"dryRun", dryRun,
 	}
-	if attribute != "" {
-		args = append(args, "changedAttribute", attribute)
+	if changedAttribute != "" {
+		args = append(args, "changedAttribute", changedAttribute)
 	}
 
 	args = append(args,
@@ -507,5 +516,13 @@ func logWorkloadMessage(message, attribute string, workload scalableResource, su
 		"to", summary.To,
 	)
 
-	slog.Info(message, args...)
+	if logger == nil {
+		logger = slog.Default().With(
+			"kind", workload.GroupVersionKind().Kind,
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+		)
+	}
+
+	logger.Info(message, args...)
 }

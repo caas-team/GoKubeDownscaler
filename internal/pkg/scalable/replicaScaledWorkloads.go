@@ -35,17 +35,20 @@ type replicaScaledWorkload struct {
 }
 
 // LogUpscaleSuccessful logs a successful upscale using the original workload message style.
-func (r *replicaScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool) {
-	logWorkloadScalingMessage("scaled up", "replicas", r, summary, dryRun)
+func (r *replicaScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled up", "replicas", r, summary, dryRun, logger)
 }
 
 // LogDownscaleSuccessful logs a successful downscale using the original workload message style.
-func (r *replicaScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool) {
-	logWorkloadScalingMessage("scaled down", "replicas", r, summary, dryRun)
+func (r *replicaScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled down", "replicas", r, summary, dryRun, logger)
 }
 
 // ScaleUp scales up the underlying replicaScaledResource.
-func (r *replicaScaledWorkload) ScaleUp() (scalingSummary, error) {
+func (r *replicaScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
 	var summary scalingSummary
 
 	currentReplicas, err := r.getReplicas()
@@ -57,10 +60,7 @@ func (r *replicaScaledWorkload) ScaleUp() (scalingSummary, error) {
 	if err != nil {
 		var originalReplicasUnsetErr *OriginalReplicasUnsetError
 		if ok := errors.As(err, &originalReplicasUnsetErr); ok {
-			slog.Debug(
-				"original replicas is not set, skipping", "kind", r.GroupVersionKind().Kind,
-				"workload", r.GetName(), "namespace", r.GetNamespace(),
-			)
+			logger.Debug("original replicas is not set, skipping")
 
 			return summary, nil
 		}
@@ -86,7 +86,11 @@ func (r *replicaScaledWorkload) ScaleUp() (scalingSummary, error) {
 // ScaleDown scales down the underlying replicaScaledResource.
 //
 
-func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (scalingSummary, error) {
+func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas, logger *slog.Logger) (scalingSummary, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	downscaleReplicasInt32, err := downscaleReplicas.AsInt32()
 
 	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0)}
@@ -117,10 +121,7 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (sc
 		}
 
 		if !isOriginalReplicasSet {
-			slog.Debug(
-				"workload is at or below target scale down replicas, skipping", "kind", r.GroupVersionKind().Kind,
-				"workload", r.GetName(), "namespace", r.GetNamespace(),
-			)
+			logger.Debug("workload is at or below target scale down replicas, skipping")
 
 			summary.From = currentReplicas
 			summary.To = downscaleReplicas
@@ -130,10 +131,7 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (sc
 
 		summary.SavedResources = r.getSavedResourcesRequests(originalReplicasInt32 - downscaleReplicasInt32)
 
-		slog.Debug(
-			"workload is already scaled down, skipping", "kind", r.GroupVersionKind().Kind,
-			"workload", r.GetName(), "namespace", r.GetNamespace(),
-		)
+		logger.Debug("workload is already scaled down, skipping")
 
 		summary.From = currentReplicas
 		summary.To = downscaleReplicas

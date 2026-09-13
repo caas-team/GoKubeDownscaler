@@ -34,13 +34,13 @@ type suspendScaledWorkload struct {
 }
 
 // LogUpscaleSuccessful logs a successful upscale using the original workload message style.
-func (r *suspendScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool) {
-	logWorkloadScalingMessage("unsuspended", "suspend", r, summary, dryRun)
+func (r *suspendScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("unsuspended", "suspend", r, summary, dryRun, logger)
 }
 
 // LogDownscaleSuccessful logs a successful downscale using the original workload message style.
-func (r *suspendScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool) {
-	logWorkloadScalingMessage("suspended", "suspend", r, summary, dryRun)
+func (r *suspendScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("suspended", "suspend", r, summary, dryRun, logger)
 }
 
 // GetChildren delegates child discovery to the wrapped resource when it supports ParentWorkload.
@@ -59,7 +59,10 @@ func (r *suspendScaledWorkload) GetChildren(ctx context.Context, clientsets *Cli
 }
 
 // ScaleUp scales up the underlying suspendScaledResource.
-func (r *suspendScaledWorkload) ScaleUp() (scalingSummary, error) {
+func (r *suspendScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
 	var summary scalingSummary
 	currentState, _ := r.getSuspend()
 
@@ -67,10 +70,7 @@ func (r *suspendScaledWorkload) ScaleUp() (scalingSummary, error) {
 	if err != nil {
 		var originalReplicasUnsetError *OriginalReplicasUnsetError
 		if ok := errors.As(err, &originalReplicasUnsetError); ok {
-			slog.Debug(
-				"original replicas is not set, skipping", "kind", r.GroupVersionKind().Kind,
-				"workload", r.GetName(), "namespace", r.GetNamespace(),
-			)
+			logger.Debug("original replicas is not set, skipping")
 
 			return summary, nil
 		}
@@ -93,7 +93,11 @@ func (r *suspendScaledWorkload) ScaleUp() (scalingSummary, error) {
 // ScaleDown scales down the underlying suspendScaledResource.
 //
 
-func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas) (scalingSummary, error) {
+func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger) (scalingSummary, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	currentState, targetScaleDownState := r.getSuspend()
 	summary := scalingSummary{
 		SavedResources: metrics.NewSavedResources(0, 0),
@@ -110,18 +114,12 @@ func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas) (scalingSummary, er
 				return summary, err
 			}
 
-			slog.Debug(
-				"workload is already at target scale down state, skipping", "kind", r.GroupVersionKind().Kind,
-				"workload", r.GetName(), "namespace", r.GetNamespace(),
-			)
+			logger.Debug("workload is already at target scale down state, skipping")
 
 			return summary, nil
 		}
 
-		slog.Debug(
-			"workload is already scaled down, skipping", "kind", r.GroupVersionKind().Kind,
-			"workload", r.GetName(), "namespace", r.GetNamespace(),
-		)
+		logger.Debug("workload is already scaled down, skipping")
 
 		savedResources := r.getSavedResourcesRequests()
 
