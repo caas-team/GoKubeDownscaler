@@ -435,7 +435,7 @@ func scanWorkload(
 	}
 
 	excluded := scopes.GetExcluded(scopes)
-	upscaleOnExclusion := scopes.GetUpscaleExcluded()
+	upscaleOnExclusion, upscaleScope := scopes.GetUpscaleExcluded()
 
 	if excluded && !upscaleOnExclusion {
 		slog.Debug(
@@ -447,7 +447,7 @@ func scanWorkload(
 		return nil
 	}
 
-	decision := getCurrentScaling(workload, excluded, upscaleOnExclusion, &scopes)
+	decision := getCurrentScaling(workload, excluded, upscaleOnExclusion, upscaleScope, &scopes)
 
 	err = attemptScaling(client, ctx, decision, workload, scopes, workloadNamespaceMetrics, config)
 	if err != nil {
@@ -487,7 +487,12 @@ func workloadResourceKind(workload scalable.Workload) string {
 	return kind
 }
 
-func getCurrentScaling(workload scalable.Workload, excluded, upscaleOnExclusion bool, scopes *values.Scopes) values.ScalingDecision {
+func getCurrentScaling(
+	workload scalable.Workload,
+	excluded, upscaleOnExclusion bool,
+	upscaleScope values.ScopeID,
+	scopes *values.Scopes,
+) values.ScalingDecision {
 	if upscaleOnExclusion && excluded {
 		slog.Debug(
 			"upscaling excluded workload", "kind", workloadResourceKind(workload),
@@ -496,7 +501,7 @@ func getCurrentScaling(workload scalable.Workload, excluded, upscaleOnExclusion 
 
 		return values.ScalingDecision{
 			Scaling: values.ScalingUp,
-			Scope:   values.ScopeNone,
+			Scope:   upscaleScope,
 			Value:   values.NewBooleanScalingValue(true),
 		}
 	}

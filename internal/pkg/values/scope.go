@@ -367,14 +367,16 @@ func (s Scopes) GetExcluded(scopes Scopes) bool {
 }
 
 // GetUpscaleExcluded check if the scopes upscale excluded workloads.
-func (s Scopes) GetUpscaleExcluded() bool {
-	for _, scope := range s {
-		if scope.UpscaleExcluded.isSet && scope.UpscaleExcluded.value {
-			return true
+func (s Scopes) GetUpscaleExcluded() (bool, ScopeID) {
+	for scopeID, scope := range s {
+		if !scope.UpscaleExcluded.isSet {
+			continue
 		}
+
+		return scope.UpscaleExcluded.value, ScopeID(scopeID)
 	}
 
-	return false
+	return false, ScopeNone
 }
 
 // IsInGracePeriod gets the grace period of the uppermost scope that has it set.
