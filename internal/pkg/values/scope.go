@@ -12,15 +12,6 @@ import (
 // Scaling is an enum that describes the current Scaling.
 type Scaling int
 
-const (
-	ScalingNone       Scaling = iota // no scaling set in this scope, go to next scope
-	ScalingIgnore                    // not scaling
-	ScalingDown                      // scaling down
-	ScalingUp                        // scaling up
-	ScalingMultiple                  // multiple scalings with same priority matched, this should be handled as an error
-	ScalingIncomplete                // not enough information to perform scaling, e.g. due to timespan being incomplete
-)
-
 // String gets the string representation of the scaling decision.
 func (s Scaling) String() string {
 	return map[Scaling]string{
@@ -33,12 +24,14 @@ func (s Scaling) String() string {
 	}[s]
 }
 
-// ScalingDecision describes the scaling state selected by a scope and the value that selected it.
-type ScalingDecision struct {
-	Scaling Scaling
-	Scope   ScopeID
-	Value   any
-}
+const (
+	ScalingNone       Scaling = iota // no scaling set in this scope, go to next scope
+	ScalingIgnore                    // not scaling
+	ScalingDown                      // scaling down
+	ScalingUp                        // scaling up
+	ScalingMultiple                  // multiple scalings with same priority matched, this should be handled as an error
+	ScalingIncomplete                // not enough information to perform scaling, e.g. due to timespan being incomplete
+)
 
 // ScopeID is an enum that describes the current Scope.
 type ScopeID int
@@ -108,6 +101,13 @@ func GetDefaultScope() *Scope {
 		DefaultTimezone:   nil,
 		DefaultWeekFrame:  nil,
 	}
+}
+
+// ScalingDecision describes the scaling state selected by a scope and the value that selected it.
+type ScalingDecision struct {
+	Scaling Scaling
+	Scope   ScopeID
+	Value   ScalingValue
 }
 
 // CheckForIncompatibleFields checks if there are incompatible fields.
@@ -216,38 +216,6 @@ func (s *Scope) getForceScaling(scopes Scopes) Scaling {
 	}
 
 	return ScalingNone
-}
-
-func forceScalingValue(scope *Scope) any {
-	if scope.ForceDowntime != nil && scope.ForceUptime != nil {
-		return []any{scope.ForceDowntime, scope.ForceUptime}
-	}
-
-	if scope.ForceDowntime != nil {
-		return scope.ForceDowntime
-	}
-
-	return scope.ForceUptime
-}
-
-func scalingValue(scope *Scope) any {
-	if scope.DownTime != nil {
-		return scope.DownTime
-	}
-
-	if scope.UpTime != nil {
-		return scope.UpTime
-	}
-
-	if scope.DownscalePeriod != nil && scope.UpscalePeriod != nil {
-		return []any{scope.DownscalePeriod, scope.UpscalePeriod}
-	}
-
-	if scope.DownscalePeriod != nil {
-		return scope.DownscalePeriod
-	}
-
-	return scope.UpscalePeriod
 }
 
 type Scopes [5]*Scope
