@@ -51,12 +51,12 @@ type podDisruptionBudget struct {
 }
 
 // LogUpscaleSuccessful logs the PodDisruptionBudget availability transition.
-func (p *podDisruptionBudget) LogUpscaleSuccessful(summary *ScalingSummary, dryRun bool) {
+func (p *podDisruptionBudget) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled up", summary.Attribute, p, summary, dryRun)
 }
 
 // LogDownscaleSuccessful logs the PodDisruptionBudget availability transition.
-func (p *podDisruptionBudget) LogDownscaleSuccessful(summary *ScalingSummary, dryRun bool) {
+func (p *podDisruptionBudget) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled down", summary.Attribute, p, summary, dryRun)
 }
 
@@ -98,8 +98,8 @@ func (p *podDisruptionBudget) setMaxUnavailable(targetMaxUnavailable values.Repl
 }
 
 // ScaleUp scales the resource up.
-func (p *podDisruptionBudget) ScaleUp() (ScalingSummary, error) {
-	var summary ScalingSummary
+func (p *podDisruptionBudget) ScaleUp() (scalingSummary, error) {
+	var summary scalingSummary
 
 	originalReplicas, err := getOriginalReplicas(p)
 	if err != nil {
@@ -121,7 +121,7 @@ func (p *podDisruptionBudget) ScaleUp() (ScalingSummary, error) {
 		p.setMaxUnavailable(originalReplicas)
 		removeOriginalReplicas(p)
 
-		return ScalingSummary{
+		return scalingSummary{
 			IsUpdateNeeded: true, From: maxUnavailable, To: originalReplicas, Attribute: maxUnavailableAttribute,
 		}, nil
 	}
@@ -131,7 +131,7 @@ func (p *podDisruptionBudget) ScaleUp() (ScalingSummary, error) {
 		p.setMinAvailable(originalReplicas)
 		removeOriginalReplicas(p)
 
-		return ScalingSummary{
+		return scalingSummary{
 			IsUpdateNeeded: true, From: minAvailable, To: originalReplicas, Attribute: minAvailableAttribute,
 		}, nil
 	}
@@ -140,8 +140,8 @@ func (p *podDisruptionBudget) ScaleUp() (ScalingSummary, error) {
 }
 
 // ScaleDown scales the resource down.
-func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (ScalingSummary, error) {
-	summary := ScalingSummary{SavedResources: metrics.NewSavedResources(0, 0)}
+func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (scalingSummary, error) {
+	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0)}
 
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {
@@ -151,7 +151,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (Scal
 				"workload", p.GetName(), "namespace", p.GetNamespace(),
 			)
 
-			return ScalingSummary{
+			return scalingSummary{
 				SavedResources: summary.SavedResources, From: maxUnavailable, To: downscaleReplicas, Attribute: maxUnavailableAttribute,
 			}, nil
 		}
@@ -159,7 +159,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (Scal
 		p.setMaxUnavailable(downscaleReplicas)
 		setOriginalReplicas(maxUnavailable, p)
 
-		return ScalingSummary{
+		return scalingSummary{
 			SavedResources: summary.SavedResources, IsUpdateNeeded: true, From: maxUnavailable, To: downscaleReplicas,
 			Attribute: maxUnavailableAttribute,
 		}, nil
@@ -173,7 +173,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (Scal
 				"workload", p.GetName(), "namespace", p.GetNamespace(),
 			)
 
-			return ScalingSummary{
+			return scalingSummary{
 				SavedResources: summary.SavedResources, From: minAvailable, To: downscaleReplicas, Attribute: minAvailableAttribute,
 			}, nil
 		}
@@ -181,7 +181,7 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (Scal
 		p.setMinAvailable(downscaleReplicas)
 		setOriginalReplicas(minAvailable, p)
 
-		return ScalingSummary{
+		return scalingSummary{
 			SavedResources: summary.SavedResources, IsUpdateNeeded: true, From: minAvailable, To: downscaleReplicas,
 			Attribute: minAvailableAttribute,
 		}, nil

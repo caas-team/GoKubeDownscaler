@@ -23,9 +23,9 @@ type valueScaledResource interface {
 	// getSavedResourcesRequests returns the saved CPU and memory requests for the workload based on the downscale replicas.
 	getSavedResourcesRequests() *metrics.SavedResources
 	// logUpscaleSuccessful logs a successful upscale operations or dry-run upscale operations.
-	logUpscaleSuccessful(summary *ScalingSummary, dryRun bool)
+	logUpscaleSuccessful(summary *scalingSummary, dryRun bool)
 	// logDownscaleSuccessful logs a successful downscale operations or dry-run downscale operations.
-	logDownscaleSuccessful(summary *ScalingSummary, dryRun bool)
+	logDownscaleSuccessful(summary *scalingSummary, dryRun bool)
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
 	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
@@ -38,18 +38,18 @@ type valueScaledWorkload struct {
 }
 
 // LogUpscaleSuccessful delegates resource-specific upscale logging.
-func (v *valueScaledWorkload) LogUpscaleSuccessful(summary *ScalingSummary, dryRun bool) {
+func (v *valueScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool) {
 	v.logUpscaleSuccessful(summary, dryRun)
 }
 
 // LogDownscaleSuccessful delegates resource-specific downscale logging.
-func (v *valueScaledWorkload) LogDownscaleSuccessful(summary *ScalingSummary, dryRun bool) {
+func (v *valueScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool) {
 	v.logDownscaleSuccessful(summary, dryRun)
 }
 
 // ScaleUp scales up the underlying valueScaledResource.
-func (v *valueScaledWorkload) ScaleUp() (ScalingSummary, error) {
-	var summary ScalingSummary
+func (v *valueScaledWorkload) ScaleUp() (scalingSummary, error) {
+	var summary scalingSummary
 
 	currentState, _, err := v.getValue()
 	if err != nil {
@@ -78,14 +78,14 @@ func (v *valueScaledWorkload) ScaleUp() (ScalingSummary, error) {
 
 	removeOriginalReplicas(v)
 
-	return ScalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState}, nil
+	return scalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState}, nil
 }
 
 // ScaleDown scales down the underlying valueScaledResource.
-func (v *valueScaledWorkload) ScaleDown(_ values.Replicas) (ScalingSummary, error) {
+func (v *valueScaledWorkload) ScaleDown(_ values.Replicas) (scalingSummary, error) {
 	currentState, targetScaleDownState, err := v.getValue()
 
-	summary := ScalingSummary{SavedResources: metrics.NewSavedResources(0, 0), From: currentState, To: targetScaleDownState}
+	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0), From: currentState, To: targetScaleDownState}
 	if err != nil {
 		return summary, err
 	}
