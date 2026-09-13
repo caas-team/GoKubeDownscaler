@@ -204,6 +204,7 @@ func startScanning(
 			config.ExcludeNamespaces,
 			config.ExcludeWorkloads,
 			currentNamespaceToMetrics,
+			slog.Default(),
 		)
 		slog.Debug("scanning over workloads matching filters", "amount", len(workloads))
 
@@ -377,7 +378,7 @@ func scanWorkload(
 	)
 
 	scopeWorkload := values.NewScope()
-	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), eventLogger, ctx); err != nil {
+	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), eventLogger, logger, ctx); err != nil {
 		workloadNamespaceMetrics.IncrementParsingWorkloadScopeErrorsCount()
 		return fmt.Errorf("failed to parse workload scope from annotations: %w", err)
 	}
@@ -396,6 +397,7 @@ func scanWorkload(
 		workload.GetAnnotations(),
 		workload.GetCreationTimestamp().Time,
 		eventLogger,
+		logger,
 		ctx,
 	)
 	if err != nil {

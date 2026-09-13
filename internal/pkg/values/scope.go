@@ -3,6 +3,7 @@ package values
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -389,6 +390,7 @@ func (s Scopes) IsInGracePeriod(
 	workloadAnnotations map[string]string,
 	creationTime time.Time,
 	logEvent util.ResourceLogger,
+	logger *slog.Logger,
 	ctx context.Context,
 ) (bool, error) {
 	var gracePeriod time.Duration = util.Undefined
@@ -407,7 +409,7 @@ func (s Scopes) IsInGracePeriod(
 		return false, nil
 	}
 
-	creationTime, err := getWorkloadCreationTime(timeAnnotation, workloadAnnotations, creationTime, logEvent, ctx)
+	creationTime, err := getWorkloadCreationTime(timeAnnotation, workloadAnnotations, creationTime, logEvent, logger, ctx)
 	if err != nil {
 		return false, fmt.Errorf("failed to get the workloads creation time: %w", err)
 	}
@@ -422,6 +424,7 @@ func getWorkloadCreationTime(
 	annotations map[string]string,
 	creationTime time.Time,
 	logEvent util.ResourceLogger,
+	logger *slog.Logger,
 	ctx context.Context,
 ) (time.Time, error) {
 	timeString, ok := annotations[annotation]
@@ -433,6 +436,10 @@ func getWorkloadCreationTime(
 	if err != nil {
 		err = fmt.Errorf("failed to parse %q annotation as RFC3339 timestamp: %w", annotation, err)
 		logEvent.ErrorInvalidAnnotation(annotation, err.Error(), ctx)
+
+		if logger != nil {
+			logger.Error("failed to parse workload creation-time annotation", "annotation", annotation, "error", err)
+		}
 
 		return time.Time{}, err
 	}

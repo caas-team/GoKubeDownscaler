@@ -156,7 +156,7 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 
 	slog.Debug("checking labels, excluded namespaces and excluded workloads")
 
-	workloads := scalable.FilterExcluded(workloadArray, *v.includeLabels, *v.excludeNamespaces, *v.excludeWorkloads, nil)
+	workloads := scalable.FilterExcluded(workloadArray, *v.includeLabels, *v.excludeNamespaces, *v.excludeWorkloads, nil, logger)
 
 	if len(workloads) == 0 {
 		logger.Info("workload is excluded from downscaling", "dryRun", v.dryRun)
@@ -180,7 +180,7 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 	logger.Debug("parsing workload scope from annotations", "workload annotations", workload.GetAnnotations())
 
 	scopeWorkload := values.NewScope()
-	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), eventLogger, ctx); err != nil {
+	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), eventLogger, logger, ctx); err != nil {
 		logger.Debug("failed to parse workload scope from annotations", "error", err, "dryRun", v.dryRun)
 
 		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())

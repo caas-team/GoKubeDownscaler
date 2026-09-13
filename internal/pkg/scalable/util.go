@@ -53,12 +53,23 @@ func FilterExcluded(
 	excludedNamespaces,
 	excludedWorkloads util.RegexList,
 	currentNamespaceToMetrics map[string]*metrics.NamespaceMetricsHolder,
+	logger *slog.Logger,
 ) []Workload {
 	externallyScaled := getExternallyScaled(workloads)
+
+	if logger == nil {
+		logger = slog.Default()
+	}
 
 	results := make([]Workload, 0, len(workloads))
 
 	for _, workload := range workloads {
+		workloadLogger := logger.With(
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
+		)
+
 		if currentNamespaceToMetrics != nil {
 			_, ok := currentNamespaceToMetrics[workload.GetNamespace()]
 			if !ok {
@@ -68,43 +79,29 @@ func FilterExcluded(
 		}
 
 		if !isMatchingLabels(workload, includeLabels) {
-			slog.Debug(
-				"workload is not matching any of the specified labels, excluding it from being scanned",
-				"workload", workload.GetName(),
-				"namespace", workload.GetNamespace(),
-			)
+			workloadLogger.Debug("workload is not matching any of the specified labels, excluding it from being scanned")
 			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}
 
 		if isNamespaceExcluded(workload, excludedNamespaces) {
-			slog.Debug(
-				"the workloads namespace is excluded, excluding it from being scanned",
-				"workload", workload.GetName(),
-				"namespace", workload.GetNamespace(),
-			)
+			workloadLogger.Debug("the workloads namespace is excluded, excluding it from being scanned")
 			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}
 
 		if isWorkloadExcluded(workload, excludedWorkloads) {
-			slog.Debug(
-				"the workloads name is excluded, excluding it from being scanned",
-				"workload", workload.GetName(),
-				"namespace", workload.GetNamespace(),
-			)
+			workloadLogger.Debug("the workloads name is excluded, excluding it from being scanned")
 			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}
 
 		if isExternallyScaled(workload, externallyScaled) {
-			slog.Debug(
+			workloadLogger.Debug(
 				"the workload is scaled externally, excluding it from being scanned",
-				"workload", workload.GetName(),
-				"namespace", workload.GetNamespace(),
 			)
 			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
@@ -518,9 +515,9 @@ func logWorkloadMessage(
 
 	if logger == nil {
 		logger = slog.Default().With(
-			"kind", workload.GroupVersionKind().Kind,
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
 		)
 	}
 
