@@ -104,10 +104,14 @@ func GetDefaultScope() *Scope {
 }
 
 // ScalingDecision describes the scaling state selected by a scope and the value that selected it.
+
+const DecisionReasonUpscaleOnExclusion = "upscaleOnExclusion"
+
 type ScalingDecision struct {
 	Scaling Scaling
 	Scope   ScopeID
 	Value   ScalingValue
+	Reason  string
 }
 
 // CheckForIncompatibleFields checks if there are incompatible fields.
