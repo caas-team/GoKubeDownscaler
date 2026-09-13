@@ -2,6 +2,7 @@ package values
 
 import (
 	"fmt"
+	"log/slog"
 	"strconv"
 )
 
@@ -63,4 +64,12 @@ func (v ScalingValue) String() string {
 	}
 
 	return fmt.Sprint(v.TimeSpans)
+}
+
+func (v ScalingValue) LogValue() slog.Value {
+	if v.Bool != nil {
+		return slog.BoolValue(*v.Bool)
+	}
+
+	return slog.StringValue(v.String())
 }
