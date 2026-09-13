@@ -229,7 +229,7 @@ func (c client) GetChildrenWorkloads(workload scalable.Workload, ctx context.Con
 			"getting children workloads for workload",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
-			"resourceType", workload.GroupVersionKind().Kind,
+			"kind", workload.GroupVersionKind().Kind,
 		)
 
 		children, err := parent.GetChildren(ctx, c.clientsets)
@@ -241,7 +241,7 @@ func (c client) GetChildrenWorkloads(workload scalable.Workload, ctx context.Con
 			"retrieved children for workload",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
-			"resourceType", workload.GroupVersionKind().Kind,
+			"kind", workload.GroupVersionKind().Kind,
 			"childrenCount", len(children),
 		)
 
@@ -279,6 +279,7 @@ func (c client) DownscaleWorkload(
 			"workload is already in a scaled down state, no update needed",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
 		)
 
 		return scalingSummary.SavedResources, nil
@@ -312,6 +313,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 			"workload is already in a scaled up state, no update needed",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
 		)
 
 		return nil
