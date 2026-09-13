@@ -497,7 +497,7 @@ func getCurrentScaling(workload scalable.Workload, excluded, upscaleOnExclusion 
 		return values.ScalingDecision{
 			Scaling: values.ScalingUp,
 			Scope:   values.ScopeNone,
-			Value:   true,
+			Value:   values.NewBooleanScalingValue(true),
 		}
 	}
 
