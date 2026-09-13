@@ -35,18 +35,18 @@ type replicaScaledWorkload struct {
 }
 
 // LogUpscaleSuccessful logs a successful upscale using the original workload message style.
-func (r *replicaScaledWorkload) LogUpscaleSuccessful(summary *ScalingSummary, dryRun bool) {
+func (r *replicaScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled up", "replicas", r, summary, dryRun)
 }
 
 // LogDownscaleSuccessful logs a successful downscale using the original workload message style.
-func (r *replicaScaledWorkload) LogDownscaleSuccessful(summary *ScalingSummary, dryRun bool) {
+func (r *replicaScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled down", "replicas", r, summary, dryRun)
 }
 
 // ScaleUp scales up the underlying replicaScaledResource.
-func (r *replicaScaledWorkload) ScaleUp() (ScalingSummary, error) {
-	var summary ScalingSummary
+func (r *replicaScaledWorkload) ScaleUp() (scalingSummary, error) {
+	var summary scalingSummary
 
 	currentReplicas, err := r.getReplicas()
 	if err != nil {
@@ -80,16 +80,16 @@ func (r *replicaScaledWorkload) ScaleUp() (ScalingSummary, error) {
 
 	removeOriginalReplicas(r)
 
-	return ScalingSummary{IsUpdateNeeded: true, From: currentReplicas, To: originalReplicas}, nil
+	return scalingSummary{IsUpdateNeeded: true, From: currentReplicas, To: originalReplicas}, nil
 }
 
 // ScaleDown scales down the underlying replicaScaledResource.
 //
 
-func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (ScalingSummary, error) {
+func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (scalingSummary, error) {
 	downscaleReplicasInt32, err := downscaleReplicas.AsInt32()
 
-	summary := ScalingSummary{SavedResources: metrics.NewSavedResources(0, 0)}
+	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0)}
 	if err != nil {
 		return summary, fmt.Errorf("failed to convert replicas to int32: %w", err)
 	}

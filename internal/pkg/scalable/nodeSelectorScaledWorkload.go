@@ -39,8 +39,8 @@ type nodeSelectorScaledWorkload struct {
 }
 
 // ScaleUp scales up the underlying nodeSelectorScaledResource.
-func (r *nodeSelectorScaledWorkload) ScaleUp() (ScalingSummary, error) {
-	summary := ScalingSummary{From: values.BooleanReplicas(true), To: values.BooleanReplicas(false)}
+func (r *nodeSelectorScaledWorkload) ScaleUp() (scalingSummary, error) {
+	summary := scalingSummary{From: values.BooleanReplicas(true), To: values.BooleanReplicas(false)}
 
 	updateNeeded, err := r.scaleUp()
 	if err != nil {
@@ -53,13 +53,13 @@ func (r *nodeSelectorScaledWorkload) ScaleUp() (ScalingSummary, error) {
 }
 
 // ScaleDown scales down the underlying nodeSelectorScaledResource.
-func (r *nodeSelectorScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (ScalingSummary, error) {
+func (r *nodeSelectorScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (scalingSummary, error) {
 	savedResources, updateNeeded, err := r.scaleDown(downscaleReplicas)
 	if err != nil {
-		return ScalingSummary{}, err
+		return scalingSummary{}, err
 	}
 
-	return ScalingSummary{
+	return scalingSummary{
 		SavedResources: savedResources,
 		IsUpdateNeeded: updateNeeded,
 		From:           values.BooleanReplicas(false),
@@ -68,12 +68,12 @@ func (r *nodeSelectorScaledWorkload) ScaleDown(downscaleReplicas values.Replicas
 }
 
 // LogUpscaleSuccessful logs a successful upscale using the node selector message style.
-func (r *nodeSelectorScaledWorkload) LogUpscaleSuccessful(summary *ScalingSummary, dryRun bool) {
+func (r *nodeSelectorScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled up", "node selector", r, summary, dryRun)
 }
 
 // LogDownscaleSuccessful logs a successful downscale using the node selector message style.
-func (r *nodeSelectorScaledWorkload) LogDownscaleSuccessful(summary *ScalingSummary, dryRun bool) {
+func (r *nodeSelectorScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("scaled down", "node selector", r, summary, dryRun)
 }
 

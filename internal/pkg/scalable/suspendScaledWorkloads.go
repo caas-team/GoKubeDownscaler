@@ -34,12 +34,12 @@ type suspendScaledWorkload struct {
 }
 
 // LogUpscaleSuccessful logs a successful upscale using the original workload message style.
-func (r *suspendScaledWorkload) LogUpscaleSuccessful(summary *ScalingSummary, dryRun bool) {
+func (r *suspendScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("unsuspended", "suspend", r, summary, dryRun)
 }
 
 // LogDownscaleSuccessful logs a successful downscale using the original workload message style.
-func (r *suspendScaledWorkload) LogDownscaleSuccessful(summary *ScalingSummary, dryRun bool) {
+func (r *suspendScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool) {
 	logWorkloadScalingMessage("suspended", "suspend", r, summary, dryRun)
 }
 
@@ -59,8 +59,8 @@ func (r *suspendScaledWorkload) GetChildren(ctx context.Context, clientsets *Cli
 }
 
 // ScaleUp scales up the underlying suspendScaledResource.
-func (r *suspendScaledWorkload) ScaleUp() (ScalingSummary, error) {
-	var summary ScalingSummary
+func (r *suspendScaledWorkload) ScaleUp() (scalingSummary, error) {
+	var summary scalingSummary
 	currentState, _ := r.getSuspend()
 
 	originalState, err := getOriginalReplicas(r)
@@ -87,15 +87,15 @@ func (r *suspendScaledWorkload) ScaleUp() (ScalingSummary, error) {
 
 	removeOriginalReplicas(r)
 
-	return ScalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState}, nil
+	return scalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState}, nil
 }
 
 // ScaleDown scales down the underlying suspendScaledResource.
 //
 
-func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas) (ScalingSummary, error) {
+func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas) (scalingSummary, error) {
 	currentState, targetScaleDownState := r.getSuspend()
-	summary := ScalingSummary{
+	summary := scalingSummary{
 		SavedResources: metrics.NewSavedResources(0, 0),
 		From:           currentState,
 		To:             targetScaleDownState,
