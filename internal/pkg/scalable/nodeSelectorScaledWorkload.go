@@ -39,7 +39,45 @@ type nodeSelectorScaledWorkload struct {
 }
 
 // ScaleUp scales up the underlying nodeSelectorScaledResource.
-func (r *nodeSelectorScaledWorkload) ScaleUp() (bool, error) {
+func (r *nodeSelectorScaledWorkload) ScaleUp() (ScalingSummary, error) {
+	summary := ScalingSummary{From: values.BooleanReplicas(true), To: values.BooleanReplicas(false)}
+
+	updateNeeded, err := r.scaleUp()
+	if err != nil {
+		return summary, err
+	}
+
+	summary.IsUpdateNeeded = updateNeeded
+
+	return summary, nil
+}
+
+// ScaleDown scales down the underlying nodeSelectorScaledResource.
+func (r *nodeSelectorScaledWorkload) ScaleDown(downscaleReplicas values.Replicas) (ScalingSummary, error) {
+	savedResources, updateNeeded, err := r.scaleDown(downscaleReplicas)
+	if err != nil {
+		return ScalingSummary{}, err
+	}
+
+	return ScalingSummary{
+		SavedResources: savedResources,
+		IsUpdateNeeded: updateNeeded,
+		From:           values.BooleanReplicas(false),
+		To:             values.BooleanReplicas(true),
+	}, nil
+}
+
+// LogUpscaleSuccessful logs a successful upscale using the node selector message style.
+func (r *nodeSelectorScaledWorkload) LogUpscaleSuccessful(summary *ScalingSummary, dryRun bool) {
+	logWorkloadScalingMessage("scaled up", "node selector", r, summary, dryRun)
+}
+
+// LogDownscaleSuccessful logs a successful downscale using the node selector message style.
+func (r *nodeSelectorScaledWorkload) LogDownscaleSuccessful(summary *ScalingSummary, dryRun bool) {
+	logWorkloadScalingMessage("scaled down", "node selector", r, summary, dryRun)
+}
+
+func (r *nodeSelectorScaledWorkload) scaleUp() (bool, error) {
 	_, err := getOriginalReplicas(r)
 	if err != nil {
 		var originalReplicasUnsetErr *OriginalReplicasUnsetError
@@ -60,8 +98,7 @@ func (r *nodeSelectorScaledWorkload) ScaleUp() (bool, error) {
 	return true, nil
 }
 
-// ScaleDown scales down the underlying nodeSelectorScaledResource.
-func (r *nodeSelectorScaledWorkload) ScaleDown(_ values.Replicas) (*metrics.SavedResources, bool, error) {
+func (r *nodeSelectorScaledWorkload) scaleDown(_ values.Replicas) (*metrics.SavedResources, bool, error) {
 	if _, hasLabel := r.getNodeSelector()[labelMatchNone]; hasLabel {
 		_, err := getOriginalReplicas(r)
 
