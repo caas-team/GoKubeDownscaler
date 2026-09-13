@@ -190,7 +190,7 @@ func startScanning(
 	config *runtimeConfiguration,
 	downscalerMetrics *metrics.Metrics,
 ) error {
-	slog.Info("started downscaler")
+	slog.Info("started downscaler scanning process")
 
 	previousNamespacesToMetrics := newNamespaceToMetrics(config)
 
