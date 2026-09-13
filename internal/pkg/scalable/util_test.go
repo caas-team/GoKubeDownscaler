@@ -340,6 +340,7 @@ func TestFilterExcluded(t *testing.T) { //nolint: maintidx// fine to read and un
 				test.excludedNamespaces,
 				test.excludedWorkloads,
 				test.currentNamespaceToMetrics,
+				nil,
 			)
 
 			assert.Equal(t, test.want, got)

@@ -868,7 +868,7 @@ func TestGetWorkloadCreationTime(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := getWorkloadCreationTime(test.annotation, test.annotations, test.creationTime, nil, t.Context())
+			got, err := getWorkloadCreationTime(test.annotation, test.annotations, test.creationTime, nil, nil, t.Context())
 			assert.Equal(t, test.want, got)
 
 			if test.wantErr {

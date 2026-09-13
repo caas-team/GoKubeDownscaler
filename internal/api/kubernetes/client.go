@@ -512,7 +512,12 @@ func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*value
 
 	slog.Debug("parsing namespace scope from annotations", "annotations", annotations, "namespace", namespace)
 
-	err = namespaceScope.GetScopeFromAnnotations(annotations, nsLogger, ctx)
+	err = namespaceScope.GetScopeFromAnnotations(
+		annotations,
+		nsLogger,
+		slog.Default().With("namespace", namespace),
+		ctx,
+	)
 	if err != nil {
 		err = fmt.Errorf("failed to parse scope from annotations for namespace %s: %w", namespace, err)
 		return nil, err
