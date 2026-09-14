@@ -225,6 +225,12 @@ func (s *Scope) getForceScaling(scopes Scopes) Scaling {
 
 type Scopes [5]*Scope
 
+// ScopeEvaluation describes whether a scope-based condition matched and the scope that caused it.
+type ScopeEvaluation struct {
+	Matched bool
+	Scope   ScopeID
+}
+
 func (s Scopes) GetDefaultTimeSpan() *time.Location {
 	for _, scope := range s {
 		defaultTimezone := scope.DefaultTimezone
@@ -338,24 +344,29 @@ func (s Scopes) GetScaleChildren() bool {
 
 // GetExcluded checks if the scopes exclude scaling.
 func (s Scopes) GetExcluded(scopes Scopes) bool {
-	for _, scope := range s {
+	return s.GetExcludedWithScope(scopes).Matched
+}
+
+// GetExcludedWithScope checks if the scopes exclude scaling and returns the scope that caused it.
+func (s Scopes) GetExcludedWithScope(scopes Scopes) ScopeEvaluation {
+	for scopeID, scope := range s {
 		if scope.Exclude == nil {
 			continue
 		}
 
 		exclude, err := scope.Exclude.inTimeSpans(scopes)
 		if err != nil {
-			return false
+			return ScopeEvaluation{Scope: ScopeNone}
 		}
 
 		if exclude {
-			return true
+			return ScopeEvaluation{Matched: true, Scope: ScopeID(scopeID)}
 		}
 
 		break
 	}
 
-	for _, scope := range s {
+	for scopeID, scope := range s {
 		if scope.ExcludeUntil == nil {
 			continue
 		}
@@ -365,10 +376,10 @@ func (s Scopes) GetExcluded(scopes Scopes) bool {
 			continue
 		}
 
-		return true
+		return ScopeEvaluation{Matched: true, Scope: ScopeID(scopeID)}
 	}
 
-	return false
+	return ScopeEvaluation{Scope: ScopeNone}
 }
 
 // GetUpscaleExcluded check if the scopes upscale excluded workloads.
@@ -392,31 +403,36 @@ func (s Scopes) IsInGracePeriod(
 	logEvent util.ResourceLogger,
 	logger *slog.Logger,
 	ctx context.Context,
-) (bool, error) {
+) (ScopeEvaluation, error) {
 	var gracePeriod time.Duration = util.Undefined
+	gracePeriodScope := ScopeNone
 
-	for _, scope := range s {
+	for scopeID, scope := range s {
 		if scope.GracePeriod == util.Undefined {
 			continue
 		}
 
 		gracePeriod = scope.GracePeriod
+		gracePeriodScope = ScopeID(scopeID)
 
 		break
 	}
 
 	if gracePeriod == util.Undefined {
-		return false, nil
+		return ScopeEvaluation{Scope: ScopeNone}, nil
 	}
 
 	creationTime, err := getWorkloadCreationTime(timeAnnotation, workloadAnnotations, creationTime, logEvent, logger, ctx)
 	if err != nil {
-		return false, fmt.Errorf("failed to get the workloads creation time: %w", err)
+		return ScopeEvaluation{Scope: gracePeriodScope}, fmt.Errorf("failed to get the workloads creation time: %w", err)
 	}
 
 	gracePeriodUntil := creationTime.Add(gracePeriod)
 
-	return time.Now().Before(gracePeriodUntil), nil
+	return ScopeEvaluation{
+		Matched: time.Now().Before(gracePeriodUntil),
+		Scope:   gracePeriodScope,
+	}, nil
 }
 
 func getWorkloadCreationTime(

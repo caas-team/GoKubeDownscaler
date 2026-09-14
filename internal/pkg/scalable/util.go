@@ -62,6 +62,7 @@ func FilterExcluded(
 	}
 
 	results := make([]Workload, 0, len(workloads))
+	filterDecisionScope := values.ScopeCli.String() + " or " + values.ScopeEnvironment.String()
 
 	for _, workload := range workloads {
 		workloadLogger := logger.With(
@@ -79,28 +80,34 @@ func FilterExcluded(
 		}
 
 		if !isMatchingLabels(workload, includeLabels) {
-			workloadLogger.Debug("workload is not matching any of the specified labels, excluding it from being scanned")
+			workloadLogger.With("decisionScope", filterDecisionScope).Debug(
+				"workload is not matching any of the specified labels, excluding it from being scanned",
+			)
 			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}
 
 		if isNamespaceExcluded(workload, excludedNamespaces) {
-			workloadLogger.Debug("the workloads namespace is excluded, excluding it from being scanned")
+			workloadLogger.With("decisionScope", filterDecisionScope).Debug(
+				"the workloads namespace is excluded, excluding it from being scanned",
+			)
 			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}
 
 		if isWorkloadExcluded(workload, excludedWorkloads) {
-			workloadLogger.Debug("the workloads name is excluded, excluding it from being scanned")
+			workloadLogger.With("decisionScope", filterDecisionScope).Debug(
+				"the workloads name is excluded, excluding it from being scanned",
+			)
 			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
 			continue
 		}
 
 		if isExternallyScaled(workload, externallyScaled) {
-			workloadLogger.Debug(
+			workloadLogger.With("decisionScope", values.ScopeNone.String()).Debug(
 				"the workload is scaled externally, excluding it from being scanned",
 			)
 			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
