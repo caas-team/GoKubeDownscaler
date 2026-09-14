@@ -37,5 +37,5 @@ annotations:
     - name: community
       url: https://inviter.co/kube-downscaler
   artifacthub.io/signKey: |
-    fingerprint: __GPG_FINGERPRINT__
-    url: https://github.com/caas-team.gpg
+    fingerprint: F4B1EC1EE0717E39230556C1AF7D6111431090B4
+    url: https://raw.githubusercontent.com/caas-team/GoKubeDownscaler/refs/heads/main/deployments/chart/signing-key.asc
