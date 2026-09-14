@@ -3,7 +3,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   namespace: {{ .Release.Namespace }}
-  name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
+  name: {{ include "go-kube-downscaler.fullname" . }}
   labels:
     {{- include "go-kube-downscaler.labels" . | nindent 4 }}
 spec:
