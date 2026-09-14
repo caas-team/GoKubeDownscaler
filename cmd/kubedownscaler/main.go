@@ -326,28 +326,13 @@ func attemptScaling(
 			continue
 		}
 
-		processedWorkloadLogArgs := []any{
-			"decidingScope", decision.Scope.String(),
-		}
-
-		if decision.Reason == values.DecisionReasonUpscaleOnExclusion {
-			processedWorkloadLogArgs = append(processedWorkloadLogArgs, "upscaleOnExclusion", decision.Value.LogValue())
-		} else {
-			processedWorkloadLogArgs = append(processedWorkloadLogArgs, "decisionValue", decision.Value.LogValue())
-		}
-
-		logger.Debug("successfully processed workload state", processedWorkloadLogArgs...)
+		logger.Debug("successfully processed workload state")
 
 		return nil
 	}
 
 	workloadNamespaceMetrics.IncrementConflictErrorsCount()
-	logger.Error(
-		"failed to scale workload",
-		"attempts", config.MaxRetriesOnConflict+1,
-		"decidingScope", decision.Scope.String(),
-		"decisionValue", decision.Value,
-	)
+	logger.Error("failed to scale workload", "attempts", config.MaxRetriesOnConflict+1)
 
 	return newMaxRetriesExceeded(config.MaxRetriesOnConflict)
 }
@@ -411,7 +396,7 @@ func scanWorkload(
 	}
 
 	if isInGracePeriod {
-		logger.Debug("workload is on grace period, skipping")
+		logger.Debug("workload is on grace period, skipping", "scalingAction", "scalingGracePeriod")
 		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
 
 		return nil
@@ -421,13 +406,14 @@ func scanWorkload(
 	upscaleOnExclusion, upscaleScope := scopes.GetUpscaleExcluded()
 
 	if excluded && !upscaleOnExclusion {
-		logger.Debug("workload is excluded, skipping")
+		logger.Debug("workload is excluded, skipping", "scalingAction", "scalingExcluded")
 		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
 
 		return nil
 	}
 
 	decision := getCurrentScaling(excluded, upscaleOnExclusion, upscaleScope, &scopes, logger)
+	logger = withScalingDecision(logger, decision)
 
 	err = attemptScaling(client, ctx, decision, workload, scopes, workloadNamespaceMetrics, config, logger)
 	if err != nil {
@@ -469,6 +455,19 @@ func workloadLogger(workload scalable.Workload) *slog.Logger {
 	)
 }
 
+func withScalingDecision(logger *slog.Logger, decision values.ScalingDecision) *slog.Logger {
+	valueKey := "decisionValue"
+	if decision.Reason == values.DecisionReasonUpscaleOnExclusion {
+		valueKey = "upscaleOnExclusion"
+	}
+
+	return logger.With(
+		"scalingAction", decision.Scaling.String(),
+		"decisionScope", decision.Scope.String(),
+		valueKey, decision.Value.LogValue(),
+	)
+}
+
 func getCurrentScaling(
 	excluded, upscaleOnExclusion bool,
 	upscaleScope values.ScopeID,
@@ -501,16 +500,11 @@ func scaleWorkloads(
 ) {
 	for _, workload := range workloads {
 		go func(workload scalable.Workload) {
-			logger := workloadLogger(workload)
+			logger := withScalingDecision(workloadLogger(workload), decision)
 
 			err := attemptScaling(client, ctx, decision, workload, scopes, workloadNamespaceMetrics, config, logger)
 			if err != nil {
-				logger.Error(
-					"scaling operation failed", "error", err,
-					"scalingDecision", decision.Scaling.String(),
-					"decidingScope", decision.Scope.String(),
-					"decisionValue", decision.Value.LogValue(),
-				)
+				logger.Error("scaling operation failed", "error", err)
 			}
 		}(workload)
 	}
