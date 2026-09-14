@@ -21,6 +21,10 @@ const (
 	deploymentGroupVersion      = "apps/v1"
 	deploymentKind              = "Deployment"
 	autoscalingRunnerSetKind    = "AutoscalingRunnerSet"
+	advancedCronJobKind         = "AdvancedCronJob"
+	advancedDaemonSetKind       = "AdvancedDaemonSet"
+	broadcastJobKind            = "BroadcastJob"
+	cloneSetKind                = "CloneSet"
 	cronJobKind                 = "CronJob"
 	daemonSetKind               = "DaemonSet"
 	gatewayKind                 = "Gateway"
@@ -295,7 +299,11 @@ func isWorkloadExcluded(
 // isSupportedOwnerKind checks whether the owner kind is supported.
 func isSupportedOwnerKind(kind string) bool {
 	supportedOwnerKinds := map[string]struct{}{
+		advancedCronJobKind:         {},
+		advancedDaemonSetKind:       {},
 		autoscalingRunnerSetKind:    {},
+		broadcastJobKind:            {},
+		cloneSetKind:                {},
 		cronJobKind:                 {},
 		daemonSetKind:               {},
 		deploymentKind:              {},

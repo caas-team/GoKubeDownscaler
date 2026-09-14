@@ -2,7 +2,9 @@
 title: FAQ
 id: faq
 globalReference: docs-faq
-description: Find answers to frequently asked questions about GoKubeDownscaler, including installation, usage, and cost-saving strategies.
+description: >
+  FAQ for GoKubeDownscaler: installation, annotation configuration, how it compares to HPA/KEDA,
+  and best practices for reducing Kubernetes infrastructure costs.
 keywords:
   - faq
 ---
@@ -108,6 +110,20 @@ keywords:
                     "Yes. " +
                     "GoKubeDownscaler doesn't interfere with KEDA's dynamic scaling based on external metrics." +
                     "It can be used alongside KEDA to schedule scale-down events while KEDA handles real-time scaling based on demand."
+            },
+        },
+        {
+            "@type": "Question",
+            name: "Can GoKubeDownscaler scale Load Balancers?",
+            acceptedAnswer: {
+                "@type": "Answer",
+                text:
+                    "Yes. " +
+                    "Starting from 1.4.0, GoKubeDownscaler can scale down to zero Kubernetes Services of type " +
+                    "LoadBalancer as well as Kubernetes Ingresses and Kubernetes Gateways resources to save costs on " +
+                    "their associated cloud provider Load Balancer. " +
+                    "It is possible to use ExternalDNS to setup automatic " +
+                    "DNS records synchronization when the cloud load balancer is scaled back up.",
             },
         },
         {
@@ -252,6 +268,19 @@ If your question isn't answered here, feel free to open an issue or join the pro
         GoKubeDownscaler doesn't interfere with KEDA's dynamic scaling based on external metrics.
         It can be used alongside KEDA to schedule scale-down events while KEDA handles real-time scaling
         based on demand.
+    </div>
+</div>
+
+<div className="faq-item">
+    {/* prettier-ignore */}
+    <h3 className="faq-question">Can GoKubeDownscaler scale Load Balancers?</h3>
+    <hr className="faq-sep" />
+    <div className="faq-answer">
+        Yes.
+        Starting from 1.4.0, GoKubeDownscaler can scale down to zero Kubernetes Services of type LoadBalancer as well as
+        Kubernetes Ingresses and Kubernetes Gateways resources to save costs on their associated cloud provider Load Balancer.
+        [this guide](ref:guides-dns-aware-load-balancer-scaling) shows you how to enable automatic synchronization of DNS records
+        using ExternalDNS when this feature is adopted.
     </div>
 </div>
 

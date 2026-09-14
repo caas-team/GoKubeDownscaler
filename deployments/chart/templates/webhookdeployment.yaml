@@ -3,9 +3,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "go-kube-downscaler.webhookController.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "go-kube-downscaler.labels" . | nindent 4 }}
-    {{- with .Values.podLabels }}
+    {{- with .Values.webhookController.podLabels }}
     {{- toYaml . | nindent 8 }}
     {{- end }}
 spec:
@@ -27,7 +28,7 @@ spec:
         {{- end }}
       {{- end }}
     spec:
-      serviceAccountName: {{ include "go-kube-downscaler.webhookController.fullname" . }}
+      serviceAccountName: {{ include "go-kube-downscaler.webhookController.serviceAccountName" . }}
       {{- if .Values.webhookController.priorityClassName }}
       priorityClassName: {{ .Values.webhookController.priorityClassName }}
       {{- end }}
@@ -58,20 +59,21 @@ spec:
             - containerPort: 443
             - containerPort: 8080
           {{- if .Values.metrics.enabled }}
-            - containerPort: 8085
+            - name: metrics
+              containerPort: 8085
           {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ .Values.configMap.name }}
                 optional: true
           env:
-            {{- with .Values.extraEnv }}
+            {{- with .Values.webhookController.extraEnv }}
             {{- toYaml . | nindent 10 }}
             {{- end }}
           resources:
             {{- toYaml .Values.webhookController.resources | nindent 12 }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.webhookController.securityContext | nindent 12 }}
           volumeMounts:
             - name: tls
               mountPath: "/etc/webhook/tls"
@@ -87,7 +89,7 @@ spec:
             timeoutSeconds: {{ .Values.webhookController.healthProbes.readinessProbe.timeoutSeconds }}
             successThreshold: {{ .Values.webhookController.healthProbes.readinessProbe.successThreshold }}
           {{- end }}
-          {{- if .Values.webhookController.healthProbes.readinessProbe.enabled }}
+          {{- if .Values.webhookController.healthProbes.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -114,6 +116,10 @@ spec:
           secret:
             secretName: {{ include "go-kube-downscaler.webhookController.fullname" . }}
             optional: true
+      {{- with .Values.webhookController.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
     {{- with .Values.webhookController.nodeSelector }}
