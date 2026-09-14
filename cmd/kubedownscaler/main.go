@@ -382,7 +382,7 @@ func scanWorkload(
 
 	logger.Debug("finished parsing all scopes", "scopes", scopes)
 
-	isInGracePeriod, err := scopes.IsInGracePeriod(
+	gracePeriodEvaluation, err := scopes.IsInGracePeriod(
 		config.TimeAnnotation,
 		workload.GetAnnotations(),
 		workload.GetCreationTimestamp().Time,
@@ -395,24 +395,32 @@ func scanWorkload(
 		return fmt.Errorf("failed to get if workload is on grace period: %w", err)
 	}
 
-	if isInGracePeriod {
-		logger.Debug("workload is on grace period, skipping", "scalingAction", "scalingGracePeriod")
+	if gracePeriodEvaluation.Matched {
+		logger = logger.With(
+			"scalingAction", "scalingGracePeriod",
+			"decisionScope", gracePeriodEvaluation.Scope.String(),
+		)
+		logger.Debug("workload is on grace period, skipping")
 		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
 
 		return nil
 	}
 
-	excluded := scopes.GetExcluded(scopes)
+	exclusionEvaluation := scopes.GetExcludedWithScope(scopes)
 	upscaleOnExclusion, upscaleScope := scopes.GetUpscaleExcluded()
 
-	if excluded && !upscaleOnExclusion {
-		logger.Debug("workload is excluded, skipping", "scalingAction", "scalingExcluded")
+	if exclusionEvaluation.Matched && !upscaleOnExclusion {
+		logger = logger.With(
+			"scalingAction", "scalingExcluded",
+			"decisionScope", exclusionEvaluation.Scope.String(),
+		)
+		logger.Debug("workload is excluded, skipping")
 		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
 
 		return nil
 	}
 
-	decision := getCurrentScaling(excluded, upscaleOnExclusion, upscaleScope, &scopes, logger)
+	decision := getCurrentScaling(exclusionEvaluation.Matched, upscaleOnExclusion, upscaleScope, &scopes, logger)
 	logger = withScalingDecision(logger, decision)
 
 	err = attemptScaling(client, ctx, decision, workload, scopes, workloadNamespaceMetrics, config, logger)
