@@ -8,12 +8,12 @@ require (
 	github.com/kedacore/keda/v2 v2.20.2
 	github.com/open-policy-agent/cert-controller v0.16.0
 	github.com/openkruise/kruise v1.9.1
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.93.1
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.93.1
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.94.0
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.94.0
 	github.com/prometheus/client_golang v1.24.1
 	github.com/stretchr/testify v1.12.1
 	github.com/wI2L/jsondiff v0.7.1
-	github.com/zalando-incubator/stackset-controller v1.4.140
+	github.com/zalando-incubator/stackset-controller v1.4.141
 	github.com/zalando/postgres-operator v1.15.1
 	go.uber.org/zap v1.28.0
 	k8s.io/api v0.37.0
@@ -45,7 +45,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-openapi/jsonpointer v1.0.0 // indirect
-	github.com/go-openapi/jsonreference v1.0.0 // indirect
+	github.com/go-openapi/jsonreference v1.0.1 // indirect
 	github.com/go-openapi/swag v0.29.1 // indirect
 	github.com/go-openapi/swag/cmdutils v0.29.1 // indirect
 	github.com/go-openapi/swag/conv v0.29.1 // indirect
