@@ -50,12 +50,12 @@ Enable JSON logging with the [`--json-logs`](ref:docs-runtime-configuration#json
 
 ## Log Severity Levels
 
-| Severity | Meaning                                                                                                               |
-| -------- | --------------------------------------------------------------------------------------------------------------------- |
-| `INFO`   | Startup information, such as starting the scanner or initializing metrics, and scaling lifecycle events.              |
-| `WARN`   | An unexpected or recoverable condition, such as an indeterminate scaling period or a retry after a workload conflict. |
-| `ERROR`  | An operation failed, such as parsing configuration, reading a workload, or applying a scaling change.                 |
-| `DEBUG`  | Detailed scan and decision information intended for troubleshooting.                                                  |
+| Severity | Meaning                                                                                                               | Typical events                                                               |
+| -------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `INFO`   | Startup information, such as starting the scanner or initializing metrics, and scaling lifecycle events.              | Workload successfully scaled up or down; downscaler starting configurations. |
+| `WARN`   | An unexpected or recoverable condition, such as an indeterminate scaling period or a retry after a workload conflict. | Incomplete scaling time; workload conflict retry.                            |
+| `ERROR`  | An operation failed, such as parsing configuration, reading a workload, or applying a scaling change.                 | Failed scaling operation; invalid configuration or annotation.               |
+| `DEBUG`  | Detailed scan and decision information intended for troubleshooting.                                                  | Excluded or skipped workload; scope evaluation and scan details.             |
 
 `INFO`, `WARN`, and `ERROR` logs are enabled by default. `DEBUG` logs are enabled when the `--debug` option
 is set.
