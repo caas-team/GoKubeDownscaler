@@ -56,9 +56,10 @@ type Client interface {
 	// RegetWorkload gets the workload again to ensure the latest state
 	RegetWorkload(workload scalable.Workload, ctx context.Context) error
 	// DownscaleWorkload downscales the workload to the specified replicas
-	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context) (*metrics.SavedResources, error)
+	//nolint: lll //it fits better in a single line.
+	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context, logger *slog.Logger) (*metrics.SavedResources, error)
 	// UpscaleWorkload upscales the workload to the original replicas
-	UpscaleWorkload(workload scalable.Workload, ctx context.Context) error
+	UpscaleWorkload(workload scalable.Workload, ctx context.Context, logger *slog.Logger) error
 	// ensureSecret ensures that the secret used for storing TLS certificates exists
 	ensureSecret(namespace, secretName string, ctx context.Context) (bool, error)
 	// GetScaledObjects gets all scaledobjects in the specified namespace
@@ -229,7 +230,7 @@ func (c client) GetChildrenWorkloads(workload scalable.Workload, ctx context.Con
 			"getting children workloads for workload",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
-			"resourceType", workload.GroupVersionKind().Kind,
+			"kind", workload.GroupVersionKind().Kind,
 		)
 
 		children, err := parent.GetChildren(ctx, c.clientsets)
@@ -241,7 +242,7 @@ func (c client) GetChildrenWorkloads(workload scalable.Workload, ctx context.Con
 			"retrieved children for workload",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
-			"resourceType", workload.GroupVersionKind().Kind,
+			"kind", workload.GroupVersionKind().Kind,
 			"childrenCount", len(children),
 		)
 
@@ -268,28 +269,26 @@ func (c client) DownscaleWorkload(
 	replicas values.Replicas,
 	workload scalable.Workload,
 	ctx context.Context,
+	logger *slog.Logger,
 ) (*metrics.SavedResources, error) {
-	savedResources, isUpdateNeeded, err := workload.ScaleDown(replicas)
+	scalingSummary, err := workload.ScaleDown(replicas, logger)
 	if err != nil {
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
 	}
 
-	if !isUpdateNeeded {
+	if !scalingSummary.IsUpdateNeeded {
 		slog.Debug(
 			"workload is already in a scaled down state, no update needed",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
 		)
 
-		return savedResources, nil
+		return scalingSummary.SavedResources, nil
 	}
 
 	if c.dryRun {
-		slog.Info(
-			"running in dry run mode, would have sent update workload request to scale down workload",
-			"workload", workload.GetName(),
-			"namespace", workload.GetNamespace(),
-		)
+		workload.LogDownscaleSuccessful(&scalingSummary, true, logger)
 
 		return metrics.NewSavedResources(0, 0), nil
 	}
@@ -299,34 +298,31 @@ func (c client) DownscaleWorkload(
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to update the workload: %w", err)
 	}
 
-	slog.Debug("successfully scaled down workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	workload.LogDownscaleSuccessful(&scalingSummary, false, logger)
 
-	return savedResources, nil
+	return scalingSummary.SavedResources, nil
 }
 
 // UpscaleWorkload upscales the workload to the original replicas.
-func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context) error {
-	isUpdateNeeded, err := workload.ScaleUp()
+func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context, logger *slog.Logger) error {
+	scalingSummary, err := workload.ScaleUp(logger)
 	if err != nil {
 		return fmt.Errorf("failed to set the workload into a scaled up state: %w", err)
 	}
 
-	if !isUpdateNeeded {
+	if !scalingSummary.IsUpdateNeeded {
 		slog.Debug(
 			"workload is already in a scaled up state, no update needed",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
 		)
 
 		return nil
 	}
 
 	if c.dryRun {
-		slog.Info(
-			"running in dry run mode, would have sent update workload request to scale up workload",
-			"workload", workload.GetName(),
-			"namespace", workload.GetNamespace(),
-		)
+		workload.LogUpscaleSuccessful(&scalingSummary, true, logger)
 
 		return nil
 	}
@@ -336,7 +332,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context)
 		return fmt.Errorf("failed to update the workload: %w", err)
 	}
 
-	slog.Debug("successfully scaled up workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	workload.LogUpscaleSuccessful(&scalingSummary, false, logger)
 
 	return nil
 }
@@ -502,7 +498,7 @@ func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.C
 }
 
 func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*values.Scope, error) {
-	nsLogger := NewResourceLoggerForNamespace(c, namespace)
+	nsLogger := NewEventLoggerForNamespace(c, namespace)
 
 	slog.Debug("fetching namespace annotations", "namespace", namespace)
 
@@ -516,7 +512,12 @@ func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*value
 
 	slog.Debug("parsing namespace scope from annotations", "annotations", annotations, "namespace", namespace)
 
-	err = namespaceScope.GetScopeFromAnnotations(annotations, nsLogger, ctx)
+	err = namespaceScope.GetScopeFromAnnotations(
+		annotations,
+		nsLogger,
+		slog.Default().With("namespace", namespace),
+		ctx,
+	)
 	if err != nil {
 		err = fmt.Errorf("failed to parse scope from annotations for namespace %s: %w", namespace, err)
 		return nil, err

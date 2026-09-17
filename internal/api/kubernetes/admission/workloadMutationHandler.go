@@ -33,6 +33,14 @@ type WorkloadMutationHandler struct {
 	admissionMetrics    *metrics.AdmissionMetrics
 }
 
+func workloadLogger(workload scalable.Workload) *slog.Logger {
+	return slog.Default().With(
+		"workload", workload.GetName(),
+		"namespace", workload.GetNamespace(),
+		"kind", workload.GroupVersionKind().Kind,
+	)
+}
+
 // NewWorkloadMutationHandler creates a new WorkloadMutationHandler.
 func NewWorkloadMutationHandler(
 	client kubernetes.Client,
@@ -87,14 +95,10 @@ func (v *WorkloadMutationHandler) HandleWorkloadMutation(ctx context.Context, wr
 		return
 	}
 
-	slog.Info(
-		"received validation request for workload",
-		"workload", workload.GetName(),
-		"namespace", workload.GetNamespace(),
-		"kind", workload.GroupVersionKind().Kind,
-	)
+	logger := workloadLogger(workload)
+	logger.Info("received validation request for workload")
 
-	out, err := v.evaluateWorkloadMutation(ctx, workload, input, v.metricsEnabled)
+	out, err := v.evaluateWorkloadMutation(ctx, workload, input, v.metricsEnabled, logger)
 	if err != nil {
 		slog.Error("error encountered while validating workload", "error", err)
 		sendAdmissionReviewResponse(writer, out)
@@ -111,19 +115,18 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 	workload scalable.Workload,
 	review *admissionv1.AdmissionReview,
 	metricsEnabled bool,
+	logger *slog.Logger,
 ) (*admissionv1.AdmissionReview, error) {
-	resourceLogger := kubernetes.NewResourceLoggerForWorkload(v.client, workload)
+	eventLogger := kubernetes.NewEventLoggerForWorkload(v.client, workload)
 
-	slog.Info("evaluating mutation on workload", "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	logger.Info("evaluating mutation on workload")
 
 	// check if namespace is included
 	slog.Debug("checking included namespaces")
 
 	if v.includeNamespaces != nil && len(*v.includeNamespaces) > 0 && !slices.Contains(*v.includeNamespaces, workload.GetNamespace()) {
-		slog.Info(
+		logger.Info(
 			"workload namespace is not in the list of included namespaces, excluding it from downscaling",
-			"workload", workload.GetName(),
-			"namespace", workload.GetNamespace(),
 			"dryRun", v.dryRun,
 		)
 
@@ -143,9 +146,9 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 
 	slog.Debug("checking external scaling conditions")
 
-	externalScalingReview, err := v.evaluateWorkloadExternalScalingCondition(ctx, workload, *review)
+	externalScalingReview, err := v.evaluateWorkloadExternalScalingCondition(ctx, workload, *review, logger)
 	if !errors.Is(err, ErrNoExternalScaling) {
-		slog.Info("workload is controlled by keda scaledobjects, excluding it")
+		logger.Info("workload is controlled by keda scaledobjects, excluding it")
 		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
 
 		return externalScalingReview, err
@@ -153,15 +156,10 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 
 	slog.Debug("checking labels, excluded namespaces and excluded workloads")
 
-	workloads := scalable.FilterExcluded(workloadArray, *v.includeLabels, *v.excludeNamespaces, *v.excludeWorkloads, nil)
+	workloads := scalable.FilterExcluded(workloadArray, *v.includeLabels, *v.excludeNamespaces, *v.excludeWorkloads, nil, logger)
 
 	if len(workloads) == 0 {
-		slog.Info(
-			"workload is excluded from downscaling",
-			"workload", workload.GetName(),
-			"namespace", workload.GetNamespace(),
-			"dryRun", v.dryRun,
-		)
+		logger.Info("workload is excluded from downscaling", "dryRun", v.dryRun)
 
 		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
 
@@ -179,22 +177,11 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 
 	slog.Debug("scanning over workloads matching filters", "amount", len(workloads))
 
-	slog.Debug(
-		"parsing workload scope from annotations",
-		"workload annotations", workload.GetAnnotations(),
-		"name", workload.GetName(),
-		"namespace", workload.GetNamespace(),
-	)
+	logger.Debug("parsing workload scope from annotations", "workload annotations", workload.GetAnnotations())
 
 	scopeWorkload := values.NewScope()
-	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), resourceLogger, ctx); err != nil {
-		slog.Debug(
-			"failed to parse workload scope from annotations",
-			"error", err,
-			"workload", workload.GetName(),
-			"namespace", workload.GetNamespace(),
-			"dryRun", v.dryRun,
-		)
+	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), eventLogger, logger, ctx); err != nil {
+		logger.Debug("failed to parse workload scope from annotations", "error", err, "dryRun", v.dryRun)
 
 		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
 
@@ -208,21 +195,11 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 		), err
 	}
 
-	slog.Debug(
-		"parsing namespace scope from workload",
-		"name", workload.GetName(),
-		"namespace", workload.GetNamespace(),
-	)
+	logger.Debug("parsing namespace scope from workload")
 
 	scopeNamespace, err := v.client.GetNamespaceScope(workload.GetNamespace(), ctx)
 	if err != nil {
-		slog.Debug(
-			"failed to parse namespace scope from annotations",
-			"error", err,
-			"workload", workload.GetName(),
-			"namespace", workload.GetNamespace(),
-			"dryRun", v.dryRun,
-		)
+		logger.Debug("failed to parse namespace scope from annotations", "error", err, "dryRun", v.dryRun)
 
 		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
 
@@ -238,14 +215,11 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 
 	scopes := values.Scopes{scopeWorkload, scopeNamespace, v.scopeCli, v.scopeEnv, v.scopeDefault}
 
-	slog.Debug("finished parsing all scopes", "scopes", scopes, "workload", workload.GetName(), "namespace", workload.GetNamespace())
+	logger.Debug("finished parsing all scopes", "scopes", scopes)
 
 	scopeIsExcluded := scopes.GetExcluded(scopes)
 	if scopeIsExcluded {
-		slog.Info("workload is excluded from mutation",
-			"workload", workload.GetName(),
-			"namespace", workload.GetNamespace(),
-			"dryRun", v.dryRun)
+		logger.Info("workload is excluded from mutation", "dryRun", v.dryRun)
 
 		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
 
@@ -259,9 +233,17 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 		), nil
 	}
 
-	scaling := scopes.GetCurrentScaling()
+	decision := scopes.GetCurrentScaling()
 
-	response, err := evaluateWorkloadScalingConditions(scaling, workload, scopes, review, v.dryRun, metricsEnabled, v.admissionMetrics)
+	response, err := evaluateWorkloadScalingConditions(
+		decision.Scaling,
+		workload,
+		scopes,
+		review,
+		v.dryRun,
+		metricsEnabled,
+		v.admissionMetrics,
+	)
 	if err != nil {
 		return response, err
 	}
@@ -284,6 +266,7 @@ func evaluateWorkloadScalingConditions(
 			"scaling is not set by any scope, skipping",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
 			"dryRun", dryRun,
 		)
 
@@ -304,6 +287,7 @@ func evaluateWorkloadScalingConditions(
 			"scaling is ignored, skipping",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
 			"dryRun", dryRun,
 		)
 
@@ -324,6 +308,7 @@ func evaluateWorkloadScalingConditions(
 			"scaling configuration incomplete missing values in timespan, skipping",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
 			"dryRun", dryRun,
 		)
 
@@ -348,8 +333,10 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 
 		slog.Debug(
 			"scaling configuration is invalid for workload",
-			"error", err, "workload", workload.GetName(),
+			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
+			"error", err,
 			"dryRun", dryRun,
 		)
 
@@ -368,15 +355,17 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 			"mutating workload matching scaling down condition",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
 			"dryRun", dryRun,
 		)
 
 		downscaleReplicas, err := scopes.GetDownscaleReplicas()
 		if err != nil {
 			slog.Debug("failed to get downscale replicas from scopes",
-				"error", err,
 				"workload", workload.GetName(),
 				"namespace", workload.GetNamespace(),
+				"kind", workload.GroupVersionKind().Kind,
+				"error", err,
 				"dryRun", dryRun)
 
 			admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
@@ -403,6 +392,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 		slog.Debug("workload matches scaling up conditions, skipping",
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
 			"dryRun", dryRun)
 
 		return newReviewResponse(
@@ -418,6 +408,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	slog.Debug("workload doesn't match any scaling condition, skipping",
 		"workload", workload.GetName(),
 		"namespace", workload.GetNamespace(),
+		"kind", workload.GroupVersionKind().Kind,
 		"dryRun", dryRun)
 
 	return newReviewResponse(
@@ -435,6 +426,7 @@ func (v *WorkloadMutationHandler) evaluateWorkloadExternalScalingCondition(
 	ctx context.Context,
 	workload scalable.Workload,
 	review admissionv1.AdmissionReview,
+	logger *slog.Logger,
 ) (*admissionv1.AdmissionReview, error) {
 	if _, ok := v.includeResourcesSet["scaledobjects"]; !ok {
 		return nil, ErrNoExternalScaling
@@ -442,11 +434,12 @@ func (v *WorkloadMutationHandler) evaluateWorkloadExternalScalingCondition(
 
 	scaledObjects, err := v.client.GetScaledObjects(workload.GetNamespace(), ctx)
 	if err != nil {
-		slog.Error(
+		logger.Error(
 			"failed to get scaledobjects from namespace",
-			"error", err,
-			"namespace", workload.GetNamespace(),
 			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
+			"error", err,
 			"dryRun", v.dryRun,
 		)
 
@@ -487,9 +480,10 @@ func mutateWorkload(
 	workloadCopy, err := workload.Copy()
 	if err != nil {
 		slog.Error("failed to deep copy workload",
-			"error", err,
 			"workload", workload.GetName(),
 			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
+			"error", err,
 			"dryRun", dryRun)
 
 		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, false, workload.GetNamespace())
@@ -504,7 +498,7 @@ func mutateWorkload(
 		), err
 	}
 
-	_, _, err = workloadCopy.ScaleDown(downscaleReplicas)
+	_, err = workloadCopy.ScaleDown(downscaleReplicas, nil)
 	if err != nil {
 		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
 

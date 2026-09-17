@@ -3,6 +3,7 @@ package values
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -11,6 +12,18 @@ import (
 
 // Scaling is an enum that describes the current Scaling.
 type Scaling int
+
+// String gets the string representation of the scaling decision.
+func (s Scaling) String() string {
+	return map[Scaling]string{
+		ScalingNone:       "ScalingNone",
+		ScalingIgnore:     "ScalingIgnore",
+		ScalingDown:       "ScalingDown",
+		ScalingUp:         "ScalingUp",
+		ScalingMultiple:   "ScalingMultiple",
+		ScalingIncomplete: "ScalingIncomplete",
+	}[s]
+}
 
 const (
 	ScalingNone       Scaling = iota // no scaling set in this scope, go to next scope
@@ -24,6 +37,8 @@ const (
 // ScopeID is an enum that describes the current Scope.
 type ScopeID int
 
+const ScopeNone ScopeID = -1
+
 const (
 	ScopeWorkload    ScopeID = iota // identifies the scope present in the workload
 	ScopeNamespace                  // identifies the scope present in the namespace
@@ -35,6 +50,7 @@ const (
 // String gets the string representation of the ScopeID.
 func (s ScopeID) String() string {
 	return map[ScopeID]string{
+		ScopeNone:        "ScopeNone",
 		ScopeWorkload:    "ScopeWorkload",
 		ScopeNamespace:   "ScopeNamespace",
 		ScopeCli:         "ScopeCli",
@@ -86,6 +102,17 @@ func GetDefaultScope() *Scope {
 		DefaultTimezone:   nil,
 		DefaultWeekFrame:  nil,
 	}
+}
+
+// ScalingDecision describes the scaling state selected by a scope and the value that selected it.
+
+const DecisionReasonUpscaleOnExclusion = "upscaleOnExclusion"
+
+type ScalingDecision struct {
+	Scaling Scaling
+	Scope   ScopeID
+	Value   ScalingValue
+	Reason  string
 }
 
 // CheckForIncompatibleFields checks if there are incompatible fields.
@@ -198,6 +225,12 @@ func (s *Scope) getForceScaling(scopes Scopes) Scaling {
 
 type Scopes [5]*Scope
 
+// ScopeEvaluation describes whether a scope-based condition matched and the scope that caused it.
+type ScopeEvaluation struct {
+	Matched bool
+	Scope   ScopeID
+}
+
 func (s Scopes) GetDefaultTimeSpan() *time.Location {
 	for _, scope := range s {
 		defaultTimezone := scope.DefaultTimezone
@@ -245,31 +278,40 @@ func (s Scopes) GetDefaultWeekdayTo() *time.Weekday {
 	return nil
 }
 
-// GetCurrentScaling gets the current scaling of the first scope that implements scaling.
-func (s Scopes) GetCurrentScaling() Scaling {
-	var result Scaling
+// GetCurrentScaling gets the current scaling decision of the first scope that implements scaling.
+func (s Scopes) GetCurrentScaling() ScalingDecision {
+	result := ScalingDecision{Scaling: ScalingNone, Scope: ScopeNone}
 
-	for _, scope := range s {
+	for scopeID, scope := range s {
 		forcedScaling := scope.getForceScaling(s)
 		if forcedScaling == ScalingNone {
 			continue // scope doesnt implement forced scaling; falling through
 		}
 
+		decision := ScalingDecision{
+			Scaling: forcedScaling,
+			Scope:   ScopeID(scopeID),
+			Value:   forceScalingValue(scope),
+		}
 		if forcedScaling == ScalingIgnore {
-			result = ScalingIgnore // default to ScalingIgnore instead of ScalingNone for correct log message
-			break                  // break out since forced scaling is set, but just inactive
+			result = decision // default to ScalingIgnore instead of ScalingNone for correct log message
+			break             // break out since forced scaling is set, but just inactive
 		}
 
-		return forcedScaling
+		return decision
 	}
 
-	for _, scope := range s {
-		scopeScaling := scope.getCurrentScaling(s)
-		if scopeScaling == ScalingNone {
+	for scopeID, scope := range s {
+		scaling := scope.getCurrentScaling(s)
+		if scaling == ScalingNone {
 			continue // scope doesnt implement scaling; falling through
 		}
 
-		return scopeScaling
+		return ScalingDecision{
+			Scaling: scaling,
+			Scope:   ScopeID(scopeID),
+			Value:   scalingValue(scope),
+		}
 	}
 
 	return result
@@ -302,24 +344,29 @@ func (s Scopes) GetScaleChildren() bool {
 
 // GetExcluded checks if the scopes exclude scaling.
 func (s Scopes) GetExcluded(scopes Scopes) bool {
-	for _, scope := range s {
+	return s.GetExcludedWithScope(scopes).Matched
+}
+
+// GetExcludedWithScope checks if the scopes exclude scaling and returns the scope that caused it.
+func (s Scopes) GetExcludedWithScope(scopes Scopes) ScopeEvaluation {
+	for scopeID, scope := range s {
 		if scope.Exclude == nil {
 			continue
 		}
 
 		exclude, err := scope.Exclude.inTimeSpans(scopes)
 		if err != nil {
-			return false
+			return ScopeEvaluation{Scope: ScopeNone}
 		}
 
 		if exclude {
-			return true
+			return ScopeEvaluation{Matched: true, Scope: ScopeID(scopeID)}
 		}
 
 		break
 	}
 
-	for _, scope := range s {
+	for scopeID, scope := range s {
 		if scope.ExcludeUntil == nil {
 			continue
 		}
@@ -329,21 +376,23 @@ func (s Scopes) GetExcluded(scopes Scopes) bool {
 			continue
 		}
 
-		return true
+		return ScopeEvaluation{Matched: true, Scope: ScopeID(scopeID)}
 	}
 
-	return false
+	return ScopeEvaluation{Scope: ScopeNone}
 }
 
 // GetUpscaleExcluded check if the scopes upscale excluded workloads.
-func (s Scopes) GetUpscaleExcluded() bool {
-	for _, scope := range s {
-		if scope.UpscaleExcluded.isSet && scope.UpscaleExcluded.value {
-			return true
+func (s Scopes) GetUpscaleExcluded() (bool, ScopeID) {
+	for scopeID, scope := range s {
+		if !scope.UpscaleExcluded.isSet {
+			continue
 		}
+
+		return scope.UpscaleExcluded.value, ScopeID(scopeID)
 	}
 
-	return false
+	return false, ScopeNone
 }
 
 // IsInGracePeriod gets the grace period of the uppermost scope that has it set.
@@ -352,32 +401,38 @@ func (s Scopes) IsInGracePeriod(
 	workloadAnnotations map[string]string,
 	creationTime time.Time,
 	logEvent util.ResourceLogger,
+	logger *slog.Logger,
 	ctx context.Context,
-) (bool, error) {
+) (ScopeEvaluation, error) {
 	var gracePeriod time.Duration = util.Undefined
+	gracePeriodScope := ScopeNone
 
-	for _, scope := range s {
+	for scopeID, scope := range s {
 		if scope.GracePeriod == util.Undefined {
 			continue
 		}
 
 		gracePeriod = scope.GracePeriod
+		gracePeriodScope = ScopeID(scopeID)
 
 		break
 	}
 
 	if gracePeriod == util.Undefined {
-		return false, nil
+		return ScopeEvaluation{Scope: ScopeNone}, nil
 	}
 
-	creationTime, err := getWorkloadCreationTime(timeAnnotation, workloadAnnotations, creationTime, logEvent, ctx)
+	creationTime, err := getWorkloadCreationTime(timeAnnotation, workloadAnnotations, creationTime, logEvent, logger, ctx)
 	if err != nil {
-		return false, fmt.Errorf("failed to get the workloads creation time: %w", err)
+		return ScopeEvaluation{Scope: gracePeriodScope}, fmt.Errorf("failed to get the workloads creation time: %w", err)
 	}
 
 	gracePeriodUntil := creationTime.Add(gracePeriod)
 
-	return time.Now().Before(gracePeriodUntil), nil
+	return ScopeEvaluation{
+		Matched: time.Now().Before(gracePeriodUntil),
+		Scope:   gracePeriodScope,
+	}, nil
 }
 
 func getWorkloadCreationTime(
@@ -385,6 +440,7 @@ func getWorkloadCreationTime(
 	annotations map[string]string,
 	creationTime time.Time,
 	logEvent util.ResourceLogger,
+	logger *slog.Logger,
 	ctx context.Context,
 ) (time.Time, error) {
 	timeString, ok := annotations[annotation]
@@ -396,6 +452,10 @@ func getWorkloadCreationTime(
 	if err != nil {
 		err = fmt.Errorf("failed to parse %q annotation as RFC3339 timestamp: %w", annotation, err)
 		logEvent.ErrorInvalidAnnotation(annotation, err.Error(), ctx)
+
+		if logger != nil {
+			logger.Error("failed to parse workload creation-time annotation", "annotation", annotation, "error", err)
+		}
 
 		return time.Time{}, err
 	}

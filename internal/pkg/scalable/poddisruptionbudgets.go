@@ -14,6 +14,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	maxUnavailableAttribute = "maxUnavailable"
+	minAvailableAttribute   = "minAvailable"
+)
+
 // getPodDisruptionBudgets is the getResourceFunc for podDisruptionBudget.
 func getPodDisruptionBudgets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
 	poddisruptionbudgets, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(namespace).List(ctx, metav1.ListOptions{})
@@ -43,6 +48,16 @@ func parsePodDisruptionBudgetFromBytes(rawObject []byte) (Workload, error) {
 // podDisruptionBudget is a wrapper for poddisruptionbudget.v1.policy to implement the Workload interface.
 type podDisruptionBudget struct {
 	*policy.PodDisruptionBudget
+}
+
+// LogUpscaleSuccessful logs the PodDisruptionBudget availability transition.
+func (p *podDisruptionBudget) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled up", summary.Attribute, p, summary, dryRun, logger)
+}
+
+// LogDownscaleSuccessful logs the PodDisruptionBudget availability transition.
+func (p *podDisruptionBudget) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled down", summary.Attribute, p, summary, dryRun, logger)
 }
 
 func (p *podDisruptionBudget) AllowPercentageReplicas() bool {
@@ -83,16 +98,22 @@ func (p *podDisruptionBudget) setMaxUnavailable(targetMaxUnavailable values.Repl
 }
 
 // ScaleUp scales the resource up.
-func (p *podDisruptionBudget) ScaleUp() (bool, error) {
+func (p *podDisruptionBudget) ScaleUp(logger *slog.Logger) (scalingSummary, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	var summary scalingSummary
+
 	originalReplicas, err := getOriginalReplicas(p)
 	if err != nil {
 		var originalReplicasUnsetErr *OriginalReplicasUnsetError
 		if ok := errors.As(err, &originalReplicasUnsetErr); ok {
-			slog.Debug("original replicas is not set, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
-			return false, nil
+			logger.Debug("original replicas is not set, skipping")
+
+			return summary, nil
 		}
 
-		return false, fmt.Errorf("failed to get original replicas for workload: %w", err)
+		return summary, fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
 	maxUnavailable := p.getMaxUnavailable()
@@ -100,7 +121,9 @@ func (p *podDisruptionBudget) ScaleUp() (bool, error) {
 		p.setMaxUnavailable(originalReplicas)
 		removeOriginalReplicas(p)
 
-		return true, nil
+		return scalingSummary{
+			IsUpdateNeeded: true, From: maxUnavailable, To: originalReplicas, Attribute: maxUnavailableAttribute,
+		}, nil
 	}
 
 	minAvailable := p.getMinAvailable()
@@ -108,43 +131,61 @@ func (p *podDisruptionBudget) ScaleUp() (bool, error) {
 		p.setMinAvailable(originalReplicas)
 		removeOriginalReplicas(p)
 
-		return true, nil
+		return scalingSummary{
+			IsUpdateNeeded: true, From: minAvailable, To: originalReplicas, Attribute: minAvailableAttribute,
+		}, nil
 	}
 
-	return false, nil
+	return summary, nil
 }
 
 // ScaleDown scales the resource down.
-func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas) (*metrics.SavedResources, bool, error) {
-	savedResources := metrics.NewSavedResources(0, 0)
+func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas, logger *slog.Logger) (scalingSummary, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
+	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0)}
 
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {
 		if maxUnavailable.String() == downscaleReplicas.String() {
-			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
-			return savedResources, false, nil
+			logger.Debug("workload is already scaled down, skipping")
+
+			return scalingSummary{
+				SavedResources: summary.SavedResources, From: maxUnavailable, To: downscaleReplicas, Attribute: maxUnavailableAttribute,
+			}, nil
 		}
 
 		p.setMaxUnavailable(downscaleReplicas)
 		setOriginalReplicas(maxUnavailable, p)
 
-		return savedResources, true, nil
+		return scalingSummary{
+			SavedResources: summary.SavedResources, IsUpdateNeeded: true, From: maxUnavailable, To: downscaleReplicas,
+			Attribute: maxUnavailableAttribute,
+		}, nil
 	}
 
 	minAvailable := p.getMinAvailable()
 	if minAvailable != nil {
 		if minAvailable.String() == downscaleReplicas.String() {
-			slog.Debug("workload is already scaled down, skipping", "workload", p.GetName(), "namespace", p.GetNamespace())
-			return savedResources, false, nil
+			logger.Debug("workload is already scaled down, skipping")
+
+			return scalingSummary{
+				SavedResources: summary.SavedResources, From: minAvailable, To: downscaleReplicas, Attribute: minAvailableAttribute,
+			}, nil
 		}
 
 		p.setMinAvailable(downscaleReplicas)
 		setOriginalReplicas(minAvailable, p)
 
-		return savedResources, true, nil
+		return scalingSummary{
+			SavedResources: summary.SavedResources, IsUpdateNeeded: true, From: minAvailable, To: downscaleReplicas,
+			Attribute: minAvailableAttribute,
+		}, nil
 	}
 
-	return metrics.NewSavedResources(0, 0), false, nil
+	return summary, nil
 }
 
 // Reget regets the resource from the Kubernetes API.

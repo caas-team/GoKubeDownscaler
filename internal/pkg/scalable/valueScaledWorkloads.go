@@ -22,6 +22,10 @@ type valueScaledResource interface {
 	getValue() (values.Replicas, values.Replicas, error)
 	// getSavedResourcesRequests returns the saved CPU and memory requests for the workload based on the downscale replicas.
 	getSavedResourcesRequests() *metrics.SavedResources
+	// logUpscaleSuccessful logs a successful upscale operations or dry-run upscale operations.
+	logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
+	// logDownscaleSuccessful logs a successful downscale operations or dry-run downscale operations.
+	logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
 	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
@@ -33,34 +37,61 @@ type valueScaledWorkload struct {
 	valueScaledResource
 }
 
+// LogUpscaleSuccessful delegates resource-specific upscale logging.
+func (v *valueScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	v.logUpscaleSuccessful(summary, dryRun, logger)
+}
+
+// LogDownscaleSuccessful delegates resource-specific downscale logging.
+func (v *valueScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	v.logDownscaleSuccessful(summary, dryRun, logger)
+}
+
 // ScaleUp scales up the underlying valueScaledResource.
-func (v *valueScaledWorkload) ScaleUp() (bool, error) {
+func (v *valueScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	var summary scalingSummary
+
+	currentState, _, err := v.getValue()
+	if err != nil {
+		return summary, fmt.Errorf("failed to get current value for workload: %w", err)
+	}
+
 	originalState, err := getOriginalReplicas(v)
 	if err != nil {
 		var originalReplicasUnsetError *OriginalReplicasUnsetError
 		if ok := errors.As(err, &originalReplicasUnsetError); ok {
-			slog.Debug("original replicas is not set, skipping", "workload", v.GetName(), "namespace", v.GetNamespace())
-			return false, nil
+			logger.Debug("original replicas is not set, skipping")
+
+			return summary, nil
 		}
 
-		return false, fmt.Errorf("failed to get original replicas for workload: %w", err)
+		return summary, fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
 	err = v.setValue(originalState)
 	if err != nil {
-		return false, fmt.Errorf("failed to set original replicas for workload: %w", err)
+		return summary, fmt.Errorf("failed to set original replicas for workload: %w", err)
 	}
 
 	removeOriginalReplicas(v)
 
-	return true, nil
+	return scalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState}, nil
 }
 
 // ScaleDown scales down the underlying valueScaledResource.
-func (v *valueScaledWorkload) ScaleDown(_ values.Replicas) (*metrics.SavedResources, bool, error) {
+func (v *valueScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger) (scalingSummary, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	currentState, targetScaleDownState, err := v.getValue()
+
+	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0), From: currentState, To: targetScaleDownState}
 	if err != nil {
-		return metrics.NewSavedResources(0, 0), false, err
+		return summary, err
 	}
 
 	if currentState == targetScaleDownState {
@@ -69,27 +100,30 @@ func (v *valueScaledWorkload) ScaleDown(_ values.Replicas) (*metrics.SavedResour
 		var originalReplicasUnsetErr *OriginalReplicasUnsetError
 		if err != nil {
 			if ok := errors.As(err, &originalReplicasUnsetErr); !ok {
-				return metrics.NewSavedResources(0, 0), false, err
+				return summary, err
 			}
 
-			slog.Debug("workload is already at target scale down state, skipping", "workload", v.GetName(), "namespace", v.GetNamespace())
+			logger.Debug("workload is already at target scale down state, skipping")
 
-			return metrics.NewSavedResources(0, 0), false, nil
+			return summary, nil
 		}
 
-		slog.Debug("workload is already scaled down, skipping", "workload", v.GetName(), "namespace", v.GetNamespace())
+		logger.Debug("workload is already scaled down, skipping")
 
-		return metrics.NewSavedResources(0, 0), false, nil
+		return summary, nil
 	}
 
 	savedResources := v.getSavedResourcesRequests()
 
 	err = v.setValue(targetScaleDownState)
 	if err != nil {
-		return metrics.NewSavedResources(0, 0), false, fmt.Errorf("failed to set replicas for workload: %w", err)
+		return summary, fmt.Errorf("failed to set replicas for workload: %w", err)
 	}
 
 	setOriginalReplicas(currentState, v)
 
-	return savedResources, true, nil
+	summary.SavedResources = savedResources
+	summary.IsUpdateNeeded = true
+
+	return summary, nil
 }

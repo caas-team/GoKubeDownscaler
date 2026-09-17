@@ -53,12 +53,24 @@ func FilterExcluded(
 	excludedNamespaces,
 	excludedWorkloads util.RegexList,
 	currentNamespaceToMetrics map[string]*metrics.NamespaceMetricsHolder,
+	logger *slog.Logger,
 ) []Workload {
 	externallyScaled := getExternallyScaled(workloads)
 
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	results := make([]Workload, 0, len(workloads))
+	filterDecisionScope := values.ScopeCli.String() + " or " + values.ScopeEnvironment.String()
 
 	for _, workload := range workloads {
+		workloadLogger := logger.With(
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
+		)
+
 		if currentNamespaceToMetrics != nil {
 			_, ok := currentNamespaceToMetrics[workload.GetNamespace()]
 			if !ok {
@@ -68,10 +80,8 @@ func FilterExcluded(
 		}
 
 		if !isMatchingLabels(workload, includeLabels) {
-			slog.Debug(
+			workloadLogger.With("decisionScope", filterDecisionScope).Debug(
 				"workload is not matching any of the specified labels, excluding it from being scanned",
-				"workload", workload.GetName(),
-				"namespace", workload.GetNamespace(),
 			)
 			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
@@ -79,10 +89,8 @@ func FilterExcluded(
 		}
 
 		if isNamespaceExcluded(workload, excludedNamespaces) {
-			slog.Debug(
+			workloadLogger.With("decisionScope", filterDecisionScope).Debug(
 				"the workloads namespace is excluded, excluding it from being scanned",
-				"workload", workload.GetName(),
-				"namespace", workload.GetNamespace(),
 			)
 			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
@@ -90,10 +98,8 @@ func FilterExcluded(
 		}
 
 		if isWorkloadExcluded(workload, excludedWorkloads) {
-			slog.Debug(
+			workloadLogger.With("decisionScope", filterDecisionScope).Debug(
 				"the workloads name is excluded, excluding it from being scanned",
-				"workload", workload.GetName(),
-				"namespace", workload.GetNamespace(),
 			)
 			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
@@ -101,10 +107,8 @@ func FilterExcluded(
 		}
 
 		if isExternallyScaled(workload, externallyScaled) {
-			slog.Debug(
+			workloadLogger.With("decisionScope", values.ScopeNone.String()).Debug(
 				"the workload is scaled externally, excluding it from being scanned",
-				"workload", workload.GetName(),
-				"namespace", workload.GetNamespace(),
 			)
 			currentNamespaceToMetrics[workload.GetNamespace()].IncrementExcludedWorkloadsCount()
 
@@ -469,4 +473,60 @@ func imagePullJobParallelism(parallelism *intstr.IntOrString) int32 {
 	}
 
 	return int32(value)
+}
+
+// scalingSummary contains the result of a scaling operation.
+type scalingSummary struct {
+	SavedResources *metrics.SavedResources
+	IsUpdateNeeded bool
+	From           values.Replicas
+	To             values.Replicas
+	Attribute      string
+}
+
+func logWorkloadScalingMessage(
+	action, changedAttribute string,
+	workload scalableResource,
+	summary *scalingSummary,
+	dryRun bool,
+	logger *slog.Logger,
+) {
+	message := "successfully " + action + " workload"
+	dryRunMessage := "running in dry run mode, would have sent update request to " + action + " workload"
+
+	if dryRun {
+		message = dryRunMessage
+	}
+
+	logWorkloadMessage(message, changedAttribute, workload, summary, dryRun, logger)
+}
+
+func logWorkloadMessage(
+	message, changedAttribute string,
+	workload scalableResource,
+	summary *scalingSummary,
+	dryRun bool,
+	logger *slog.Logger,
+) {
+	args := []any{
+		"dryRun", dryRun,
+	}
+	if changedAttribute != "" {
+		args = append(args, "changedAttribute", changedAttribute)
+	}
+
+	args = append(args,
+		"from", summary.From,
+		"to", summary.To,
+	)
+
+	if logger == nil {
+		logger = slog.Default().With(
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+			"kind", workload.GroupVersionKind().Kind,
+		)
+	}
+
+	logger.Info(message, args...)
 }
