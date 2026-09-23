@@ -32,6 +32,8 @@ type CommonRuntimeConfiguration struct {
 	Qps float64
 	// Burst sets the maximum burst to use while communicating with the Kubernetes API.
 	Burst int
+	// Timeout sets the timeout for Kubernetes API requests.
+	Timeout int
 	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
 	Kubeconfig string
 }
@@ -113,6 +115,12 @@ func (c *CommonRuntimeConfiguration) ParseCommonFlags() {
 		"burst",
 		1000, //nolint:mnd // downscaler default for burst
 		"maximum burst to use while communicating with the Kubernetes API (default: 1000)",
+	)
+	flag.IntVar(
+		&c.Timeout,
+		"timeout",
+		30, //nolint:mnd // downscaler default for timeout
+		"timeout for Kubernetes API requests in seconds (default: 30)",
 	)
 	flag.BoolVar(
 		&c.JsonLogs,
