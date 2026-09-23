@@ -142,6 +142,7 @@ func (s *Scope) GetScopeFromEnv() error {
 func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocyclo // it is a big function and we can refactor it a bit but it should be fine for now
 	annotations map[string]string,
 	logEvent util.ResourceLogger,
+	logger *slog.Logger,
 	ctx context.Context,
 ) error {
 	var err error
@@ -151,6 +152,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationDownscalePeriod, err)
 			logEvent.ErrorInvalidAnnotation(annotationDownscalePeriod, err.Error(), ctx)
+			logInvalidAnnotation(logger, annotationDownscalePeriod, err)
 
 			return err
 		}
@@ -161,6 +163,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationDowntime, err)
 			logEvent.ErrorInvalidAnnotation(annotationDowntime, err.Error(), ctx)
+			logInvalidAnnotation(logger, annotationDowntime, err)
 
 			return err
 		}
@@ -171,6 +174,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationUpscalePeriod, err)
 			logEvent.ErrorInvalidAnnotation(annotationUpscalePeriod, err.Error(), ctx)
+			logInvalidAnnotation(logger, annotationUpscalePeriod, err)
 
 			return fmt.Errorf("failed to parse %q annotation: %w", annotationUpscalePeriod, err)
 		}
@@ -181,6 +185,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationUptime, err)
 			logEvent.ErrorInvalidAnnotation(annotationUptime, err.Error(), ctx)
+			logInvalidAnnotation(logger, annotationUptime, err)
 
 			return err
 		}
@@ -191,6 +196,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationExclude, err)
 			logEvent.ErrorInvalidAnnotation(annotationExclude, err.Error(), ctx)
+			logInvalidAnnotation(logger, annotationExclude, err)
 
 			return err
 		}
@@ -203,6 +209,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationExcludeUntil, err)
 			logEvent.ErrorInvalidAnnotation(annotationExcludeUntil, err.Error(), ctx)
+			logInvalidAnnotation(logger, annotationExcludeUntil, err)
 
 			return err
 		}
@@ -215,6 +222,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationForceUptime, err)
 			logEvent.ErrorInvalidAnnotation(annotationForceUptime, err.Error(), ctx)
+			logInvalidAnnotation(logger, annotationForceUptime, err)
 
 			return err
 		}
@@ -225,6 +233,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationForceDowntime, err)
 			logEvent.ErrorInvalidAnnotation(annotationForceDowntime, err.Error(), ctx)
+			logInvalidAnnotation(logger, annotationForceDowntime, err)
 
 			return err
 		}
@@ -236,6 +245,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		if err = replicasVal.Set(downscaleReplicasString); err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationDownscaleReplicas, err)
 			logEvent.ErrorInvalidAnnotation(annotationDownscaleReplicas, err.Error(), ctx)
+			logInvalidAnnotation(logger, annotationDownscaleReplicas, err)
 
 			return err
 		}
@@ -248,6 +258,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationGracePeriod, err)
 			logEvent.ErrorInvalidAnnotation(annotationGracePeriod, err.Error(), ctx)
+			logInvalidAnnotation(logger, annotationGracePeriod, err)
 
 			return err
 		}
@@ -258,6 +269,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationScaleChildren, err)
 			logEvent.ErrorInvalidAnnotation(annotationScaleChildren, err.Error(), ctx)
+			logInvalidAnnotation(logger, annotationScaleChildren, err)
 
 			return err
 		}
@@ -268,6 +280,7 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		if err != nil {
 			err = fmt.Errorf("failed to parse %q annotation: %w", annotationExclusionUpscale, err)
 			logEvent.ErrorInvalidAnnotation(annotationExclusionUpscale, err.Error(), ctx)
+			logInvalidAnnotation(logger, annotationExclusionUpscale, err)
 		}
 	}
 
@@ -275,10 +288,22 @@ func (s *Scope) GetScopeFromAnnotations( //nolint: funlen,gocognit,cyclop,gocycl
 		err = fmt.Errorf("error: found incompatible fields: %w", err)
 		logEvent.ErrorIncompatibleFields(err.Error(), ctx)
 
+		if logger != nil {
+			logger.Error("scope contains incompatible fields", "error", err)
+		}
+
 		return err
 	}
 
 	return nil
+}
+
+func logInvalidAnnotation(logger *slog.Logger, annotation string, err error) {
+	if logger == nil {
+		return
+	}
+
+	logger.Error("failed to parse workload annotation", "annotation", annotation, "error", err)
 }
 
 //nolint:nonamedreturns //required for function clarity

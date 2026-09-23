@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
@@ -27,6 +28,7 @@ func getServices(namespace string, clientsets *Clientsets, ctx context.Context) 
 
 	results := make([]Workload, 0, len(services.Items))
 	for i := range services.Items {
+		setGroupVersionKindIfEmpty(&services.Items[i], corev1.SchemeGroupVersion.WithKind(serviceKind))
 		results = append(results, &valueScaledWorkload{&service{&services.Items[i]}})
 	}
 
@@ -82,6 +84,8 @@ func parseServiceFromBytes(rawObject []byte) (Workload, error) {
 		return nil, fmt.Errorf("failed to decode Service: %w", err)
 	}
 
+	setGroupVersionKindIfEmpty(&svc, corev1.SchemeGroupVersion.WithKind(serviceKind))
+
 	return &valueScaledWorkload{&service{&svc}}, nil
 }
 
@@ -113,6 +117,16 @@ func (s *service) getValue() (currentValue, downscalingValue values.Replicas, er
 	return currentValue, downscalingValue, nil
 }
 
+// LogUpscaleSuccessful logs the ServiceType transition for an upscale.
+func (s *service) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled up", "serviceType", s, summary, dryRun, logger)
+}
+
+// LogDownscaleSuccessful logs the ServiceType transition for a downscale.
+func (s *service) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled down", "serviceType", s, summary, dryRun, logger)
+}
+
 // getSavedResourcesRequests gets the amount of resources that are requested to be saved by downscaling this resource.
 func (s *service) getSavedResourcesRequests() *metrics.SavedResources {
 	return metrics.NewSavedResources(0, 0)
@@ -126,6 +140,8 @@ func (s *service) Reget(clientsets *Clientsets, ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get service: %w", err)
 	}
+
+	setGroupVersionKindIfEmpty(s.Service, corev1.SchemeGroupVersion.WithKind(serviceKind))
 
 	return nil
 }

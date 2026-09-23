@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -73,6 +74,16 @@ func (i *ingress) getValue() (currentValue, downscalingValue values.Replicas, er
 	downscalingValue = values.StringReplicas(downscalerIngressClassConst)
 
 	return currentValue, downscalingValue, nil
+}
+
+// LogUpscaleSuccessful logs the ingress class transition for an upscale.
+func (i *ingress) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled up", "ingressClass", i, summary, dryRun, logger)
+}
+
+// LogDownscaleSuccessful logs the ingress class transition for a downscale.
+func (i *ingress) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled down", "ingressClass", i, summary, dryRun, logger)
 }
 
 // Reget regets the resource from the Kubernetes API.
