@@ -1,0 +1,31 @@
+---
+title: Getting Started
+id: getting-started
+globalReference: guides-getting-started
+description: >
+  Start reducing Kubernetes cloud costs today: install GoKubeDownscaler and follow step-by-step
+  guides to automate workload downscaling and save money.
+keywords: [getting started, guides]
+---
+
+import DocCardList from "@theme/DocCardList";
+
+# Getting Started
+
+This section covers how to get started with GoKubeDownscaler.
+You will learn how to install the GoKubeDownscaler and
+explore the most common patterns to optimize cluster costs.
+Pages in this section include:
+
+- [Installation](ref:guides-installation): This page explains the installation process using Helm or Kubernetes manifests,
+  and the differences between a constrained installation and a cluster-wide installation.
+- [Basic Night Time Saving](ref:guides-basic-night-time-saving): This page explains the most used pattern for using GoKubeDownscaler, you will
+  learn how to scale down the cluster at night and during the weekends using relative timespans.
+- [Scaling Down for Holidays](ref:guides-scaling-down-for-holidays): This page explains a common pattern for scaling down workloads during holidays,
+  you will learn how to use absolute timespans to scale down the cluster during specific date ranges.
+- [On Demand Startup](ref:guides-on-demand-startup): This page explains one of the most effective patterns, you will learn how to use boolean
+  timespans to keep workloads always scaled down.
+  Scale up will be performed only using excluding annotations.
+  This is an advanced pattern that can be used to achieve the maximum cost savings
+
+<DocCardList />

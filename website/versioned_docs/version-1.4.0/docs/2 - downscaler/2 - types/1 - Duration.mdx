@@ -1,0 +1,70 @@
+---
+title: Duration
+id: duration
+globalReference: docs-duration
+description: >
+  Learn how to use the Duration type in GoKubeDownscaler to specify time intervals for downscaling
+  grace periods and cooldown settings in Kubernetes clusters.
+keywords: [duration]
+---
+
+<script type="application/ld+json">
+  {JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "@id": "https://kube-downscaler.io/docs/duration#techarticle",
+    headline: "Duration — GoKubeDownscaler",
+    description:
+      "Learn how to use the Duration type in GoKubeDownscaler to specify time intervals" +
+      " for downscaling grace periods and cooldown settings in Kubernetes clusters.",
+    articleSection: "Types - Duration",
+    keywords: ["duration", "time intervals", "time format", "configuration"],
+    url: "https://kube-downscaler.io/docs/duration",
+    image: "https://kube-downscaler.io/img/social-preview.png",
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": "https://kube-downscaler.io/docs/duration",
+    },
+    author: { "@id": "https://kube-downscaler.io/#organization" },
+    publisher: { "@id": "https://kube-downscaler.io/#organization" },
+    about: { "@id": "https://kube-downscaler.io/#software" },
+  })}
+</script>
+
+# Duration
+
+A duration can be represented as an [integer, in which case it represents seconds](#integer-seconds) or a [duration string](#duration-string).
+
+## Duration String
+
+### Examples
+
+```text
+"1h30m" # 1 hour and 30 minutes
+"1.5h"  # 1 hour and 30 minutes
+"2m"    # 2 minutes
+"10s"   # 10 seconds
+"300s"  # 300 seconds
+```
+
+### Units
+
+```text
+"ns"      # nanoseconds
+"us"/"µs" # microseconds
+"ms"      # milliseconds
+"s"       # seconds
+"m"       # minutes
+"h"       # hours
+```
+
+See [Golang's official documentation](https://pkg.go.dev/time#ParseDuration) for more information
+
+## Integer Seconds
+
+Examples:
+
+```text
+"120" # 120 seconds (2 minutes)
+"900" # 900 seconds (15 minutes)
+```
