@@ -144,6 +144,23 @@ Here is a list of all the available runtime configurations for the Downscaler.
 - Default: 1000
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
 
+### Timeout
+
+- Type: int (seconds)
+- Description: Sets the timeout for requests to the Kubernetes API.
+- Default: 30
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+:::warning
+If GoKubeDownscaler operations frequently time out, investigate API server health and admission webhook latency
+before increasing the default value.
+For example, an under-provisioned admission webhook may respond slowly, increasing the latency of API requests that invoke it,
+including requests originating from GoKubeDownscaler and other cluster clients.
+Timeouts can often be a symptom of broader cluster performance issues, increasing the timeout without
+addressing the root cause may only mask the problem and lead to further issues.
+
+:::
+
 ### Leader Election
 
 - Type: boolean

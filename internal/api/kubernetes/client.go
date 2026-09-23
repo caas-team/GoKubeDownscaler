@@ -33,13 +33,13 @@ import (
 
 const (
 	componentName = "kubedownscaler"
-	timeout       = 30 * time.Second
 )
 
 var (
 	ErrInvalidBurst = stdErrors.New("burst argument must greater than zero")
 	ErrInvalidQPS   = stdErrors.New("qps argument can't be zero, it can either be a positive value " +
 		"or a negative value to disable rate limiting")
+	ErrInvalidTimeout = stdErrors.New("timeout argument must greater than or equal to zero")
 )
 
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
@@ -77,7 +77,7 @@ type Client interface {
 // NewClient makes a new Client.
 //
 // nolint: cyclop // this function is complex due to the multiple clientsets being created.
-func NewClient(kubeconfig string, dryRun bool, qps float64, burst int) (client, error) {
+func NewClient(kubeconfig string, dryRun bool, qps float64, burst, timeout int) (client, error) {
 	var kubeclient client
 
 	var clientsets scalable.Clientsets
@@ -98,9 +98,14 @@ func NewClient(kubeconfig string, dryRun bool, qps float64, burst int) (client, 
 		return kubeclient, fmt.Errorf("%w", ErrInvalidQPS)
 	}
 
+	if timeout < 0 {
+		return kubeclient, fmt.Errorf("%w: got %d", ErrInvalidTimeout, timeout)
+	}
+
 	// set qps and burst rate limiting options. See https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1/
-	config.QPS = float32(qps) // available queries per second, when unused will fill the burst buffer
-	config.Burst = burst      // the max size of the buffer of queries
+	config.QPS = float32(qps)                             // available queries per second, when unused will fill the burst buffer
+	config.Burst = burst                                  // the max size of the buffer of queries
+	config.Timeout = time.Duration(timeout) * time.Second // set the timeout for requests to the Kubernetes API
 
 	clientsets.Kubernetes, err = kubernetes.NewForConfig(config)
 	if err != nil {
@@ -195,9 +200,6 @@ func (c client) GetWorkloads(
 	resourceTypes []string,
 	ctx context.Context,
 ) ([]scalable.Workload, error) {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
 	var results []scalable.Workload
 
 	if namespaces == nil {
@@ -222,9 +224,6 @@ func (c client) GetWorkloads(
 
 // GetChildrenWorkloads gets the children workloads of the specified workload.
 func (c client) GetChildrenWorkloads(workload scalable.Workload, ctx context.Context) ([]scalable.Workload, error) {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
 	if parent, ok := workload.(scalable.ParentWorkload); ok {
 		slog.Debug(
 			"getting children workloads for workload",
