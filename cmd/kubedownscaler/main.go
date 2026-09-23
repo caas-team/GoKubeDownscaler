@@ -40,7 +40,7 @@ func main() {
 
 	slog.Debug("getting client for kubernetes")
 
-	client, err := kubernetes.NewClient(config.Kubeconfig, config.DryRun, config.Qps, config.Burst)
+	client, err := kubernetes.NewClient(config.Kubeconfig, config.DryRun, config.Qps, config.Burst, config.Timeout)
 	if err != nil {
 		slog.Error("failed to create new Kubernetes client", "error", err)
 		os.Exit(1)
