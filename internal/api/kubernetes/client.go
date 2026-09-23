@@ -39,7 +39,7 @@ var (
 	ErrInvalidBurst = stdErrors.New("burst argument must greater than zero")
 	ErrInvalidQPS   = stdErrors.New("qps argument can't be zero, it can either be a positive value " +
 		"or a negative value to disable rate limiting")
-	ErrInvalidTimeout = stdErrors.New("timeout argument must greater than zero")
+	ErrInvalidTimeout = stdErrors.New("timeout argument must greater than or equal to zero")
 )
 
 // Client is an interface representing a high-level client to get and modify Kubernetes resources.
@@ -85,12 +85,6 @@ func NewClient(kubeconfig string, dryRun bool, qps float64, burst, timeout int) 
 
 	kubeclient.dryRun = dryRun
 
-	if timeout <= 0 {
-		return kubeclient, fmt.Errorf("%w: got %d", ErrInvalidTimeout, timeout)
-	}
-
-	kubeclient.timeout = time.Duration(timeout) * time.Second
-
 	config, err := getConfig(kubeconfig)
 	if err != nil {
 		return kubeclient, fmt.Errorf("failed to get config for Kubernetes: %w", err)
@@ -104,9 +98,14 @@ func NewClient(kubeconfig string, dryRun bool, qps float64, burst, timeout int) 
 		return kubeclient, fmt.Errorf("%w", ErrInvalidQPS)
 	}
 
+	if timeout < 0 {
+		return kubeclient, fmt.Errorf("%w: got %d", ErrInvalidTimeout, timeout)
+	}
+
 	// set qps and burst rate limiting options. See https://kubernetes.io/docs/reference/config-api/apiserver-eventratelimit.v1alpha1/
-	config.QPS = float32(qps) // available queries per second, when unused will fill the burst buffer
-	config.Burst = burst      // the max size of the buffer of queries
+	config.QPS = float32(qps)                             // available queries per second, when unused will fill the burst buffer
+	config.Burst = burst                                  // the max size of the buffer of queries
+	config.Timeout = time.Duration(timeout) * time.Second // set the timeout for requests to the Kubernetes API
 
 	clientsets.Kubernetes, err = kubernetes.NewForConfig(config)
 	if err != nil {
@@ -183,14 +182,10 @@ func NewScheme() (*runtime.Scheme, error) {
 type client struct {
 	clientsets *scalable.Clientsets
 	dryRun     bool
-	timeout    time.Duration
 }
 
 // getNamespaceAnnotations gets the annotations of the workload's namespace.
 func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-
 	ns, err := c.clientsets.Kubernetes.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace: %w", err)
@@ -205,9 +200,6 @@ func (c client) GetWorkloads(
 	resourceTypes []string,
 	ctx context.Context,
 ) ([]scalable.Workload, error) {
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-
 	var results []scalable.Workload
 
 	if namespaces == nil {
@@ -232,9 +224,6 @@ func (c client) GetWorkloads(
 
 // GetChildrenWorkloads gets the children workloads of the specified workload.
 func (c client) GetChildrenWorkloads(workload scalable.Workload, ctx context.Context) ([]scalable.Workload, error) {
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-
 	if parent, ok := workload.(scalable.ParentWorkload); ok {
 		slog.Debug(
 			"getting children workloads for workload",
@@ -264,9 +253,6 @@ func (c client) GetChildrenWorkloads(workload scalable.Workload, ctx context.Con
 
 // RegetWorkload gets the workload again to ensure the latest state.
 func (c client) RegetWorkload(workload scalable.Workload, ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-
 	err := workload.Reget(c.clientsets, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get workload: %w", err)
@@ -306,9 +292,6 @@ func (c client) DownscaleWorkload(
 		return metrics.NewSavedResources(0, 0), nil
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-
 	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to update the workload: %w", err)
@@ -343,9 +326,6 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context,
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-
 	err = workload.Update(c.clientsets, ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update the workload: %w", err)
@@ -377,9 +357,6 @@ func (c client) addEvent(
 
 		return nil
 	}
-
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
 
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s.%s", identifier, message)))
 	name := fmt.Sprintf("%s.%s.%x", object.Name, reason, hash)
@@ -446,10 +423,7 @@ func (c client) CreateLease(leaseName string) (*resourcelock.LeaseLock, error) {
 
 // GetNamespacesAsSet returns all namespaces as a set (map[string]struct{}).
 func (c client) GetNamespacesAsSet() (map[string]struct{}, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-
-	namespaceList, err := c.clientsets.Kubernetes.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	namespaceList, err := c.clientsets.Kubernetes.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list namespaces: %w", err)
 	}
@@ -523,9 +497,6 @@ func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.C
 }
 
 func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*values.Scope, error) {
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-
 	nsLogger := NewEventLoggerForNamespace(c, namespace)
 
 	slog.Debug("fetching namespace annotations", "namespace", namespace)
@@ -558,9 +529,6 @@ func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*value
 
 // GetScaledObjects gets all scaledobjects in the specified namespace.
 func (c client) GetScaledObjects(namespace string, ctx context.Context) ([]scalable.Workload, error) {
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-
 	scaledObjects, err := scalable.GetWorkloads("scaledobject", namespace, c.clientsets, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get scaledobjects: %w", err)
@@ -571,9 +539,6 @@ func (c client) GetScaledObjects(namespace string, ctx context.Context) ([]scala
 
 // ensureSecret ensures that the secret used for storing TLS certificates exists.
 func (c client) ensureSecret(namespace, secretName string, ctx context.Context) (bool, error) {
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-
 	isPresent := false
 
 	_, err := c.clientsets.Kubernetes.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
