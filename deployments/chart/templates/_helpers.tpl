@@ -357,6 +357,66 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "rabbitmqclusters" }}
+- apiGroups:
+    - rabbitmq.com
+  resources:
+    - rabbitmqclusters
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "cnpgclusters" }}
+- apiGroups:
+    - postgresql.cnpg.io
+  resources:
+    - clusters
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "elasticsearches" }}
+- apiGroups:
+    - elasticsearch.k8s.elastic.co
+  resources:
+    - elasticsearches
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "mongodbcommunities" }}
+- apiGroups:
+    - mongodbcommunity.mongodb.com
+  resources:
+    - mongodbcommunity
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "redisreplications" }}
+- apiGroups:
+    - redis.redis.opstreelabs.in
+  resources:
+    - redisreplications
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "redissentinels" }}
+- apiGroups:
+    - redis.redis.opstreelabs.in
+  resources:
+    - redissentinels
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- if eq $resource "kafkaconnects" }}
 - apiGroups:
     - kafka.strimzi.io
@@ -606,6 +666,72 @@ Create webhook resources
     - "UPDATE"
   resources:
     - postgresqls
+{{ end -}}
+{{ if eq $resource "rabbitmqclusters" -}}
+- apiGroups:
+    - rabbitmq.com
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - rabbitmqclusters
+{{ end -}}
+{{ if eq $resource "cnpgclusters" -}}
+- apiGroups:
+    - postgresql.cnpg.io
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - clusters
+{{ end -}}
+{{ if eq $resource "elasticsearches" -}}
+- apiGroups:
+    - elasticsearch.k8s.elastic.co
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - elasticsearches
+{{ end -}}
+{{ if eq $resource "mongodbcommunities" -}}
+- apiGroups:
+    - mongodbcommunity.mongodb.com
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - mongodbcommunity
+{{ end -}}
+{{ if eq $resource "redisreplications" -}}
+- apiGroups:
+    - redis.redis.opstreelabs.in
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - redisreplications
+{{ end -}}
+{{ if eq $resource "redissentinels" -}}
+- apiGroups:
+    - redis.redis.opstreelabs.in
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - redissentinels
 {{ end -}}
 {{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
 - apiGroups:
@@ -938,6 +1064,84 @@ resources include in annotationsCompliance
     - "UPDATE"
   resources:
     - postgresqls
+{{ end -}}
+{{ if eq $resource "rabbitmqclusters" -}}
+- apiGroups:
+    - rabbitmq.com
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - rabbitmqclusters
+{{ end -}}
+{{ if eq $resource "cnpgclusters" -}}
+- apiGroups:
+    - postgresql.cnpg.io
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - clusters
+{{ end -}}
+{{ if eq $resource "elasticsearches" -}}
+- apiGroups:
+    - elasticsearch.k8s.elastic.co
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - elasticsearches
+{{ end -}}
+{{ if eq $resource "mongodbcommunities" -}}
+- apiGroups:
+    - mongodbcommunity.mongodb.com
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - mongodbcommunity
+{{ end -}}
+{{ if eq $resource "redisreplications" -}}
+- apiGroups:
+    - redis.redis.opstreelabs.in
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - redisreplications
+{{ end -}}
+{{ if eq $resource "redissentinels" -}}
+- apiGroups:
+    - redis.redis.opstreelabs.in
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - redissentinels
 {{ end -}}
 {{ if eq $resource "kafkaconnects" -}}
 - apiGroups:

@@ -152,12 +152,99 @@ Scales by setting the GatewayClassName of the Gateway object to `downscaler-gate
 In a constrained installation, the GatewayClass object with the name `downscaler-gateway-class` must
 be provisioned by a cluster administrator having the necessary cluster-wide permissions
 
+## Operator Custom Resources vs. Their Workloads
+
+The data-engine types below (`postgresqls`, `cnpgclusters`, `rabbitmqclusters`,
+`elasticsearches`, `mongodbcommunities`, `redisreplications`, `redissentinels`,
+and the Kafka kinds) scale the **operator's custom resource**, not the
+ReplicaSet or StatefulSet the operator manages.
+The downscaler patches the CR
+(for example a `RabbitmqCluster` or an `Elasticsearch`), and the operator
+reconciles its own StatefulSets from that change.
+
+Because of this, the generic `statefulsets` scaler is deliberately kept off
+StatefulSets owned by these operators: any StatefulSet whose controller
+owner-reference is one of these kinds is excluded from the generic pass
+(`supportedOwnerKinds`).
+Do not add both a data engine's CR and its
+StatefulSet to `--include-resources` — that would have the generic scaler and
+the CR scaler fight over the same workload.
+Enable a data engine by including
+only its CR type.
+
+Where the operator does not scale its own workloads down (Elasticsearch, whose
+`pause-orchestration` stops reconciliation without stopping pods; and
+MongoDBCommunity, whose operator short-circuits once `members` is 0), the CR
+scaler also scales those child StatefulSets itself, gated by
+[downscaler/scale-children](ref:docs-scale-children).
+
 ### Postgresqls
 
 - id: postgresqls
 - resource: postgresql.v1.acid.zalan.do
 
 Scales by setting the numberOfInstances count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+### RabbitmqClusters
+
+- id: rabbitmqclusters
+- resource: rabbitmqcluster.v1beta1.rabbitmq.com
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+Requires the [RabbitMQ Cluster Operator](https://github.com/rabbitmq/cluster-operator).
+The operator supports `replicas: 0` natively: it records the previous count in the
+`rabbitmq.com/before-zero-replicas-configured` annotation and only accepts that count when
+scaling back up, which is the value the downscaler restores.
+The StatefulSet the operator creates is owned by the RabbitmqCluster and is left alone.
+
+### CnpgClusters
+
+- id: cnpgclusters
+- resource: cluster.v1.postgresql.cnpg.io
+
+Suspends by setting the operator's declarative hibernation annotation
+`cnpg.io/hibernation` to `on`, and resumes by setting it to `off`.
+Requires the [CloudNativePG operator](https://github.com/cloudnative-pg/cloudnative-pg).
+On the way down the operator deletes the instance pods (replicas first, primary last) while
+retaining the PVCs, so data survives; on the way up it recreates the pods.
+This is a suspend-shaped workload, not a replica-shaped one: the operator owns the instance
+count and the downscaler only toggles hibernation.
+
+### Elasticsearches
+
+- id: elasticsearches
+- resource: elasticsearch.v1.elasticsearch.k8s.elastic.co
+
+Suspends by setting the `eck.k8s.elastic.co/pause-orchestration` annotation to `true`, and resumes by setting it to `false`.
+Because pausing does not stop the node pods, the scaler also scales the cluster's node-set StatefulSets to 0 (its children),
+matched by the `elasticsearch.k8s.elastic.co/cluster-name` label; ECK restores them on wake.
+Requires [downscaler/scale-children](ref:docs-scale-children) to be enabled.
+
+### MongoDBCommunities
+
+- id: mongodbcommunities
+- resource: mongodbcommunity.v1.mongodbcommunity.mongodb.com
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+Requires the [MongoDB Community Kubernetes Operator](https://github.com/mongodb/mongodb-kubernetes-operator).
+Refuses to park a resource lacking the `mongodb.com/v1.lastSuccessfulConfiguration` annotation;
+the operator would have no known-good config to restore.
+
+### RedisReplications
+
+- id: redisreplications
+- resource: redisreplication.v1beta2.redis.redis.opstreelabs.in
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas) via `spec.clusterSize`.
+Requires the [Redis Operator by OpsTree Labs](https://github.com/OT-CONTAINER-KIT/redis-operator).
+
+### RedisSentinels
+
+- id: redissentinels
+- resource: redissentinel.v1beta2.redis.redis.opstreelabs.in
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas) via `spec.clusterSize`.
+Requires the [Redis Operator by OpsTree Labs](https://github.com/OT-CONTAINER-KIT/redis-operator).
 
 ### KafkaConnects
 

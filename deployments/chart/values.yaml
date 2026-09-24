@@ -31,7 +31,20 @@ includedResources:
 #  - awsnlbservices
 #  - ingresses
 #  - gateways
+  # The entries below scale operator CUSTOM RESOURCES, not the ReplicaSets or
+  # StatefulSets those operators own. The downscaler drives the CR (e.g. the
+  # RabbitmqCluster / Elasticsearch / RedisReplication), and the operator
+  # reconciles its own workloads from it. Do NOT also add the operators'
+  # StatefulSets here — the generic statefulsets scaler is kept off operator-
+  # owned StatefulSets via supportedOwnerKinds, and doubling up would fight the
+  # operator. Enable a data engine by uncommenting only its CR entry.
 #  - postgresqls
+#  - cnpgclusters
+#  - rabbitmqclusters
+#  - elasticsearches
+#  - mongodbcommunities
+#  - redisreplications
+#  - redissentinels
 #  - kafkaconnects
 #  - kafkamirrormaker2s
 #  - kafkabridges

@@ -34,6 +34,24 @@ type replicaScaledWorkload struct {
 	replicaScaledResource
 }
 
+// GetChildren delegates child discovery to the wrapped resource when it supports
+// ParentWorkload. Most replica-shaped resources have no children (the value is
+// nil, nil), but some operator CRs (e.g. MongoDBCommunity, whose operator stops
+// reconciling once members is 0) must scale their own StatefulSets.
+func (r *replicaScaledWorkload) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error) {
+	parent, ok := r.replicaScaledResource.(ParentWorkload)
+	if !ok {
+		return nil, nil
+	}
+
+	children, err := parent.GetChildren(ctx, clientsets)
+	if err != nil {
+		return nil, fmt.Errorf("get children from parent workload: %w", err)
+	}
+
+	return children, nil
+}
+
 // ScaleUp scales up the underlying replicaScaledResource.
 func (r *replicaScaledWorkload) ScaleUp() (bool, error) {
 	originalReplicas, err := getOriginalReplicas(r)

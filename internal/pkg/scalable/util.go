@@ -20,7 +20,13 @@ const (
 	annotationOriginalReplicas  = "downscaler/original-replicas"
 	deploymentGroupVersion      = "apps/v1"
 	deploymentKind              = "Deployment"
+	elasticsearchGroup          = "elasticsearch.k8s.elastic.co"
+	elasticsearchVersion        = "v1"
+	elasticsearchKind           = "Elasticsearch"
 	autoscalingRunnerSetKind    = "AutoscalingRunnerSet"
+	cnpgGroup                   = "postgresql.cnpg.io"
+	cnpgVersion                 = "v1"
+	cnpgClusterKind             = "Cluster"
 	cronJobKind                 = "CronJob"
 	daemonSetKind               = "DaemonSet"
 	gatewayKind                 = "Gateway"
@@ -32,9 +38,19 @@ const (
 	kafkaBridgeKind             = "KafkaBridge"
 	kafkaConnectKind            = "KafkaConnect"
 	kafkaMirrorMaker2Kind       = "KafkaMirrorMaker2"
+	mongoDBCommunityGroup       = "mongodbcommunity.mongodb.com"
+	mongoDBCommunityVersion     = "v1"
+	mongoDBCommunityKind        = "MongoDBCommunity"
+	redisGroup                  = "redis.redis.opstreelabs.in"
+	redisVersion                = "v1beta2"
+	redisReplicationKind        = "RedisReplication"
+	redisSentinelKind           = "RedisSentinel"
 	podDisruptionBudgetKind     = "PodDisruptionBudget"
 	postgresqlKind              = "postgresql" // lowercase for postgresqlKind is intentional
 	prometheusKind              = "Prometheus"
+	rabbitmqGroup               = "rabbitmq.com"
+	rabbitmqVersion             = "v1beta1"
+	rabbitmqClusterKind         = "RabbitmqCluster"
 	rolloutKind                 = "Rollout"
 	scaledObjectKind            = "ScaledObject"
 	serviceKind                 = "Service"
@@ -296,8 +312,10 @@ func isWorkloadExcluded(
 func isSupportedOwnerKind(kind string) bool {
 	supportedOwnerKinds := map[string]struct{}{
 		autoscalingRunnerSetKind:    {},
+		cnpgClusterKind:             {},
 		cronJobKind:                 {},
 		daemonSetKind:               {},
+		elasticsearchKind:           {},
 		deploymentKind:              {},
 		gatewayKind:                 {},
 		horizontalPodAutoscalerKind: {},
@@ -306,9 +324,13 @@ func isSupportedOwnerKind(kind string) bool {
 		kafkaBridgeKind:             {},
 		kafkaConnectKind:            {},
 		kafkaMirrorMaker2Kind:       {},
+		mongoDBCommunityKind:        {},
+		redisReplicationKind:        {},
+		redisSentinelKind:           {},
 		podDisruptionBudgetKind:     {},
 		postgresqlKind:              {},
 		prometheusKind:              {},
+		rabbitmqClusterKind:         {},
 		rolloutKind:                 {},
 		scaledObjectKind:            {},
 		serviceKind:                 {},
