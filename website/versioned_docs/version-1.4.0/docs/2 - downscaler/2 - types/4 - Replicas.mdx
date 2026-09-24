@@ -1,0 +1,59 @@
+---
+title: Replicas
+id: replicas
+globalReference: docs-replicas
+description: >
+  Learn how to configure the Replicas type in GoKubeDownscaler to define target replica counts when
+  scaling down Kubernetes Deployments and StatefulSets.
+keywords: [replicas]
+---
+
+<script type="application/ld+json">
+  {JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "@id": "https://kube-downscaler.io/docs/replicas#techarticle",
+    headline: "Replicas — GoKubeDownscaler",
+    description:
+      "Learn how to configure the Replicas type in GoKubeDownscaler to define target replica counts when " +
+      "scaling down Kubernetes Deployments and StatefulSets.",
+    articleSection: "Types - Replicas",
+    keywords: ["replicas", "scaling", "replica counts", "configuration"],
+    url: "https://kube-downscaler.io/docs/replicas",
+    image: "https://kube-downscaler.io/img/social-preview.png",
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": "https://kube-downscaler.io/docs/replicas",
+    },
+    author: { "@id": "https://kube-downscaler.io/#organization" },
+    publisher: { "@id": "https://kube-downscaler.io/#organization" },
+    about: { "@id": "https://kube-downscaler.io/#software" },
+  })}
+</script>
+
+# Replicas
+
+Replicas can be a value of the desired number of replicas or the desired percentage value for scaling workloads.
+
+## Syntax
+
+Replicas can be represented as an integer for all workloads
+
+```text
+2 # 2 Replicas
+```
+
+Replicas can also be represented as a string percentage, for example, when targeting PodDisruptionBudgets
+
+```text
+50% # 50% of the current replicas
+```
+
+:::warning
+
+A percentage value can be used inside a Scope that is also targeting workloads that do not support percentage replicas
+like PodDisruptionBudgets do.
+This will result in an error on scaling workloads that do not support percentage-based replicas
+and will therefore skip any scaling of these resources unless a more specific scope overrides the downtime replicas value
+
+:::

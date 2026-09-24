@@ -1,0 +1,58 @@
+---
+title: podDisruptionBudget
+id: podDisruptionBudget
+globalReference: docs-helm-pod-disruption-budget
+description: >
+  Learn how to configure a Kubernetes PodDisruptionBudget for the main GoKubeDownscaler Deployment
+  using the podDisruptionBudget Helm chart value.
+keywords: [podDisruptionBudget, PodDisruptionBudget]
+---
+
+# podDisruptionBudget
+
+A `PodDisruptionBudget` limits the number of pods from the main GoKubeDownscaler Deployment that can be
+voluntarily disrupted at the same time.
+This helps maintain availability during operations such as node
+draining or cluster maintenance.
+
+The following fields could be customized:
+
+- `minAvailable` specifies the minimum number or percentage of pods that must remain available.
+- `maxUnavailable` specifies the maximum number or percentage of pods that can be unavailable.
+
+Only one of `minAvailable` or `maxUnavailable` should be configured.
+The PodDisruptionBudget is not
+created when both values are empty.
+
+:::info
+
+The default values for `podDisruptionBudget` are:
+
+```yaml
+podDisruptionBudget:
+  minAvailable: ""
+  maxUnavailable: ""
+```
+
+:::
+
+For example, to ensure that at least one GoKubeDownscaler pod remains available:
+
+```yaml
+podDisruptionBudget:
+  minAvailable: 1
+```
+
+Alternatively, a percentage can be used:
+
+```yaml
+podDisruptionBudget:
+  minAvailable: 50%
+```
+
+To configure the maximum number of unavailable pods instead:
+
+```yaml
+podDisruptionBudget:
+  maxUnavailable: 1
+```

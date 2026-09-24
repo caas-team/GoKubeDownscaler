@@ -1,0 +1,269 @@
+---
+title: Workload Types
+id: workload-types
+globalReference: docs-workload-types
+description: >
+  Explore Kubernetes resources that can be scaled down to zero by KubeDownscaler,
+  including Deployments, StatefulSets, Jobs, and more, with their scaling behavior.
+keywords: [workloads, supported workloads, supported crds]
+---
+
+<script type="application/ld+json">
+  {JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "@id": "https://kube-downscaler.io/docs/workload-types#techarticle",
+    headline: "Workload Types — GoKubeDownscaler",
+    description:
+      "Explore Kubernetes resources that can be scaled down to zero by GoKubeDownscaler, " +
+      "including Deployments, StatefulSets, Jobs, and more.",
+    articleSection: "Downscaler - Workload Types",
+    keywords: [
+      "workloads",
+      "supported workloads",
+      "supported crds",
+      "kubernetes resources",
+    ],
+    url: "https://kube-downscaler.io/docs/workload-types",
+    image: "https://kube-downscaler.io/img/social-preview.png",
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": "https://kube-downscaler.io/docs/workload-types",
+    },
+    author: { "@id": "https://kube-downscaler.io/#organization" },
+    publisher: { "@id": "https://kube-downscaler.io/#organization" },
+    about: { "@id": "https://kube-downscaler.io/#software" },
+  })}
+</script>
+
+# Workload Types
+
+Valid values for the workload type are the case-insensitive Kubernetes resource names of the workloads.
+Workload types to be included in the scaling process can be specified using the
+[`--include-resources`](ref:docs-runtime-configuration#include-resources) argument at the [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+## List of Workload Types
+
+Here is a list of all the workload types supported by KubeDownscaler and how they are scaled.
+
+### Cronjobs
+
+- id: cronjobs
+- resource: cronjob.v1.batch
+
+Scales by setting the cronjobs suspend property to true, which halts further scheduled runs of the Cronjob.
+
+### Daemonsets
+
+- id: daemonsets
+- resource: daemonset.v1.apps
+
+Scales by setting the node selector to match none of the nodes, which stops pods from running on any node.
+
+### Deployments
+
+- id: deployments
+- resource: deployment.v1.apps
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+### HPAs
+
+- id: horizontalpodautoscalers
+- resource: horizontalpodautoscaler.v2.autoscaling
+
+Scales by setting the minReplicas to the [downscale replicas](ref:docs-values#downscale-replicas).
+If the [downscale replicas](ref:docs-values#downscale-replicas) are less than 1 it will throw an error.
+When restoring the original minReplicas value, if minReplicas happens to be greater than the current maxReplicas value,
+the downscaler will set minReplicas to the current maxReplicas value to avoid configuration errors.
+
+### Jobs
+
+- id: jobs
+- resource: job.v1.batch
+
+Scales by setting the suspend property to true, which stops the execution of the job until it is upscaled again.
+
+### PodDisruptionBudgets
+
+- id: poddisruptionbudgets
+- resource: poddisruptionbudget.v1.policy
+
+Scales by setting the maxUnavailable or minAvailable properties (depending on which one is used) to the
+[downscale replicas](ref:docs-values#downscale-replicas).
+[Percentage values](ref:docs-replicas#syntax) are supported as well
+
+### ScaledObjects
+
+- id: scaledobjects
+- resource: scaledobject.v1alpha1.keda.sh
+
+Scales by setting the paused replicas annotation to the [downscale replicas](ref:docs-values#downscale-replicas),
+which scales the workloads managed by the scaled object to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+When scaled objects are [being scaled](ref:docs-runtime-configuration#include-resources) the downscaler will
+automatically exclude the workloads the scaled objects are managing to avoid conflicts.
+
+### Statefulsets
+
+- id: statefulsets
+- resource: statefulset.v1.apps
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+### Rollouts
+
+- id: Rollouts
+- resource: rollout.v1alpha1.argoproj.io
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+### Stacks
+
+- id: stacks
+- resource: stack.v1.zalando.org
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+### Prometheuses
+
+- id: prometheuses
+- resource: prometheus.v1.monitoring.coreos.com
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+### AutoscalingRunnerSets
+
+- id: autoscalingrunnersets
+- resource: autoscalingrunnerset.v1alpha1.actions.github.com
+
+Scales by setting the minRunners count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+### Services
+
+- id: services
+- resource: services.v1
+
+Scales by setting the type to ClusterIP.
+
+### AWSELBServices
+
+- id: awselbservices
+- resource: services.v1
+
+Scales by setting the type to ClusterIP.
+Only services without the `service.beta.kubernetes.io/aws-load-balancer-type` annotation or
+with the `service.beta.kubernetes.io/aws-load-balancer-type` annotation set to a value different from `nlb` are scaled.
+
+### AWSNLBServices
+
+- id: awsnlbservices
+- resource: services.v1
+
+Scales by setting the type to ClusterIP.
+Only services with the `service.beta.kubernetes.io/aws-load-balancer-type` annotation
+set to `nlb` are scaled.
+
+### Ingresses
+
+- id: ingresses
+- resource: ingresses.v1.networking.k8s.io
+
+Scales by setting the IngressClassName of the Ingress object to `downscaler-ingress-class`.
+In a constrained installation, the IngressClass object with the name `downscaler-ingress-class` must
+be provisioned by a cluster administrator having the necessary cluster-wide permissions
+
+### Gateways
+
+- id: gateways
+- resource: gateway.v1.networking.k8s.io
+
+Scales by setting the GatewayClassName of the Gateway object to `downscaler-gateway-class`.
+In a constrained installation, the GatewayClass object with the name `downscaler-gateway-class` must
+be provisioned by a cluster administrator having the necessary cluster-wide permissions
+
+### Postgresqls
+
+- id: postgresqls
+- resource: postgresql.v1.acid.zalan.do
+
+Scales by setting the numberOfInstances count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+### KafkaConnects
+
+- id: kafkaconnects
+- resource: kafkaconnect.v1.kafka.strimzi.io
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+Requires the [Strimzi Kafka Operator](https://strimzi.io/) `>=0.49` (the `v1` API was introduced in 0.49 and
+the legacy `v1beta2` was removed in 1.0.0).
+
+### KafkaMirrorMaker2s
+
+- id: kafkamirrormaker2s
+- resource: kafkamirrormaker2.v1.kafka.strimzi.io
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+Requires the [Strimzi Kafka Operator](https://strimzi.io/) `>=0.49` (the `v1` API was introduced in 0.49 and
+the legacy `v1beta2` was removed in 1.0.0).
+
+### KafkaBridges
+
+- id: kafkabridges
+- resource: kafkabridge.v1.kafka.strimzi.io
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+Requires the [Strimzi Kafka Operator](https://strimzi.io/) `>=0.49` (the `v1` API was introduced in 0.49 and
+the legacy `v1beta2` was removed in 1.0.0).
+
+### KruiseStatefulSets
+
+- id: advancedstatefulsets
+- resource: statefulset.v1beta1.kruise.io
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+### CloneSets
+
+- id: clonesets
+- resource: clonesets.v1beta1.kruise.io
+
+Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
+
+### BroadcastJobs
+
+- id: broadcastjobs
+- resource: broadcastjobs.v1beta1.kruise.io
+
+Scales by setting the suspend property to true.
+
+:::warning
+According to Kruise documentation, this won't stop the job from running,
+but it will prevent new pods from being created.
+:::
+
+### ImagePullJobs
+
+- id: imagepulljobs
+- resource: imagepulljobs.v1beta1.kruise.io
+
+Scales by setting the suspend property to true.
+
+:::warning
+According to Kruise documentation, this won't stop the job from running,
+but it will prevent new pods from being created.
+:::
+
+### AdvancedCronJobs
+
+- id: advancedcronjobs
+- resource: advancedcronjobs.v1beta1.kruise.io
+
+Scales by setting the suspend property to true, which halts further scheduled runs of the AdvancedCronJob.
+
+### AdvancedDaemonSets
+
+- id: advanceddaemonsets
+- resource: advanceddaemonsets.v1beta1.kruise.io
+
+Scales by setting the node selector to match none of the nodes, which stops pods from running on any node.
