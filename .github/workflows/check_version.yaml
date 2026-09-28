@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - "release/[0-9]*.[0-9]*"
     paths:
       - deployments/chart/Chart.yaml
 
@@ -17,6 +18,7 @@ jobs:
       app_version_change: ${{ steps.check_for_appVersion_change.outputs.app_version_change }}
       version: ${{ steps.chart_version.outputs.version }}
       app_version: ${{ steps.app_version.outputs.app_version }}
+      set_latest: ${{ steps.determine_latest.outputs.set_latest }}
 
     steps:
       - name: Checkout code
@@ -27,13 +29,13 @@ jobs:
       - name: Check for appVersion change
         id: check_for_appVersion_change
         run: |
-          app_version_change=$(git diff main HEAD~1 -- deployments/chart/Chart.yaml | grep -qe "^[+-]appVersion: " && echo "appVersion changed" || echo "appVersion didn't change")
+          app_version_change=$(git diff HEAD~1 HEAD -- deployments/chart/Chart.yaml | grep -qe "^[+-]appVersion: " && echo "appVersion changed" || echo "appVersion didn't change")
           echo "app_version_change=$app_version_change" >> $GITHUB_OUTPUT
 
       - name: Check for version change
         id: check_for_version_change
         run: |
-          version_change=$(git diff main HEAD~1 -- deployments/chart/Chart.yaml | grep -qe "^[+-]version: " && echo "version changed" || echo "version didn't change")
+          version_change=$(git diff HEAD~1 HEAD -- deployments/chart/Chart.yaml | grep -qe "^[+-]version: " && echo "version changed" || echo "version didn't change")
           echo "version_change=$version_change" >> $GITHUB_OUTPUT
 
       - name: Extract Chart Version
@@ -47,6 +49,30 @@ jobs:
         run: |
           app_version=$(yq e '.appVersion' ./deployments/chart/Chart.yaml)
           echo "app_version=$app_version" >> $GITHUB_OUTPUT
+
+      - name: Determine if this is the latest release line
+        id: determine_latest
+        env:
+          APP_VERSION: ${{ steps.app_version.outputs.app_version }}
+        run: |
+          current_major_minor=$(echo "$APP_VERSION" | cut -d. -f1,2)
+
+          # gather major.minor of every existing release/* branch, plus the version being built,
+          # so the very first release of a line is included in the comparison
+          versions=$(
+            {
+              git ls-remote --heads origin 'release/*' | sed -E 's#.*refs/heads/release/##'
+              echo "$current_major_minor"
+            } | sort -u
+          )
+
+          highest=$(printf '%s\n' "$versions" | sort -V | tail -1)
+
+          if [ "$current_major_minor" = "$highest" ]; then
+            echo "set_latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "set_latest=false" >> "$GITHUB_OUTPUT"
+          fi
 
   build_new_chart:
     needs: check_versions
@@ -71,7 +97,7 @@ jobs:
     uses: ./.github/workflows/docker_build.yaml
     with:
       appVersion: ${{ needs.check_versions.outputs.app_version }}
-      setLatest: true
+      setLatest: ${{ needs.check_versions.outputs.set_latest == 'true' }}
     secrets: inherit
 
   release_new_version:
