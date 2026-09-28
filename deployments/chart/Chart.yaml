@@ -8,8 +8,8 @@ keywords:
   - downscaling
   - cost-optimization
   - autoscaling
-version: 1.4.0
-appVersion: 1.4.0
+version: 1.4.1
+appVersion: 1.4.1
 icon: https://raw.githubusercontent.com/caas-team/GoKubeDownscaler/refs/heads/main/logo/kubedownscaler.svg
 sources:
   - https://github.com/caas-team/GoKubeDownscaler
