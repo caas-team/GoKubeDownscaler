@@ -127,6 +127,8 @@
 	}
   },
   "properties": {
+	"global": { "type": "object" },
+	"enabled": { "type": "boolean" },
 	"replicaCount": { "type": "integer", "minimum": 0 },
 	"image": { "$ref": "#/$defs/image" },
 	"imagePullSecrets": {
