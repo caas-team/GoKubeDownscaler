@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
+    "sync:well-known": "node scripts/sync-well-known.mjs",
+    "prestart": "npm run sync:well-known",
     "start": "docusaurus start",
+    "prebuild": "npm run sync:well-known",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
