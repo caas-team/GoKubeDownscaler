@@ -1,6 +1,8 @@
 .env
 .vscode
+.idea/
 website/node_modules
 website/build
 website/.docusaurus
 mise.toml
+mise.lock

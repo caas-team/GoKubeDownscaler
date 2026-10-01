@@ -54,6 +54,7 @@ These global settings can be overridden by more specific scopes in the hierarchy
 - [DEFAULT_UPTIME](ref:docs-values#uptime)
 - [DEFAULT_TIMEZONE](ref:docs-values#timezone)
 - [DEFAULT_WEEKFRAME](ref:docs-values#weekframe)
+- [DOWNTIME_REPLICAS](ref:docs-values#downscale-replicas)
 
 ## Runtime Configuration
 
@@ -93,6 +94,7 @@ configMap:
   name: go-kube-downscaler
   extraConfig: |
     DEFAULT_DOWNTIME: "Mon-Fri 20:00-08:00 Asia/Tokyo, Sat-Sun 00:00-24:00 Asia/Tokyo"
+    DOWNTIME_REPLICAS: "1"
     EXCLUDE_NAMESPACES: "my-namespace, example-.*"
     EXCLUDE_DEPLOYMENTS: "my-deployment"
 
