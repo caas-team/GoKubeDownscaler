@@ -243,7 +243,7 @@ flag on the Downscaler deployment.
         Adding the downtime with kubectl is a single command:
 
         ```bash
-        kubectl annotate deployment my-deployment downscaler/downtime="Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
+        kubectl annotate svc my-service downscaler/downtime="Mon-Fri 18:00-08:00 UTC, Sat-Sun 00:00-24:00 UTC"
         ```
 
     </TabItem>
