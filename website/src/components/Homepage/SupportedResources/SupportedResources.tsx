@@ -9,6 +9,7 @@ import * as GithubLightSVG from "@site/static/img/Github-white.svg";
 import * as GithubDarkSVG from "@site/static/img/Github.svg";
 import * as GatewaySVG from "@site/static/img/Gateway.svg";
 import * as OpenKruiseSVG from "@site/static/img/OpenKruise.svg";
+import * as StrimziSVG from "@site/static/img/Strimzi.svg";
 import { useColorMode } from "@docusaurus/theme-common";
 import Link from "@docusaurus/Link";
 import styles from "./styles.module.css";
@@ -21,7 +22,8 @@ const delayClasses = [
   "animate-delay-1000",
   "animate-delay-1250",
   "animate-delay-1500",
-  "animate-delay-1750"
+  "animate-delay-1750",
+  "animate-delay-2000",
 ];
 
 const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
@@ -89,7 +91,14 @@ const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
     SvgLight: OpenKruiseSVG.default,
     SvgDark: OpenKruiseSVG.default,
     href: "https://openkruise.io/",
-    supportedResources: ["StatefulSet, CloneSet, AdvancedCronJob, BroadcastJob, DaemonSet"],
+    supportedResources: ["StatefulSets", "CloneSets", "AdvancedCronJobs", "BroadcastJobs", "DaemonSets"],
+  },
+  {
+    title: "Strimzi",
+    SvgLight: StrimziSVG.default,
+    SvgDark: StrimziSVG.default,
+    href: "https://strimzi.io/",
+    supportedResources: ["KafkaBridges", "KafkaConnects", "KafkaMirrorMakers"],
   },
 ];
 
