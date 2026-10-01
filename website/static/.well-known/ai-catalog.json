@@ -3,18 +3,22 @@
   "host": {
     "displayName": "GoKubeDownscaler",
     "identifier": "did:web:kube-downscaler.io",
-    "url": "https://kube-downscaler.io"
+    "url": "https://kube-downscaler.io",
+    "icon": "https://kube-downscaler.io/logo/kubedownscaler.svg"
   },
   "entries": [
     {
       "identifier": "urn:air:kube-downscaler.io:tool:go-kube-downscaler",
       "displayName": "GoKubeDownscaler",
-      "type": "application/ai-registry+json",
+      "type": "application/ai-catalog+json",
       "url": "https://kube-downscaler.io",
       "description": "Open-source Kubernetes cost optimization tool that automatically scales workloads down on schedules to reduce cloud spend during nights, weekends, and holidays.",
       "publisher": "caas-team",
+      "repository": "https://github.com/caas-team/GoKubeDownscaler",
+      "license": "GPL-3.0",
+      "icon": "https://kube-downscaler.io/logo/kubedownscaler.svg",
       "version": "latest",
-      "updatedAt": "2026-10-01T09:43:49Z",
+      "updatedAt": "2026-10-01T10:30:00Z",
       "tags": [
         "kubernetes",
         "cloud-cost-optimization",
@@ -51,8 +55,11 @@
       "url": "https://kube-downscaler.io/guides",
       "description": "Official getting-started documentation for installing GoKubeDownscaler and configuring scheduled scale-down rules for Kubernetes cost reduction.",
       "publisher": "caas-team",
+      "repository": "https://github.com/caas-team/GoKubeDownscaler",
+      "license": "GPL-3.0",
+      "icon": "https://kube-downscaler.io/logo/kubedownscaler.svg",
       "version": "latest",
-      "updatedAt": "2026-10-01T09:43:49Z",
+      "updatedAt": "2026-09-28T14:15:30Z",
       "tags": [
         "installation",
         "kubernetes",
@@ -79,8 +86,11 @@
       "url": "https://kube-downscaler.io/guides/basic-night-time-saving",
       "description": "Guide for scaling Kubernetes workloads down overnight and during idle periods to cut cloud costs while preserving critical services.",
       "publisher": "caas-team",
+      "repository": "https://github.com/caas-team/GoKubeDownscaler",
+      "license": "GPL-3.0",
+      "icon": "https://kube-downscaler.io/logo/kubedownscaler.svg",
       "version": "latest",
-      "updatedAt": "2026-10-01T09:43:49Z",
+      "updatedAt": "2026-09-25T11:22:15Z",
       "tags": [
         "night-time",
         "kubernetes",
@@ -107,8 +117,11 @@
       "url": "https://kube-downscaler.io/docs/faq",
       "description": "Docs and FAQ covering Kubernetes scaling schedules, cloud cost reduction, workloads, scopes, and operational patterns for reducing spending on clusters and cloud resources.",
       "publisher": "caas-team",
+      "repository": "https://github.com/caas-team/GoKubeDownscaler",
+      "license": "GPL-3.0",
+      "icon": "https://kube-downscaler.io/logo/kubedownscaler.svg",
       "version": "latest",
-      "updatedAt": "2026-10-01T09:43:49Z",
+      "updatedAt": "2026-09-20T16:45:22Z",
       "tags": [
         "faq",
         "docs",
