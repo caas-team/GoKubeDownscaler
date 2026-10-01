@@ -25,12 +25,13 @@ const (
 	annotationScaleChildren     = "downscaler/scale-children"
 	annotationExclusionUpscale  = "downscaler/upscale-excluded"
 
-	envUpscalePeriod   = "UPSCALE_PERIOD"
-	envUptime          = "DEFAULT_UPTIME"
-	envDownscalePeriod = "DOWNSCALE_PERIOD"
-	envDowntime        = "DEFAULT_DOWNTIME"
-	envTimezone        = "DEFAULT_TIMEZONE"
-	envWeekFrame       = "DEFAULT_WEEKFRAME"
+	envUpscalePeriod    = "UPSCALE_PERIOD"
+	envUptime           = "DEFAULT_UPTIME"
+	envDownscalePeriod  = "DOWNSCALE_PERIOD"
+	envDowntime         = "DEFAULT_DOWNTIME"
+	envTimezone         = "DEFAULT_TIMEZONE"
+	envWeekFrame        = "DEFAULT_WEEKFRAME"
+	envDowntimeReplicas = "DOWNTIME_REPLICAS"
 )
 
 // ParseScopeFlags sets all flags corresponding to scope values to fill into l.
@@ -129,6 +130,10 @@ func (s *Scope) GetScopeFromEnv() error {
 
 	if err = util.GetEnvValue(envWeekFrame, &util.WeekFrameValue{Value: &s.DefaultWeekFrame}); err != nil {
 		return fmt.Errorf("error while getting %q environment variable: %w", envWeekFrame, err)
+	}
+
+	if err = util.GetEnvValue(envDowntimeReplicas, &ReplicasValue{Replicas: &s.DownscaleReplicas}); err != nil {
+		return fmt.Errorf("error while getting %q environment variable: %w", envDowntimeReplicas, err)
 	}
 
 	if err = s.CheckForIncompatibleFields(); err != nil {

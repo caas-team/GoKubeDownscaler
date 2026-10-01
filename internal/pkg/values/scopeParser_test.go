@@ -17,6 +17,7 @@ func clearScopeEnvVars(t *testing.T) {
 		envDowntime,
 		envTimezone,
 		envWeekFrame,
+		envDowntimeReplicas,
 	}
 
 	for _, key := range keys {
@@ -199,6 +200,131 @@ func TestScopeGetScopeFromEnv_DefaultWeekFrameAppliesToDowntimeWithoutWeekdays(t
 			} else {
 				require.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestScopeGetScopeFromEnv_ParsesDowntimeReplicas(t *testing.T) {
+	tests := []struct {
+		name     string
+		replicas string
+		unset    bool
+		want     Replicas
+		wantErr  bool
+	}{
+		{
+			name:     "absolute replicas parsed",
+			replicas: "2",
+			want:     AbsoluteReplicas(2),
+		},
+		{
+			name:     "percentage replicas parsed",
+			replicas: "50%",
+			want:     PercentageReplicas(50),
+		},
+		{
+			name:     "invalid negative replicas returns error",
+			replicas: "-3",
+			wantErr:  true,
+		},
+		{
+			name:     "malformed replicas returns error",
+			replicas: "3x",
+			wantErr:  true,
+		},
+		{
+			name:     "invalid percentage returns error",
+			replicas: "150%",
+			wantErr:  true,
+		},
+		{
+			name:  "unset leaves DownscaleReplicas nil",
+			unset: true,
+			want:  nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			clearScopeEnvVars(t)
+
+			if !test.unset {
+				t.Setenv(envDowntimeReplicas, test.replicas)
+			}
+
+			scope := NewScope()
+			err := scope.GetScopeFromEnv()
+
+			if test.wantErr {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, test.want, scope.DownscaleReplicas)
+		})
+	}
+}
+
+func TestScopeGetScopeFromEnv_DowntimeReplicasPrecedence(t *testing.T) {
+	tests := []struct {
+		name      string
+		workload  Replicas
+		namespace Replicas
+		cli       Replicas
+		envValue  string
+		want      Replicas
+	}{
+		{
+			name:     "env overrides default",
+			envValue: "3",
+			want:     AbsoluteReplicas(3),
+		},
+		{
+			name:     "cli overrides env",
+			cli:      AbsoluteReplicas(1),
+			envValue: "3",
+			want:     AbsoluteReplicas(1),
+		},
+		{
+			name:      "namespace overrides env",
+			namespace: AbsoluteReplicas(4),
+			envValue:  "3",
+			want:      AbsoluteReplicas(4),
+		},
+		{
+			name:     "workload overrides env",
+			workload: PercentageReplicas(25),
+			envValue: "3",
+			want:     PercentageReplicas(25),
+		},
+		{
+			name: "default used when env unset",
+			want: AbsoluteReplicas(0),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			clearScopeEnvVars(t)
+
+			if test.envValue != "" {
+				t.Setenv(envDowntimeReplicas, test.envValue)
+			}
+
+			scopeEnv := NewScope()
+			require.NoError(t, scopeEnv.GetScopeFromEnv())
+
+			scopeWorkload, scopeNamespace, scopeCli := NewScope(), NewScope(), NewScope()
+			scopeWorkload.DownscaleReplicas = test.workload
+			scopeNamespace.DownscaleReplicas = test.namespace
+			scopeCli.DownscaleReplicas = test.cli
+
+			scopes := Scopes{scopeWorkload, scopeNamespace, scopeCli, scopeEnv, GetDefaultScope()}
+
+			got, err := scopes.GetDownscaleReplicas()
+			require.NoError(t, err)
+			require.Equal(t, test.want, got)
 		})
 	}
 }
