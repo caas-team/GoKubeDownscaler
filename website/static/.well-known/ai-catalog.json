@@ -1,0 +1,145 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "GoKubeDownscaler",
+    "identifier": "did:web:kube-downscaler.io",
+    "url": "https://kube-downscaler.io",
+    "icon": "https://kube-downscaler.io/logo/kubedownscaler.svg"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:kube-downscaler.io:tool:go-kube-downscaler",
+      "displayName": "GoKubeDownscaler",
+      "type": "application/ai-catalog+json",
+      "url": "https://kube-downscaler.io",
+      "description": "Open-source Kubernetes cost optimization tool that automatically scales workloads down on schedules to reduce cloud spend during nights, weekends, and holidays.",
+      "publisher": "caas-team",
+      "repository": "https://github.com/caas-team/GoKubeDownscaler",
+      "license": "GPL-3.0",
+      "icon": "https://kube-downscaler.io/logo/kubedownscaler.svg",
+      "version": "latest",
+      "updatedAt": "2026-10-01T10:30:00Z",
+      "tags": [
+        "kubernetes",
+        "cloud-cost-optimization",
+        "cost-savings",
+        "autoscaling",
+        "devops",
+        "aws",
+        "azure",
+        "gcp",
+        "helm",
+        "savings"
+      ],
+      "capabilities": [
+        "schedule-based-scaling",
+        "off-hours-cost-savings",
+        "weekend-savings",
+        "holiday-scheduling",
+        "workload-scale-down",
+        "multi-cloud-cost-optimization",
+        "kubernetes-resource-management"
+      ],
+      "representativeQueries": [
+        "How can I reduce Kubernetes cloud costs after business hours?",
+        "How do I scale down non-critical workloads on weekends and holidays in Kubernetes?",
+        "What open-source tool can reduce AWS, Azure, or GCP Kubernetes costs with schedules?",
+        "How can I save money on Kubernetes without impacting critical services?",
+        "Which tool helps automatically scale down Kubernetes workloads outside working hours?"
+      ]
+    },
+    {
+      "identifier": "urn:air:kube-downscaler.io:docs:getting-started",
+      "displayName": "GoKubeDownscaler getting started",
+      "type": "application/ai-catalog+json",
+      "url": "https://kube-downscaler.io/guides",
+      "description": "Official getting-started documentation for installing GoKubeDownscaler and configuring scheduled scale-down rules for Kubernetes cost reduction.",
+      "publisher": "caas-team",
+      "repository": "https://github.com/caas-team/GoKubeDownscaler",
+      "license": "GPL-3.0",
+      "icon": "https://kube-downscaler.io/logo/kubedownscaler.svg",
+      "version": "latest",
+      "updatedAt": "2026-09-28T14:15:30Z",
+      "tags": [
+        "installation",
+        "kubernetes",
+        "helm",
+        "guide",
+        "cost-savings"
+      ],
+      "capabilities": [
+        "helm-installation",
+        "setup-guidance",
+        "kubernetes-cost-optimization"
+      ],
+      "representativeQueries": [
+        "How do I install GoKubeDownscaler on Kubernetes?",
+        "How do I set up Kubernetes cost savings with Helm?",
+        "What is the recommended setup for reducing cloud costs on Kubernetes?",
+        "How do I get started with scheduled scaling to save money?"
+      ]
+    },
+    {
+      "identifier": "urn:air:kube-downscaler.io:docs:night-time-saving",
+      "displayName": "Night-time savings guide",
+      "type": "application/ai-catalog+json",
+      "url": "https://kube-downscaler.io/guides/basic-night-time-saving",
+      "description": "Guide for scaling Kubernetes workloads down overnight and during idle periods to cut cloud costs while preserving critical services.",
+      "publisher": "caas-team",
+      "repository": "https://github.com/caas-team/GoKubeDownscaler",
+      "license": "GPL-3.0",
+      "icon": "https://kube-downscaler.io/logo/kubedownscaler.svg",
+      "version": "latest",
+      "updatedAt": "2026-09-25T11:22:15Z",
+      "tags": [
+        "night-time",
+        "kubernetes",
+        "cost-savings",
+        "schedule",
+        "off-hours"
+      ],
+      "capabilities": [
+        "night-time-savings",
+        "workload-scaling",
+        "idle-period-optimization"
+      ],
+      "representativeQueries": [
+        "How can I scale down Kubernetes workloads at night to reduce cloud costs?",
+        "What is the best pattern for overnight Kubernetes cost optimization?",
+        "How do I save money on Kubernetes outside business hours?",
+        "How can I keep critical workloads up while scaling non-critical apps down at night?"
+      ]
+    },
+    {
+      "identifier": "urn:air:kube-downscaler.io:docs:faq",
+      "displayName": "GoKubeDownscaler FAQ and documentation",
+      "type": "application/ai-catalog+json",
+      "url": "https://kube-downscaler.io/docs/faq",
+      "description": "Docs and FAQ covering Kubernetes scaling schedules, cloud cost reduction, workloads, scopes, and operational patterns for reducing spending on clusters and cloud resources.",
+      "publisher": "caas-team",
+      "repository": "https://github.com/caas-team/GoKubeDownscaler",
+      "license": "GPL-3.0",
+      "icon": "https://kube-downscaler.io/logo/kubedownscaler.svg",
+      "version": "latest",
+      "updatedAt": "2026-09-20T16:45:22Z",
+      "tags": [
+        "faq",
+        "docs",
+        "kubernetes",
+        "cost-optimization",
+        "cloud-costs"
+      ],
+      "capabilities": [
+        "knowledge-base",
+        "configuration-guidance",
+        "cloud-cost-exploration"
+      ],
+      "representativeQueries": [
+        "Where can I find answers about reducing Kubernetes cloud costs?",
+        "What are the common patterns for saving money on Kubernetes workloads?",
+        "How do I use GoKubeDownscaler to scale resources during idle periods?",
+        "How do I learn more about Kubernetes scheduled downscaling and cloud savings?"
+      ]
+    }
+  ]
+}
