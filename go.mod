@@ -16,21 +16,12 @@ require (
 	github.com/zalando-incubator/stackset-controller v1.4.142
 	github.com/zalando/postgres-operator v1.15.1
 	go.uber.org/zap v1.28.0
-<<<<<<< HEAD
-	k8s.io/api v0.37.0
-	k8s.io/apimachinery v0.37.0
-	k8s.io/apiserver v0.37.0
-	k8s.io/client-go v0.37.0
-	k8s.io/component-base v0.37.0
-	sigs.k8s.io/controller-runtime v0.25.1
-=======
 	k8s.io/api v0.37.1
 	k8s.io/apimachinery v0.37.1
 	k8s.io/apiserver v0.37.1
 	k8s.io/client-go v0.37.1
 	k8s.io/component-base v0.37.1
 	sigs.k8s.io/controller-runtime v0.25.2
->>>>>>> 0e74dc1 (chore(deps): bump sigs.k8s.io/controller-runtime (#562))
 	sigs.k8s.io/gateway-api v1.6.2
 )
 
