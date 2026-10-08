@@ -21,11 +21,7 @@ require (
 	k8s.io/apiserver v0.37.1
 	k8s.io/client-go v0.37.1
 	k8s.io/component-base v0.37.1
-<<<<<<< HEAD
 	sigs.k8s.io/controller-runtime v0.25.2
-=======
-	sigs.k8s.io/controller-runtime v0.25.1
->>>>>>> ddea47d (chore(deps): bump the version-bump group with 8 updates (#551))
 	sigs.k8s.io/gateway-api v1.6.2
 )
 
