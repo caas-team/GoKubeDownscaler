@@ -13,7 +13,7 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/stretchr/testify v1.12.1
 	github.com/wI2L/jsondiff v0.7.1
-	github.com/zalando-incubator/stackset-controller v1.4.142
+	github.com/zalando-incubator/stackset-controller v1.4.144
 	github.com/zalando/postgres-operator v1.15.1
 	go.uber.org/zap v1.28.0
 	k8s.io/api v0.37.1
