@@ -309,7 +309,7 @@ func attemptScaling(
 	logger *slog.Logger,
 ) error {
 	for retry := range config.MaxRetriesOnConflict + 1 {
-		err := scaleWorkload(decision.Scaling, workload, scopes, workloadNamespaceMetrics, client, ctx, logger)
+		err := scaleWorkload(decision.Scaling, workload, scopes, workloadNamespaceMetrics, config, client, ctx, logger)
 		if err != nil {
 			if !strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
 				recordScalingError(err, workloadNamespaceMetrics)
@@ -524,6 +524,7 @@ func scaleWorkload(
 	workload scalable.Workload,
 	scopes values.Scopes,
 	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
+	config *runtimeConfiguration,
 	client kubernetes.Client,
 	ctx context.Context,
 	logger *slog.Logger,
@@ -565,7 +566,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 			return fmt.Errorf("failed to get downscale replicas: %w", err)
 		}
 
-		savedResources, err := client.DownscaleWorkload(downscaleReplicas, workload, ctx, logger)
+		savedResources, err := client.DownscaleWorkload(downscaleReplicas, workload, config.ServerSidePatch, ctx, logger)
 		if err != nil {
 			return fmt.Errorf("failed to downscale workload: %w", err)
 		}
@@ -577,7 +578,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	if scaling == values.ScalingUp {
 		logger.Debug("upscaling workload")
 
-		err := client.UpscaleWorkload(workload, ctx, logger)
+		err := client.UpscaleWorkload(workload, config.ServerSidePatch, ctx, logger)
 		if err != nil {
 			return fmt.Errorf("failed to upscale workload: %w", err)
 		}

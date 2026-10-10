@@ -13,6 +13,7 @@ import (
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -163,4 +164,14 @@ func (k *kafkaConnect) Update(clientsets *Clientsets, ctx context.Context) error
 	}
 
 	return nil
+}
+
+func (k *kafkaConnect) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	return patchControllerRuntimeObject(clientsets.Client, k.Unstructured, patchType, patchData, manageFields, ctx)
 }

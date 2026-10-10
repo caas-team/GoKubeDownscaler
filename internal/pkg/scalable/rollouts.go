@@ -11,6 +11,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getRollouts is the getResourceFunc for Argo Rollouts.
@@ -143,4 +144,49 @@ func (r *rollout) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+func (r *rollout) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if r.Rollout == nil {
+		return newNilUnderlyingObjectError(r.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedRollout, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(r.Namespace).Patch(
+		ctx,
+		r.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch rollout: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedRollout.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create rollout managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Argo.ArgoprojV1alpha1().Rollouts(r.Namespace).Patch(
+			ctx,
+			r.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear rollout managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

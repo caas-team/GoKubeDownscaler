@@ -1,3 +1,4 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -12,6 +13,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	policy "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -116,13 +118,23 @@ func (p *podDisruptionBudget) ScaleUp(logger *slog.Logger) (scalingSummary, erro
 		return summary, fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
+	workloadCopy, err := p.Copy()
+	if err != nil {
+		return summary, fmt.Errorf("failed to copy workload before scaling up: %w", err)
+	}
+
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {
 		p.setMaxUnavailable(originalReplicas)
 		removeOriginalReplicas(p)
 
+		patchData, err := createPatchData(workloadCopy, p)
+		if err != nil {
+			return summary, err
+		}
+
 		return scalingSummary{
-			IsUpdateNeeded: true, From: maxUnavailable, To: originalReplicas, Attribute: maxUnavailableAttribute,
+			IsUpdateNeeded: true, From: maxUnavailable, To: originalReplicas, Attribute: maxUnavailableAttribute, PatchData: patchData,
 		}, nil
 	}
 
@@ -131,8 +143,13 @@ func (p *podDisruptionBudget) ScaleUp(logger *slog.Logger) (scalingSummary, erro
 		p.setMinAvailable(originalReplicas)
 		removeOriginalReplicas(p)
 
+		patchData, err := createPatchData(workloadCopy, p)
+		if err != nil {
+			return summary, err
+		}
+
 		return scalingSummary{
-			IsUpdateNeeded: true, From: minAvailable, To: originalReplicas, Attribute: minAvailableAttribute,
+			IsUpdateNeeded: true, From: minAvailable, To: originalReplicas, Attribute: minAvailableAttribute, PatchData: patchData,
 		}, nil
 	}
 
@@ -157,12 +174,22 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas, logge
 			}, nil
 		}
 
+		workloadCopy, err := p.Copy()
+		if err != nil {
+			return summary, fmt.Errorf("failed to copy workload before scaling down: %w", err)
+		}
+
 		p.setMaxUnavailable(downscaleReplicas)
 		setOriginalReplicas(maxUnavailable, p)
 
+		patchData, err := createPatchData(workloadCopy, p)
+		if err != nil {
+			return summary, err
+		}
+
 		return scalingSummary{
 			SavedResources: summary.SavedResources, IsUpdateNeeded: true, From: maxUnavailable, To: downscaleReplicas,
-			Attribute: maxUnavailableAttribute,
+			Attribute: maxUnavailableAttribute, PatchData: patchData,
 		}, nil
 	}
 
@@ -176,12 +203,22 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas, logge
 			}, nil
 		}
 
+		workloadCopy, err := p.Copy()
+		if err != nil {
+			return summary, fmt.Errorf("failed to copy workload before scaling down: %w", err)
+		}
+
 		p.setMinAvailable(downscaleReplicas)
 		setOriginalReplicas(minAvailable, p)
 
+		patchData, err := createPatchData(workloadCopy, p)
+		if err != nil {
+			return summary, err
+		}
+
 		return scalingSummary{
 			SavedResources: summary.SavedResources, IsUpdateNeeded: true, From: minAvailable, To: downscaleReplicas,
-			Attribute: minAvailableAttribute,
+			Attribute: minAvailableAttribute, PatchData: patchData,
 		}, nil
 	}
 
@@ -207,6 +244,52 @@ func (p *podDisruptionBudget) Update(clientsets *Clientsets, ctx context.Context
 	_, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(p.Namespace).Update(ctx, p.PodDisruptionBudget, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update poddisruptionbudget: %w", err)
+	}
+
+	return nil
+}
+
+// Patch applies a patch to the PodDisruptionBudget and manages the downscaler's field ownership.
+func (p *podDisruptionBudget) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if p.PodDisruptionBudget == nil {
+		return newNilUnderlyingObjectError(p.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedPDB, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(p.Namespace).Patch(
+		ctx,
+		p.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch poddisruptionbudget: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedPDB.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create poddisruptionbudget managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(p.Namespace).Patch(
+			ctx,
+			p.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear poddisruptionbudget managed fields: %w", err)
+		}
 	}
 
 	return nil

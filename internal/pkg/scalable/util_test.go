@@ -1,6 +1,7 @@
 package scalable
 
 import (
+	"encoding/json"
 	"math"
 	"regexp"
 	"testing"
@@ -9,6 +10,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/kedacore/keda/v2/apis/keda/v1alpha1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -444,4 +446,61 @@ func TestImagePullJobParallelism(t *testing.T) {
 	assert.Equal(t, int32(math.MaxInt32), imagePullJobParallelism(&maximum))
 	assert.Equal(t, int32(1), imagePullJobParallelism(&negative))
 	assert.Equal(t, int32(1), imagePullJobParallelism(&invalidString))
+}
+
+func TestClearManagedFieldsPatch(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		original []metav1.ManagedFieldsEntry
+		want     []string
+	}{
+		{
+			name: "removes only the downscaler manager",
+			original: []metav1.ManagedFieldsEntry{
+				{Manager: "deployment-controller"},
+				{Manager: managedFieldsManager},
+				{Manager: "horizontal-pod-autoscaler"},
+			},
+			want: []string{"deployment-controller", "horizontal-pod-autoscaler"},
+		},
+		{
+			name: "retains all entries when the downscaler is absent",
+			original: []metav1.ManagedFieldsEntry{
+				{Manager: "deployment-controller"},
+			},
+			want: []string{"deployment-controller"},
+		},
+		{
+			name: "sends an explicit empty managed fields list when only the downscaler is present",
+			original: []metav1.ManagedFieldsEntry{
+				{Manager: managedFieldsManager},
+			},
+			want: []string{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			patchData, err := clearManagedFieldsPatch(test.original)
+			require.NoError(t, err)
+
+			var patch struct {
+				Metadata struct {
+					ManagedFields []metav1.ManagedFieldsEntry `json:"managedFields"`
+				} `json:"metadata"`
+			}
+			require.NoError(t, json.Unmarshal(patchData, &patch))
+
+			got := make([]string, 0, len(patch.Metadata.ManagedFields))
+			for _, managedField := range patch.Metadata.ManagedFields {
+				got = append(got, managedField.Manager)
+			}
+
+			assert.Equal(t, test.want, got)
+		})
+	}
 }

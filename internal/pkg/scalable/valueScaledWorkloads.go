@@ -9,6 +9,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // valueScaledResource provides all the functions needed to scale a resource by setting a field to a particular value.
@@ -16,6 +17,8 @@ type valueScaledResource interface {
 	scalableResource
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
 	Update(clientsets *Clientsets, ctx context.Context) error
+	// Patch applies a patch to the resource.
+	Patch(clientsets *Clientsets, patchType types.PatchType, patchData []byte, manageFields bool, ctx context.Context) error
 	// setValue sets the value of the key where downscaling is performed
 	setValue(value values.Replicas) error
 	// getValue gets the current value of the key where downscaling is performed and the value used for downscaling
@@ -71,6 +74,11 @@ func (v *valueScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, erro
 		return summary, fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
+	workloadCopy, err := v.Copy()
+	if err != nil {
+		return summary, fmt.Errorf("failed to copy workload before scaling up: %w", err)
+	}
+
 	err = v.setValue(originalState)
 	if err != nil {
 		return summary, fmt.Errorf("failed to set original replicas for workload: %w", err)
@@ -78,7 +86,12 @@ func (v *valueScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, erro
 
 	removeOriginalReplicas(v)
 
-	return scalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState}, nil
+	patchData, err := createPatchData(workloadCopy, v)
+	if err != nil {
+		return summary, err
+	}
+
+	return scalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState, PatchData: patchData}, nil
 }
 
 // ScaleDown scales down the underlying valueScaledResource.
@@ -115,6 +128,11 @@ func (v *valueScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger) 
 
 	savedResources := v.getSavedResourcesRequests()
 
+	workloadCopy, err := v.Copy()
+	if err != nil {
+		return summary, fmt.Errorf("failed to copy workload before scaling down: %w", err)
+	}
+
 	err = v.setValue(targetScaleDownState)
 	if err != nil {
 		return summary, fmt.Errorf("failed to set replicas for workload: %w", err)
@@ -122,8 +140,14 @@ func (v *valueScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger) 
 
 	setOriginalReplicas(currentState, v)
 
+	patchData, err := createPatchData(workloadCopy, v)
+	if err != nil {
+		return summary, err
+	}
+
 	summary.SavedResources = savedResources
 	summary.IsUpdateNeeded = true
+	summary.PatchData = patchData
 
 	return summary, nil
 }

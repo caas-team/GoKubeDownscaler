@@ -1,6 +1,8 @@
 package scalable
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"math"
@@ -11,12 +13,16 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
+	managedFieldsManager        = "gokubedownscaler"
 	annotationOriginalReplicas  = "downscaler/original-replicas"
 	deploymentGroupVersion      = "apps/v1"
 	deploymentKind              = "Deployment"
@@ -45,6 +51,92 @@ const (
 	stackKind                   = "Stack"
 	statefulSetKind             = "StatefulSet"
 )
+
+// clearManagedFieldsPatch creates a merge patch that retains every manager except this controller.
+func clearManagedFieldsPatch(managedFields []metav1.ManagedFieldsEntry) ([]byte, error) {
+	remainingManagedFields := make([]metav1.ManagedFieldsEntry, 0, len(managedFields))
+	for _, managedField := range managedFields {
+		if managedField.Manager != managedFieldsManager {
+			remainingManagedFields = append(remainingManagedFields, managedField)
+		}
+	}
+
+	patch := struct {
+		Metadata struct {
+			ManagedFields []metav1.ManagedFieldsEntry `json:"managedFields"`
+		} `json:"metadata"`
+	}{}
+	patch.Metadata.ManagedFields = remainingManagedFields
+
+	marshal, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal clear managed fields patch: %w", err)
+	}
+
+	return marshal, nil
+}
+
+func patchOptions(manageFields bool) metav1.PatchOptions {
+	options := metav1.PatchOptions{}
+	if manageFields {
+		options.FieldManager = managedFieldsManager
+	}
+
+	return options
+}
+
+func patchControllerRuntimeObject(
+	client ctrlclient.Client,
+	object ctrlclient.Object,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	options := []ctrlclient.PatchOption{}
+	if manageFields {
+		options = append(options, ctrlclient.FieldOwner(managedFieldsManager))
+	}
+
+	if err := client.Patch(ctx, object, ctrlclient.RawPatch(patchType, patchData), options...); err != nil {
+		return fmt.Errorf("failed to patch object: %w", err)
+	}
+
+	if manageFields {
+		return nil
+	}
+
+	if err := client.Get(ctx, ctrlclient.ObjectKeyFromObject(object), object); err != nil {
+		return fmt.Errorf("failed to get updated object after patching: %w", err)
+	}
+
+	clearPatch, err := clearManagedFieldsPatch(object.GetManagedFields())
+	if err != nil {
+		return fmt.Errorf("failed to create clear managed fields patch: %w", err)
+	}
+
+	err = client.Patch(ctx, object, ctrlclient.RawPatch(types.MergePatchType, clearPatch))
+	if err != nil {
+		return fmt.Errorf("failed to patch object: %w", err)
+	}
+
+	return nil
+}
+
+// createPatchData serializes a JSON Patch that transforms original into modified.
+func createPatchData(original, modified Workload) ([]byte, error) {
+	patch, err := original.Compare(modified)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compare scaled workload with its original state: %w", err)
+	}
+
+	patchData, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal workload patch: %w", err)
+	}
+
+	return patchData, nil
+}
 
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads.
 func FilterExcluded(
@@ -478,6 +570,7 @@ func imagePullJobParallelism(parallelism *intstr.IntOrString) int32 {
 // scalingSummary contains the result of a scaling operation.
 type scalingSummary struct {
 	SavedResources *metrics.SavedResources
+	PatchData      []byte
 	IsUpdateNeeded bool
 	From           values.Replicas
 	To             values.Replicas

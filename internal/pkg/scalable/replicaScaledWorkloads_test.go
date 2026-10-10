@@ -14,6 +14,75 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+func TestReplicaScaledWorkload_ScalingGeneratesPatchData(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name             string
+		initialReplicas  int32
+		originalReplicas values.Replicas
+		action           string
+		wantReplicas     int32
+		wantPatch        any
+	}{
+		{
+			name:            "scale down",
+			initialReplicas: 5,
+			action:          "downscale",
+			wantReplicas:    0,
+			wantPatch: []any{
+				map[string]any{"op": "add", "path": "/metadata/annotations", "value": map[string]any{"downscaler/original-replicas": "5"}},
+				map[string]any{"op": "replace", "path": "/spec/replicas", "value": float64(0)},
+			},
+		},
+		{
+			name:             "scale up",
+			initialReplicas:  0,
+			originalReplicas: values.AbsoluteReplicas(5),
+			action:           "upscale",
+			wantReplicas:     5,
+			wantPatch: []any{
+				map[string]any{"op": "remove", "path": "/metadata/annotations"},
+				map[string]any{"op": "replace", "path": "/spec/replicas", "value": float64(5)},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			replicas := test.initialReplicas
+			deploymentObject := &appsv1.Deployment{Spec: appsv1.DeploymentSpec{Replicas: &replicas}}
+			workload := &replicaScaledWorkload{&deployment{deploymentObject}}
+
+			if test.originalReplicas != nil {
+				setOriginalReplicas(test.originalReplicas, workload)
+			}
+
+			before := deploymentObject.DeepCopy()
+			var (
+				summary scalingSummary
+				err     error
+			)
+
+			switch test.action {
+			case "downscale":
+				summary, err = workload.ScaleDown(values.AbsoluteReplicas(0), nil)
+			case "upscale":
+				summary, err = workload.ScaleUp(nil)
+			default:
+				t.Fatalf("unsupported action %q", test.action)
+			}
+
+			require.NoError(t, err)
+			assert.True(t, summary.IsUpdateNeeded)
+			t.Logf("patchData: %s", summary.PatchData)
+			assertJSONPatchTransforms(t, before, summary.PatchData, deploymentObject)
+		})
+	}
+}
+
 func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 	t.Parallel()
 

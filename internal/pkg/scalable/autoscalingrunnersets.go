@@ -10,6 +10,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -143,4 +144,21 @@ func (a *autoscalingRunnerSet) Compare(workloadCopy Workload) (jsondiff.Patch, e
 	}
 
 	return diff, nil
+}
+
+func (a *autoscalingRunnerSet) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	return patchControllerRuntimeObject(
+		clientsets.Client,
+		a.AutoscalingRunnerSet,
+		patchType,
+		patchData,
+		manageFields,
+		ctx,
+	)
 }

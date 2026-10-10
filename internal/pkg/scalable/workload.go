@@ -156,6 +156,8 @@ type Workload interface {
 	scalableResource
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
 	Update(clientsets *Clientsets, ctx context.Context) error
+	// Patch applies a patch to the resource. It should only be called once on a resource.
+	Patch(clientsets *Clientsets, patchType types.PatchType, patchData []byte, manageFields bool, ctx context.Context) error
 	// ScaleUp scales up the workload.
 	ScaleUp(logger *slog.Logger) (scalingSummary, error)
 	// ScaleDown scales down the workload

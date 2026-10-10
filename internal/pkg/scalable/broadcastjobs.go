@@ -11,6 +11,7 @@ import (
 	kruisev1beta1 "github.com/openkruise/kruise/apis/apps/v1beta1"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getBroadcastJobs is the getResourceFunc for BroadcastJobs.
@@ -135,4 +136,49 @@ func (b *broadcastJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+func (b *broadcastJob) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if b.BroadcastJob == nil {
+		return newNilUnderlyingObjectError(b.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedBroadcastJob, err := clientsets.Kruise.AppsV1beta1().BroadcastJobs(b.Namespace).Patch(
+		ctx,
+		b.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch broadcastjob: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedBroadcastJob.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create broadcastjob managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kruise.AppsV1beta1().BroadcastJobs(b.Namespace).Patch(
+			ctx,
+			b.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear broadcastjob managed fields: %w", err)
+		}
+	}
+
+	return nil
 }
