@@ -230,3 +230,95 @@ func TestValueScaledWorkload_ScaleUp(t *testing.T) {
 		})
 	}
 }
+
+func TestValueScaledWorkload_ScalingGeneratesPatchData(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		kind          string
+		initial       any
+		wantDown      any
+		wantDownPatch any
+		wantUpPatch   any
+	}{
+		{
+			name:     "service",
+			kind:     ServiceKind,
+			initial:  corev1.ServiceTypeLoadBalancer,
+			wantDown: corev1.ServiceTypeClusterIP,
+			wantDownPatch: []any{
+				map[string]any{"op": "add", "path": "/metadata/annotations", "value": map[string]any{"downscaler/original-replicas": "LoadBalancer"}},
+				map[string]any{"op": "replace", "path": "/spec/type", "value": "ClusterIP"},
+			},
+			wantUpPatch: []any{
+				map[string]any{"op": "remove", "path": "/metadata/annotations"},
+				map[string]any{"op": "replace", "path": "/spec/type", "value": "LoadBalancer"},
+			},
+		},
+		{
+			name:     "ingress",
+			kind:     IngressKind,
+			initial:  "nginx",
+			wantDown: downscalerIngressClassConst,
+			wantDownPatch: []any{
+				map[string]any{"op": "add", "path": "/metadata/annotations", "value": map[string]any{"downscaler/original-replicas": "nginx"}},
+				map[string]any{"op": "replace", "path": "/spec/ingressClassName", "value": "kube-downscaler-ingress-class"},
+			},
+			wantUpPatch: []any{
+				map[string]any{"op": "remove", "path": "/metadata/annotations"},
+				map[string]any{"op": "replace", "path": "/spec/ingressClassName", "value": "nginx"},
+			},
+		},
+		{
+			name:     "gateway",
+			kind:     GatewayKind,
+			initial:  gatewayv1.ObjectName("nginx"),
+			wantDown: gatewayv1.ObjectName(downscalerGatewayClassConst),
+			wantDownPatch: []any{
+				map[string]any{"op": "add", "path": "/metadata/annotations", "value": map[string]any{"downscaler/original-replicas": "nginx"}},
+				map[string]any{"op": "replace", "path": "/spec/gatewayClassName", "value": "kube-downscaler-gateway-class"},
+			},
+			wantUpPatch: []any{
+				map[string]any{"op": "remove", "path": "/metadata/annotations"},
+				map[string]any{"op": "replace", "path": "/spec/gatewayClassName", "value": "nginx"},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			workload, underlying := buildValueScaledResourceForTest(t, test.kind, test.initial)
+			vsw := &valueScaledWorkload{workload}
+
+			beforeDownscale := deepCopyValueScaledObject(underlying)
+			downscaleSummary, err := vsw.ScaleDown(values.AbsoluteReplicas(0), nil)
+			require.NoError(t, err)
+			t.Logf("downscale patchData: %s", downscaleSummary.PatchData)
+			assert.True(t, downscaleSummary.IsUpdateNeeded)
+			assertJSONPatchTransforms(t, beforeDownscale, downscaleSummary.PatchData, underlying)
+
+			beforeUpscale := deepCopyValueScaledObject(underlying)
+			upscaleSummary, err := vsw.ScaleUp(nil)
+			require.NoError(t, err)
+			t.Logf("upscale patchData: %s", upscaleSummary.PatchData)
+			assert.True(t, upscaleSummary.IsUpdateNeeded)
+			assertJSONPatchTransforms(t, beforeUpscale, upscaleSummary.PatchData, underlying)
+		})
+	}
+}
+
+func deepCopyValueScaledObject(obj any) any {
+	switch typed := obj.(type) {
+	case *corev1.Service:
+		return typed.DeepCopy()
+	case *networkingv1.Ingress:
+		return typed.DeepCopy()
+	case *gatewayv1.Gateway:
+		return typed.DeepCopy()
+	default:
+		return nil
+	}
+}

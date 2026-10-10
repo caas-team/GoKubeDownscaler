@@ -10,6 +10,7 @@ import (
 	kruisev1beta1 "github.com/openkruise/kruise/apis/apps/v1beta1"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getAdvancedDaemonSets is the getResourceFunc for advanced daemonsets.
@@ -132,4 +133,49 @@ func (d *advancedDaemonSet) Compare(workloadCopy Workload) (jsondiff.Patch, erro
 	}
 
 	return diff, nil
+}
+
+func (d *advancedDaemonSet) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if d.DaemonSet == nil {
+		return newNilUnderlyingObjectError(d.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedDaemonSet, err := clientsets.Kruise.AppsV1beta1().DaemonSets(d.Namespace).Patch(
+		ctx,
+		d.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch advanceddaemonset: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedDaemonSet.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create advanceddaemonset managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kruise.AppsV1beta1().DaemonSets(d.Namespace).Patch(
+			ctx,
+			d.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear advanceddaemonset managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	zalandov1 "github.com/zalando-incubator/stackset-controller/pkg/apis/zalando.org/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getStacks is the getResourceFunc for Zalando Stacks.
@@ -143,4 +144,49 @@ func (s *stack) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+func (s *stack) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if s.Stack == nil {
+		return newNilUnderlyingObjectError(s.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedStack, err := clientsets.Zalando.ZalandoV1().Stacks(s.Namespace).Patch(
+		ctx,
+		s.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch stack: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedStack.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create stack managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Zalando.ZalandoV1().Stacks(s.Namespace).Patch(
+			ctx,
+			s.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear stack managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

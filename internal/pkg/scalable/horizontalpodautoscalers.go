@@ -13,6 +13,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	appsv1 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var errMinReplicasBoundsExceeded = errors.New("error: an HPAs minReplicas can only be set to int32 values larger than 1")
@@ -157,4 +158,49 @@ func (h *horizontalPodAutoscaler) Compare(workloadCopy Workload) (jsondiff.Patch
 	}
 
 	return diff, nil
+}
+
+func (h *horizontalPodAutoscaler) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if h.HorizontalPodAutoscaler == nil {
+		return newNilUnderlyingObjectError(h.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedHPA, err := clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(h.Namespace).Patch(
+		ctx,
+		h.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch horizontalpodautoscaler: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedHPA.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create horizontalpodautoscaler managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(h.Namespace).Patch(
+			ctx,
+			h.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear horizontalpodautoscaler managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

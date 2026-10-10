@@ -12,6 +12,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
@@ -142,4 +143,49 @@ func (g *gateway) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+func (g *gateway) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if g.Gateway == nil {
+		return newNilUnderlyingObjectError(g.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedGateway, err := clientsets.Gateway.GatewayV1().Gateways(g.Namespace).Patch(
+		ctx,
+		g.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch gateway: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedGateway.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create gateway managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Gateway.GatewayV1().Gateways(g.Namespace).Patch(
+			ctx,
+			g.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear gateway managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

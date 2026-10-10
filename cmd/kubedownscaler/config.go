@@ -23,6 +23,10 @@ type runtimeConfiguration struct {
 	Interval time.Duration
 	// MaxRetriesOnConflict sets the maximum number of retries on 409 errors.
 	MaxRetriesOnConflict int
+	// ServerSidePatch sets if the downscaler should use server-side apply for updates.
+	ServerSidePatch bool
+	// ManageFields sets if the downscaler should manage fields for patches.
+	ManageFields bool
 }
 
 func getDefaultConfig() *runtimeConfiguration {

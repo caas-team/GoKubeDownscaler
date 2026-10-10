@@ -11,6 +11,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	acidv1 "github.com/zalando/postgres-operator/pkg/apis/acid.zalan.do/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -158,4 +159,14 @@ func (p *postgresql) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+func (p *postgresql) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	return patchControllerRuntimeObject(clientsets.Client, p.Postgresql, patchType, patchData, manageFields, ctx)
 }

@@ -11,6 +11,7 @@ import (
 	kruise "github.com/openkruise/kruise/apis/apps/v1alpha1"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getCloneSets is the getResourceFunc for cloneSets.
@@ -141,4 +142,49 @@ func (c *cloneSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+func (c *cloneSet) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if c.CloneSet == nil {
+		return newNilUnderlyingObjectError(c.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedCloneSet, err := clientsets.Kruise.AppsV1alpha1().CloneSets(c.Namespace).Patch(
+		ctx,
+		c.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch cloneset: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedCloneSet.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create cloneset managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kruise.AppsV1alpha1().CloneSets(c.Namespace).Patch(
+			ctx,
+			c.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear cloneset managed fields: %w", err)
+		}
+	}
+
+	return nil
 }
