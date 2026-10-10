@@ -14,6 +14,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getAdvancedCronJobs is the getResourceFunc for AdvancedCronJobs.
@@ -243,4 +244,49 @@ func (c *advancedCronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error)
 	}
 
 	return diff, nil
+}
+
+func (c *advancedCronJob) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if c.AdvancedCronJob == nil {
+		return newNilUnderlyingObjectError(c.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedAdvancedCronJob, err := clientsets.Kruise.AppsV1beta1().AdvancedCronJobs(c.Namespace).Patch(
+		ctx,
+		c.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch advancedcronjob: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedAdvancedCronJob.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create advancedcronjob managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kruise.AppsV1beta1().AdvancedCronJobs(c.Namespace).Patch(
+			ctx,
+			c.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear advancedcronjob managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

@@ -13,6 +13,7 @@ import (
 	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -153,4 +154,49 @@ func (s *scaledObject) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+func (s *scaledObject) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if s.ScaledObject == nil {
+		return newNilUnderlyingObjectError(s.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedScaledObject, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(s.Namespace).Patch(
+		ctx,
+		s.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch scaledobject: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedScaledObject.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create scaledobject managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Keda.KedaV1alpha1().ScaledObjects(s.Namespace).Patch(
+			ctx,
+			s.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear scaledobject managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

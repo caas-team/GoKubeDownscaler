@@ -11,6 +11,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getPrometheuses is the getResourceFunc for Prometheuses.
@@ -143,4 +144,49 @@ func (p *prometheus) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+func (p *prometheus) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if p.Prometheus == nil {
+		return newNilUnderlyingObjectError(p.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedPrometheus, err := clientsets.Monitoring.MonitoringV1().Prometheuses(p.Namespace).Patch(
+		ctx,
+		p.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch prometheus: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedPrometheus.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create prometheus managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Monitoring.MonitoringV1().Prometheuses(p.Namespace).Patch(
+			ctx,
+			p.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear prometheus managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

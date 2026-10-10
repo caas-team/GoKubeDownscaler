@@ -11,6 +11,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getStatefulSets is the getResourceFunc for StatefulSets.
@@ -143,4 +144,49 @@ func (s *statefulSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+func (s *statefulSet) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if s.StatefulSet == nil {
+		return newNilUnderlyingObjectError(s.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedStatefulSet, err := clientsets.Kubernetes.AppsV1().StatefulSets(s.Namespace).Patch(
+		ctx,
+		s.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch statefulset: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedStatefulSet.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create statefulset managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kubernetes.AppsV1().StatefulSets(s.Namespace).Patch(
+			ctx,
+			s.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear statefulset managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

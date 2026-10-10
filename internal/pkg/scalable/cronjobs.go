@@ -14,6 +14,7 @@ import (
 	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getCronJobs is the getResourceFunc for CronJobs.
@@ -197,4 +198,49 @@ func (c *cronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+func (c *cronJob) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if c.CronJob == nil {
+		return newNilUnderlyingObjectError(c.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedCronJob, err := clientsets.Kubernetes.BatchV1().CronJobs(c.Namespace).Patch(
+		ctx,
+		c.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch cronjob: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedCronJob.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create cronjob managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kubernetes.BatchV1().CronJobs(c.Namespace).Patch(
+			ctx,
+			c.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear cronjob managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

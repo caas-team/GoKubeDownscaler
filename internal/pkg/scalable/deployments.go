@@ -11,6 +11,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getDeployments is the getResourceFunc for Deployments.
@@ -99,6 +100,56 @@ func (d *deployment) Update(clientsets *Clientsets, ctx context.Context) error {
 	_, err := clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Update(ctx, d.Deployment, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update deployment: %w", err)
+	}
+
+	return nil
+}
+
+// Patch applies a patch to the Deployment. Downscaling records this controller as
+// the field manager; upscaling clears managed fields after restoring the workload.
+func (d *deployment) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if d.Deployment == nil {
+		return newNilUnderlyingObjectError(d.Kind)
+	}
+
+	patchOptions := metav1.PatchOptions{}
+	if manageFields {
+		patchOptions.FieldManager = managedFieldsManager
+	}
+
+	patchedDeployment, err := clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Patch(
+		ctx,
+		d.Name,
+		patchType,
+		patchData,
+		patchOptions,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch deployment: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedDeployment.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create deployment managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Patch(
+			ctx,
+			d.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear deployment managed fields: %w", err)
+		}
 	}
 
 	return nil
