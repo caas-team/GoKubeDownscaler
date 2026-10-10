@@ -8,6 +8,7 @@ require (
 	github.com/argoproj/argo-rollouts v1.10.2
 	github.com/fluxcd/helm-controller/api v1.7.2
 	github.com/fluxcd/kustomize-controller/api v1.10.2
+	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/kedacore/keda/v2 v2.21.1
 	github.com/open-policy-agent/cert-controller v0.16.0
 	github.com/openkruise/kruise v1.9.3

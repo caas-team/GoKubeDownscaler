@@ -13,6 +13,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -191,4 +192,49 @@ func (s *service) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+func (s *service) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if s.Service == nil {
+		return newNilUnderlyingObjectError(s.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedService, err := clientsets.Kubernetes.CoreV1().Services(s.Namespace).Patch(
+		ctx,
+		s.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch service: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedService.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create service managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kubernetes.CoreV1().Services(s.Namespace).Patch(
+			ctx,
+			s.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear service managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

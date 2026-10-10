@@ -11,6 +11,7 @@ import (
 	kruisev1beta1 "github.com/openkruise/kruise/apis/apps/v1beta1"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -127,4 +128,49 @@ func (i *imagePullJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+func (i *imagePullJob) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if i.ImagePullJob == nil {
+		return newNilUnderlyingObjectError(i.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedImagePullJob, err := clientsets.Kruise.AppsV1beta1().ImagePullJobs(i.Namespace).Patch(
+		ctx,
+		i.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch imagepulljob: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedImagePullJob.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create imagepulljob managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kruise.AppsV1beta1().ImagePullJobs(i.Namespace).Patch(
+			ctx,
+			i.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear imagepulljob managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

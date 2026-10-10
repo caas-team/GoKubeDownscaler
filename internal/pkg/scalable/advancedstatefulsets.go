@@ -13,6 +13,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getStatefulSets is the getResourceFunc for KruiseStatefulSets.
@@ -250,4 +251,94 @@ func savedResourcesFromContainers(containers []corev1.Container, diffReplicas in
 	}
 
 	return metrics.NewSavedResources(totalCPU*float64(diffReplicas), totalMemory*float64(diffReplicas))
+}
+
+func (s *advancedStatefulSet) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if s.StatefulSet == nil {
+		return newNilUnderlyingObjectError(s.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedStatefulSet, err := clientsets.Kruise.AppsV1beta1().StatefulSets(s.Namespace).Patch(
+		ctx,
+		s.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch advancedstatefulset: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedStatefulSet.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create advancedstatefulset managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kruise.AppsV1beta1().StatefulSets(s.Namespace).Patch(
+			ctx,
+			s.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear advancedstatefulset managed fields: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (s *advancedStatefulSetV1alpha1) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if s.StatefulSet == nil {
+		return newNilUnderlyingObjectError(s.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedStatefulSet, err := clientsets.Kruise.AppsV1alpha1().StatefulSets(s.Namespace).Patch(
+		ctx,
+		s.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch advancedstatefulsetv1alpha1: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedStatefulSet.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create advancedstatefulsetv1alpha1 managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kruise.AppsV1alpha1().StatefulSets(s.Namespace).Patch(
+			ctx,
+			s.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear advancedstatefulsetv1alpha1 managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

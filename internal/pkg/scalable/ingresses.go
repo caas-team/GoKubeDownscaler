@@ -12,6 +12,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -143,4 +144,49 @@ func (i *ingress) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+func (i *ingress) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if i.Ingress == nil {
+		return newNilUnderlyingObjectError(i.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedIngress, err := clientsets.Kubernetes.NetworkingV1().Ingresses(i.Namespace).Patch(
+		ctx,
+		i.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch ingress: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedIngress.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create ingress managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kubernetes.NetworkingV1().Ingresses(i.Namespace).Patch(
+			ctx,
+			i.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear ingress managed fields: %w", err)
+		}
+	}
+
+	return nil
 }
