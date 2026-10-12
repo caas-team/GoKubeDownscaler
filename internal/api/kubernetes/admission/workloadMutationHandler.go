@@ -518,7 +518,7 @@ func mutateWorkload(
 		), err
 	}
 
-	patch, err := workload.Compare(workloadCopy)
+	patch, err := workload.GenerateJSONDiff(workloadCopy)
 	if err != nil {
 		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
 

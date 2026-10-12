@@ -499,7 +499,7 @@ func TestClearManagedFieldsPatch(t *testing.T) {
 			name: "removes only the downscaler manager",
 			original: []metav1.ManagedFieldsEntry{
 				{Manager: "deployment-controller"},
-				{Manager: managedFieldsManager},
+				{Manager: goKubeDownscalerFieldManager},
 				{Manager: "horizontal-pod-autoscaler"},
 			},
 			want: []string{"deployment-controller", "horizontal-pod-autoscaler"},
@@ -514,7 +514,7 @@ func TestClearManagedFieldsPatch(t *testing.T) {
 		{
 			name: "sends an explicit empty managed fields list when only the downscaler is present",
 			original: []metav1.ManagedFieldsEntry{
-				{Manager: managedFieldsManager},
+				{Manager: goKubeDownscalerFieldManager},
 			},
 			want: []string{},
 		},

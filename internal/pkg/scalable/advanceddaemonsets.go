@@ -109,10 +109,10 @@ func (d *advancedDaemonSet) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two advancedDaemonSet resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two advancedDaemonSet resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (d *advancedDaemonSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (d *advancedDaemonSet) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	nswCopy, ok := workloadCopy.(*nodeSelectorScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*nodeSelectorScaledWorkload)(nil), workloadCopy)
@@ -135,6 +135,21 @@ func (d *advancedDaemonSet) Compare(workloadCopy Workload) (jsondiff.Patch, erro
 	return diff, nil
 }
 
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (d *advancedDaemonSet) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := d.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate advancedDaemonSet patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
+}
+
 func (d *advancedDaemonSet) Patch(
 	clientsets *Clientsets,
 	patchType types.PatchType,
@@ -148,7 +163,7 @@ func (d *advancedDaemonSet) Patch(
 
 	options := patchOptions(manageFields)
 
-	patchedDaemonSet, err := clientsets.Kruise.AppsV1beta1().DaemonSets(d.Namespace).Patch(
+	_, err := clientsets.Kruise.AppsV1beta1().DaemonSets(d.Namespace).Patch(
 		ctx,
 		d.Name,
 		patchType,
@@ -157,24 +172,6 @@ func (d *advancedDaemonSet) Patch(
 	)
 	if err != nil {
 		return fmt.Errorf("failed to patch advanceddaemonset: %w", err)
-	}
-
-	if !manageFields {
-		clearPatch, err := clearManagedFieldsPatch(patchedDaemonSet.ManagedFields)
-		if err != nil {
-			return fmt.Errorf("failed to create advanceddaemonset managed fields clear patch: %w", err)
-		}
-
-		_, err = clientsets.Kruise.AppsV1beta1().DaemonSets(d.Namespace).Patch(
-			ctx,
-			d.Name,
-			types.MergePatchType,
-			clearPatch,
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to clear advanceddaemonset managed fields: %w", err)
-		}
 	}
 
 	return nil
