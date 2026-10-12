@@ -115,10 +115,10 @@ func (k *kafkaBridge) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares the workload with another workload and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen // short names are ok for the workflow of this function
-func (k *kafkaBridge) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (k *kafkaBridge) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -139,6 +139,21 @@ func (k *kafkaBridge) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (k *kafkaBridge) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := k.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate kafkaBridge patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
 }
 
 // Reget regets the workload to ensure the latest state.

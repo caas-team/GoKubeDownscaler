@@ -263,7 +263,7 @@ func (p *podDisruptionBudget) Patch(
 
 	options := patchOptions(manageFields)
 
-	patchedPDB, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(p.Namespace).Patch(
+	_, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(p.Namespace).Patch(
 		ctx,
 		p.Name,
 		patchType,
@@ -272,24 +272,6 @@ func (p *podDisruptionBudget) Patch(
 	)
 	if err != nil {
 		return fmt.Errorf("failed to patch poddisruptionbudget: %w", err)
-	}
-
-	if !manageFields {
-		clearPatch, err := clearManagedFieldsPatch(patchedPDB.ManagedFields)
-		if err != nil {
-			return fmt.Errorf("failed to create poddisruptionbudget managed fields clear patch: %w", err)
-		}
-
-		_, err = clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(p.Namespace).Patch(
-			ctx,
-			p.Name,
-			types.MergePatchType,
-			clearPatch,
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to clear poddisruptionbudget managed fields: %w", err)
-		}
 	}
 
 	return nil
@@ -306,8 +288,8 @@ func (p *podDisruptionBudget) Copy() (Workload, error) {
 	return &podDisruptionBudget{PodDisruptionBudget: copied}, nil
 }
 
-// Compare compares two podDisruptionBudget resources and returns the differences as a jsondiff.Patch.
-func (p *podDisruptionBudget) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+// GenerateJSONDiff compares two podDisruptionBudget resources and returns the differences as a jsondiff.Patch.
+func (p *podDisruptionBudget) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	pdbCopy, ok := workloadCopy.(*podDisruptionBudget)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*podDisruptionBudget)(nil), workloadCopy)
@@ -323,4 +305,19 @@ func (p *podDisruptionBudget) Compare(workloadCopy Workload) (jsondiff.Patch, er
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (p *podDisruptionBudget) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := p.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate podDisruptionBudget patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
 }

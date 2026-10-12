@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func assertJSONPatchTransforms(t *testing.T, original any, patchData []byte, expected any) {
+func assertJSONPatchTransforms(t *testing.T, original any, patchData PatchData, expected any) {
 	t.Helper()
 
-	t.Logf("patchData: %s", patchData)
+	t.Logf("patchData: %s", patchData.JSONPatch)
 
-	if len(patchData) == 0 {
+	if len(patchData.JSONPatch) == 0 {
 		assert.Equal(t, expected, original)
 		return
 	}
@@ -25,7 +25,7 @@ func assertJSONPatchTransforms(t *testing.T, original any, patchData []byte, exp
 	expectedJSON, err := json.Marshal(expected)
 	require.NoError(t, err)
 
-	patch, err := jsonpatch.DecodePatch(patchData)
+	patch, err := jsonpatch.DecodePatch(patchData.JSONPatch)
 	require.NoError(t, err)
 
 	actualJSON, err := patch.Apply(originalJSON)
