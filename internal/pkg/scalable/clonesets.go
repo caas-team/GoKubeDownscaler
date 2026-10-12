@@ -118,10 +118,10 @@ func (c *cloneSet) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two cloneSet resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two cloneSet resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (c *cloneSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (c *cloneSet) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -144,6 +144,21 @@ func (c *cloneSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	return diff, nil
 }
 
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (c *cloneSet) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := c.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate cloneSet patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
+}
+
 func (c *cloneSet) Patch(
 	clientsets *Clientsets,
 	patchType types.PatchType,
@@ -157,7 +172,7 @@ func (c *cloneSet) Patch(
 
 	options := patchOptions(manageFields)
 
-	patchedCloneSet, err := clientsets.Kruise.AppsV1alpha1().CloneSets(c.Namespace).Patch(
+	_, err := clientsets.Kruise.AppsV1alpha1().CloneSets(c.Namespace).Patch(
 		ctx,
 		c.Name,
 		patchType,
@@ -166,24 +181,6 @@ func (c *cloneSet) Patch(
 	)
 	if err != nil {
 		return fmt.Errorf("failed to patch cloneset: %w", err)
-	}
-
-	if !manageFields {
-		clearPatch, err := clearManagedFieldsPatch(patchedCloneSet.ManagedFields)
-		if err != nil {
-			return fmt.Errorf("failed to create cloneset managed fields clear patch: %w", err)
-		}
-
-		_, err = clientsets.Kruise.AppsV1alpha1().CloneSets(c.Namespace).Patch(
-			ctx,
-			c.Name,
-			types.MergePatchType,
-			clearPatch,
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to clear cloneset managed fields: %w", err)
-		}
 	}
 
 	return nil

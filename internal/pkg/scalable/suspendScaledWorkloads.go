@@ -31,8 +31,10 @@ type suspendScaledResource interface {
 	logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
-	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
-	Compare(workloadCopy Workload) (jsondiff.Patch, error)
+	// GenerateJSONDiff compares the workload with another workload and returns the differences as a jsondiff.Patch
+	GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error)
+	// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+	GeneratePatchDiff(workloadCopy Workload) ([]byte, error)
 }
 
 // suspendScaledWorkload is a wrapper for all resources which are scaled by setting a suspend field.

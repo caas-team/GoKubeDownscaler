@@ -120,10 +120,10 @@ func (i *ingress) Copy() (Workload, error) {
 	return &valueScaledWorkload{&ingress{Ingress: copied}}, nil
 }
 
-// Compare compares two ingress resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two ingress resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (i *ingress) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (i *ingress) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	vsw, ok := workloadCopy.(*valueScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
@@ -146,6 +146,21 @@ func (i *ingress) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	return diff, nil
 }
 
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (i *ingress) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := i.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate ingress patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
+}
+
 func (i *ingress) Patch(
 	clientsets *Clientsets,
 	patchType types.PatchType,
@@ -159,7 +174,7 @@ func (i *ingress) Patch(
 
 	options := patchOptions(manageFields)
 
-	patchedIngress, err := clientsets.Kubernetes.NetworkingV1().Ingresses(i.Namespace).Patch(
+	_, err := clientsets.Kubernetes.NetworkingV1().Ingresses(i.Namespace).Patch(
 		ctx,
 		i.Name,
 		patchType,
@@ -168,24 +183,6 @@ func (i *ingress) Patch(
 	)
 	if err != nil {
 		return fmt.Errorf("failed to patch ingress: %w", err)
-	}
-
-	if !manageFields {
-		clearPatch, err := clearManagedFieldsPatch(patchedIngress.ManagedFields)
-		if err != nil {
-			return fmt.Errorf("failed to create ingress managed fields clear patch: %w", err)
-		}
-
-		_, err = clientsets.Kubernetes.NetworkingV1().Ingresses(i.Namespace).Patch(
-			ctx,
-			i.Name,
-			types.MergePatchType,
-			clearPatch,
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to clear ingress managed fields: %w", err)
-		}
 	}
 
 	return nil

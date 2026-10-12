@@ -32,8 +32,10 @@ type nodeSelectorScaledResource interface {
 	getResourcesRequests(_ int32) *metrics.SavedResources
 	// Copy creates a deep copy of the resource.
 	Copy() (Workload, error)
-	// Compare compares the resource with another resource and returns the differences as a jsondiff.Patch.
-	Compare(workloadCopy Workload) (jsondiff.Patch, error)
+	// GenerateJSONDiff compares the resource with another resource and returns the differences as a jsondiff.Patch.
+	GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error)
+	// GeneratePatchDiff compares the resource with another resource and returns the JSON patch bytes.
+	GeneratePatchDiff(workloadCopy Workload) ([]byte, error)
 }
 
 // nodeSelectorScaledWorkload is a wrapper for all resources which are scaled by mutating their node selector.

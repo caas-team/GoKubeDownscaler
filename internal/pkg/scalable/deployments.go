@@ -105,8 +105,8 @@ func (d *deployment) Update(clientsets *Clientsets, ctx context.Context) error {
 	return nil
 }
 
-// Patch applies a patch to the Deployment. Downscaling records this controller as
-// the field manager; upscaling clears managed fields after restoring the workload.
+// Patch applies a patch to the Deployment. Downscaling uses ApplyPatchType to record
+// this controller as the field manager; upscaling uses JSONPatchType and clears managed fields.
 func (d *deployment) Patch(
 	clientsets *Clientsets,
 	patchType types.PatchType,
@@ -118,38 +118,17 @@ func (d *deployment) Patch(
 		return newNilUnderlyingObjectError(d.Kind)
 	}
 
-	patchOptions := metav1.PatchOptions{}
-	if manageFields {
-		patchOptions.FieldManager = managedFieldsManager
-	}
+	options := patchOptions(manageFields)
 
-	patchedDeployment, err := clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Patch(
+	_, err := clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Patch(
 		ctx,
 		d.Name,
 		patchType,
 		patchData,
-		patchOptions,
+		options,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to patch deployment: %w", err)
-	}
-
-	if !manageFields {
-		clearPatch, err := clearManagedFieldsPatch(patchedDeployment.ManagedFields)
-		if err != nil {
-			return fmt.Errorf("failed to create deployment managed fields clear patch: %w", err)
-		}
-
-		_, err = clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Patch(
-			ctx,
-			d.Name,
-			types.MergePatchType,
-			clearPatch,
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to clear deployment managed fields: %w", err)
-		}
 	}
 
 	return nil
@@ -170,10 +149,10 @@ func (d *deployment) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two deployment resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two deployment resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (d *deployment) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (d *deployment) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -194,4 +173,19 @@ func (d *deployment) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (d *deployment) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := d.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate deployment patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
 }
