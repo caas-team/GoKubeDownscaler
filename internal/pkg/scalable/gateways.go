@@ -119,10 +119,10 @@ func (g *gateway) Copy() (Workload, error) {
 	return &valueScaledWorkload{valueScaledResource: &gateway{Gateway: copied}}, nil
 }
 
-// Compare compares two ingress resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two ingress resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (g *gateway) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (g *gateway) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	vswCopy, ok := workloadCopy.(*valueScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
@@ -145,6 +145,21 @@ func (g *gateway) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	return diff, nil
 }
 
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (g *gateway) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := g.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate gateway patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
+}
+
 func (g *gateway) Patch(
 	clientsets *Clientsets,
 	patchType types.PatchType,
@@ -158,7 +173,7 @@ func (g *gateway) Patch(
 
 	options := patchOptions(manageFields)
 
-	patchedGateway, err := clientsets.Gateway.GatewayV1().Gateways(g.Namespace).Patch(
+	_, err := clientsets.Gateway.GatewayV1().Gateways(g.Namespace).Patch(
 		ctx,
 		g.Name,
 		patchType,
@@ -167,24 +182,6 @@ func (g *gateway) Patch(
 	)
 	if err != nil {
 		return fmt.Errorf("failed to patch gateway: %w", err)
-	}
-
-	if !manageFields {
-		clearPatch, err := clearManagedFieldsPatch(patchedGateway.ManagedFields)
-		if err != nil {
-			return fmt.Errorf("failed to create gateway managed fields clear patch: %w", err)
-		}
-
-		_, err = clientsets.Gateway.GatewayV1().Gateways(g.Namespace).Patch(
-			ctx,
-			g.Name,
-			types.MergePatchType,
-			clearPatch,
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to clear gateway managed fields: %w", err)
-		}
 	}
 
 	return nil

@@ -220,10 +220,10 @@ func (c *advancedCronJob) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two advancedCronJob resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two advancedCronJob resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (c *advancedCronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (c *advancedCronJob) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
@@ -244,6 +244,21 @@ func (c *advancedCronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error)
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (c *advancedCronJob) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := c.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate advancedCronJob patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
 }
 
 func (c *advancedCronJob) Patch(

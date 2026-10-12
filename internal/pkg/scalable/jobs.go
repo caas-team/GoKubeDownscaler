@@ -124,10 +124,10 @@ func (j *job) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two Job resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two Job resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (j *job) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (j *job) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
@@ -148,6 +148,21 @@ func (j *job) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (j *job) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := j.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate job patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
 }
 
 func (j *job) Patch(

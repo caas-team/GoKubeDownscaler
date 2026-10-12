@@ -58,9 +58,9 @@ type Client interface {
 	RegetWorkload(workload scalable.Workload, ctx context.Context) error
 	// DownscaleWorkload downscales the workload to the specified replicas
 	//nolint: lll //it fits better in a single line.
-	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, serverSidePatch bool, ctx context.Context, logger *slog.Logger) (*metrics.SavedResources, error)
+	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, patch bool, ctx context.Context, logger *slog.Logger) (*metrics.SavedResources, error)
 	// UpscaleWorkload upscales the workload to the original replicas
-	UpscaleWorkload(workload scalable.Workload, serverSidePatch bool, ctx context.Context, logger *slog.Logger) error
+	UpscaleWorkload(workload scalable.Workload, patch bool, ctx context.Context, logger *slog.Logger) error
 	// ensureSecret ensures that the secret used for storing TLS certificates exists
 	ensureSecret(namespace, secretName string, ctx context.Context) (bool, error)
 	// GetScaledObjects gets all scaledobjects in the specified namespace
@@ -268,7 +268,7 @@ func (c client) RegetWorkload(workload scalable.Workload, ctx context.Context) e
 func (c client) DownscaleWorkload(
 	replicas values.Replicas,
 	workload scalable.Workload,
-	serverSidePatch bool,
+	patch bool,
 	ctx context.Context,
 	logger *slog.Logger,
 ) (*metrics.SavedResources, error) {
@@ -294,7 +294,7 @@ func (c client) DownscaleWorkload(
 		return metrics.NewSavedResources(0, 0), nil
 	}
 
-	err = c.persistWorkload(workload, scalingSummary.PatchData, serverSidePatch, true, ctx)
+	err = c.persistWorkload(workload, scalingSummary.PatchData, patch, true, ctx)
 	if err != nil {
 		return metrics.NewSavedResources(0, 0), err
 	}
@@ -305,7 +305,7 @@ func (c client) DownscaleWorkload(
 }
 
 // UpscaleWorkload upscales the workload to the original replicas.
-func (c client) UpscaleWorkload(workload scalable.Workload, serverSidePatch bool, ctx context.Context, logger *slog.Logger) error {
+func (c client) UpscaleWorkload(workload scalable.Workload, patch bool, ctx context.Context, logger *slog.Logger) error {
 	scalingSummary, err := workload.ScaleUp(logger)
 	if err != nil {
 		return fmt.Errorf("failed to set the workload into a scaled up state: %w", err)
@@ -328,7 +328,7 @@ func (c client) UpscaleWorkload(workload scalable.Workload, serverSidePatch bool
 		return nil
 	}
 
-	err = c.persistWorkload(workload, scalingSummary.PatchData, serverSidePatch, false, ctx)
+	err = c.persistWorkload(workload, scalingSummary.PatchData, patch, false, ctx)
 	if err != nil {
 		return err
 	}
@@ -341,20 +341,41 @@ func (c client) UpscaleWorkload(workload scalable.Workload, serverSidePatch bool
 // persistWorkload applies a generated patch when requested and supported; otherwise it updates the full workload.
 func (c client) persistWorkload(
 	workload scalable.Workload,
-	patchData []byte,
-	serverSidePatch, manageFields bool,
+	patchData scalable.PatchData,
+	patch, manageFields bool,
 	ctx context.Context,
 ) error {
-	if serverSidePatch {
-		if err := workload.Patch(c.clientsets, types.JSONPatchType, patchData, manageFields, ctx); err != nil {
-			return fmt.Errorf("failed to patch the workload: %w", err)
+	if !patch {
+		err := workload.Update(c.clientsets, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update the workload: %w", err)
 		}
 
 		return nil
 	}
 
-	if err := workload.Update(c.clientsets, ctx); err != nil {
-		return fmt.Errorf("failed to update the workload: %w", err)
+	var patchType types.PatchType
+	var patchContent []byte
+
+	if manageFields {
+		// Scale down: use apply patch to set field manager
+		patchType = types.ApplyPatchType
+		patchContent = patchData.ApplyPatch
+	} else {
+		// Scale up: use JSON patch to clean gokubedownscaler manager
+		patchType = types.JSONPatchType
+
+		jsonPatch, err := scalable.PrependManagedFieldsResetJSONPatch(patchData.JSONPatch, patchData.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to prepend managedFields reset to JSON patch: %w", err)
+		}
+
+		patchContent = jsonPatch
+	}
+
+	err := workload.Patch(c.clientsets, patchType, patchContent, manageFields, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to apply patch to the workload: %w", err)
 	}
 
 	return nil

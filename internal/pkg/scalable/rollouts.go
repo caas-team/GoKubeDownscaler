@@ -120,10 +120,10 @@ func (r *rollout) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two rollout resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two rollout resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (r *rollout) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (r *rollout) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -144,6 +144,21 @@ func (r *rollout) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (r *rollout) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := r.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate rollout patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
 }
 
 func (r *rollout) Patch(

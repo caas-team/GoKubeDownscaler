@@ -22,44 +22,39 @@ import (
 )
 
 const (
-	managedFieldsManager        = "gokubedownscaler"
-	annotationOriginalReplicas  = "downscaler/original-replicas"
-	deploymentGroupVersion      = "apps/v1"
-	deploymentKind              = "Deployment"
-	autoscalingRunnerSetKind    = "AutoscalingRunnerSet"
-	advancedCronJobKind         = "AdvancedCronJob"
-	advancedDaemonSetKind       = "AdvancedDaemonSet"
-	broadcastJobKind            = "BroadcastJob"
-	cloneSetKind                = "CloneSet"
-	cronJobKind                 = "CronJob"
-	daemonSetKind               = "DaemonSet"
-	gatewayKind                 = "Gateway"
-	horizontalPodAutoscalerKind = "HorizontalPodAutoscaler"
-	ingressKind                 = "Ingress"
-	jobKind                     = "Job"
-	kafkaStrimziGroup           = "kafka.strimzi.io"
-	kafkaStrimziVersion         = "v1"
-	kafkaBridgeKind             = "KafkaBridge"
-	kafkaConnectKind            = "KafkaConnect"
-	kafkaMirrorMaker2Kind       = "KafkaMirrorMaker2"
-	podDisruptionBudgetKind     = "PodDisruptionBudget"
-	postgresqlKind              = "postgresql" // lowercase for postgresqlKind is intentional
-	prometheusKind              = "Prometheus"
-	rolloutKind                 = "Rollout"
-	scaledObjectKind            = "ScaledObject"
-	serviceKind                 = "Service"
-	stackKind                   = "Stack"
-	statefulSetKind             = "StatefulSet"
+	goKubeDownscalerFieldManager = "gokubedownscaler"
+	annotationOriginalReplicas   = "downscaler/original-replicas"
+	deploymentGroupVersion       = "apps/v1"
+	deploymentKind               = "Deployment"
+	autoscalingRunnerSetKind     = "AutoscalingRunnerSet"
+	advancedCronJobKind          = "AdvancedCronJob"
+	advancedDaemonSetKind        = "AdvancedDaemonSet"
+	broadcastJobKind             = "BroadcastJob"
+	cloneSetKind                 = "CloneSet"
+	cronJobKind                  = "CronJob"
+	daemonSetKind                = "DaemonSet"
+	gatewayKind                  = "Gateway"
+	horizontalPodAutoscalerKind  = "HorizontalPodAutoscaler"
+	ingressKind                  = "Ingress"
+	jobKind                      = "Job"
+	kafkaStrimziGroup            = "kafka.strimzi.io"
+	kafkaStrimziVersion          = "v1"
+	kafkaBridgeKind              = "KafkaBridge"
+	kafkaConnectKind             = "KafkaConnect"
+	kafkaMirrorMaker2Kind        = "KafkaMirrorMaker2"
+	podDisruptionBudgetKind      = "PodDisruptionBudget"
+	postgresqlKind               = "postgresql" // lowercase for postgresqlKind is intentional
+	prometheusKind               = "Prometheus"
+	rolloutKind                  = "Rollout"
+	scaledObjectKind             = "ScaledObject"
+	serviceKind                  = "Service"
+	stackKind                    = "Stack"
+	statefulSetKind              = "StatefulSet"
 )
 
 // clearManagedFieldsPatch creates a merge patch that retains every manager except this controller.
 func clearManagedFieldsPatch(managedFields []metav1.ManagedFieldsEntry) ([]byte, error) {
-	remainingManagedFields := make([]metav1.ManagedFieldsEntry, 0, len(managedFields))
-	for _, managedField := range managedFields {
-		if managedField.Manager != managedFieldsManager {
-			remainingManagedFields = append(remainingManagedFields, managedField)
-		}
-	}
+	remainingManagedFields := excludeFieldsManagedByManager(managedFields, goKubeDownscalerFieldManager)
 
 	patch := struct {
 		Metadata struct {
@@ -76,10 +71,23 @@ func clearManagedFieldsPatch(managedFields []metav1.ManagedFieldsEntry) ([]byte,
 	return marshal, nil
 }
 
+func excludeFieldsManagedByManager(managedFields []metav1.ManagedFieldsEntry, excludedManager string) []metav1.ManagedFieldsEntry {
+	remainingManagedFields := make([]metav1.ManagedFieldsEntry, 0, len(managedFields))
+	for _, managedField := range managedFields {
+		if managedField.Manager != excludedManager {
+			remainingManagedFields = append(remainingManagedFields, managedField)
+		}
+	}
+
+	return remainingManagedFields
+}
+
 func patchOptions(manageFields bool) metav1.PatchOptions {
 	options := metav1.PatchOptions{}
 	if manageFields {
-		options.FieldManager = managedFieldsManager
+		options.FieldManager = goKubeDownscalerFieldManager
+		force := true
+		options.Force = &force
 	}
 
 	return options
@@ -95,47 +103,14 @@ func patchControllerRuntimeObject(
 ) error {
 	options := []ctrlclient.PatchOption{}
 	if manageFields {
-		options = append(options, ctrlclient.FieldOwner(managedFieldsManager))
+		options = append(options, ctrlclient.FieldOwner(goKubeDownscalerFieldManager))
 	}
 
 	if err := client.Patch(ctx, object, ctrlclient.RawPatch(patchType, patchData), options...); err != nil {
 		return fmt.Errorf("failed to patch object: %w", err)
 	}
 
-	if manageFields {
-		return nil
-	}
-
-	if err := client.Get(ctx, ctrlclient.ObjectKeyFromObject(object), object); err != nil {
-		return fmt.Errorf("failed to get updated object after patching: %w", err)
-	}
-
-	clearPatch, err := clearManagedFieldsPatch(object.GetManagedFields())
-	if err != nil {
-		return fmt.Errorf("failed to create clear managed fields patch: %w", err)
-	}
-
-	err = client.Patch(ctx, object, ctrlclient.RawPatch(types.MergePatchType, clearPatch))
-	if err != nil {
-		return fmt.Errorf("failed to patch object: %w", err)
-	}
-
 	return nil
-}
-
-// createPatchData serializes a JSON Patch that transforms original into modified.
-func createPatchData(original, modified Workload) ([]byte, error) {
-	patch, err := original.Compare(modified)
-	if err != nil {
-		return nil, fmt.Errorf("failed to compare scaled workload with its original state: %w", err)
-	}
-
-	patchData, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal workload patch: %w", err)
-	}
-
-	return patchData, nil
 }
 
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads.
@@ -570,7 +545,7 @@ func imagePullJobParallelism(parallelism *intstr.IntOrString) int32 {
 // scalingSummary contains the result of a scaling operation.
 type scalingSummary struct {
 	SavedResources *metrics.SavedResources
-	PatchData      []byte
+	PatchData      PatchData
 	IsUpdateNeeded bool
 	From           values.Replicas
 	To             values.Replicas
@@ -622,4 +597,75 @@ func logWorkloadMessage(
 	}
 
 	logger.Info(message, args...)
+}
+
+// PatchData contains both a JSON patch and a Kubernetes server-side apply patch for a workload update.
+type PatchData struct {
+	JSONPatch     []byte                      `json:"jsonPatch"`
+	ApplyPatch    []byte                      `json:"applyPatch"`
+	ManagedFields []metav1.ManagedFieldsEntry `json:"managedFields,omitempty"`
+}
+
+// createPatchData serializes a JSON Patch that transforms original into modified,
+// and also creates a full-object apply patch for server-side apply.
+func createPatchData(original, modified Workload) (PatchData, error) {
+	result := PatchData{}
+
+	if managedFieldsObject, ok := original.(interface {
+		GetManagedFields() []metav1.ManagedFieldsEntry
+	}); ok {
+		result.ManagedFields = managedFieldsObject.GetManagedFields()
+	}
+
+	jsonPatch, err := original.GenerateJSONDiff(modified)
+	if err != nil {
+		return result, fmt.Errorf("failed to compare scaled workload with its original state: %w", err)
+	}
+
+	result.JSONPatch, err = json.Marshal(jsonPatch)
+	if err != nil {
+		return result, fmt.Errorf("failed to marshal workload patch: %w", err)
+	}
+
+	diffPatch, err := original.GeneratePatchDiff(modified)
+	if err != nil {
+		return result, fmt.Errorf("failed to generate workload patch diff: %w", err)
+	}
+
+	result.ApplyPatch = diffPatch
+
+	return result, nil
+}
+
+// PrependManagedFieldsResetJSONPatch prepends a JSON Patch operation that removes only the entries
+// owned by gokubedownscaler while preserving all other field managers.
+func PrependManagedFieldsResetJSONPatch(patch []byte, managedFields []metav1.ManagedFieldsEntry) ([]byte, error) {
+	resetOp := map[string]any{
+		"op":    "replace",
+		"path":  "/metadata/managedFields",
+		"value": excludeFieldsManagedByManager(managedFields, goKubeDownscalerFieldManager),
+	}
+
+	if len(patch) == 0 {
+		resetPatch, err := json.Marshal([]map[string]any{resetOp})
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal managed fields reset patch: %w", err)
+		}
+
+		return resetPatch, nil
+	}
+
+	var patchOps []map[string]any
+	if err := json.Unmarshal(patch, &patchOps); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON patch: %w", err)
+	}
+
+	patchOps = append([]map[string]any{resetOp}, patchOps...)
+
+	patchedOps, err := json.Marshal(patchOps)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal managed fields reset patch: %w", err)
+	}
+
+	return patchedOps, nil
 }

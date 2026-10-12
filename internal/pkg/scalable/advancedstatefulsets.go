@@ -124,10 +124,10 @@ func (s *advancedStatefulSet) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two statefulSet resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two statefulSet resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (s *advancedStatefulSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (s *advancedStatefulSet) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -148,6 +148,21 @@ func (s *advancedStatefulSet) Compare(workloadCopy Workload) (jsondiff.Patch, er
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (s *advancedStatefulSet) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := s.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate advancedStatefulSet patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
 }
 
 // advancedStatefulSetV1alpha1 is a wrapper for StatefulSet.v1alpha1.apps.kruise.io to implement the replicaScaledResource interface.
@@ -211,10 +226,10 @@ func (s *advancedStatefulSetV1alpha1) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two statefulSet resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two statefulSet resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (s *advancedStatefulSetV1alpha1) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (s *advancedStatefulSetV1alpha1) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -235,6 +250,21 @@ func (s *advancedStatefulSetV1alpha1) Compare(workloadCopy Workload) (jsondiff.P
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (s *advancedStatefulSetV1alpha1) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := s.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate advancedStatefulSetV1alpha1 patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
 }
 
 // savedResourcesFromContainers is a helper function to calculate the total saved resources requests when downscaling based
@@ -266,7 +296,7 @@ func (s *advancedStatefulSet) Patch(
 
 	options := patchOptions(manageFields)
 
-	patchedStatefulSet, err := clientsets.Kruise.AppsV1beta1().StatefulSets(s.Namespace).Patch(
+	_, err := clientsets.Kruise.AppsV1beta1().StatefulSets(s.Namespace).Patch(
 		ctx,
 		s.Name,
 		patchType,
@@ -275,24 +305,6 @@ func (s *advancedStatefulSet) Patch(
 	)
 	if err != nil {
 		return fmt.Errorf("failed to patch advancedstatefulset: %w", err)
-	}
-
-	if !manageFields {
-		clearPatch, err := clearManagedFieldsPatch(patchedStatefulSet.ManagedFields)
-		if err != nil {
-			return fmt.Errorf("failed to create advancedstatefulset managed fields clear patch: %w", err)
-		}
-
-		_, err = clientsets.Kruise.AppsV1beta1().StatefulSets(s.Namespace).Patch(
-			ctx,
-			s.Name,
-			types.MergePatchType,
-			clearPatch,
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to clear advancedstatefulset managed fields: %w", err)
-		}
 	}
 
 	return nil
@@ -311,7 +323,7 @@ func (s *advancedStatefulSetV1alpha1) Patch(
 
 	options := patchOptions(manageFields)
 
-	patchedStatefulSet, err := clientsets.Kruise.AppsV1alpha1().StatefulSets(s.Namespace).Patch(
+	_, err := clientsets.Kruise.AppsV1alpha1().StatefulSets(s.Namespace).Patch(
 		ctx,
 		s.Name,
 		patchType,
@@ -320,24 +332,6 @@ func (s *advancedStatefulSetV1alpha1) Patch(
 	)
 	if err != nil {
 		return fmt.Errorf("failed to patch advancedstatefulsetv1alpha1: %w", err)
-	}
-
-	if !manageFields {
-		clearPatch, err := clearManagedFieldsPatch(patchedStatefulSet.ManagedFields)
-		if err != nil {
-			return fmt.Errorf("failed to create advancedstatefulsetv1alpha1 managed fields clear patch: %w", err)
-		}
-
-		_, err = clientsets.Kruise.AppsV1alpha1().StatefulSets(s.Namespace).Patch(
-			ctx,
-			s.Name,
-			types.MergePatchType,
-			clearPatch,
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to clear advancedstatefulsetv1alpha1 managed fields: %w", err)
-		}
 	}
 
 	return nil

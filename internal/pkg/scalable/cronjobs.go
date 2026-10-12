@@ -174,10 +174,10 @@ func (c *cronJob) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two cronJob resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two cronJob resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (c *cronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (c *cronJob) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
@@ -200,6 +200,21 @@ func (c *cronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	return diff, nil
 }
 
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (c *cronJob) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := c.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate cronJob patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
+}
+
 func (c *cronJob) Patch(
 	clientsets *Clientsets,
 	patchType types.PatchType,
@@ -213,7 +228,7 @@ func (c *cronJob) Patch(
 
 	options := patchOptions(manageFields)
 
-	patchedCronJob, err := clientsets.Kubernetes.BatchV1().CronJobs(c.Namespace).Patch(
+	_, err := clientsets.Kubernetes.BatchV1().CronJobs(c.Namespace).Patch(
 		ctx,
 		c.Name,
 		patchType,
@@ -222,24 +237,6 @@ func (c *cronJob) Patch(
 	)
 	if err != nil {
 		return fmt.Errorf("failed to patch cronjob: %w", err)
-	}
-
-	if !manageFields {
-		clearPatch, err := clearManagedFieldsPatch(patchedCronJob.ManagedFields)
-		if err != nil {
-			return fmt.Errorf("failed to create cronjob managed fields clear patch: %w", err)
-		}
-
-		_, err = clientsets.Kubernetes.BatchV1().CronJobs(c.Namespace).Patch(
-			ctx,
-			c.Name,
-			types.MergePatchType,
-			clearPatch,
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to clear cronjob managed fields: %w", err)
-		}
 	}
 
 	return nil

@@ -566,7 +566,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 			return fmt.Errorf("failed to get downscale replicas: %w", err)
 		}
 
-		savedResources, err := client.DownscaleWorkload(downscaleReplicas, workload, config.ServerSidePatch, ctx, logger)
+		savedResources, err := client.DownscaleWorkload(downscaleReplicas, workload, config.Patch, ctx, logger)
 		if err != nil {
 			return fmt.Errorf("failed to downscale workload: %w", err)
 		}
@@ -578,7 +578,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 	if scaling == values.ScalingUp {
 		logger.Debug("upscaling workload")
 
-		err := client.UpscaleWorkload(workload, config.ServerSidePatch, ctx, logger)
+		err := client.UpscaleWorkload(workload, config.Patch, ctx, logger)
 		if err != nil {
 			return fmt.Errorf("failed to upscale workload: %w", err)
 		}
