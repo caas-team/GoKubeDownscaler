@@ -134,10 +134,10 @@ func (h *horizontalPodAutoscaler) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two horizontalPodAutoscaler resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two horizontalPodAutoscaler resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (h *horizontalPodAutoscaler) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (h *horizontalPodAutoscaler) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -160,6 +160,21 @@ func (h *horizontalPodAutoscaler) Compare(workloadCopy Workload) (jsondiff.Patch
 	return diff, nil
 }
 
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (h *horizontalPodAutoscaler) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := h.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate horizontalPodAutoscaler patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
+}
+
 func (h *horizontalPodAutoscaler) Patch(
 	clientsets *Clientsets,
 	patchType types.PatchType,
@@ -173,7 +188,7 @@ func (h *horizontalPodAutoscaler) Patch(
 
 	options := patchOptions(manageFields)
 
-	patchedHPA, err := clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(h.Namespace).Patch(
+	_, err := clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(h.Namespace).Patch(
 		ctx,
 		h.Name,
 		patchType,
@@ -182,24 +197,6 @@ func (h *horizontalPodAutoscaler) Patch(
 	)
 	if err != nil {
 		return fmt.Errorf("failed to patch horizontalpodautoscaler: %w", err)
-	}
-
-	if !manageFields {
-		clearPatch, err := clearManagedFieldsPatch(patchedHPA.ManagedFields)
-		if err != nil {
-			return fmt.Errorf("failed to create horizontalpodautoscaler managed fields clear patch: %w", err)
-		}
-
-		_, err = clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(h.Namespace).Patch(
-			ctx,
-			h.Name,
-			types.MergePatchType,
-			clearPatch,
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to clear horizontalpodautoscaler managed fields: %w", err)
-		}
 	}
 
 	return nil

@@ -28,16 +28,16 @@ func (m *MockClient) GetNamespaceAnnotations(namespace string, ctx context.Conte
 func (m *MockClient) DownscaleWorkload(
 	replicas values.Replicas,
 	workload scalable.Workload,
-	serverSidePatch bool,
+	patch bool,
 	ctx context.Context,
 	logger *slog.Logger,
 ) (*metrics.SavedResources, error) {
-	args := m.Called(replicas, workload, serverSidePatch, ctx, logger)
+	args := m.Called(replicas, workload, patch, ctx, logger)
 	return args.Get(0).(*metrics.SavedResources), args.Error(1)
 }
 
-func (m *MockClient) UpscaleWorkload(workload scalable.Workload, serverSidePatch bool, ctx context.Context, logger *slog.Logger) error {
-	args := m.Called(workload, serverSidePatch, ctx, logger)
+func (m *MockClient) UpscaleWorkload(workload scalable.Workload, patch bool, ctx context.Context, logger *slog.Logger) error {
+	args := m.Called(workload, patch, ctx, logger)
 	return args.Error(0)
 }
 

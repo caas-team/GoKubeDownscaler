@@ -13,6 +13,8 @@ import (
 )
 
 // valueScaledResource provides all the functions needed to scale a resource by setting a field to a particular value.
+//
+//nolint:interfacebloat // this interface is used to define functions needed by scalable workloads.
 type valueScaledResource interface {
 	scalableResource
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
@@ -31,8 +33,10 @@ type valueScaledResource interface {
 	logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
-	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
-	Compare(workloadCopy Workload) (jsondiff.Patch, error)
+	// GenerateJSONDiff compares the workload with another workload and returns the differences as a jsondiff.Patch
+	GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error)
+	// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+	GeneratePatchDiff(workloadCopy Workload) ([]byte, error)
 }
 
 // valueScaledWorkload is a wrapper for all resources which are scaled by setting custom value field.

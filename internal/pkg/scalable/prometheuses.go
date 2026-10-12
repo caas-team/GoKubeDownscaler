@@ -120,10 +120,10 @@ func (p *prometheus) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two prometheus resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two prometheus resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (p *prometheus) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (p *prometheus) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -144,6 +144,21 @@ func (p *prometheus) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (p *prometheus) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := p.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate prometheus patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
 }
 
 func (p *prometheus) Patch(

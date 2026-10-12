@@ -23,10 +23,10 @@ type runtimeConfiguration struct {
 	Interval time.Duration
 	// MaxRetriesOnConflict sets the maximum number of retries on 409 errors.
 	MaxRetriesOnConflict int
-	// ServerSidePatch sets if the downscaler should use server-side apply for updates.
-	ServerSidePatch bool
-	// ManageFields sets if the downscaler should manage fields for patches.
-	ManageFields bool
+	// Patch sets if the downscaler should use patching for updates.
+	Patch bool
+	// ServerSide sets if the downscaler should use server-side apply for updates.
+	ServerSide bool
 }
 
 func getDefaultConfig() *runtimeConfiguration {
@@ -62,6 +62,18 @@ func (c *runtimeConfiguration) parseConfigFlags() {
 		"max-retries-on-conflict",
 		0,
 		"maximum number of retries on 409 conflict errors (default: 0)",
+	)
+	flag.BoolVar(
+		&c.Patch,
+		"patch",
+		false,
+		"enables patching for updates (default: false)",
+	)
+	flag.BoolVar(
+		&c.ServerSide,
+		"server-side",
+		false,
+		"enables server-side apply for updates (default: false)",
 	)
 }
 

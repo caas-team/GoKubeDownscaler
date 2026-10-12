@@ -168,10 +168,10 @@ func (s *service) Copy() (Workload, error) {
 	return &valueScaledWorkload{&service{Service: copied}}, nil
 }
 
-// Compare compares two service resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two service resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (s *service) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (s *service) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	vsw, ok := workloadCopy.(*valueScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
@@ -192,6 +192,21 @@ func (s *service) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (s *service) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := s.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate service patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
 }
 
 func (s *service) Patch(

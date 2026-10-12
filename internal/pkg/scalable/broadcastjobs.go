@@ -112,10 +112,10 @@ func (b *broadcastJob) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two broadcastJob resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two broadcastJob resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (b *broadcastJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (b *broadcastJob) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
@@ -138,6 +138,21 @@ func (b *broadcastJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	return diff, nil
 }
 
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+func (b *broadcastJob) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := b.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate broadcastJob patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
+}
+
 func (b *broadcastJob) Patch(
 	clientsets *Clientsets,
 	patchType types.PatchType,
@@ -151,7 +166,7 @@ func (b *broadcastJob) Patch(
 
 	options := patchOptions(manageFields)
 
-	patchedBroadcastJob, err := clientsets.Kruise.AppsV1beta1().BroadcastJobs(b.Namespace).Patch(
+	_, err := clientsets.Kruise.AppsV1beta1().BroadcastJobs(b.Namespace).Patch(
 		ctx,
 		b.Name,
 		patchType,
@@ -160,24 +175,6 @@ func (b *broadcastJob) Patch(
 	)
 	if err != nil {
 		return fmt.Errorf("failed to patch broadcastjob: %w", err)
-	}
-
-	if !manageFields {
-		clearPatch, err := clearManagedFieldsPatch(patchedBroadcastJob.ManagedFields)
-		if err != nil {
-			return fmt.Errorf("failed to create broadcastjob managed fields clear patch: %w", err)
-		}
-
-		_, err = clientsets.Kruise.AppsV1beta1().BroadcastJobs(b.Namespace).Patch(
-			ctx,
-			b.Name,
-			types.MergePatchType,
-			clearPatch,
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to clear broadcastjob managed fields: %w", err)
-		}
 	}
 
 	return nil
