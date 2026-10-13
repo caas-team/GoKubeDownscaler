@@ -161,18 +161,24 @@ func (h *horizontalPodAutoscaler) GenerateJSONDiff(workloadCopy Workload) (jsond
 }
 
 // GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (h *horizontalPodAutoscaler) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
-	patch, err := h.GenerateJSONDiff(workloadCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate horizontalPodAutoscaler patch diff: %w", err)
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
 	}
 
-	patchedDiff, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	hpaCopy, ok := rswCopy.replicaScaledResource.(*horizontalPodAutoscaler)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*horizontalPodAutoscaler)(nil), rswCopy.replicaScaledResource)
 	}
 
-	return patchedDiff, nil
+	if h.HorizontalPodAutoscaler == nil || hpaCopy.HorizontalPodAutoscaler == nil {
+		return nil, newNilUnderlyingObjectError(h.Kind)
+	}
+
+	return generateServerSideApplyPatch(h.HorizontalPodAutoscaler, hpaCopy.HorizontalPodAutoscaler)
 }
 
 func (h *horizontalPodAutoscaler) Patch(

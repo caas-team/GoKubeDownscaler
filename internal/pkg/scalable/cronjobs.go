@@ -200,19 +200,25 @@ func (c *cronJob) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error
 	return diff, nil
 }
 
-// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (c *cronJob) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
-	patch, err := c.GenerateJSONDiff(workloadCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate cronJob patch diff: %w", err)
+	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
 	}
 
-	patchedDiff, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	cjCopy, ok := sswCopy.suspendScaledResource.(*cronJob)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*cronJob)(nil), sswCopy.suspendScaledResource)
 	}
 
-	return patchedDiff, nil
+	if c.CronJob == nil || cjCopy.CronJob == nil {
+		return nil, newNilUnderlyingObjectError(c.Kind)
+	}
+
+	return generateServerSideApplyPatch(c.CronJob, cjCopy.CronJob)
 }
 
 func (c *cronJob) Patch(

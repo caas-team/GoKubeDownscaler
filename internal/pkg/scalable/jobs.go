@@ -150,19 +150,25 @@ func (j *job) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	return diff, nil
 }
 
-// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (j *job) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
-	patch, err := j.GenerateJSONDiff(workloadCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate job patch diff: %w", err)
+	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
 	}
 
-	patchedDiff, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	jCopy, ok := sswCopy.suspendScaledResource.(*job)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*job)(nil), sswCopy.suspendScaledResource)
 	}
 
-	return patchedDiff, nil
+	if j.Job == nil || jCopy.Job == nil {
+		return nil, newNilUnderlyingObjectError(j.Kind)
+	}
+
+	return generateServerSideApplyPatch(j.Job, jCopy.Job)
 }
 
 func (j *job) Patch(

@@ -13,6 +13,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	jsonpatch "github.com/evanphx/json-patch/v5"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -647,6 +648,91 @@ func createPatchData(original, modified Workload) (PatchData, error) {
 	result.ApplyPatch = diffPatch
 
 	return result, nil
+}
+
+// generateServerSideApplyPatch creates a server-side apply patch containing the object identity
+// and only the fields of spec that differ between original and modified.
+func generateServerSideApplyPatch(original, modified runtime.Object) ([]byte, error) {
+	meta, ok := modified.(metav1.Object)
+	if !ok {
+		return nil, newMetaV1DecodingError("modified object doesn't implement metav1.Object")
+	}
+
+	origJSON, err := json.Marshal(original)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal original object: %w", err)
+	}
+
+	modJSON, err := json.Marshal(modified)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal modified object: %w", err)
+	}
+
+	diff, err := jsonpatch.CreateMergePatch(origJSON, modJSON)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create merge patch: %w", err)
+	}
+
+	var patch map[string]any
+	if err = json.Unmarshal(diff, &patch); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal merge patch: %w", err)
+	}
+
+	// server-side apply only expresses fields to own; deletions (null) and server-owned fields are dropped.
+	patch, _ = stripNulls(patch).(map[string]any)
+	if patch == nil {
+		patch = map[string]any{}
+	}
+
+	delete(patch, "status")
+
+	gvk := modified.GetObjectKind().GroupVersionKind()
+	patch["apiVersion"] = gvk.GroupVersion().String()
+	patch["kind"] = gvk.Kind
+	patch["metadata"] = mergeMetadata(patch["metadata"], meta.GetName(), meta.GetNamespace())
+
+	result, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal server-side apply patch: %w", err)
+	}
+
+	return result, nil
+}
+
+// stripNulls recursively removes null values (merge patch deletions) from the given JSON value.
+func stripNulls(value any) any {
+	object, ok := value.(map[string]any)
+	if !ok {
+		return value
+	}
+
+	for key, child := range object {
+		if child == nil {
+			delete(object, key)
+
+			continue
+		}
+
+		object[key] = stripNulls(child)
+	}
+
+	return object
+}
+
+// mergeMetadata keeps only the changed annotations and labels and adds the name and namespace
+// that server-side apply requires to identify the object.
+func mergeMetadata(diffMetadata any, name, namespace string) map[string]any {
+	metadata := map[string]any{"name": name, "namespace": namespace}
+
+	if diff, ok := diffMetadata.(map[string]any); ok {
+		for _, key := range []string{"annotations", "labels"} {
+			if value, exists := diff[key]; exists {
+				metadata[key] = value
+			}
+		}
+	}
+
+	return metadata
 }
 
 // PrependManagedFieldsResetJSONPatch prepends a JSON Patch operation that removes only the entries
