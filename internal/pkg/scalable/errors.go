@@ -126,3 +126,15 @@ func newUnexpectedReplicasTypeError(val any, kind, namespace, name string) error
 func (e *UnexpectedReplicasTypeError) Error() string {
 	return fmt.Sprintf("unexpected type %s for spec.replicas on %s %s/%s", e.valType, e.kind, e.namespace, e.name)
 }
+
+type ModifiedObjectDoesntImplementMetaV1Error struct {
+	reason string
+}
+
+func newMetaV1DecodingError(reason string) error {
+	return &ModifiedObjectDoesntImplementMetaV1Error{reason: reason}
+}
+
+func (e *ModifiedObjectDoesntImplementMetaV1Error) Error() string {
+	return "error: modified object doesn't implement metav1.Object: " + e.reason
+}

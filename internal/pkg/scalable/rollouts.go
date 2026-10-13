@@ -146,19 +146,25 @@ func (r *rollout) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error
 	return diff, nil
 }
 
-// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (r *rollout) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
-	patch, err := r.GenerateJSONDiff(workloadCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate rollout patch diff: %w", err)
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
 	}
 
-	patchedDiff, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	rollCopy, ok := rswCopy.replicaScaledResource.(*rollout)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*rollout)(nil), rswCopy.replicaScaledResource)
 	}
 
-	return patchedDiff, nil
+	if r.Rollout == nil || rollCopy.Rollout == nil {
+		return nil, newNilUnderlyingObjectError(r.Kind)
+	}
+
+	return generateServerSideApplyPatch(r.Rollout, rollCopy.Rollout)
 }
 
 func (r *rollout) Patch(

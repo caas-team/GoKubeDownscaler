@@ -161,19 +161,25 @@ func (p *postgresql) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, er
 	return diff, nil
 }
 
-// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (p *postgresql) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
-	patch, err := p.GenerateJSONDiff(workloadCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate postgresql patch diff: %w", err)
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
 	}
 
-	patchedDiff, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	pgCopy, ok := rswCopy.replicaScaledResource.(*postgresql)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*postgresql)(nil), rswCopy.replicaScaledResource)
 	}
 
-	return patchedDiff, nil
+	if p.Postgresql == nil || pgCopy.Postgresql == nil {
+		return nil, newNilUnderlyingObjectError(p.Kind)
+	}
+
+	return generateServerSideApplyPatch(p.Postgresql, pgCopy.Postgresql)
 }
 
 func (p *postgresql) Patch(

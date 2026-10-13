@@ -145,19 +145,25 @@ func (g *gateway) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error
 	return diff, nil
 }
 
-// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (g *gateway) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
-	patch, err := g.GenerateJSONDiff(workloadCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate gateway patch diff: %w", err)
+	vswCopy, ok := workloadCopy.(*valueScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
 	}
 
-	patchedDiff, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	gtwCopy, ok := vswCopy.valueScaledResource.(*gateway)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*gateway)(nil), vswCopy.valueScaledResource)
 	}
 
-	return patchedDiff, nil
+	if g.Gateway == nil || gtwCopy.Gateway == nil {
+		return nil, newNilUnderlyingObjectError(g.Kind)
+	}
+
+	return generateServerSideApplyPatch(g.Gateway, gtwCopy.Gateway)
 }
 
 func (g *gateway) Patch(
