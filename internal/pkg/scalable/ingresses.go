@@ -147,18 +147,24 @@ func (i *ingress) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error
 }
 
 // GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (i *ingress) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
-	patch, err := i.GenerateJSONDiff(workloadCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate ingress patch diff: %w", err)
+	vswCopy, ok := workloadCopy.(*valueScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
 	}
 
-	patchedDiff, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	ingCopy, ok := vswCopy.valueScaledResource.(*ingress)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*ingress)(nil), vswCopy.valueScaledResource)
 	}
 
-	return patchedDiff, nil
+	if i.Ingress == nil || ingCopy.Ingress == nil {
+		return nil, newNilUnderlyingObjectError(i.Kind)
+	}
+
+	return generateServerSideApplyPatch(i.Ingress, ingCopy.Ingress)
 }
 
 func (i *ingress) Patch(

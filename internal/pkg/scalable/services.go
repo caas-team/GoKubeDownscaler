@@ -194,19 +194,25 @@ func (s *service) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error
 	return diff, nil
 }
 
-// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (s *service) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
-	patch, err := s.GenerateJSONDiff(workloadCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate service patch diff: %w", err)
+	vswCopy, ok := workloadCopy.(*valueScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
 	}
 
-	patchedDiff, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	svcCopy, ok := vswCopy.valueScaledResource.(*service)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*service)(nil), vswCopy.valueScaledResource)
 	}
 
-	return patchedDiff, nil
+	if s.Service == nil || svcCopy.Service == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	return generateServerSideApplyPatch(s.Service, svcCopy.Service)
 }
 
 func (s *service) Patch(

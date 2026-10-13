@@ -157,6 +157,8 @@ func (s *scaledObject) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, 
 }
 
 // GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+//
+
 func (s *scaledObject) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
 	patch, err := s.GenerateJSONDiff(workloadCopy)
 	if err != nil {
