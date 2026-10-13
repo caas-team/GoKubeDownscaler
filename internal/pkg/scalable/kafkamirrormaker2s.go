@@ -142,18 +142,24 @@ func (k *kafkaMirrorMaker2) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Pa
 }
 
 // GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (k *kafkaMirrorMaker2) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
-	patch, err := k.GenerateJSONDiff(workloadCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate kafkaMirrorMaker2 patch diff: %w", err)
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
 	}
 
-	patchedDiff, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	kCopy, ok := rswCopy.replicaScaledResource.(*kafkaMirrorMaker2)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*kafkaMirrorMaker2)(nil), rswCopy.replicaScaledResource)
 	}
 
-	return patchedDiff, nil
+	if k.Unstructured == nil || kCopy.Unstructured == nil {
+		return nil, newNilUnderlyingObjectError(k.GetKind())
+	}
+
+	return generateServerSideApplyPatch(k.Unstructured, kCopy.Unstructured)
 }
 
 // Reget regets the workload to ensure the latest state.

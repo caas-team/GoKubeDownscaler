@@ -135,19 +135,25 @@ func (d *advancedDaemonSet) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Pa
 	return diff, nil
 }
 
-// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (d *advancedDaemonSet) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
-	patch, err := d.GenerateJSONDiff(workloadCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate advancedDaemonSet patch diff: %w", err)
+	nswCopy, ok := workloadCopy.(*nodeSelectorScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*nodeSelectorScaledWorkload)(nil), workloadCopy)
 	}
 
-	patchedDiff, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	dsCopy, ok := nswCopy.nodeSelectorScaledResource.(*advancedDaemonSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*advancedDaemonSet)(nil), nswCopy.nodeSelectorScaledResource)
 	}
 
-	return patchedDiff, nil
+	if d.DaemonSet == nil || dsCopy.DaemonSet == nil {
+		return nil, newNilUnderlyingObjectError(d.Kind)
+	}
+
+	return generateServerSideApplyPatch(d.DaemonSet, dsCopy.DaemonSet)
 }
 
 func (d *advancedDaemonSet) Patch(

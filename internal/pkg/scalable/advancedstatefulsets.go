@@ -150,19 +150,25 @@ func (s *advancedStatefulSet) GenerateJSONDiff(workloadCopy Workload) (jsondiff.
 	return diff, nil
 }
 
-// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (s *advancedStatefulSet) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
-	patch, err := s.GenerateJSONDiff(workloadCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate advancedStatefulSet patch diff: %w", err)
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
 	}
 
-	patchedDiff, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	stsCopy, ok := rswCopy.replicaScaledResource.(*advancedStatefulSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*advancedStatefulSet)(nil), rswCopy.replicaScaledResource)
 	}
 
-	return patchedDiff, nil
+	if s.StatefulSet == nil || stsCopy.StatefulSet == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	return generateServerSideApplyPatch(s.StatefulSet, stsCopy.StatefulSet)
 }
 
 // advancedStatefulSetV1alpha1 is a wrapper for StatefulSet.v1alpha1.apps.kruise.io to implement the replicaScaledResource interface.
@@ -252,19 +258,25 @@ func (s *advancedStatefulSetV1alpha1) GenerateJSONDiff(workloadCopy Workload) (j
 	return diff, nil
 }
 
-// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (s *advancedStatefulSetV1alpha1) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
-	patch, err := s.GenerateJSONDiff(workloadCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate advancedStatefulSetV1alpha1 patch diff: %w", err)
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
 	}
 
-	patchedDiff, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	stsCopy, ok := rswCopy.replicaScaledResource.(*advancedStatefulSetV1alpha1)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*advancedStatefulSetV1alpha1)(nil), rswCopy.replicaScaledResource)
 	}
 
-	return patchedDiff, nil
+	if s.StatefulSet == nil || stsCopy.StatefulSet == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	return generateServerSideApplyPatch(s.StatefulSet, stsCopy.StatefulSet)
 }
 
 // savedResourcesFromContainers is a helper function to calculate the total saved resources requests when downscaling based
