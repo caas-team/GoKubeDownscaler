@@ -146,19 +146,25 @@ func (a *autoscalingRunnerSet) GenerateJSONDiff(workloadCopy Workload) (jsondiff
 	return diff, nil
 }
 
-// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
 func (a *autoscalingRunnerSet) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
-	patch, err := a.GenerateJSONDiff(workloadCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate autoscalingRunnerSet patch diff: %w", err)
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
 	}
 
-	patchedDiff, err := json.Marshal(patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	arsCopy, ok := rswCopy.replicaScaledResource.(*autoscalingRunnerSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*autoscalingRunnerSet)(nil), rswCopy.replicaScaledResource)
 	}
 
-	return patchedDiff, nil
+	if a.AutoscalingRunnerSet == nil || arsCopy.AutoscalingRunnerSet == nil {
+		return nil, newNilUnderlyingObjectError(a.Kind)
+	}
+
+	return generateServerSideApplyPatch(a.AutoscalingRunnerSet, arsCopy.AutoscalingRunnerSet)
 }
 
 func (a *autoscalingRunnerSet) Patch(
