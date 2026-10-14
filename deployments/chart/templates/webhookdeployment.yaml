@@ -74,6 +74,7 @@ spec:
             {{- toYaml .Values.webhookController.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.webhookController.securityContext | nindent 12 }}
+          imagePullPolicy: {{ .Values.webhookController.image.pullPolicy }}
           volumeMounts:
             - name: tls
               mountPath: "/etc/webhook/tls"

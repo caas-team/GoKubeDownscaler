@@ -43,26 +43,18 @@
 	  "type": "object",
 	  "additionalProperties": false,
 	  "properties": {
-		"limits": {
-		  "type": "object",
-		  "additionalProperties": { "type": "string" },
-		  "properties": {
-			"cpu": { "type": "string" },
-			"memory": { "type": "string" }
-		  },
-		  "required": ["cpu", "memory"]
-		},
-		"requests": {
-		  "type": "object",
-		  "additionalProperties": { "type": "string" },
-		  "properties": {
-			"cpu": { "type": "string" },
-			"memory": { "type": "string" }
-		  },
-		  "required": ["cpu", "memory"]
-		}
-	  },
-	  "required": ["limits", "requests"]
+		"limits": { "$ref": "#/$defs/resourceList" },
+		"requests": { "$ref": "#/$defs/resourceList" }
+	  }
+	},
+	"resourceList": {
+	  "type": "object",
+	  "additionalProperties": { "type": ["string", "integer", "number"] },
+	  "properties": {
+		"cpu": { "type": ["string", "integer", "number"] },
+		"memory": { "type": ["string", "integer", "number"] },
+		"ephemeral-storage": { "type": ["string", "integer", "number"] }
+	  }
 	},
 	"envVar": {
 	  "type": "object",
@@ -157,15 +149,13 @@
 			  "type": "array",
 			  "items": { "type": "string" }
 			}
-		  },
-		  "required": ["drop"]
+		  }
 		},
 		"seccompProfile": { "$ref": "#/$defs/seccompProfile" },
 		"seLinuxOptions": { "$ref": "#/$defs/seLinuxOptions" },
 		"appArmorProfile": { "$ref": "#/$defs/appArmorProfile" },
 		"windowsOptions": { "$ref": "#/$defs/windowsSecurityContextOptions" }
-	  },
-	  "required": ["readOnlyRootFilesystem", "allowPrivilegeEscalation", "privileged", "capabilities"]
+	  }
 	},
 	"secretTemplate": {
 	  "type": "object",
@@ -303,8 +293,7 @@
 		"seLinuxOptions": { "$ref": "#/$defs/seLinuxOptions" },
 		"appArmorProfile": { "$ref": "#/$defs/appArmorProfile" },
 		"windowsOptions": { "$ref": "#/$defs/windowsSecurityContextOptions" }
-	  },
-	  "required": ["runAsGroup", "runAsNonRoot", "runAsUser", "fsGroup", "supplementalGroups"]
+	  }
 	},
 	"securityContext": { "$ref": "#/$defs/containerSecurityContext" },
 	"healthProbes": {
