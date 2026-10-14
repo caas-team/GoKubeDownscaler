@@ -43,26 +43,18 @@
 	  "type": "object",
 	  "additionalProperties": false,
 	  "properties": {
-		"limits": {
-		  "type": "object",
-		  "additionalProperties": false,
-		  "properties": {
-			"cpu": { "type": "string" },
-			"memory": { "type": "string" }
-		  },
-		  "required": ["cpu", "memory"]
-		},
-		"requests": {
-		  "type": "object",
-		  "additionalProperties": false,
-		  "properties": {
-			"cpu": { "type": "string" },
-			"memory": { "type": "string" }
-		  },
-		  "required": ["cpu", "memory"]
-		}
-	  },
-	  "required": ["limits", "requests"]
+		"limits": { "$ref": "#/$defs/resourceList" },
+		"requests": { "$ref": "#/$defs/resourceList" }
+	  }
+	},
+	"resourceList": {
+	  "type": "object",
+	  "additionalProperties": { "type": ["string", "integer", "number"] },
+	  "properties": {
+		"cpu": { "type": ["string", "integer", "number"] },
+		"memory": { "type": ["string", "integer", "number"] },
+		"ephemeral-storage": { "type": ["string", "integer", "number"] }
+	  }
 	},
 	"envVar": {
 	  "type": "object",
@@ -93,6 +85,108 @@
 	"secretTemplate": {
 	  "type": "object",
 	  "additionalProperties": true
+	},
+	"capabilities": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"add": {
+		  "type": "array",
+		  "items": { "type": "string" }
+		},
+		"drop": {
+		  "type": "array",
+		  "items": { "type": "string" }
+		}
+	  }
+	},
+	"seLinuxOptions": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"level": { "type": "string" },
+		"role": { "type": "string" },
+		"type": { "type": "string" },
+		"user": { "type": "string" }
+	  }
+	},
+	"seccompProfile": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"type": { "type": "string", "enum": ["Localhost", "RuntimeDefault", "Unconfined"] },
+		"localhostProfile": { "type": "string" }
+	  },
+	  "required": ["type"]
+	},
+	"appArmorProfile": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"type": { "type": "string", "enum": ["Localhost", "RuntimeDefault", "Unconfined"] },
+		"localhostProfile": { "type": "string" }
+	  },
+	  "required": ["type"]
+	},
+	"windowsOptions": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"gmsaCredentialSpec": { "type": "string" },
+		"gmsaCredentialSpecName": { "type": "string" },
+		"hostProcess": { "type": "boolean" },
+		"runAsUserName": { "type": "string" }
+	  }
+	},
+	"containerSecurityContext": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"allowPrivilegeEscalation": { "type": "boolean" },
+		"appArmorProfile": { "$ref": "#/$defs/appArmorProfile" },
+		"capabilities": { "$ref": "#/$defs/capabilities" },
+		"privileged": { "type": "boolean" },
+		"procMount": { "type": "string", "enum": ["Default", "Unmasked"] },
+		"readOnlyRootFilesystem": { "type": "boolean" },
+		"runAsGroup": { "type": "integer" },
+		"runAsNonRoot": { "type": "boolean" },
+		"runAsUser": { "type": "integer" },
+		"seLinuxOptions": { "$ref": "#/$defs/seLinuxOptions" },
+		"seccompProfile": { "$ref": "#/$defs/seccompProfile" },
+		"windowsOptions": { "$ref": "#/$defs/windowsOptions" }
+	  }
+	},
+	"podSecurityContext": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"appArmorProfile": { "$ref": "#/$defs/appArmorProfile" },
+		"fsGroup": { "type": "integer" },
+		"fsGroupChangePolicy": { "type": "string", "enum": ["OnRootMismatch", "Always"] },
+		"runAsGroup": { "type": "integer" },
+		"runAsNonRoot": { "type": "boolean" },
+		"runAsUser": { "type": "integer" },
+		"seLinuxOptions": { "$ref": "#/$defs/seLinuxOptions" },
+		"seccompProfile": { "$ref": "#/$defs/seccompProfile" },
+		"supplementalGroups": {
+		  "type": "array",
+		  "items": { "type": "integer" }
+		},
+		"supplementalGroupsPolicy": { "type": "string", "enum": ["Merge", "Strict"] },
+		"sysctls": {
+		  "type": "array",
+		  "items": {
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+			  "name": { "type": "string" },
+			  "value": { "type": "string" }
+			},
+			"required": ["name", "value"]
+		  }
+		},
+		"windowsOptions": { "$ref": "#/$defs/windowsOptions" }
+	  }
 	},
 	"podDisruptionBudgetValue": {
 	  "oneOf": [
@@ -168,7 +262,13 @@
 		  "awselbservices",
 		  "awsnlbservices",
 		  "ingresses",
-		  "gateways"
+		  "gateways",
+		  "advancedstatefulsets",
+		  "clonesets",
+		  "advancedcronjobs",
+		  "broadcastjobs",
+		  "imagepulljobs",
+		  "advanceddaemonsets"
 		]
 	  }
 	},
@@ -189,42 +289,8 @@
 	  "required": ["create", "annotations", "name"]
 	},
 	"priorityClassName": { "type": "string" },
-	"podSecurityContext": {
-	  "type": "object",
-	  "additionalProperties": false,
-	  "properties": {
-		"runAsGroup": { "type": "integer" },
-		"runAsNonRoot": { "type": "boolean" },
-		"runAsUser": { "type": "integer" },
-		"fsGroup": { "type": "integer" },
-		"supplementalGroups": {
-		  "type": "array",
-		  "items": { "type": "integer" }
-		}
-	  },
-	  "required": ["runAsGroup", "runAsNonRoot", "runAsUser", "fsGroup", "supplementalGroups"]
-	},
-	"securityContext": {
-	  "type": "object",
-	  "additionalProperties": false,
-	  "properties": {
-		"readOnlyRootFilesystem": { "type": "boolean" },
-		"allowPrivilegeEscalation": { "type": "boolean" },
-		"privileged": { "type": "boolean" },
-		"capabilities": {
-		  "type": "object",
-		  "additionalProperties": false,
-		  "properties": {
-			"drop": {
-			  "type": "array",
-			  "items": { "type": "string" }
-			}
-		  },
-		  "required": ["drop"]
-		}
-	  },
-	  "required": ["readOnlyRootFilesystem", "allowPrivilegeEscalation", "privileged", "capabilities"]
-	},
+	"podSecurityContext": { "$ref": "#/$defs/podSecurityContext" },
+	"securityContext": { "$ref": "#/$defs/containerSecurityContext" },
 	"healthProbes": {
 	  "type": "object",
 	  "additionalProperties": false,
@@ -370,27 +436,7 @@
 		  "required": ["readinessProbe", "livenessProbe", "startupProbe"]
 		},
 		"resources": { "$ref": "#/$defs/resources" },
-		"securityContext": {
-		  "type": "object",
-		  "additionalProperties": false,
-		  "properties": {
-			"readOnlyRootFilesystem": { "type": "boolean" },
-			"allowPrivilegeEscalation": { "type": "boolean" },
-			"privileged": { "type": "boolean" },
-			"capabilities": {
-			  "type": "object",
-			  "additionalProperties": false,
-			  "properties": {
-				"drop": {
-				  "type": "array",
-				  "items": { "type": "string" }
-				}
-			  },
-			  "required": ["drop"]
-			}
-		  },
-		  "required": ["readOnlyRootFilesystem", "allowPrivilegeEscalation", "privileged", "capabilities"]
-		},
+		"securityContext": { "$ref": "#/$defs/containerSecurityContext" },
 		"nodeSelector": { "$ref": "#/$defs/stringMap" },
 		"tolerations": {
 		  "type": "array",
