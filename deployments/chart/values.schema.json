@@ -45,7 +45,7 @@
 	  "properties": {
 		"limits": {
 		  "type": "object",
-		  "additionalProperties": false,
+		  "additionalProperties": { "type": "string" },
 		  "properties": {
 			"cpu": { "type": "string" },
 			"memory": { "type": "string" }
@@ -54,7 +54,7 @@
 		},
 		"requests": {
 		  "type": "object",
-		  "additionalProperties": false,
+		  "additionalProperties": { "type": "string" },
 		  "properties": {
 			"cpu": { "type": "string" },
 			"memory": { "type": "string" }
@@ -89,6 +89,83 @@
 	"affinity": {
 	  "type": "object",
 	  "additionalProperties": true
+	},
+	"seccompProfile": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"type": {
+		  "type": "string",
+		  "enum": ["RuntimeDefault", "Localhost", "Unconfined"]
+		},
+		"localhostProfile": { "type": "string" }
+	  },
+	  "required": ["type"]
+	},
+	"seLinuxOptions": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"level": { "type": "string" },
+		"role": { "type": "string" },
+		"type": { "type": "string" },
+		"user": { "type": "string" }
+	  }
+	},
+	"appArmorProfile": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"type": {
+		  "type": "string",
+		  "enum": ["RuntimeDefault", "Localhost", "Unconfined"]
+		},
+		"localhostProfile": { "type": "string" }
+	  },
+	  "required": ["type"]
+	},
+	"windowsSecurityContextOptions": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"gmsaCredentialSpec": { "type": "string" },
+		"gmsaCredentialSpecName": { "type": "string" },
+		"hostProcess": { "type": "boolean" },
+		"runAsUserName": { "type": "string" }
+	  }
+	},
+	"containerSecurityContext": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"readOnlyRootFilesystem": { "type": "boolean" },
+		"allowPrivilegeEscalation": { "type": "boolean" },
+		"privileged": { "type": "boolean" },
+		"runAsGroup": { "type": "integer" },
+		"runAsNonRoot": { "type": "boolean" },
+		"runAsUser": { "type": "integer" },
+		"procMount": { "type": "string", "enum": ["Default", "Unmasked"] },
+		"capabilities": {
+		  "type": "object",
+		  "additionalProperties": false,
+		  "properties": {
+			"add": {
+			  "type": "array",
+			  "items": { "type": "string" }
+			},
+			"drop": {
+			  "type": "array",
+			  "items": { "type": "string" }
+			}
+		  },
+		  "required": ["drop"]
+		},
+		"seccompProfile": { "$ref": "#/$defs/seccompProfile" },
+		"seLinuxOptions": { "$ref": "#/$defs/seLinuxOptions" },
+		"appArmorProfile": { "$ref": "#/$defs/appArmorProfile" },
+		"windowsOptions": { "$ref": "#/$defs/windowsSecurityContextOptions" }
+	  },
+	  "required": ["readOnlyRootFilesystem", "allowPrivilegeEscalation", "privileged", "capabilities"]
 	},
 	"secretTemplate": {
 	  "type": "object",
@@ -168,7 +245,13 @@
 		  "awselbservices",
 		  "awsnlbservices",
 		  "ingresses",
-		  "gateways"
+		  "gateways",
+		  "advancedstatefulsets",
+		  "clonesets",
+		  "advancedcronjobs",
+		  "broadcastjobs",
+		  "imagepulljobs",
+		  "advanceddaemonsets"
 		]
 	  }
 	},
@@ -200,31 +283,30 @@
 		"supplementalGroups": {
 		  "type": "array",
 		  "items": { "type": "integer" }
-		}
+		},
+		"fsGroupChangePolicy": { "type": "string", "enum": ["OnRootMismatch", "Always"] },
+		"supplementalGroupsPolicy": { "type": "string", "enum": ["Merge", "Strict"] },
+		"seLinuxChangePolicy": { "type": "string", "enum": ["Recursive", "MountOption"] },
+		"sysctls": {
+		  "type": "array",
+		  "items": {
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+			  "name": { "type": "string" },
+			  "value": { "type": "string" }
+			},
+			"required": ["name", "value"]
+		  }
+		},
+		"seccompProfile": { "$ref": "#/$defs/seccompProfile" },
+		"seLinuxOptions": { "$ref": "#/$defs/seLinuxOptions" },
+		"appArmorProfile": { "$ref": "#/$defs/appArmorProfile" },
+		"windowsOptions": { "$ref": "#/$defs/windowsSecurityContextOptions" }
 	  },
 	  "required": ["runAsGroup", "runAsNonRoot", "runAsUser", "fsGroup", "supplementalGroups"]
 	},
-	"securityContext": {
-	  "type": "object",
-	  "additionalProperties": false,
-	  "properties": {
-		"readOnlyRootFilesystem": { "type": "boolean" },
-		"allowPrivilegeEscalation": { "type": "boolean" },
-		"privileged": { "type": "boolean" },
-		"capabilities": {
-		  "type": "object",
-		  "additionalProperties": false,
-		  "properties": {
-			"drop": {
-			  "type": "array",
-			  "items": { "type": "string" }
-			}
-		  },
-		  "required": ["drop"]
-		}
-	  },
-	  "required": ["readOnlyRootFilesystem", "allowPrivilegeEscalation", "privileged", "capabilities"]
-	},
+	"securityContext": { "$ref": "#/$defs/containerSecurityContext" },
 	"healthProbes": {
 	  "type": "object",
 	  "additionalProperties": false,
@@ -370,27 +452,7 @@
 		  "required": ["readinessProbe", "livenessProbe", "startupProbe"]
 		},
 		"resources": { "$ref": "#/$defs/resources" },
-		"securityContext": {
-		  "type": "object",
-		  "additionalProperties": false,
-		  "properties": {
-			"readOnlyRootFilesystem": { "type": "boolean" },
-			"allowPrivilegeEscalation": { "type": "boolean" },
-			"privileged": { "type": "boolean" },
-			"capabilities": {
-			  "type": "object",
-			  "additionalProperties": false,
-			  "properties": {
-				"drop": {
-				  "type": "array",
-				  "items": { "type": "string" }
-				}
-			  },
-			  "required": ["drop"]
-			}
-		  },
-		  "required": ["readOnlyRootFilesystem", "allowPrivilegeEscalation", "privileged", "capabilities"]
-		},
+		"securityContext": { "$ref": "#/$defs/containerSecurityContext" },
 		"nodeSelector": { "$ref": "#/$defs/stringMap" },
 		"tolerations": {
 		  "type": "array",

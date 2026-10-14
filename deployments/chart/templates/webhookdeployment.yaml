@@ -6,9 +6,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "go-kube-downscaler.labels" . | nindent 4 }}
-    {{- with .Values.webhookController.podLabels }}
-    {{- toYaml . | nindent 8 }}
-    {{- end }}
 spec:
   replicas: {{ .Values.webhookController.replicaCount }}
   selector:
@@ -18,6 +15,9 @@ spec:
     metadata:
       labels:
         {{- include "go-kube-downscaler.webhookController.selectorLabels" . | nindent 8 }}
+        {{- with .Values.webhookController.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- if or .Values.webhookController.podAnnotations .Values.forceRestartOnConfigChange }}
       annotations:
         {{- if .Values.forceRestartOnConfigChange }}
