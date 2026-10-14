@@ -621,41 +621,35 @@ Create webhook resources
 {{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
 - apiGroups:
     - ""
-  resources:
-    - services
+  apiVersions:
+    - "*"
   operations:
     - "CREATE"
     - "UPDATE"
-  verbs:
-    - get
-    - list
-    - update
+  resources:
+    - services
 {{- end }}
 {{- if eq $resource "ingresses" }}
 - apiGroups:
-    - "networking.k8s.io"
-  resources:
-    - ingresses
+    - networking.k8s.io
+  apiVersions:
+    - "*"
   operations:
     - "CREATE"
     - "UPDATE"
-  verbs:
-    - get
-    - list
-    - update
+  resources:
+    - ingresses
 {{- end }}
 {{- if eq $resource "gateways" }}
 - apiGroups:
-    - "gateway.networking.k8s.io"
-  resources:
-    - gateways
+    - gateway.networking.k8s.io
+  apiVersions:
+    - "*"
   operations:
     - "CREATE"
     - "UPDATE"
-  verbs:
-    - get
-    - list
-    - update
+  resources:
+    - gateways
 {{- end }}
 {{ if eq $resource "kafkaconnects" -}}
 - apiGroups:
