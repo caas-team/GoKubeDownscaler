@@ -378,6 +378,16 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "cnpgclusters" }}
+- apiGroups:
+    - postgresql.cnpg.io
+  resources:
+    - clusters
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- if eq $resource "kafkaconnects" }}
 - apiGroups:
     - kafka.strimzi.io
