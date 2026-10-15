@@ -129,6 +129,21 @@ type PercentageWorkload interface {
 	AllowPercentageReplicas() bool
 }
 
+// MustScaleChildrenWorkload is implemented by a ParentWorkload whose own scaling has no effect
+// unless its children are scaled too (e.g. an operator that stops reconciling its child
+// StatefulSet once its own replica count is parked), so its children must be scaled regardless
+// of the scale-children scope setting.
+type MustScaleChildrenWorkload interface {
+	MustScaleChildren() bool
+}
+
+// MustScaleChildren reports whether workload's children must be scaled regardless of the
+// scale-children scope setting.
+func MustScaleChildren(workload Workload) bool {
+	must, ok := workload.(MustScaleChildrenWorkload)
+	return ok && must.MustScaleChildren()
+}
+
 // scalableResource provides all functions needed to scale any type of resource.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource

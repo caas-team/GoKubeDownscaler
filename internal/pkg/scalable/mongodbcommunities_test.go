@@ -163,6 +163,17 @@ func TestMongoDBCommunity_GVK(t *testing.T) {
 	assert.Equal(t, mongoDBCommunityGVK.Kind, w.GroupVersionKind().Kind)
 }
 
+func TestMongoDBCommunity_MustScaleChildren(t *testing.T) {
+	t.Parallel()
+
+	mongoCommunity := newTestMongoDBCommunity(float64(3), true)
+	assert.True(t, mongoCommunity.MustScaleChildren())
+
+	rsw := &replicaScaledWorkload{replicaScaledResource: mongoCommunity}
+	assert.True(t, rsw.MustScaleChildren())
+	assert.True(t, MustScaleChildren(rsw))
+}
+
 func TestMongoDBCommunity_GetSavedResourcesRequests(t *testing.T) {
 	t.Parallel()
 

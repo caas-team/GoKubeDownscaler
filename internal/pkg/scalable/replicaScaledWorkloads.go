@@ -59,6 +59,12 @@ func (r *replicaScaledWorkload) GetChildren(ctx context.Context, clientsets *Cli
 	return children, nil
 }
 
+// MustScaleChildren delegates to the wrapped resource when it supports MustScaleChildrenWorkload.
+func (r *replicaScaledWorkload) MustScaleChildren() bool {
+	must, ok := r.replicaScaledResource.(MustScaleChildrenWorkload)
+	return ok && must.MustScaleChildren()
+}
+
 // ScaleUp scales up the underlying replicaScaledResource.
 func (r *replicaScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, error) {
 	if logger == nil {

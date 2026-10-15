@@ -156,6 +156,13 @@ func (m *mongoDBCommunity) GetChildren(ctx context.Context, clientsets *Clientse
 	return results, nil
 }
 
+// MustScaleChildren reports that the owned StatefulSet must always be scaled: the operator stops
+// reconciling it once spec.members is parked (see GetChildren), so parking the CR alone has no
+// effect on the running pods. This must not depend on the scale-children scope setting.
+func (m *mongoDBCommunity) MustScaleChildren() bool {
+	return true
+}
+
 // getSavedResourcesRequests returns the saved CPU and memory requests.
 //
 // MongoDBCommunity carries per-member resources under the mongod container in

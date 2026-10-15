@@ -428,15 +428,32 @@ func scanWorkload(
 		return err
 	}
 
-	if scopes.GetScaleChildren() {
-		childrenWorkloads, err := client.GetChildrenWorkloads(workload, ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get children workloads: %w", err)
-		}
+	return scaleChildrenIfNeeded(workload, client, ctx, decision, scopes, workloadNamespaceMetrics, config, logger)
+}
 
-		logger.Debug("scaling children workloads", "childrenCount", len(childrenWorkloads))
-		scaleWorkloads(decision, childrenWorkloads, scopes, workloadNamespaceMetrics, client, ctx, config)
+// scaleChildrenIfNeeded scales workload's children when the scale-children scope setting is
+// enabled, or unconditionally when workload itself requires it (see scalable.MustScaleChildren).
+func scaleChildrenIfNeeded(
+	workload scalable.Workload,
+	client kubernetes.Client,
+	ctx context.Context,
+	decision values.ScalingDecision,
+	scopes values.Scopes,
+	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
+	config *runtimeConfiguration,
+	logger *slog.Logger,
+) error {
+	if !scopes.GetScaleChildren() && !scalable.MustScaleChildren(workload) {
+		return nil
 	}
+
+	childrenWorkloads, err := client.GetChildrenWorkloads(workload, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get children workloads: %w", err)
+	}
+
+	logger.Debug("scaling children workloads", "childrenCount", len(childrenWorkloads))
+	scaleWorkloads(decision, childrenWorkloads, scopes, workloadNamespaceMetrics, client, ctx, config)
 
 	return nil
 }
