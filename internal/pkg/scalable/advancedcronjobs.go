@@ -14,6 +14,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getAdvancedCronJobs is the getResourceFunc for AdvancedCronJobs.
@@ -219,10 +220,10 @@ func (c *advancedCronJob) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two advancedCronJob resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two advancedCronJob resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (c *advancedCronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (c *advancedCronJob) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
@@ -243,4 +244,70 @@ func (c *advancedCronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error)
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (c *advancedCronJob) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
+	}
+
+	acjCopy, ok := sswCopy.suspendScaledResource.(*advancedCronJob)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*advancedCronJob)(nil), sswCopy.suspendScaledResource)
+	}
+
+	if c.AdvancedCronJob == nil || acjCopy.AdvancedCronJob == nil {
+		return nil, newNilUnderlyingObjectError(c.Kind)
+	}
+
+	return generateServerSideApplyPatch(c.AdvancedCronJob, acjCopy.AdvancedCronJob)
+}
+
+func (c *advancedCronJob) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if c.AdvancedCronJob == nil {
+		return newNilUnderlyingObjectError(c.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedAdvancedCronJob, err := clientsets.Kruise.AppsV1beta1().AdvancedCronJobs(c.Namespace).Patch(
+		ctx,
+		c.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch advancedcronjob: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedAdvancedCronJob.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create advancedcronjob managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kruise.AppsV1beta1().AdvancedCronJobs(c.Namespace).Patch(
+			ctx,
+			c.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear advancedcronjob managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

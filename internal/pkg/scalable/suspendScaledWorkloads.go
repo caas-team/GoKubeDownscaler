@@ -9,6 +9,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // suspendScaledResource provides all the functions needed to scale a resource which is scaled by setting a suspend field.
@@ -16,6 +17,8 @@ type suspendScaledResource interface {
 	scalableResource
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
 	Update(clientsets *Clientsets, ctx context.Context) error
+	// Patch applies a patch to the resource.
+	Patch(clientsets *Clientsets, patchType types.PatchType, patchData []byte, manageFields bool, ctx context.Context) error
 	// getSuspend gets the value of the suspend field on the workload
 	getSuspend() (values.Replicas, values.Replicas)
 	// setSuspend sets the value of the suspend field on the workload
@@ -24,8 +27,10 @@ type suspendScaledResource interface {
 	getSavedResourcesRequests() *metrics.SavedResources
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
-	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
-	Compare(workloadCopy Workload) (jsondiff.Patch, error)
+	// GenerateJSONDiff compares the workload with another workload and returns the differences as a jsondiff.Patch
+	GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error)
+	// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+	GeneratePatchDiff(workloadCopy Workload) ([]byte, error)
 }
 
 // suspendScaledWorkload is a wrapper for all resources which are scaled by setting a suspend field.
@@ -83,11 +88,21 @@ func (r *suspendScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, er
 		return summary, fmt.Errorf("failed to convert original state to bool: %w", err)
 	}
 
+	workloadCopy, err := r.Copy()
+	if err != nil {
+		return summary, fmt.Errorf("failed to copy workload before scaling up: %w", err)
+	}
+
 	r.setSuspend(originalStateBool)
 
 	removeOriginalReplicas(r)
 
-	return scalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState}, nil
+	patchData, err := createPatchData(workloadCopy, r)
+	if err != nil {
+		return summary, err
+	}
+
+	return scalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState, PatchData: patchData}, nil
 }
 
 // ScaleDown scales down the underlying suspendScaledResource.
@@ -128,14 +143,25 @@ func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger
 		return summary, nil
 	}
 
+	workloadCopy, err := r.Copy()
+	if err != nil {
+		return summary, fmt.Errorf("failed to copy workload before scaling down: %w", err)
+	}
+
 	r.setSuspend(true)
 
 	savedResources := r.getSavedResourcesRequests()
 
 	setOriginalReplicas(currentState, r)
 
+	patchData, err := createPatchData(workloadCopy, r)
+	if err != nil {
+		return summary, err
+	}
+
 	summary.SavedResources = savedResources
 	summary.IsUpdateNeeded = true
+	summary.PatchData = patchData
 
 	return summary, nil
 }

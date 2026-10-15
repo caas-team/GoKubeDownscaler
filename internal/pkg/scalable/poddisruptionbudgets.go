@@ -1,3 +1,4 @@
+//nolint:dupl // necessary to handle different workload types separately
 package scalable
 
 import (
@@ -12,6 +13,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	policy "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -116,13 +118,23 @@ func (p *podDisruptionBudget) ScaleUp(logger *slog.Logger) (scalingSummary, erro
 		return summary, fmt.Errorf("failed to get original replicas for workload: %w", err)
 	}
 
+	workloadCopy, err := p.Copy()
+	if err != nil {
+		return summary, fmt.Errorf("failed to copy workload before scaling up: %w", err)
+	}
+
 	maxUnavailable := p.getMaxUnavailable()
 	if maxUnavailable != nil {
 		p.setMaxUnavailable(originalReplicas)
 		removeOriginalReplicas(p)
 
+		patchData, err := createPatchData(workloadCopy, p)
+		if err != nil {
+			return summary, err
+		}
+
 		return scalingSummary{
-			IsUpdateNeeded: true, From: maxUnavailable, To: originalReplicas, Attribute: maxUnavailableAttribute,
+			IsUpdateNeeded: true, From: maxUnavailable, To: originalReplicas, Attribute: maxUnavailableAttribute, PatchData: patchData,
 		}, nil
 	}
 
@@ -131,8 +143,13 @@ func (p *podDisruptionBudget) ScaleUp(logger *slog.Logger) (scalingSummary, erro
 		p.setMinAvailable(originalReplicas)
 		removeOriginalReplicas(p)
 
+		patchData, err := createPatchData(workloadCopy, p)
+		if err != nil {
+			return summary, err
+		}
+
 		return scalingSummary{
-			IsUpdateNeeded: true, From: minAvailable, To: originalReplicas, Attribute: minAvailableAttribute,
+			IsUpdateNeeded: true, From: minAvailable, To: originalReplicas, Attribute: minAvailableAttribute, PatchData: patchData,
 		}, nil
 	}
 
@@ -157,12 +174,22 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas, logge
 			}, nil
 		}
 
+		workloadCopy, err := p.Copy()
+		if err != nil {
+			return summary, fmt.Errorf("failed to copy workload before scaling down: %w", err)
+		}
+
 		p.setMaxUnavailable(downscaleReplicas)
 		setOriginalReplicas(maxUnavailable, p)
 
+		patchData, err := createPatchData(workloadCopy, p)
+		if err != nil {
+			return summary, err
+		}
+
 		return scalingSummary{
 			SavedResources: summary.SavedResources, IsUpdateNeeded: true, From: maxUnavailable, To: downscaleReplicas,
-			Attribute: maxUnavailableAttribute,
+			Attribute: maxUnavailableAttribute, PatchData: patchData,
 		}, nil
 	}
 
@@ -176,12 +203,22 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas, logge
 			}, nil
 		}
 
+		workloadCopy, err := p.Copy()
+		if err != nil {
+			return summary, fmt.Errorf("failed to copy workload before scaling down: %w", err)
+		}
+
 		p.setMinAvailable(downscaleReplicas)
 		setOriginalReplicas(minAvailable, p)
 
+		patchData, err := createPatchData(workloadCopy, p)
+		if err != nil {
+			return summary, err
+		}
+
 		return scalingSummary{
 			SavedResources: summary.SavedResources, IsUpdateNeeded: true, From: minAvailable, To: downscaleReplicas,
-			Attribute: minAvailableAttribute,
+			Attribute: minAvailableAttribute, PatchData: patchData,
 		}, nil
 	}
 
@@ -212,6 +249,34 @@ func (p *podDisruptionBudget) Update(clientsets *Clientsets, ctx context.Context
 	return nil
 }
 
+// Patch applies a patch to the PodDisruptionBudget and manages the downscaler's field ownership.
+func (p *podDisruptionBudget) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if p.PodDisruptionBudget == nil {
+		return newNilUnderlyingObjectError(p.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Kubernetes.PolicyV1().PodDisruptionBudgets(p.Namespace).Patch(
+		ctx,
+		p.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch poddisruptionbudget: %w", err)
+	}
+
+	return nil
+}
+
 // Copy creates a deep copy of the given Workload, which is expected to be a podDisruptionBudget.
 func (p *podDisruptionBudget) Copy() (Workload, error) {
 	if p.PodDisruptionBudget == nil {
@@ -223,8 +288,8 @@ func (p *podDisruptionBudget) Copy() (Workload, error) {
 	return &podDisruptionBudget{PodDisruptionBudget: copied}, nil
 }
 
-// Compare compares two podDisruptionBudget resources and returns the differences as a jsondiff.Patch.
-func (p *podDisruptionBudget) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+// GenerateJSONDiff compares two podDisruptionBudget resources and returns the differences as a jsondiff.Patch.
+func (p *podDisruptionBudget) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	pdbCopy, ok := workloadCopy.(*podDisruptionBudget)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*podDisruptionBudget)(nil), workloadCopy)
@@ -240,4 +305,20 @@ func (p *podDisruptionBudget) Compare(workloadCopy Workload) (jsondiff.Patch, er
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+
+func (p *podDisruptionBudget) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	pdbCopy, ok := workloadCopy.(*podDisruptionBudget)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*podDisruptionBudget)(nil), workloadCopy)
+	}
+
+	if p.PodDisruptionBudget == nil || pdbCopy.PodDisruptionBudget == nil {
+		return nil, newNilUnderlyingObjectError(p.Kind)
+	}
+
+	return generateServerSideApplyPatch(p.PodDisruptionBudget, pdbCopy.PodDisruptionBudget)
 }

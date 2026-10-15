@@ -13,6 +13,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	appsv1 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var errMinReplicasBoundsExceeded = errors.New("error: an HPAs minReplicas can only be set to int32 values larger than 1")
@@ -133,10 +134,10 @@ func (h *horizontalPodAutoscaler) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two horizontalPodAutoscaler resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two horizontalPodAutoscaler resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (h *horizontalPodAutoscaler) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (h *horizontalPodAutoscaler) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -157,4 +158,52 @@ func (h *horizontalPodAutoscaler) Compare(workloadCopy Workload) (jsondiff.Patch
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (h *horizontalPodAutoscaler) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	hpaCopy, ok := rswCopy.replicaScaledResource.(*horizontalPodAutoscaler)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*horizontalPodAutoscaler)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if h.HorizontalPodAutoscaler == nil || hpaCopy.HorizontalPodAutoscaler == nil {
+		return nil, newNilUnderlyingObjectError(h.Kind)
+	}
+
+	return generateServerSideApplyPatch(h.HorizontalPodAutoscaler, hpaCopy.HorizontalPodAutoscaler)
+}
+
+func (h *horizontalPodAutoscaler) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if h.HorizontalPodAutoscaler == nil {
+		return newNilUnderlyingObjectError(h.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Kubernetes.AutoscalingV2().HorizontalPodAutoscalers(h.Namespace).Patch(
+		ctx,
+		h.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch horizontalpodautoscaler: %w", err)
+	}
+
+	return nil
 }

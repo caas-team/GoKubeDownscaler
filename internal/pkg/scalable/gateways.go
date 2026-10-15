@@ -12,6 +12,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
@@ -118,10 +119,10 @@ func (g *gateway) Copy() (Workload, error) {
 	return &valueScaledWorkload{valueScaledResource: &gateway{Gateway: copied}}, nil
 }
 
-// Compare compares two ingress resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two ingress resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (g *gateway) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (g *gateway) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	vswCopy, ok := workloadCopy.(*valueScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
@@ -142,4 +143,52 @@ func (g *gateway) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (g *gateway) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	vswCopy, ok := workloadCopy.(*valueScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
+	}
+
+	gtwCopy, ok := vswCopy.valueScaledResource.(*gateway)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*gateway)(nil), vswCopy.valueScaledResource)
+	}
+
+	if g.Gateway == nil || gtwCopy.Gateway == nil {
+		return nil, newNilUnderlyingObjectError(g.Kind)
+	}
+
+	return generateServerSideApplyPatch(g.Gateway, gtwCopy.Gateway)
+}
+
+func (g *gateway) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if g.Gateway == nil {
+		return newNilUnderlyingObjectError(g.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Gateway.GatewayV1().Gateways(g.Namespace).Patch(
+		ctx,
+		g.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch gateway: %w", err)
+	}
+
+	return nil
 }

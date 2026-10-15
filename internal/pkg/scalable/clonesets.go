@@ -11,6 +11,7 @@ import (
 	kruise "github.com/openkruise/kruise/apis/apps/v1alpha1"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getCloneSets is the getResourceFunc for cloneSets.
@@ -117,10 +118,10 @@ func (c *cloneSet) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two cloneSet resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two cloneSet resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (c *cloneSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (c *cloneSet) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -141,4 +142,52 @@ func (c *cloneSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (c *cloneSet) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	csCopy, ok := rswCopy.replicaScaledResource.(*cloneSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*cloneSet)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if c.CloneSet == nil || csCopy.CloneSet == nil {
+		return nil, newNilUnderlyingObjectError(c.Kind)
+	}
+
+	return generateServerSideApplyPatch(c.CloneSet, csCopy.CloneSet)
+}
+
+func (c *cloneSet) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if c.CloneSet == nil {
+		return newNilUnderlyingObjectError(c.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Kruise.AppsV1alpha1().CloneSets(c.Namespace).Patch(
+		ctx,
+		c.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch cloneset: %w", err)
+	}
+
+	return nil
 }
