@@ -228,6 +228,7 @@
 		  "poddisruptionbudgets",
 		  "autoscalingrunnersets",
 		  "postgresqls",
+		  "mongodbcommunities",
 		  "kafkaconnects",
 		  "kafkamirrormaker2s",
 		  "kafkabridges",

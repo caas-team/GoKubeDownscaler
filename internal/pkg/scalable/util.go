@@ -36,6 +36,9 @@ const (
 	kafkaBridgeKind             = "KafkaBridge"
 	kafkaConnectKind            = "KafkaConnect"
 	kafkaMirrorMaker2Kind       = "KafkaMirrorMaker2"
+	mongoDBCommunityGroup       = "mongodbcommunity.mongodb.com"
+	mongoDBCommunityVersion     = "v1"
+	mongoDBCommunityKind        = "MongoDBCommunity"
 	podDisruptionBudgetKind     = "PodDisruptionBudget"
 	postgresqlKind              = "postgresql" // lowercase for postgresqlKind is intentional
 	prometheusKind              = "Prometheus"
@@ -318,6 +321,7 @@ func isSupportedOwnerKind(kind string) bool {
 		kafkaBridgeKind:             {},
 		kafkaConnectKind:            {},
 		kafkaMirrorMaker2Kind:       {},
+		mongoDBCommunityKind:        {},
 		podDisruptionBudgetKind:     {},
 		postgresqlKind:              {},
 		prometheusKind:              {},
