@@ -189,6 +189,19 @@ be provisioned by a cluster administrator having the necessary cluster-wide perm
 
 Scales by setting the numberOfInstances count to the [downscale replicas](ref:docs-values#downscale-replicas).
 
+### MongoDBCommunities
+
+- id: mongodbcommunities
+- resource: mongodbcommunity.v1.mongodbcommunity.mongodb.com
+
+Scales by setting the `spec.members` count to the [downscale replicas](ref:docs-values#downscale-replicas).
+The [MongoDB Community Kubernetes Operator](https://github.com/mongodb/mongodb-kubernetes) stops reconciling the owned StatefulSet once `members` reaches 0, so it does not scale the pods down by itself.
+The downscaler scales that StatefulSet directly instead, always, regardless of the [scale-children](ref:docs-values#scale-children) scope setting, since parking the CR alone would have no effect on the running pods.
+`statefulsets` must also be in `includedResources` for the chart to grant the RBAC needed to scale it.
+
+As a safety measure, a MongoDBCommunity is never parked (scaled to 0) unless it carries the operator-written annotation `mongodb.com/v1.lastSuccessfulConfiguration`, without it the operator has no known-good configuration to restore on wake, so the downscaler refuses and logs instead.
+Scaling up is never refused.
+
 ### KafkaConnects
 
 - id: kafkaconnects

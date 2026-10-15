@@ -368,6 +368,16 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "mongodbcommunities" }}
+- apiGroups:
+    - mongodbcommunity.mongodb.com
+  resources:
+    - mongodbcommunity
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- if eq $resource "kafkaconnects" }}
 - apiGroups:
     - kafka.strimzi.io

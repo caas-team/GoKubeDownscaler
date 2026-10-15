@@ -44,6 +44,7 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"ingresses":                getIngresses,
 		"gateways":                 getGateways,
 		"postgresqls":              getPostgresqls,
+		"mongodbcommunities":       getMongoDBCommunities,
 		"kafkaconnects":            getKafkaConnects,
 		"kafkamirrormaker2s":       getKafkaMirrorMaker2s,
 		"kafkabridges":             getKafkaBridges,
@@ -95,6 +96,7 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"ingress":                 parseIngressFromBytes,
 		"gateway":                 parseGatewayFromBytes,
 		"postgresql":              parsePostgresqlFromBytes,
+		"mongodbcommunity":        parseMongoDBCommunityFromBytes,
 		"kafkaconnect":            parseKafkaConnectFromBytes,
 		"kafkamirrormaker2":       parseKafkaMirrorMaker2FromBytes,
 		"kafkabridge":             parseKafkaBridgeFromBytes,
@@ -125,6 +127,21 @@ type ParentWorkload interface {
 
 type PercentageWorkload interface {
 	AllowPercentageReplicas() bool
+}
+
+// MustScaleChildrenWorkload is implemented by a ParentWorkload whose own scaling has no effect
+// unless its children are scaled too (e.g. an operator that stops reconciling its child
+// StatefulSet once its own replica count is parked), so its children must be scaled regardless
+// of the scale-children scope setting.
+type MustScaleChildrenWorkload interface {
+	MustScaleChildren() bool
+}
+
+// MustScaleChildren reports whether workload's children must be scaled regardless of the
+// scale-children scope setting.
+func MustScaleChildren(workload Workload) bool {
+	must, ok := workload.(MustScaleChildrenWorkload)
+	return ok && must.MustScaleChildren()
 }
 
 // scalableResource provides all functions needed to scale any type of resource.
