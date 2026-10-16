@@ -648,6 +648,39 @@ Create webhook resources
   resources:
     - postgresqls
 {{ end -}}
+{{ if eq $resource "mongodbcommunities" -}}
+- apiGroups:
+    - mongodbcommunity.mongodb.com
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - mongodbcommunity
+{{ end -}}
+{{ if eq $resource "cnpgclusters" -}}
+- apiGroups:
+    - postgresql.cnpg.io
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - clusters
+{{ end -}}
+{{ if eq $resource "mariadbs" -}}
+- apiGroups:
+    - k8s.mariadb.com
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - mariadbs
+{{ end -}}
 {{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
 - apiGroups:
     - ""
@@ -973,6 +1006,45 @@ resources include in annotationsCompliance
     - "UPDATE"
   resources:
     - postgresqls
+{{ end -}}
+{{ if eq $resource "mongodbcommunities" -}}
+- apiGroups:
+    - mongodbcommunity.mongodb.com
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - mongodbcommunity
+{{ end -}}
+{{ if eq $resource "cnpgclusters" -}}
+- apiGroups:
+    - postgresql.cnpg.io
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - clusters
+{{ end -}}
+{{ if eq $resource "mariadbs" -}}
+- apiGroups:
+    - k8s.mariadb.com
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - mariadbs
 {{ end -}}
 {{ if eq $resource "kafkaconnects" -}}
 - apiGroups:
