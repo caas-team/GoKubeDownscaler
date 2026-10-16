@@ -4,7 +4,7 @@ go 1.26.9
 
 require (
 	github.com/actions/actions-runner-controller v0.27.6
-	github.com/argoproj/argo-rollouts v1.10.0
+	github.com/argoproj/argo-rollouts v1.10.1
 	github.com/kedacore/keda/v2 v2.21.0
 	github.com/open-policy-agent/cert-controller v0.16.0
 	github.com/openkruise/kruise v1.9.1
