@@ -229,6 +229,7 @@
 		  "autoscalingrunnersets",
 		  "postgresqls",
 		  "mongodbcommunities",
+		  "cnpgclusters",
 		  "kafkaconnects",
 		  "kafkamirrormaker2s",
 		  "kafkabridges",
