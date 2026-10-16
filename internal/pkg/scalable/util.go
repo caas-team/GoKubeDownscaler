@@ -39,6 +39,9 @@ const (
 	kafkaBridgeKind             = "KafkaBridge"
 	kafkaConnectKind            = "KafkaConnect"
 	kafkaMirrorMaker2Kind       = "KafkaMirrorMaker2"
+	mariaDBGroup                = "k8s.mariadb.com"
+	mariaDBVersion              = "v1alpha1"
+	mariaDBKind                 = "MariaDB"
 	mongoDBCommunityGroup       = "mongodbcommunity.mongodb.com"
 	mongoDBCommunityVersion     = "v1"
 	mongoDBCommunityKind        = "MongoDBCommunity"
@@ -324,6 +327,7 @@ func isSupportedOwnerKind(kind string) bool {
 		kafkaBridgeKind:             {},
 		kafkaConnectKind:            {},
 		kafkaMirrorMaker2Kind:       {},
+		mariaDBKind:                 {},
 		mongoDBCommunityKind:        {},
 		podDisruptionBudgetKind:     {},
 		postgresqlKind:              {},
