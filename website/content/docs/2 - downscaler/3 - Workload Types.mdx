@@ -211,6 +211,26 @@ Scales by toggling the `cnpg.io/hibernation` annotation between `"on"` and `"off
 This is fully automatic in both directions: the [CloudNativePG Operator](https://cloudnative-pg.io/documentation/current/declarative_hibernation/) deletes every instance pod itself (preserving the underlying volumes) when hibernation is requested, and recreates them with no bookkeeping needed from the downscaler when it's cleared.
 No `scale-children` is needed, and there's no child resource to grant RBAC on.
 
+### MariaDBs
+
+- id: mariadbs
+- resource: mariadb.v1alpha1.k8s.mariadb.com
+
+Scales by setting `spec.replicas` to the [downscale replicas](ref:docs-values#downscale-replicas).
+The [mariadb-operator](https://github.com/mariadb-operator/mariadb-operator) propagates that value to its StatefulSet, including 0.
+It does not scale the metrics exporter Deployment it owns, which would crash-loop without a database, so the downscaler scales that Deployment directly, always, regardless of the [scale-children](ref:docs-values#scale-children) scope setting.
+`deployments` must also be in `includedResources` for the chart to grant the RBAC needed to scale it.
+
+With Galera enabled, the operator's admission webhook rejects `spec.replicas` below 2, so a Galera MariaDB is parked differently:
+the downscaler sets `spec.suspend: true`, which stops the operator from reconciling, leaves `spec.replicas` untouched, and scales the StatefulSet the MariaDB owns to 0 directly.
+On wake it sets `spec.suspend: false` and restores the StatefulSet; the operator then runs its [Galera cluster recovery](https://github.com/mariadb-operator/mariadb-operator/blob/main/docs/galera.md#galera-cluster-recovery), bootstrapping the cluster from the node with the highest sequence number, so waking up takes a few minutes.
+`statefulsets` must also be in `includedResources` for the chart to grant the RBAC needed to scale it.
+A Galera MariaDB whose recovery is disabled (`spec.galera.recovery.enabled` not true when `spec.galera.recovery` is set) is never parked, since nothing would bootstrap the cluster on wake.
+Downscale replicas of 1 are refused for Galera as well.
+
+A MariaDB with replication enabled is never scaled below 2 replicas, for the same webhook reason; the downscaler refuses and logs instead.
+Scaling up is never refused.
+
 ### KafkaConnects
 
 - id: kafkaconnects

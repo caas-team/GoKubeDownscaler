@@ -388,6 +388,16 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "mariadbs" }}
+- apiGroups:
+    - k8s.mariadb.com
+  resources:
+    - mariadbs
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- if eq $resource "kafkaconnects" }}
 - apiGroups:
     - kafka.strimzi.io
