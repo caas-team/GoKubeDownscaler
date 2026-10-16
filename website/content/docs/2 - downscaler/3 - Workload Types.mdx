@@ -208,7 +208,7 @@ Scaling up is never refused.
 - resource: cluster.v1.postgresql.cnpg.io
 
 Scales by toggling the `cnpg.io/hibernation` annotation between `"on"` and `"off"`.
-Unlike MongoDBCommunities, this is fully automatic in both directions: the [CloudNativePG Operator](https://cloudnative-pg.io/documentation/current/declarative_hibernation/) deletes every instance pod itself (preserving the underlying volumes) when hibernation is requested, and recreates them with no bookkeeping needed from the downscaler when it's cleared.
+This is fully automatic in both directions: the [CloudNativePG Operator](https://cloudnative-pg.io/documentation/current/declarative_hibernation/) deletes every instance pod itself (preserving the underlying volumes) when hibernation is requested, and recreates them with no bookkeeping needed from the downscaler when it's cleared.
 No `scale-children` is needed, and there's no child resource to grant RBAC on.
 
 ### KafkaConnects
