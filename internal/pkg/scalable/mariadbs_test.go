@@ -90,16 +90,89 @@ func TestMariaDB_GetReplicas(t *testing.T) {
 	}
 }
 
-func TestMariaDB_SetReplicas_ScaleDownStandalone(t *testing.T) {
+// TestMariaDB_SetReplicas covers setReplicas scenarios that are each a single, independent call
+// with no state shared between them.
+func TestMariaDB_SetReplicas(t *testing.T) {
 	t.Parallel()
 
-	w := newTestMariaDB(float64(1), "")
+	tests := []struct {
+		name                       string
+		initialReplicas            float64
+		haField                    string
+		setup                      func(t *testing.T, w *mariaDB)
+		target                     int32
+		wantSuspended              bool
+		checkSpecReplicasUnchanged bool
+		wantReplicas               values.Replicas // nil skips the getReplicas assertion
+	}{
+		{
+			name:            "standalone scale down",
+			initialReplicas: 1,
+			target:          0,
+			wantReplicas:    values.AbsoluteReplicas(0),
+		},
+		{
+			name:                       "galera scale down suspends",
+			initialReplicas:            3,
+			haField:                    "galera",
+			target:                     0,
+			wantSuspended:              true,
+			checkSpecReplicasUnchanged: true,
+			wantReplicas:               values.AbsoluteReplicas(0),
+		},
+		{
+			name:            "galera scale down allowed with recovery explicitly enabled",
+			initialReplicas: 3,
+			haField:         "galera",
+			setup: func(t *testing.T, w *mariaDB) {
+				t.Helper()
+				require.NoError(t, unstructured.SetNestedField(w.Object, true, "spec", "galera", "recovery", "enabled"))
+			},
+			target:        0,
+			wantSuspended: true,
+		},
+		{
+			name:            "scale down allowed when HA explicitly disabled",
+			initialReplicas: 1,
+			setup: func(t *testing.T, w *mariaDB) {
+				t.Helper()
+				require.NoError(t, unstructured.SetNestedField(w.Object, false, "spec", "galera", "enabled"))
+			},
+			target: 0,
+		},
+		{
+			name:            "scale up always allowed",
+			initialReplicas: 0,
+			target:          1,
+			wantReplicas:    values.AbsoluteReplicas(1),
+		},
+	}
 
-	require.NoError(t, w.setReplicas(0))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 
-	got, err := w.getReplicas()
-	require.NoError(t, err)
-	assert.Equal(t, values.AbsoluteReplicas(0), got)
+			w := newTestMariaDB(test.initialReplicas, test.haField)
+			if test.setup != nil {
+				test.setup(t, w)
+			}
+
+			require.NoError(t, w.setReplicas(test.target))
+			assert.Equal(t, test.wantSuspended, w.isSuspended())
+
+			if test.checkSpecReplicasUnchanged {
+				specReplicas, _, err := unstructured.NestedFieldNoCopy(w.Object, "spec", "replicas")
+				require.NoError(t, err)
+				assert.InDelta(t, test.initialReplicas, specReplicas, 0, "spec.replicas must stay valid for the operator webhook")
+			}
+
+			if test.wantReplicas != nil {
+				got, err := w.getReplicas()
+				require.NoError(t, err)
+				assert.Equal(t, test.wantReplicas, got)
+			}
+		})
+	}
 }
 
 func TestMariaDB_SetReplicas_RefusedBelowHAMinimum(t *testing.T) {
@@ -132,24 +205,6 @@ func TestMariaDB_SetReplicas_RefusedBelowHAMinimum(t *testing.T) {
 			assert.False(t, w.isSuspended())
 		})
 	}
-}
-
-func TestMariaDB_SetReplicas_GaleraScaleDownSuspends(t *testing.T) {
-	t.Parallel()
-
-	w := newTestMariaDB(float64(3), "galera")
-
-	require.NoError(t, w.setReplicas(0))
-
-	assert.True(t, w.isSuspended())
-
-	specReplicas, _, err := unstructured.NestedFieldNoCopy(w.Object, "spec", "replicas")
-	require.NoError(t, err)
-	assert.InDelta(t, 3, specReplicas, 0, "spec.replicas must stay valid for the operator webhook")
-
-	got, err := w.getReplicas()
-	require.NoError(t, err)
-	assert.Equal(t, values.AbsoluteReplicas(0), got)
 }
 
 func TestMariaDB_SetReplicas_GaleraWakeResumes(t *testing.T) {
@@ -194,16 +249,6 @@ func TestMariaDB_SetReplicas_GaleraScaleDownRefusedWithoutRecovery(t *testing.T)
 	}
 }
 
-func TestMariaDB_SetReplicas_GaleraScaleDownAllowedWithRecoveryEnabled(t *testing.T) {
-	t.Parallel()
-
-	w := newTestMariaDB(float64(3), "galera")
-	require.NoError(t, unstructured.SetNestedField(w.Object, true, "spec", "galera", "recovery", "enabled"))
-
-	require.NoError(t, w.setReplicas(0))
-	assert.True(t, w.isSuspended())
-}
-
 func TestMariaDB_GaleraScaleDownThenUp(t *testing.T) {
 	t.Parallel()
 
@@ -232,27 +277,6 @@ func TestMariaDB_GetReplicas_SuspendIgnoredWithoutGalera(t *testing.T) {
 
 	w := newTestMariaDB(float64(1), "")
 	require.NoError(t, unstructured.SetNestedField(w.Object, true, "spec", "suspend"))
-
-	got, err := w.getReplicas()
-	require.NoError(t, err)
-	assert.Equal(t, values.AbsoluteReplicas(1), got)
-}
-
-func TestMariaDB_SetReplicas_ScaleDownAllowedWhenHADisabled(t *testing.T) {
-	t.Parallel()
-
-	w := newTestMariaDB(float64(1), "")
-	require.NoError(t, unstructured.SetNestedField(w.Object, false, "spec", "galera", "enabled"))
-
-	require.NoError(t, w.setReplicas(0))
-}
-
-func TestMariaDB_SetReplicas_ScaleUpAlwaysAllowed(t *testing.T) {
-	t.Parallel()
-
-	w := newTestMariaDB(float64(0), "")
-
-	require.NoError(t, w.setReplicas(1))
 
 	got, err := w.getReplicas()
 	require.NoError(t, err)
