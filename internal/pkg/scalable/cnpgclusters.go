@@ -60,7 +60,7 @@ func getCnpgClusters(namespace string, clientsets *Clientsets, ctx context.Conte
 	for i := range list.Items {
 		item := list.Items[i]
 		setGroupVersionKindIfEmpty(&item, cnpgClusterGVK)
-		results = append(results, &suspendScaledWorkload{&cnpgCluster{&item}})
+		results = append(results, &valueScaledWorkload{&cnpgCluster{&item}})
 	}
 
 	return results, nil
@@ -73,20 +73,28 @@ func parseCnpgClusterFromBytes(rawObject []byte) (Workload, error) {
 		return nil, fmt.Errorf("failed to decode cnpgcluster: %w", err)
 	}
 
-	return &suspendScaledWorkload{&cnpgCluster{&u}}, nil
+	return &valueScaledWorkload{&cnpgCluster{&u}}, nil
 }
 
-//nolint:nonamedreturns // getSuspend gets the current value of the hibernation annotation and the target downscale state for it.
-func (c *cnpgCluster) getSuspend() (currentValue, targetDownscaleState values.Replicas) {
+// getValue gets the current value of the hibernation annotation and the target downscale state for it.
+// Nothing can fail reading an annotation, so err is always nil.
+//
+//nolint:nonamedreturns // clarifies which value is current and which is the downscale target
+func (c *cnpgCluster) getValue() (currentValue, targetDownscaleState values.Replicas, err error) {
 	current := c.GetAnnotations()[cnpgHibernationAnnotation] == cnpgHibernationValueOn
 
-	return values.BooleanReplicas(current), values.BooleanReplicas(true)
+	return values.BooleanReplicas(current), values.BooleanReplicas(true), nil
 }
 
-// setSuspend sets the hibernation annotation to request or clear hibernation. The annotation is
+// setValue sets the hibernation annotation to request or clear hibernation. The annotation is
 // always written explicitly (never removed) since CNPG treats an absent annotation the same as
 // "off".
-func (c *cnpgCluster) setSuspend(suspend bool) {
+func (c *cnpgCluster) setValue(value values.Replicas) error {
+	suspend, err := value.AsBool()
+	if err != nil {
+		return fmt.Errorf("failed to convert target value to bool: %w", err)
+	}
+
 	annotations := c.GetAnnotations()
 	if annotations == nil {
 		annotations = map[string]string{}
@@ -98,6 +106,18 @@ func (c *cnpgCluster) setSuspend(suspend bool) {
 	}
 
 	c.SetAnnotations(annotations)
+
+	return nil
+}
+
+// logUpscaleSuccessful logs the hibernation annotation transition for an upscale.
+func (c *cnpgCluster) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled up", "hibernation", c, summary, dryRun, logger)
+}
+
+// logDownscaleSuccessful logs the hibernation annotation transition for a downscale.
+func (c *cnpgCluster) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("scaled down", "hibernation", c, summary, dryRun, logger)
 }
 
 // getSavedResourcesRequests returns the saved CPU and memory requests.
@@ -122,8 +142,8 @@ func (c *cnpgCluster) Copy() (Workload, error) {
 		return nil, newNilUnderlyingObjectError(c.GetKind())
 	}
 
-	return &suspendScaledWorkload{
-		suspendScaledResource: &cnpgCluster{
+	return &valueScaledWorkload{
+		valueScaledResource: &cnpgCluster{
 			Unstructured: c.DeepCopy(),
 		},
 	}, nil
@@ -133,14 +153,14 @@ func (c *cnpgCluster) Copy() (Workload, error) {
 //
 //nolint:varnamelen // short names are ok for the workflow of this function
 func (c *cnpgCluster) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
-	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	vswCopy, ok := workloadCopy.(*valueScaledWorkload)
 	if !ok {
-		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
+		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
 	}
 
-	cCopy, ok := sswCopy.suspendScaledResource.(*cnpgCluster)
+	cCopy, ok := vswCopy.valueScaledResource.(*cnpgCluster)
 	if !ok {
-		return nil, newExpectTypeGotTypeError((*cnpgCluster)(nil), sswCopy.suspendScaledResource)
+		return nil, newExpectTypeGotTypeError((*cnpgCluster)(nil), vswCopy.valueScaledResource)
 	}
 
 	if c.Object == nil || cCopy.Object == nil {
