@@ -139,15 +139,35 @@ func TestCnpgCluster_GVK(t *testing.T) {
 func TestCnpgCluster_GetSavedResourcesRequests(t *testing.T) {
 	t.Parallel()
 
-	w := newTestCnpgCluster("off")
-	require.NoError(t, unstructured.SetNestedField(w.Object, "500m", "spec", "resources", "requests", "cpu"))
-	require.NoError(t, unstructured.SetNestedField(w.Object, "1Gi", "spec", "resources", "requests", "memory"))
+	tests := []struct {
+		name      string
+		instances any
+	}{
+		{
+			name:      "instances as int64",
+			instances: int64(3),
+		},
+		{
+			name:      "instances as float64 (admission webhook path, json.Unmarshal decodes numbers as float64)",
+			instances: float64(3),
+		},
+	}
 
-	saved := w.getSavedResourcesRequests()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 
-	// spec.instances is 3 in newTestCnpgCluster.
-	assert.InDelta(t, 1.5, saved.TotalCPU(), 1e-9)
-	assert.InDelta(t, 3*1024*1024*1024, saved.TotalMemory(), 1e5)
+			w := newTestCnpgCluster("off")
+			require.NoError(t, unstructured.SetNestedField(w.Object, test.instances, "spec", "instances"))
+			require.NoError(t, unstructured.SetNestedField(w.Object, "500m", "spec", "resources", "requests", "cpu"))
+			require.NoError(t, unstructured.SetNestedField(w.Object, "1Gi", "spec", "resources", "requests", "memory"))
+
+			saved := w.getSavedResourcesRequests()
+
+			assert.InDelta(t, 1.5, saved.TotalCPU(), 1e-9)
+			assert.InDelta(t, 3*1024*1024*1024, saved.TotalMemory(), 1e5)
+		})
+	}
 }
 
 func TestCnpgCluster_GetSavedResourcesRequests_MissingResources(t *testing.T) {
