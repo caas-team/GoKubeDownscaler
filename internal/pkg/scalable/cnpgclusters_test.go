@@ -36,7 +36,7 @@ func newTestCnpgCluster(hibernationVal string) *cnpgCluster {
 	return &cnpgCluster{Unstructured: u}
 }
 
-func TestCnpgCluster_GetSuspend(t *testing.T) {
+func TestCnpgCluster_GetValue(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -67,7 +67,8 @@ func TestCnpgCluster_GetSuspend(t *testing.T) {
 
 			w := newTestCnpgCluster(test.hibernatedVal)
 
-			current, target := w.getSuspend()
+			current, target, err := w.getValue()
+			require.NoError(t, err)
 
 			assert.Equal(t, test.wantCurrent, current)
 			assert.Equal(t, values.BooleanReplicas(true), target)
@@ -75,38 +76,51 @@ func TestCnpgCluster_GetSuspend(t *testing.T) {
 	}
 }
 
-func TestCnpgCluster_SetSuspend(t *testing.T) {
+func TestCnpgCluster_SetValue(t *testing.T) {
 	t.Parallel()
 
 	cluster := newTestCnpgCluster("")
 
-	cluster.setSuspend(true)
+	require.NoError(t, cluster.setValue(values.BooleanReplicas(true)))
 	assert.Equal(t, cnpgHibernationValueOn, cluster.GetAnnotations()[cnpgHibernationAnnotation])
 
-	cluster.setSuspend(false)
+	require.NoError(t, cluster.setValue(values.BooleanReplicas(false)))
 	assert.Equal(t, cnpgHibernationValueOff, cluster.GetAnnotations()[cnpgHibernationAnnotation])
+}
+
+func TestCnpgCluster_SetValue_WrongType(t *testing.T) {
+	t.Parallel()
+
+	cluster := newTestCnpgCluster("")
+
+	err := cluster.setValue(values.AbsoluteReplicas(5))
+
+	var invalidReplicaTypeError *values.InvalidReplicaTypeError
+	assert.ErrorAs(t, err, &invalidReplicaTypeError)
 }
 
 func TestCnpgCluster_Copy_IsDeepCopy(t *testing.T) {
 	t.Parallel()
 
 	original := newTestCnpgCluster("off")
-	ssw := &suspendScaledWorkload{suspendScaledResource: original}
+	vsw := &valueScaledWorkload{valueScaledResource: original}
 
-	copyWorkload, err := ssw.Copy()
+	copyWorkload, err := vsw.Copy()
 	require.NoError(t, err)
 
-	original.setSuspend(true)
+	require.NoError(t, original.setValue(values.BooleanReplicas(true)))
 
-	origCurrent, _ := original.getSuspend()
+	origCurrent, _, err := original.getValue()
+	require.NoError(t, err)
 	assert.Equal(t, values.BooleanReplicas(true), origCurrent)
 
-	copySSW, ok := copyWorkload.(*suspendScaledWorkload)
+	copyVSW, ok := copyWorkload.(*valueScaledWorkload)
 	require.True(t, ok)
-	copyCluster, ok := copySSW.suspendScaledResource.(*cnpgCluster)
+	copyCluster, ok := copyVSW.valueScaledResource.(*cnpgCluster)
 	require.True(t, ok)
 
-	copyCurrent, _ := copyCluster.getSuspend()
+	copyCurrent, _, err := copyCluster.getValue()
+	require.NoError(t, err)
 	assert.Equal(t, values.BooleanReplicas(false), copyCurrent)
 }
 
