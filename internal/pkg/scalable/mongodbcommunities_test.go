@@ -69,9 +69,9 @@ func TestMongoDBCommunity_GetReplicas(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			w := newTestMongoDBCommunity(test.membersVal, true)
+			mongoCommunity := newTestMongoDBCommunity(test.membersVal, true)
 
-			got, err := w.getReplicas()
+			got, err := mongoCommunity.getReplicas()
 
 			if test.wantErr {
 				require.Error(t, err)
@@ -125,9 +125,9 @@ func TestMongoDBCommunity_SetReplicas(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			w := newTestMongoDBCommunity(test.initialMembers, test.withLastSuccessfulConfiguration)
+			mongoCommunity := newTestMongoDBCommunity(test.initialMembers, test.withLastSuccessfulConfiguration)
 
-			err := w.setReplicas(test.target)
+			err := mongoCommunity.setReplicas(test.target)
 
 			if test.wantErr {
 				var scalingRefusedErr *ScalingRefusedError
@@ -136,7 +136,7 @@ func TestMongoDBCommunity_SetReplicas(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			got, err := w.getReplicas()
+			got, err := mongoCommunity.getReplicas()
 			require.NoError(t, err)
 			assert.Equal(t, test.wantReplicas, got)
 		})
@@ -173,11 +173,11 @@ func TestMongoDBCommunity_GVK(t *testing.T) {
 
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(mongoDBCommunityGVK)
-	w := &mongoDBCommunity{Unstructured: u}
+	mongoCommunity := &mongoDBCommunity{Unstructured: u}
 
-	assert.Equal(t, mongoDBCommunityGVK.Group, w.GroupVersionKind().Group)
-	assert.Equal(t, mongoDBCommunityGVK.Version, w.GroupVersionKind().Version)
-	assert.Equal(t, mongoDBCommunityGVK.Kind, w.GroupVersionKind().Kind)
+	assert.Equal(t, mongoDBCommunityGVK.Group, mongoCommunity.GroupVersionKind().Group)
+	assert.Equal(t, mongoDBCommunityGVK.Version, mongoCommunity.GroupVersionKind().Version)
+	assert.Equal(t, mongoDBCommunityGVK.Kind, mongoCommunity.GroupVersionKind().Kind)
 }
 
 func TestMongoDBCommunity_MustScaleChildren(t *testing.T) {
@@ -216,9 +216,9 @@ func TestMongoDBCommunity_GetSavedResourcesRequests(t *testing.T) {
 func TestMongoDBCommunity_GetSavedResourcesRequests_MissingContainers(t *testing.T) {
 	t.Parallel()
 
-	w := newTestMongoDBCommunity(float64(3), true)
+	mongoCommunity := newTestMongoDBCommunity(float64(3), true)
 
-	saved := w.getSavedResourcesRequests(2)
+	saved := mongoCommunity.getSavedResourcesRequests(2)
 
 	assert.InDelta(t, 0, saved.TotalCPU(), 1e-9)
 	assert.InDelta(t, 0, saved.TotalMemory(), 1e-9)
