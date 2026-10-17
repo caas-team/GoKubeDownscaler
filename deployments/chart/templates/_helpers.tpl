@@ -495,6 +495,26 @@ Create defined permissions for roles
     - update
 {{- end }}
 {{- end }}
+{{- if and (or (has "mongodbcommunities" .Values.includedResources) (has "mariadbs" .Values.includedResources)) (not (has "statefulsets" .Values.includedResources)) }}
+- apiGroups:
+    - apps
+  resources:
+    - statefulsets
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if and (has "mariadbs" .Values.includedResources) (not (has "deployments" .Values.includedResources)) }}
+- apiGroups:
+    - apps
+  resources:
+    - deployments
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- end }}
 
 {{/*
