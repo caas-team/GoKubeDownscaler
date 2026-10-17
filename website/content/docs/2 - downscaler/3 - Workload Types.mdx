@@ -198,10 +198,10 @@ Scales by setting the `spec.members` count to the [downscale replicas](ref:docs-
 The [MongoDB Community Operator](https://github.com/mongodb/mongodb-kubernetes) stops reconciling the StatefulSet once `members` is 0,
 so it does not scale the pods down by itself.
 The downscaler scales that StatefulSet directly instead, always, regardless of the [scale-children](ref:docs-values#scale-children) scope setting.
-Parking the CR alone would have no effect on the running pods.
+Downscaling the CR alone would have no effect on the running pods.
 The chart grants the RBAC needed to scale that StatefulSet automatically whenever `mongodbcommunities` is in `includedResources`.
 
-As a safety measure, a MongoDBCommunity is never parked (scaled to 0) unless it carries the operator-written annotation `mongodb.com/v1.lastSuccessfulConfiguration`.
+As a safety measure, a MongoDBCommunity is never scaled to 0 unless it carries the operator-written annotation `mongodb.com/v1.lastSuccessfulConfiguration`.
 Without it, the operator has no known-good configuration to restore on wake, so the downscaler refuses and logs instead.
 Scaling up is never refused.
 
@@ -226,14 +226,14 @@ It does not scale the metrics exporter Deployment it owns, which would crash-loo
 The downscaler scales that Deployment directly instead, always, regardless of the [scale-children](ref:docs-values#scale-children) scope setting.
 The chart grants the RBAC needed to scale that Deployment automatically whenever `mariadbs` is in `includedResources`.
 
-With Galera enabled, the operator's admission webhook rejects `spec.replicas` below 2, so a Galera MariaDB is parked differently.
+With Galera enabled, the operator's admission webhook rejects `spec.replicas` below 2, so a Galera MariaDB is scaled down differently.
 The downscaler sets `spec.suspend: true`, which stops the operator from reconciling, and leaves `spec.replicas` untouched.
 It also scales the StatefulSet the MariaDB owns to 0 directly.
 The chart grants the RBAC needed to scale that StatefulSet automatically whenever `mariadbs` is in `includedResources`.
 On wake it sets `spec.suspend: false` and restores the StatefulSet.
 It then runs [Galera recovery](https://github.com/mariadb-operator/mariadb-operator/blob/main/docs/galera.md#galera-cluster-recovery).
 This bootstraps the cluster from the node with the highest sequence number, so waking up takes a few minutes.
-A Galera MariaDB whose recovery is disabled is never parked, since nothing would bootstrap the cluster on wake.
+A Galera MariaDB whose recovery is disabled is never scaled down, since nothing would bootstrap the cluster on wake.
 Recovery counts as disabled when `spec.galera.recovery` is set but `spec.galera.recovery.enabled` is not true.
 Downscale replicas of 1 are refused for Galera as well.
 
