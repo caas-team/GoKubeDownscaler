@@ -34,6 +34,7 @@ const (
 	horizontalPodAutoscalerKind = "HorizontalPodAutoscaler"
 	ingressKind                 = "Ingress"
 	jobKind                     = "Job"
+	helmReleaseKind             = "HelmRelease"
 	kafkaStrimziGroup           = "kafka.strimzi.io"
 	kafkaStrimziVersion         = "v1"
 	kafkaBridgeKind             = "KafkaBridge"
@@ -338,6 +339,7 @@ func isSupportedOwnerKind(kind string) bool {
 		serviceKind:                 {},
 		stackKind:                   {},
 		statefulSetKind:             {},
+		helmReleaseKind:             {},
 	}
 
 	_, supported := supportedOwnerKinds[kind]
