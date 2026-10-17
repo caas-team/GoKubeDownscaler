@@ -74,9 +74,9 @@ func TestMariaDB_GetReplicas(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			w := newTestMariaDB(test.replicasVal, "")
+			mariaDBResource := newTestMariaDB(test.replicasVal, "")
 
-			got, err := w.getReplicas()
+			got, err := mariaDBResource.getReplicas()
 
 			if test.wantErr {
 				require.Error(t, err)
@@ -99,7 +99,7 @@ func TestMariaDB_SetReplicas(t *testing.T) {
 		name                       string
 		initialReplicas            float64
 		haField                    string
-		setup                      func(t *testing.T, w *mariaDB)
+		setup                      func(t *testing.T, mariaDBResource *mariaDB)
 		target                     int32
 		wantSuspended              bool
 		checkSpecReplicasUnchanged bool
@@ -124,9 +124,9 @@ func TestMariaDB_SetReplicas(t *testing.T) {
 			name:            "galera scale down allowed with recovery explicitly enabled",
 			initialReplicas: 3,
 			haField:         "galera",
-			setup: func(t *testing.T, w *mariaDB) {
+			setup: func(t *testing.T, mariaDBResource *mariaDB) {
 				t.Helper()
-				require.NoError(t, unstructured.SetNestedField(w.Object, true, "spec", "galera", "recovery", "enabled"))
+				require.NoError(t, unstructured.SetNestedField(mariaDBResource.Object, true, "spec", "galera", "recovery", "enabled"))
 			},
 			target:        0,
 			wantSuspended: true,
@@ -134,9 +134,9 @@ func TestMariaDB_SetReplicas(t *testing.T) {
 		{
 			name:            "scale down allowed when HA explicitly disabled",
 			initialReplicas: 1,
-			setup: func(t *testing.T, w *mariaDB) {
+			setup: func(t *testing.T, mariaDBResource *mariaDB) {
 				t.Helper()
-				require.NoError(t, unstructured.SetNestedField(w.Object, false, "spec", "galera", "enabled"))
+				require.NoError(t, unstructured.SetNestedField(mariaDBResource.Object, false, "spec", "galera", "enabled"))
 			},
 			target: 0,
 		},
@@ -152,22 +152,22 @@ func TestMariaDB_SetReplicas(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			w := newTestMariaDB(test.initialReplicas, test.haField)
+			mariaDBResource := newTestMariaDB(test.initialReplicas, test.haField)
 			if test.setup != nil {
-				test.setup(t, w)
+				test.setup(t, mariaDBResource)
 			}
 
-			require.NoError(t, w.setReplicas(test.target))
-			assert.Equal(t, test.wantSuspended, w.isSuspended())
+			require.NoError(t, mariaDBResource.setReplicas(test.target))
+			assert.Equal(t, test.wantSuspended, mariaDBResource.isSuspended())
 
 			if test.checkSpecReplicasUnchanged {
-				specReplicas, _, err := unstructured.NestedFieldNoCopy(w.Object, "spec", "replicas")
+				specReplicas, _, err := unstructured.NestedFieldNoCopy(mariaDBResource.Object, "spec", "replicas")
 				require.NoError(t, err)
 				assert.InDelta(t, test.initialReplicas, specReplicas, 0, "spec.replicas must stay valid for the operator webhook")
 			}
 
 			if test.wantReplicas != nil {
-				got, err := w.getReplicas()
+				got, err := mariaDBResource.getReplicas()
 				require.NoError(t, err)
 				assert.Equal(t, test.wantReplicas, got)
 			}
@@ -192,17 +192,17 @@ func TestMariaDB_SetReplicas_RefusedBelowHAMinimum(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			w := newTestMariaDB(float64(3), test.haField)
+			mariaDBResource := newTestMariaDB(float64(3), test.haField)
 
-			err := w.setReplicas(test.target)
+			err := mariaDBResource.setReplicas(test.target)
 
 			var scalingRefusedErr *ScalingRefusedError
 			require.ErrorAs(t, err, &scalingRefusedErr)
 
-			got, err := w.getReplicas()
+			got, err := mariaDBResource.getReplicas()
 			require.NoError(t, err)
 			assert.Equal(t, values.AbsoluteReplicas(3), got)
-			assert.False(t, w.isSuspended())
+			assert.False(t, mariaDBResource.isSuspended())
 		})
 	}
 }
@@ -210,14 +210,14 @@ func TestMariaDB_SetReplicas_RefusedBelowHAMinimum(t *testing.T) {
 func TestMariaDB_SetReplicas_GaleraWakeResumes(t *testing.T) {
 	t.Parallel()
 
-	w := newTestMariaDB(float64(3), "galera")
-	require.NoError(t, w.setReplicas(0))
+	mariaDBResource := newTestMariaDB(float64(3), "galera")
+	require.NoError(t, mariaDBResource.setReplicas(0))
 
-	require.NoError(t, w.setReplicas(3))
+	require.NoError(t, mariaDBResource.setReplicas(3))
 
-	assert.False(t, w.isSuspended())
+	assert.False(t, mariaDBResource.isSuspended())
 
-	got, err := w.getReplicas()
+	got, err := mariaDBResource.getReplicas()
 	require.NoError(t, err)
 	assert.Equal(t, values.AbsoluteReplicas(3), got)
 }
@@ -237,14 +237,14 @@ func TestMariaDB_SetReplicas_GaleraScaleDownRefusedWithoutRecovery(t *testing.T)
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			w := newTestMariaDB(float64(3), "galera")
-			require.NoError(t, unstructured.SetNestedMap(w.Object, test.recovery, "spec", "galera", "recovery"))
+			mariaDBResource := newTestMariaDB(float64(3), "galera")
+			require.NoError(t, unstructured.SetNestedMap(mariaDBResource.Object, test.recovery, "spec", "galera", "recovery"))
 
-			err := w.setReplicas(0)
+			err := mariaDBResource.setReplicas(0)
 
 			var scalingRefusedErr *ScalingRefusedError
 			require.ErrorAs(t, err, &scalingRefusedErr)
-			assert.False(t, w.isSuspended())
+			assert.False(t, mariaDBResource.isSuspended())
 		})
 	}
 }
@@ -252,22 +252,22 @@ func TestMariaDB_SetReplicas_GaleraScaleDownRefusedWithoutRecovery(t *testing.T)
 func TestMariaDB_GaleraScaleDownThenUp(t *testing.T) {
 	t.Parallel()
 
-	w := newTestMariaDB(float64(3), "galera")
-	rsw := &replicaScaledWorkload{replicaScaledResource: w}
+	mariaDBResource := newTestMariaDB(float64(3), "galera")
+	rsw := &replicaScaledWorkload{replicaScaledResource: mariaDBResource}
 
 	down, err := rsw.ScaleDown(values.AbsoluteReplicas(0), nil)
 	require.NoError(t, err)
 	assert.True(t, down.IsUpdateNeeded)
-	assert.True(t, w.isSuspended())
-	assert.Equal(t, "3", w.GetAnnotations()[annotationOriginalReplicas])
+	assert.True(t, mariaDBResource.isSuspended())
+	assert.Equal(t, "3", mariaDBResource.GetAnnotations()[annotationOriginalReplicas])
 
 	up, err := rsw.ScaleUp(nil)
 	require.NoError(t, err)
 	assert.True(t, up.IsUpdateNeeded)
-	assert.False(t, w.isSuspended())
-	assert.NotContains(t, w.GetAnnotations(), annotationOriginalReplicas)
+	assert.False(t, mariaDBResource.isSuspended())
+	assert.NotContains(t, mariaDBResource.GetAnnotations(), annotationOriginalReplicas)
 
-	got, err := w.getReplicas()
+	got, err := mariaDBResource.getReplicas()
 	require.NoError(t, err)
 	assert.Equal(t, values.AbsoluteReplicas(3), got)
 }
@@ -275,10 +275,10 @@ func TestMariaDB_GaleraScaleDownThenUp(t *testing.T) {
 func TestMariaDB_GetReplicas_SuspendIgnoredWithoutGalera(t *testing.T) {
 	t.Parallel()
 
-	w := newTestMariaDB(float64(1), "")
-	require.NoError(t, unstructured.SetNestedField(w.Object, true, "spec", "suspend"))
+	mariaDBResource := newTestMariaDB(float64(1), "")
+	require.NoError(t, unstructured.SetNestedField(mariaDBResource.Object, true, "spec", "suspend"))
 
-	got, err := w.getReplicas()
+	got, err := mariaDBResource.getReplicas()
 	require.NoError(t, err)
 	assert.Equal(t, values.AbsoluteReplicas(1), got)
 }
@@ -309,23 +309,23 @@ func TestMariaDB_GVK(t *testing.T) {
 
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(mariaDBGVK)
-	w := &mariaDB{Unstructured: u}
+	mariaDBResource := &mariaDB{Unstructured: u}
 
-	assert.Equal(t, "k8s.mariadb.com", w.GroupVersionKind().Group)
-	assert.Equal(t, "v1alpha1", w.GroupVersionKind().Version)
-	assert.Equal(t, "MariaDB", w.GroupVersionKind().Kind)
+	assert.Equal(t, "k8s.mariadb.com", mariaDBResource.GroupVersionKind().Group)
+	assert.Equal(t, "v1alpha1", mariaDBResource.GroupVersionKind().Version)
+	assert.Equal(t, "MariaDB", mariaDBResource.GroupVersionKind().Kind)
 }
 
 func TestMariaDB_GetSavedResourcesRequests(t *testing.T) {
 	t.Parallel()
 
-	w := newTestMariaDB(float64(1), "")
-	require.NoError(t, unstructured.SetNestedStringMap(w.Object, map[string]string{
+	mariaDBResource := newTestMariaDB(float64(1), "")
+	require.NoError(t, unstructured.SetNestedStringMap(mariaDBResource.Object, map[string]string{
 		"cpu":    "500m",
 		"memory": "1Gi",
 	}, "spec", "resources", "requests"))
 
-	saved := w.getSavedResourcesRequests(2)
+	saved := mariaDBResource.getSavedResourcesRequests(2)
 
 	assert.InDelta(t, 1.0, saved.TotalCPU(), 1e-9)
 	assert.InDelta(t, 2*1024*1024*1024, saved.TotalMemory(), 1e5)
@@ -334,9 +334,9 @@ func TestMariaDB_GetSavedResourcesRequests(t *testing.T) {
 func TestMariaDB_GetSavedResourcesRequests_MissingResources(t *testing.T) {
 	t.Parallel()
 
-	w := newTestMariaDB(float64(1), "")
+	mariaDBResource := newTestMariaDB(float64(1), "")
 
-	saved := w.getSavedResourcesRequests(1)
+	saved := mariaDBResource.getSavedResourcesRequests(1)
 
 	assert.InDelta(t, 0, saved.TotalCPU(), 1e-9)
 	assert.InDelta(t, 0, saved.TotalMemory(), 1e-9)
@@ -354,9 +354,9 @@ func newTestDeploymentOwnedBy(name, ownerKind, ownerName string) appsv1.Deployme
 func TestMariaDB_OwnedDeployments(t *testing.T) {
 	t.Parallel()
 
-	w := newTestMariaDB(float64(1), "")
+	mariaDBResource := newTestMariaDB(float64(1), "")
 
-	children := w.ownedDeployments([]appsv1.Deployment{
+	children := mariaDBResource.ownedDeployments([]appsv1.Deployment{
 		newTestDeploymentOwnedBy("test-mariadb-metrics", "MariaDB", "test-mariadb"),
 		newTestDeploymentOwnedBy("other-mariadb-metrics", "MariaDB", "other-mariadb"),
 		newTestDeploymentOwnedBy("same-name-other-kind", "MaxScale", "test-mariadb"),
@@ -378,7 +378,7 @@ func TestMariaDB_MustScaleChildren(t *testing.T) {
 func TestMariaDB_OwnedStatefulSets(t *testing.T) {
 	t.Parallel()
 
-	w := newTestMariaDB(float64(3), "galera")
+	mariaDBResource := newTestMariaDB(float64(3), "galera")
 
 	owned := appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{
 		Name: "test-mariadb", Namespace: "default",
@@ -389,7 +389,7 @@ func TestMariaDB_OwnedStatefulSets(t *testing.T) {
 		OwnerReferences: []metav1.OwnerReference{{Kind: "MariaDB", Name: "other-mariadb"}},
 	}}
 
-	children := w.ownedStatefulSets([]appsv1.StatefulSet{owned, other})
+	children := mariaDBResource.ownedStatefulSets([]appsv1.StatefulSet{owned, other})
 
 	require.Len(t, children, 1)
 	assert.Equal(t, "test-mariadb", children[0].GetName())
