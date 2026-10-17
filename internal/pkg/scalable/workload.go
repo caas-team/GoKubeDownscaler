@@ -54,6 +54,7 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"broadcastjobs":            getBroadcastJobs,
 		"imagepulljobs":            getImagePullJobs,
 		"clonesets":                getCloneSets,
+		"helmreleases":             getHelmReleases,
 	}
 
 	resourceFunc, exists := resourceFuncMap[resource]
@@ -104,6 +105,7 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"imagepulljob":            parseImagePullJobFromBytes,
 		"advancedstatefulsets":    parseKruiseStatefulSetFromBytes,
 		"clonesets":               parseCloneSetFromBytes,
+		"helmreleases":            parseHelmReleaseFromBytes,
 	}
 
 	parseFunc, exists := parseWorkloadFuncMap[resource]

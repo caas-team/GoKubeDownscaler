@@ -267,3 +267,10 @@ Scales by setting the suspend property to true, which halts further scheduled ru
 - resource: advanceddaemonsets.v1beta1.kruise.io
 
 Scales by setting the node selector to match none of the nodes, which stops pods from running on any node.
+
+### HelmReleases
+
+- id: helmreleases
+- resource: helmrelease.v2.helm.toolkit.fluxcd.io
+
+Scales by setting the suspend property to true, which pauses reconciliation of the HelmRelease until it is upscaled again.

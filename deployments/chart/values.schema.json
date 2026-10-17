@@ -222,6 +222,7 @@
 		  "horizontalpodautoscalers",
 		  "jobs",
 		  "cronjobs",
+		  "helmreleases",
 		  "scaledobjects",
 		  "stacks",
 		  "prometheuses",
@@ -564,5 +565,3 @@
   },
   "required": []
 }
-
-
