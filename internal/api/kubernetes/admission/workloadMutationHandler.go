@@ -100,7 +100,13 @@ func (v *WorkloadMutationHandler) HandleWorkloadMutation(ctx context.Context, wr
 
 	out, err := v.evaluateWorkloadMutation(ctx, workload, input, v.metricsEnabled, logger)
 	if err != nil {
-		slog.Error("error encountered while validating workload", "error", err)
+		var scalingRefusedErr *scalable.ScalingRefusedError
+		if errors.As(err, &scalingRefusedErr) {
+			logger.Warn("scaling refused", "error", err)
+		} else {
+			slog.Error("error encountered while validating workload", "error", err)
+		}
+
 		sendAdmissionReviewResponse(writer, out)
 
 		return
