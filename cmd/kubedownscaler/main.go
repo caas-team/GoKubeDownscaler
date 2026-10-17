@@ -238,7 +238,12 @@ func startScanning(
 
 				err = scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceScopes, workloadNamespaceMetrics, config, logger)
 				if err != nil {
-					logger.Error("failed to scan workload", "error", err)
+					var scalingRefusedErr *scalable.ScalingRefusedError
+					if errors.As(err, &scalingRefusedErr) {
+						logger.Warn("scaling refused", "error", err)
+					} else {
+						logger.Error("failed to scan workload", "error", err)
+					}
 
 					return
 				}
