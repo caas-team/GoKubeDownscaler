@@ -317,6 +317,7 @@ func isSupportedOwnerKind(kind string) bool {
 		autoscalingRunnerSetKind:    {},
 		broadcastJobKind:            {},
 		cloneSetKind:                {},
+		cnpgClusterKind:             {},
 		cronJobKind:                 {},
 		daemonSetKind:               {},
 		deploymentKind:              {},
