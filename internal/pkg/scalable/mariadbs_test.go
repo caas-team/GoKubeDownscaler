@@ -123,8 +123,8 @@ func TestMariaDB_SetReplicas_RefusedBelowHAMinimum(t *testing.T) {
 
 			err := w.setReplicas(test.target)
 
-			var parkRefusedErr *ParkRefusedError
-			require.ErrorAs(t, err, &parkRefusedErr)
+			var scalingRefusedErr *ScalingRefusedError
+			require.ErrorAs(t, err, &scalingRefusedErr)
 
 			got, err := w.getReplicas()
 			require.NoError(t, err)
@@ -187,8 +187,8 @@ func TestMariaDB_SetReplicas_GaleraParkRefusedWithoutRecovery(t *testing.T) {
 
 			err := w.setReplicas(0)
 
-			var parkRefusedErr *ParkRefusedError
-			require.ErrorAs(t, err, &parkRefusedErr)
+			var scalingRefusedErr *ScalingRefusedError
+			require.ErrorAs(t, err, &scalingRefusedErr)
 			assert.False(t, w.isSuspended())
 		})
 	}

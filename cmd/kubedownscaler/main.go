@@ -529,7 +529,12 @@ func scaleWorkloads(
 
 			err := attemptScaling(client, ctx, decision, workload, scopes, workloadNamespaceMetrics, config, logger)
 			if err != nil {
-				logger.Error("scaling operation failed", "error", err)
+				var scalingRefusedErr *scalable.ScalingRefusedError
+				if errors.As(err, &scalingRefusedErr) {
+					logger.Warn("scaling refused", "error", err)
+				} else {
+					logger.Error("scaling operation failed", "error", err)
+				}
 			}
 		}(workload)
 	}
