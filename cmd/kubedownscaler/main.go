@@ -433,7 +433,12 @@ func scanWorkload(
 		return err
 	}
 
-	return scaleChildrenIfNeeded(workload, client, ctx, decision, scopes, workloadNamespaceMetrics, config, logger)
+	err = scaleChildrenIfNeeded(workload, client, ctx, decision, scopes, workloadNamespaceMetrics, config, logger)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // scaleChildrenIfNeeded scales workload's children when the scale-children scope setting is
