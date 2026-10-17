@@ -203,6 +203,10 @@ func (m *mariaDB) ownedStatefulSets(statefulSets []appsv1.StatefulSet) []Workloa
 
 func (m *mariaDB) owns(obj metav1.Object) bool {
 	for _, owner := range obj.GetOwnerReferences() {
+		if owner.Controller == nil || !*owner.Controller {
+			continue
+		}
+
 		if owner.Kind == mariaDBKind && owner.Name == m.GetName() {
 			return true
 		}
