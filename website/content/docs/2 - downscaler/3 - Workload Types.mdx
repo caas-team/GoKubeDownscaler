@@ -195,10 +195,14 @@ Scales by setting the numberOfInstances count to the [downscale replicas](ref:do
 - resource: mongodbcommunity.v1.mongodbcommunity.mongodb.com
 
 Scales by setting the `spec.members` count to the [downscale replicas](ref:docs-values#downscale-replicas).
-The [MongoDB Community Kubernetes Operator](https://github.com/mongodb/mongodb-kubernetes) stops reconciling the owned StatefulSet once `members` reaches 0, so it does not scale the pods down by itself.
-The downscaler scales that StatefulSet directly instead, always, regardless of the [scale-children](ref:docs-values#scale-children) scope setting, since parking the CR alone would have no effect on the running pods.
+The [MongoDB Community Operator](https://github.com/mongodb/mongodb-kubernetes) stops reconciling the StatefulSet once `members` is 0,
+so it does not scale the pods down by itself.
+The downscaler scales that StatefulSet directly instead, always, regardless of the [scale-children](ref:docs-values#scale-children) scope setting.
+Parking the CR alone would have no effect on the running pods.
+The chart grants the RBAC needed to scale that StatefulSet automatically whenever `mongodbcommunities` is in `includedResources`.
 
-As a safety measure, a MongoDBCommunity is never parked (scaled to 0) unless it carries the operator-written annotation `mongodb.com/v1.lastSuccessfulConfiguration`, without it the operator has no known-good configuration to restore on wake, so the downscaler refuses and logs instead.
+As a safety measure, a MongoDBCommunity is never parked (scaled to 0) unless it carries the operator-written annotation `mongodb.com/v1.lastSuccessfulConfiguration`.
+Without it, the operator has no known-good configuration to restore on wake, so the downscaler refuses and logs instead.
 Scaling up is never refused.
 
 ### CnpgClusters
@@ -207,8 +211,9 @@ Scaling up is never refused.
 - resource: cluster.v1.postgresql.cnpg.io
 
 Scales by toggling the `cnpg.io/hibernation` annotation between `"on"` and `"off"`.
-This is fully automatic in both directions: the [CloudNativePG Operator](https://cloudnative-pg.io/documentation/current/declarative_hibernation/) deletes every instance pod itself (preserving the underlying volumes) when hibernation is requested, and recreates them with no bookkeeping needed from the downscaler when it's cleared.
-No `scale-children` is needed, and there's no child resource to grant RBAC on.
+The [CloudNativePG Operator](https://cloudnative-pg.io/documentation/current/declarative_hibernation/) handles both directions on its own.
+Hibernating deletes every instance pod itself, preserving the underlying volumes.
+Clearing it recreates them, with no bookkeeping needed from the downscaler.
 
 ### MariaDBs
 
@@ -217,12 +222,19 @@ No `scale-children` is needed, and there's no child resource to grant RBAC on.
 
 Scales by setting `spec.replicas` to the [downscale replicas](ref:docs-values#downscale-replicas).
 The [mariadb-operator](https://github.com/mariadb-operator/mariadb-operator) propagates that value to its StatefulSet, including 0.
-It does not scale the metrics exporter Deployment it owns, which would crash-loop without a database, so the downscaler scales that Deployment directly, always, regardless of the [scale-children](ref:docs-values#scale-children) scope setting.
+It does not scale the metrics exporter Deployment it owns, which would crash-loop without a database.
+The downscaler scales that Deployment directly instead, always, regardless of the [scale-children](ref:docs-values#scale-children) scope setting.
+The chart grants the RBAC needed to scale that Deployment automatically whenever `mariadbs` is in `includedResources`.
 
-With Galera enabled, the operator's admission webhook rejects `spec.replicas` below 2, so a Galera MariaDB is parked differently:
-the downscaler sets `spec.suspend: true`, which stops the operator from reconciling, leaves `spec.replicas` untouched, and scales the StatefulSet the MariaDB owns to 0 directly.
-On wake it sets `spec.suspend: false` and restores the StatefulSet; the operator then runs its [Galera cluster recovery](https://github.com/mariadb-operator/mariadb-operator/blob/main/docs/galera.md#galera-cluster-recovery), bootstrapping the cluster from the node with the highest sequence number, so waking up takes a few minutes.
-A Galera MariaDB whose recovery is disabled (`spec.galera.recovery.enabled` not true when `spec.galera.recovery` is set) is never parked, since nothing would bootstrap the cluster on wake.
+With Galera enabled, the operator's admission webhook rejects `spec.replicas` below 2, so a Galera MariaDB is parked differently.
+The downscaler sets `spec.suspend: true`, which stops the operator from reconciling, and leaves `spec.replicas` untouched.
+It also scales the StatefulSet the MariaDB owns to 0 directly.
+The chart grants the RBAC needed to scale that StatefulSet automatically whenever `mariadbs` is in `includedResources`.
+On wake it sets `spec.suspend: false` and restores the StatefulSet.
+It then runs [Galera recovery](https://github.com/mariadb-operator/mariadb-operator/blob/main/docs/galera.md#galera-cluster-recovery).
+This bootstraps the cluster from the node with the highest sequence number, so waking up takes a few minutes.
+A Galera MariaDB whose recovery is disabled is never parked, since nothing would bootstrap the cluster on wake.
+Recovery counts as disabled when `spec.galera.recovery` is set but `spec.galera.recovery.enabled` is not true.
 Downscale replicas of 1 are refused for Galera as well.
 
 A MariaDB with replication enabled is never scaled below 2 replicas, for the same webhook reason; the downscaler refuses and logs instead.
