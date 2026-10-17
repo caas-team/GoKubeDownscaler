@@ -85,45 +85,62 @@ func TestMongoDBCommunity_GetReplicas(t *testing.T) {
 	}
 }
 
-func TestMongoDBCommunity_SetReplicas_ScaleDownAllowedWithAnnotation(t *testing.T) {
+func TestMongoDBCommunity_SetReplicas(t *testing.T) {
 	t.Parallel()
 
-	w := newTestMongoDBCommunity(float64(3), true)
+	tests := []struct {
+		name                            string
+		initialMembers                  any
+		withLastSuccessfulConfiguration bool
+		target                          int32
+		wantErr                         bool
+		wantReplicas                    values.Replicas
+	}{
+		{
+			name:                            "scale down allowed with annotation",
+			initialMembers:                  float64(3),
+			withLastSuccessfulConfiguration: true,
+			target:                          0,
+			wantReplicas:                    values.AbsoluteReplicas(0),
+		},
+		{
+			// spec.members must be left untouched when the scale down is refused.
+			name:                            "scale down refused without annotation",
+			initialMembers:                  float64(3),
+			withLastSuccessfulConfiguration: false,
+			target:                          0,
+			wantErr:                         true,
+			wantReplicas:                    values.AbsoluteReplicas(3),
+		},
+		{
+			name:                            "scale up always allowed without annotation",
+			initialMembers:                  float64(0),
+			withLastSuccessfulConfiguration: false,
+			target:                          3,
+			wantReplicas:                    values.AbsoluteReplicas(3),
+		},
+	}
 
-	require.NoError(t, w.setReplicas(0))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 
-	got, err := w.getReplicas()
-	require.NoError(t, err)
-	assert.Equal(t, values.AbsoluteReplicas(0), got)
-}
+			w := newTestMongoDBCommunity(test.initialMembers, test.withLastSuccessfulConfiguration)
 
-func TestMongoDBCommunity_SetReplicas_ScaleDownRefusedWithoutAnnotation(t *testing.T) {
-	t.Parallel()
+			err := w.setReplicas(test.target)
 
-	mongoCommunity := newTestMongoDBCommunity(float64(3), false)
+			if test.wantErr {
+				var scalingRefusedErr *ScalingRefusedError
+				require.ErrorAs(t, err, &scalingRefusedErr)
+			} else {
+				require.NoError(t, err)
+			}
 
-	err := mongoCommunity.setReplicas(0)
-	require.Error(t, err)
-
-	var scalingRefusedErr *ScalingRefusedError
-	require.ErrorAs(t, err, &scalingRefusedErr)
-
-	// spec.members must be left untouched when the scale down is refused.
-	got, err := mongoCommunity.getReplicas()
-	require.NoError(t, err)
-	assert.Equal(t, values.AbsoluteReplicas(3), got)
-}
-
-func TestMongoDBCommunity_SetReplicas_ScaleUpAlwaysAllowedWithoutAnnotation(t *testing.T) {
-	t.Parallel()
-
-	w := newTestMongoDBCommunity(float64(0), false)
-
-	require.NoError(t, w.setReplicas(3))
-
-	got, err := w.getReplicas()
-	require.NoError(t, err)
-	assert.Equal(t, values.AbsoluteReplicas(3), got)
+			got, err := w.getReplicas()
+			require.NoError(t, err)
+			assert.Equal(t, test.wantReplicas, got)
+		})
+	}
 }
 
 func TestMongoDBCommunity_Copy_IsDeepCopy(t *testing.T) {
