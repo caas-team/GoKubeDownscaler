@@ -125,7 +125,8 @@ func (c *cnpgCluster) logDownscaleSuccessful(summary *scalingSummary, dryRun boo
 // Hibernation stops every instance, so this is the per-instance request from spec.resources
 // multiplied by spec.instances; a missing or unparseable value counts as zero.
 func (c *cnpgCluster) getSavedResourcesRequests() *metrics.SavedResources {
-	instances, _, _ := unstructured.NestedInt64(c.Object, "spec", "instances")
+	instancesVal, _, _ := unstructured.NestedFieldNoCopy(c.Object, "spec", "instances")
+	instances, _ := unstructuredReplicasToInt32(instancesVal)
 
 	cpuReq, _, _ := unstructured.NestedString(c.Object, "spec", "resources", "requests", "cpu")
 	memReq, _, _ := unstructured.NestedString(c.Object, "spec", "resources", "requests", "memory")
