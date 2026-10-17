@@ -9,6 +9,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/utils/ptr"
 )
 
 // newTestMariaDB builds a mariaDB with spec.replicas set to the given raw value (nil omits it).
@@ -342,10 +343,13 @@ func TestMariaDB_GetSavedResourcesRequests_MissingResources(t *testing.T) {
 	assert.InDelta(t, 0, saved.TotalMemory(), 1e-9)
 }
 
-func newTestDeploymentOwnedBy(name, ownerKind, ownerName string) appsv1.Deployment {
+// newTestDeploymentOwnedBy builds a Deployment with a single owner reference to ownerKind/ownerName.
+// controller is nil to omit the Controller field entirely; pass ptr.To(true) or ptr.To(false) to set
+// it explicitly. Pass an empty ownerKind to build an unowned Deployment.
+func newTestDeploymentOwnedBy(name, ownerKind, ownerName string, controller *bool) appsv1.Deployment {
 	dep := appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "default"}}
 	if ownerKind != "" {
-		dep.OwnerReferences = []metav1.OwnerReference{{Kind: ownerKind, Name: ownerName}}
+		dep.OwnerReferences = []metav1.OwnerReference{{Kind: ownerKind, Name: ownerName, Controller: controller}}
 	}
 
 	return dep
@@ -357,10 +361,12 @@ func TestMariaDB_OwnedDeployments(t *testing.T) {
 	mariaDBResource := newTestMariaDB(float64(1), "")
 
 	children := mariaDBResource.ownedDeployments([]appsv1.Deployment{
-		newTestDeploymentOwnedBy("test-mariadb-metrics", "MariaDB", "test-mariadb"),
-		newTestDeploymentOwnedBy("other-mariadb-metrics", "MariaDB", "other-mariadb"),
-		newTestDeploymentOwnedBy("same-name-other-kind", "MaxScale", "test-mariadb"),
-		newTestDeploymentOwnedBy("unowned", "", ""),
+		newTestDeploymentOwnedBy("test-mariadb-metrics", "MariaDB", "test-mariadb", ptr.To(true)),
+		newTestDeploymentOwnedBy("other-mariadb-metrics", "MariaDB", "other-mariadb", ptr.To(true)),
+		newTestDeploymentOwnedBy("same-name-other-kind", "MaxScale", "test-mariadb", ptr.To(true)),
+		newTestDeploymentOwnedBy("unowned", "", "", nil),
+		newTestDeploymentOwnedBy("same-name-not-controller", "MariaDB", "test-mariadb", ptr.To(false)),
+		newTestDeploymentOwnedBy("same-name-nil-controller", "MariaDB", "test-mariadb", nil),
 	})
 
 	require.Len(t, children, 1)
@@ -382,14 +388,22 @@ func TestMariaDB_OwnedStatefulSets(t *testing.T) {
 
 	owned := appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{
 		Name: "test-mariadb", Namespace: "default",
-		OwnerReferences: []metav1.OwnerReference{{Kind: "MariaDB", Name: "test-mariadb"}},
+		OwnerReferences: []metav1.OwnerReference{{Kind: "MariaDB", Name: "test-mariadb", Controller: ptr.To(true)}},
 	}}
 	other := appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{
 		Name: "other", Namespace: "default",
-		OwnerReferences: []metav1.OwnerReference{{Kind: "MariaDB", Name: "other-mariadb"}},
+		OwnerReferences: []metav1.OwnerReference{{Kind: "MariaDB", Name: "other-mariadb", Controller: ptr.To(true)}},
+	}}
+	notController := appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{
+		Name: "not-controller", Namespace: "default",
+		OwnerReferences: []metav1.OwnerReference{{Kind: "MariaDB", Name: "test-mariadb", Controller: ptr.To(false)}},
+	}}
+	nilController := appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{
+		Name: "nil-controller", Namespace: "default",
+		OwnerReferences: []metav1.OwnerReference{{Kind: "MariaDB", Name: "test-mariadb"}},
 	}}
 
-	children := mariaDBResource.ownedStatefulSets([]appsv1.StatefulSet{owned, other})
+	children := mariaDBResource.ownedStatefulSets([]appsv1.StatefulSet{owned, other, notController, nilController})
 
 	require.Len(t, children, 1)
 	assert.Equal(t, "test-mariadb", children[0].GetName())

@@ -135,17 +135,7 @@ func (m *mongoDBCommunity) GetChildren(ctx context.Context, clientsets *Clientse
 
 	for i := range list.Items {
 		sts := &list.Items[i]
-
-		owned := false
-
-		for _, owner := range sts.GetOwnerReferences() {
-			if owner.Kind == mongoDBCommunityKind && owner.Name == m.GetName() {
-				owned = true
-				break
-			}
-		}
-
-		if !owned {
+		if !m.owns(sts) {
 			continue
 		}
 
@@ -154,6 +144,23 @@ func (m *mongoDBCommunity) GetChildren(ctx context.Context, clientsets *Clientse
 	}
 
 	return results, nil
+}
+
+// owns reports whether obj is the StatefulSet controlled by this MongoDBCommunity, matched via its
+// controlling owner reference (Controller: true), not merely a non-controlling reference with a
+// matching Kind and Name.
+func (m *mongoDBCommunity) owns(obj metav1.Object) bool {
+	for _, owner := range obj.GetOwnerReferences() {
+		if owner.Controller == nil || !*owner.Controller {
+			continue
+		}
+
+		if owner.Kind == mongoDBCommunityKind && owner.Name == m.GetName() {
+			return true
+		}
+	}
+
+	return false
 }
 
 // MustScaleChildren reports that the owned StatefulSet must always be scaled: the operator stops

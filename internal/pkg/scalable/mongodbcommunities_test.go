@@ -6,7 +6,10 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/utils/ptr"
 )
 
 // newTestMongoDBCommunity builds a mongoDBCommunity with spec.members set to the given raw value.
@@ -211,6 +214,59 @@ func TestMongoDBCommunity_GetSavedResourcesRequests(t *testing.T) {
 
 	assert.InDelta(t, 1.0, saved.TotalCPU(), 1e-9)
 	assert.InDelta(t, 2*1024*1024*1024, saved.TotalMemory(), 1e5)
+}
+
+// TestMongoDBCommunity_Owns verifies that owns only matches a StatefulSet's controlling owner
+// reference (Controller: true), not merely a non-controlling reference with a matching Kind and Name.
+func TestMongoDBCommunity_Owns(t *testing.T) {
+	t.Parallel()
+
+	mongoCommunity := newTestMongoDBCommunity(float64(3), true)
+
+	tests := []struct {
+		name      string
+		ownerRefs []metav1.OwnerReference
+		wantOwned bool
+	}{
+		{
+			name:      "controller true with matching kind and name is owned",
+			ownerRefs: []metav1.OwnerReference{{Kind: "MongoDBCommunity", Name: "test-mongodbcommunity", Controller: ptr.To(true)}},
+			wantOwned: true,
+		},
+		{
+			name:      "matching name but different kind is not owned",
+			ownerRefs: []metav1.OwnerReference{{Kind: "OtherKind", Name: "test-mongodbcommunity", Controller: ptr.To(true)}},
+			wantOwned: false,
+		},
+		{
+			name:      "matching kind and name but controller false is not owned",
+			ownerRefs: []metav1.OwnerReference{{Kind: "MongoDBCommunity", Name: "test-mongodbcommunity", Controller: ptr.To(false)}},
+			wantOwned: false,
+		},
+		{
+			name:      "matching kind and name but controller nil is not owned",
+			ownerRefs: []metav1.OwnerReference{{Kind: "MongoDBCommunity", Name: "test-mongodbcommunity"}},
+			wantOwned: false,
+		},
+		{
+			name:      "no owner references is not owned",
+			ownerRefs: nil,
+			wantOwned: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			sts := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{
+				Name: "test-mongodbcommunity", Namespace: "default",
+				OwnerReferences: test.ownerRefs,
+			}}
+
+			assert.Equal(t, test.wantOwned, mongoCommunity.owns(sts))
+		})
+	}
 }
 
 func TestMongoDBCommunity_GetSavedResourcesRequests_MissingContainers(t *testing.T) {
