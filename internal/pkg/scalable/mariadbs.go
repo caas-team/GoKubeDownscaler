@@ -32,7 +32,7 @@ var mariaDBGVK = schema.GroupVersionKind{
 
 // mariaDB wraps an unstructured MariaDB CR from the mariadb-operator. It is replica-shaped:
 //   - standalone: on spec.replicas, which the operator propagates to its StatefulSet, including 0.
-//   - Galera: the webhook rejects spec.replicas below 2, so parking sets spec.suspend instead
+//   - Galera: the webhook rejects spec.replicas below 2, so scaling down sets spec.suspend instead
 //     (freezing the operator) and the StatefulSet is scaled to 0 as a child. On wake the operator
 //     restores the StatefulSet and runs its full-cluster Galera recovery.
 //
@@ -81,7 +81,7 @@ func parseMariaDBFromBytes(rawObject []byte) (Workload, error) {
 
 // getReplicas gets the current amount of replicas of the resource.
 //
-// A parked Galera MariaDB (suspended) reports 0, its spec.replicas being left untouched.
+// A scaled-down Galera MariaDB (suspended) reports 0, its spec.replicas being left untouched.
 func (m *mariaDB) getReplicas() (values.Replicas, error) {
 	if m.isGaleraEnabled() && m.isSuspended() {
 		return values.AbsoluteReplicas(0), nil
@@ -106,8 +106,8 @@ func (m *mariaDB) getReplicas() (values.Replicas, error) {
 
 // setReplicas sets the amount of replicas on the resource.
 //
-// With HA enabled the operator rejects spec.replicas below 2. A Galera MariaDB is parked through
-// spec.suspend instead, unless its automatic cluster recovery is disabled, since nothing would
+// With HA enabled the operator rejects spec.replicas below 2. A Galera MariaDB is scaled down
+// through spec.suspend instead, unless its automatic cluster recovery is disabled, since nothing would
 // then bootstrap the cluster on wake. Any other target below 2 is refused for HA MariaDBs.
 func (m *mariaDB) setReplicas(replicas int32) error {
 	if m.isHAEnabled() && replicas < mariaDBHAMinReplicas {
@@ -147,8 +147,8 @@ func (m *mariaDB) setSuspend(suspend bool) error {
 
 // GetChildren returns the workloads owned by this MariaDB that the operator does not scale itself:
 //   - the metrics exporter Deployment, only reconciled by the operator while the MariaDB is Ready,
-//     so it stays parked while the database is down instead of crash-looping.
-//   - for Galera, the StatefulSet, since parking only suspends the operator.
+//     so it stays scaled down while the database is down instead of crash-looping.
+//   - for Galera, the StatefulSet, since scaling down only suspends the operator.
 func (m *mariaDB) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error) {
 	deployments, err := clientsets.Kubernetes.AppsV1().Deployments(m.GetNamespace()).List(ctx, metav1.ListOptions{})
 	if err != nil {

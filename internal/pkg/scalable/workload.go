@@ -135,7 +135,7 @@ type PercentageWorkload interface {
 
 // MustScaleChildrenWorkload is implemented by a ParentWorkload whose own scaling has no effect
 // unless its children are scaled too (e.g. an operator that stops reconciling its child
-// StatefulSet once its own replica count is parked), so its children must be scaled regardless
+// StatefulSet once its own replica count is scaled down), so its children must be scaled regardless
 // of the scale-children scope setting.
 type MustScaleChildrenWorkload interface {
 	MustScaleChildren() bool

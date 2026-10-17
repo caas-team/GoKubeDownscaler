@@ -85,7 +85,7 @@ func TestMongoDBCommunity_GetReplicas(t *testing.T) {
 	}
 }
 
-func TestMongoDBCommunity_SetReplicas_ParkAllowedWithAnnotation(t *testing.T) {
+func TestMongoDBCommunity_SetReplicas_ScaleDownAllowedWithAnnotation(t *testing.T) {
 	t.Parallel()
 
 	w := newTestMongoDBCommunity(float64(3), true)
@@ -97,7 +97,7 @@ func TestMongoDBCommunity_SetReplicas_ParkAllowedWithAnnotation(t *testing.T) {
 	assert.Equal(t, values.AbsoluteReplicas(0), got)
 }
 
-func TestMongoDBCommunity_SetReplicas_ParkRefusedWithoutAnnotation(t *testing.T) {
+func TestMongoDBCommunity_SetReplicas_ScaleDownRefusedWithoutAnnotation(t *testing.T) {
 	t.Parallel()
 
 	mongoCommunity := newTestMongoDBCommunity(float64(3), false)
@@ -108,7 +108,7 @@ func TestMongoDBCommunity_SetReplicas_ParkRefusedWithoutAnnotation(t *testing.T)
 	var scalingRefusedErr *ScalingRefusedError
 	require.ErrorAs(t, err, &scalingRefusedErr)
 
-	// spec.members must be left untouched when the park is refused.
+	// spec.members must be left untouched when the scale down is refused.
 	got, err := mongoCommunity.getReplicas()
 	require.NoError(t, err)
 	assert.Equal(t, values.AbsoluteReplicas(3), got)

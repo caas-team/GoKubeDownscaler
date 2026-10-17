@@ -90,7 +90,7 @@ func TestMariaDB_GetReplicas(t *testing.T) {
 	}
 }
 
-func TestMariaDB_SetReplicas_ParkStandalone(t *testing.T) {
+func TestMariaDB_SetReplicas_ScaleDownStandalone(t *testing.T) {
 	t.Parallel()
 
 	w := newTestMariaDB(float64(1), "")
@@ -110,7 +110,7 @@ func TestMariaDB_SetReplicas_RefusedBelowHAMinimum(t *testing.T) {
 		haField string
 		target  int32
 	}{
-		{name: "replication park", haField: "replication", target: 0},
+		{name: "replication scale down", haField: "replication", target: 0},
 		{name: "replication to 1", haField: "replication", target: 1},
 		{name: "galera to 1", haField: "galera", target: 1},
 	}
@@ -134,7 +134,7 @@ func TestMariaDB_SetReplicas_RefusedBelowHAMinimum(t *testing.T) {
 	}
 }
 
-func TestMariaDB_SetReplicas_GaleraParkSuspends(t *testing.T) {
+func TestMariaDB_SetReplicas_GaleraScaleDownSuspends(t *testing.T) {
 	t.Parallel()
 
 	w := newTestMariaDB(float64(3), "galera")
@@ -167,7 +167,7 @@ func TestMariaDB_SetReplicas_GaleraWakeResumes(t *testing.T) {
 	assert.Equal(t, values.AbsoluteReplicas(3), got)
 }
 
-func TestMariaDB_SetReplicas_GaleraParkRefusedWithoutRecovery(t *testing.T) {
+func TestMariaDB_SetReplicas_GaleraScaleDownRefusedWithoutRecovery(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -194,7 +194,7 @@ func TestMariaDB_SetReplicas_GaleraParkRefusedWithoutRecovery(t *testing.T) {
 	}
 }
 
-func TestMariaDB_SetReplicas_GaleraParkAllowedWithRecoveryEnabled(t *testing.T) {
+func TestMariaDB_SetReplicas_GaleraScaleDownAllowedWithRecoveryEnabled(t *testing.T) {
 	t.Parallel()
 
 	w := newTestMariaDB(float64(3), "galera")
@@ -238,7 +238,7 @@ func TestMariaDB_GetReplicas_SuspendIgnoredWithoutGalera(t *testing.T) {
 	assert.Equal(t, values.AbsoluteReplicas(1), got)
 }
 
-func TestMariaDB_SetReplicas_ParkAllowedWhenHADisabled(t *testing.T) {
+func TestMariaDB_SetReplicas_ScaleDownAllowedWhenHADisabled(t *testing.T) {
 	t.Parallel()
 
 	w := newTestMariaDB(float64(1), "")

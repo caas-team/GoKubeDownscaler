@@ -22,8 +22,8 @@ import (
 // operator once it has successfully applied a configuration. Its presence means
 // the operator has a known-good config it can reconcile back to.
 //
-// setReplicas refuses to park (scale to 0) a MongoDBCommunity that lacks this
-// annotation: parking before the operator has ever reconciled a good config
+// setReplicas refuses to scale down (to 0) a MongoDBCommunity that lacks this
+// annotation: scaling down before the operator has ever reconciled a good config
 // risks the operator being unable to bring it back. Scaling up is always allowed.
 const mongoLastSuccessfulConfigurationAnnotation = "mongodb.com/v1.lastSuccessfulConfiguration"
 
@@ -101,9 +101,9 @@ func (m *mongoDBCommunity) getReplicas() (values.Replicas, error) {
 
 // setReplicas sets the amount of replica-set members on the resource.
 //
-// It refuses to scale DOWN (park) a CR that has never recorded a successful
+// It refuses to scale down a CR that has never recorded a successful
 // configuration (the lastSuccessfulConfiguration annotation is absent), so the
-// downscaler never parks a Mongo the operator could not bring back. Scaling up
+// downscaler never scales down a Mongo the operator could not bring back. Scaling up
 // is always allowed.
 func (m *mongoDBCommunity) setReplicas(replicas int32) error {
 	if replicas == 0 {
@@ -122,7 +122,7 @@ func (m *mongoDBCommunity) setReplicas(replicas int32) error {
 
 // GetChildren returns the StatefulSet the MongoDB Community operator created for
 // this resource, wrapped as a replica-scaled workload so the downscaler scales
-// it to 0 on park. The operator stops reconciling once spec.members is 0, so it
+// it to 0 on scale down. The operator stops reconciling once spec.members is 0, so it
 // will NOT scale the StatefulSet down itself - the scaler must. The StatefulSet
 // is matched by an ownerReference back to this MongoDBCommunity.
 func (m *mongoDBCommunity) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error) {
@@ -157,7 +157,7 @@ func (m *mongoDBCommunity) GetChildren(ctx context.Context, clientsets *Clientse
 }
 
 // MustScaleChildren reports that the owned StatefulSet must always be scaled: the operator stops
-// reconciling it once spec.members is parked (see GetChildren), so parking the CR alone has no
+// reconciling it once spec.members is scaled down (see GetChildren), so scaling down the CR alone has no
 // effect on the running pods. This must not depend on the scale-children scope setting.
 func (m *mongoDBCommunity) MustScaleChildren() bool {
 	return true
