@@ -108,7 +108,7 @@ func (m *mongoDBCommunity) getReplicas() (values.Replicas, error) {
 func (m *mongoDBCommunity) setReplicas(replicas int32) error {
 	if replicas == 0 {
 		if _, ok := m.GetAnnotations()[mongoLastSuccessfulConfigurationAnnotation]; !ok {
-			return newParkRefusedError(m.GetKind(), m.GetNamespace(), m.GetName(),
+			return newScalingRefusedError(m.GetKind(), m.GetNamespace(), m.GetName(),
 				fmt.Sprintf("annotation %q is absent, operator has no known-good config to restore", mongoLastSuccessfulConfigurationAnnotation))
 		}
 	}

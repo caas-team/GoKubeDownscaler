@@ -105,8 +105,8 @@ func TestMongoDBCommunity_SetReplicas_ParkRefusedWithoutAnnotation(t *testing.T)
 	err := mongoCommunity.setReplicas(0)
 	require.Error(t, err)
 
-	var parkRefusedErr *ParkRefusedError
-	require.ErrorAs(t, err, &parkRefusedErr)
+	var scalingRefusedErr *ScalingRefusedError
+	require.ErrorAs(t, err, &scalingRefusedErr)
 
 	// spec.members must be left untouched when the park is refused.
 	got, err := mongoCommunity.getReplicas()

@@ -112,12 +112,12 @@ func (m *mariaDB) getReplicas() (values.Replicas, error) {
 func (m *mariaDB) setReplicas(replicas int32) error {
 	if m.isHAEnabled() && replicas < mariaDBHAMinReplicas {
 		if replicas != 0 || !m.isGaleraEnabled() {
-			return newParkRefusedError(m.GetKind(), m.GetNamespace(), m.GetName(),
+			return newScalingRefusedError(m.GetKind(), m.GetNamespace(), m.GetName(),
 				fmt.Sprintf("galera or replication is enabled, the operator rejects spec.replicas below %d", mariaDBHAMinReplicas))
 		}
 
 		if !m.isGaleraRecoveryEnabled() {
-			return newParkRefusedError(m.GetKind(), m.GetNamespace(), m.GetName(),
+			return newScalingRefusedError(m.GetKind(), m.GetNamespace(), m.GetName(),
 				"galera recovery is disabled, the cluster could not be bootstrapped on wake")
 		}
 
