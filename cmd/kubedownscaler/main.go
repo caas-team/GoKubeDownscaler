@@ -238,7 +238,12 @@ func startScanning(
 
 				err = scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceScopes, workloadNamespaceMetrics, config, logger)
 				if err != nil {
-					logger.Error("failed to scan workload", "error", err)
+					var scalingRefusedErr *scalable.ScalingRefusedError
+					if errors.As(err, &scalingRefusedErr) {
+						logger.Warn("scaling refused", "error", err)
+					} else {
+						logger.Error("failed to scan workload", "error", err)
+					}
 
 					return
 				}
@@ -428,15 +433,37 @@ func scanWorkload(
 		return err
 	}
 
-	if scopes.GetScaleChildren() {
-		childrenWorkloads, err := client.GetChildrenWorkloads(workload, ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get children workloads: %w", err)
-		}
-
-		logger.Debug("scaling children workloads", "childrenCount", len(childrenWorkloads))
-		scaleWorkloads(decision, childrenWorkloads, scopes, workloadNamespaceMetrics, client, ctx, config)
+	err = scaleChildrenIfNeeded(workload, client, ctx, decision, scopes, workloadNamespaceMetrics, config, logger)
+	if err != nil {
+		return err
 	}
+
+	return nil
+}
+
+// scaleChildrenIfNeeded scales workload's children when the scale-children scope setting is
+// enabled, or unconditionally when workload itself requires it (see scalable.MustScaleChildren).
+func scaleChildrenIfNeeded(
+	workload scalable.Workload,
+	client kubernetes.Client,
+	ctx context.Context,
+	decision values.ScalingDecision,
+	scopes values.Scopes,
+	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
+	config *runtimeConfiguration,
+	logger *slog.Logger,
+) error {
+	if !scopes.GetScaleChildren() && !scalable.MustScaleChildren(workload) {
+		return nil
+	}
+
+	childrenWorkloads, err := client.GetChildrenWorkloads(workload, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get children workloads: %w", err)
+	}
+
+	logger.Debug("scaling children workloads", "childrenCount", len(childrenWorkloads))
+	scaleWorkloads(decision, childrenWorkloads, scopes, workloadNamespaceMetrics, client, ctx, config)
 
 	return nil
 }
@@ -512,7 +539,12 @@ func scaleWorkloads(
 
 			err := attemptScaling(client, ctx, decision, workload, scopes, workloadNamespaceMetrics, config, logger)
 			if err != nil {
-				logger.Error("scaling operation failed", "error", err)
+				var scalingRefusedErr *scalable.ScalingRefusedError
+				if errors.As(err, &scalingRefusedErr) {
+					logger.Warn("scaling refused", "error", err)
+				} else {
+					logger.Error("scaling operation failed", "error", err)
+				}
 			}
 		}(workload)
 	}

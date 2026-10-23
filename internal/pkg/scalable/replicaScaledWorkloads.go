@@ -44,6 +44,27 @@ func (r *replicaScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, 
 	logWorkloadScalingMessage("scaled down", "replicas", r, summary, dryRun, logger)
 }
 
+// GetChildren delegates child discovery to the wrapped resource when it supports ParentWorkload.
+func (r *replicaScaledWorkload) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error) {
+	parent, ok := r.replicaScaledResource.(ParentWorkload)
+	if !ok {
+		return nil, nil
+	}
+
+	children, err := parent.GetChildren(ctx, clientsets)
+	if err != nil {
+		return nil, fmt.Errorf("get children from parent workload: %w", err)
+	}
+
+	return children, nil
+}
+
+// MustScaleChildren delegates to the wrapped resource when it supports MustScaleChildrenWorkload.
+func (r *replicaScaledWorkload) MustScaleChildren() bool {
+	must, ok := r.replicaScaledResource.(MustScaleChildrenWorkload)
+	return ok && must.MustScaleChildren()
+}
+
 // ScaleUp scales up the underlying replicaScaledResource.
 func (r *replicaScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, error) {
 	if logger == nil {

@@ -17,6 +17,21 @@ func (n *NoReplicasError) Error() string {
 	return fmt.Sprintf("error: %q %q has no replicas set", n.kind, n.name)
 }
 
+type ScalingRefusedError struct {
+	kind      string
+	namespace string
+	name      string
+	reason    string
+}
+
+func newScalingRefusedError(kind, namespace, name, reason string) error {
+	return &ScalingRefusedError{kind: kind, namespace: namespace, name: name, reason: reason}
+}
+
+func (p *ScalingRefusedError) Error() string {
+	return fmt.Sprintf("refusing to scale down %s %s/%s: %s", p.kind, p.namespace, p.name, p.reason)
+}
+
 type InvalidResourceError struct {
 	resource string
 }
