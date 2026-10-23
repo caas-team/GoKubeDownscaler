@@ -23,30 +23,31 @@ import (
 )
 
 const (
-	goKubeDownscalerFieldManager = "gokubedownscaler"
-	annotationOriginalReplicas   = "downscaler/original-replicas"
-	deploymentGroupVersion       = "apps/v1"
-	deploymentKind               = "Deployment"
-	autoscalingRunnerSetKind     = "AutoscalingRunnerSet"
-	advancedCronJobKind          = "AdvancedCronJob"
-	advancedDaemonSetKind        = "AdvancedDaemonSet"
-	broadcastJobKind             = "BroadcastJob"
-	cloneSetKind                 = "CloneSet"
+	goKubeDownscalerFieldManager  = "gokubedownscaler"
+	annotationNeedFieldManagement = "downscaler/need-field-management"
+	annotationOriginalReplicas    = "downscaler/original-replicas"
+	deploymentGroupVersion        = "apps/v1"
+	deploymentKind                = "Deployment"
+	autoscalingRunnerSetKind      = "AutoscalingRunnerSet"
+	advancedCronJobKind           = "AdvancedCronJob"
+	advancedDaemonSetKind         = "AdvancedDaemonSet"
+	broadcastJobKind              = "BroadcastJob"
+	cloneSetKind                  = "CloneSet"
 	cnpgGroup                   = "postgresql.cnpg.io"
 	cnpgVersion                 = "v1"
 	cnpgClusterKind             = "Cluster"
-	cronJobKind                  = "CronJob"
-	daemonSetKind                = "DaemonSet"
-	gatewayKind                  = "Gateway"
-	horizontalPodAutoscalerKind  = "HorizontalPodAutoscaler"
-	ingressKind                  = "Ingress"
-	jobKind                      = "Job"
+	cronJobKind                   = "CronJob"
+	daemonSetKind                 = "DaemonSet"
+	gatewayKind                   = "Gateway"
+	horizontalPodAutoscalerKind   = "HorizontalPodAutoscaler"
+	ingressKind                   = "Ingress"
+	jobKind                       = "Job"
 	helmReleaseKind             = "HelmRelease"
-	kafkaStrimziGroup            = "kafka.strimzi.io"
-	kafkaStrimziVersion          = "v1"
-	kafkaBridgeKind              = "KafkaBridge"
-	kafkaConnectKind             = "KafkaConnect"
-	kafkaMirrorMaker2Kind        = "KafkaMirrorMaker2"
+	kafkaStrimziGroup             = "kafka.strimzi.io"
+	kafkaStrimziVersion           = "v1"
+	kafkaBridgeKind               = "KafkaBridge"
+	kafkaConnectKind              = "KafkaConnect"
+	kafkaMirrorMaker2Kind         = "KafkaMirrorMaker2"
 	kustomizationKind           = "Kustomization"
 	mariaDBGroup                = "k8s.mariadb.com"
 	mariaDBVersion              = "v1alpha1"
@@ -54,14 +55,14 @@ const (
 	mongoDBCommunityGroup       = "mongodbcommunity.mongodb.com"
 	mongoDBCommunityVersion     = "v1"
 	mongoDBCommunityKind        = "MongoDBCommunity"
-	podDisruptionBudgetKind      = "PodDisruptionBudget"
-	postgresqlKind               = "postgresql" // lowercase for postgresqlKind is intentional
-	prometheusKind               = "Prometheus"
-	rolloutKind                  = "Rollout"
-	scaledObjectKind             = "ScaledObject"
-	serviceKind                  = "Service"
-	stackKind                    = "Stack"
-	statefulSetKind              = "StatefulSet"
+	podDisruptionBudgetKind       = "PodDisruptionBudget"
+	postgresqlKind                = "postgresql" // lowercase for postgresqlKind is intentional
+	prometheusKind                = "Prometheus"
+	rolloutKind                   = "Rollout"
+	scaledObjectKind              = "ScaledObject"
+	serviceKind                   = "Service"
+	stackKind                     = "Stack"
+	statefulSetKind               = "StatefulSet"
 	applicationKind             = "Application"
 )
 
@@ -474,6 +475,31 @@ func removeOriginalReplicas(workload Workload) {
 	workload.SetAnnotations(annotations)
 }
 
+// getNeedFieldManagement returns true if the workload has the need-field-management annotation set to true,
+// false if set to false or not set at all.
+func getNeedFieldManagement(workload Workload) (bool, error) {
+	annotations := workload.GetAnnotations()
+
+	needFieldManagement, ok := annotations[annotationNeedFieldManagement]
+	if !ok {
+		return false, nil
+	}
+
+	needFieldManagementBool, err := strconv.ParseBool(needFieldManagement)
+	if err != nil {
+		return false, newNeedFieldManagementValueConversionError("error: need-field-management annotation value is not a valid boolean")
+	}
+
+	return needFieldManagementBool, nil
+}
+
+// setNeedFieldManagement sets the need-field-management annotation on the workload to the specified value.
+func setNeedFieldManagement(workload Workload) {
+	annotations := workload.GetAnnotations()
+	delete(annotations, annotationNeedFieldManagement)
+	workload.SetAnnotations(annotations)
+}
+
 // derefInt32 safely dereference int32, if not present a default value is set instead.
 func derefInt32(p *int32, def int32) int32 {
 	if p != nil {
@@ -772,4 +798,35 @@ func PrependManagedFieldsResetJSONPatch(patch []byte, managedFields []metav1.Man
 	}
 
 	return patchedOps, nil
+}
+
+// AddNeedFieldManagementAnnotationToPatch adds the field-management trigger annotation to the JSON patch returned by the admission webhook.
+func AddNeedFieldManagementAnnotationToPatch(patch []byte) ([]byte, error) {
+	if len(patch) == 0 {
+		return patch, nil
+	}
+
+	patchOps := make([]map[string]any, 0, 1)
+	if err := json.Unmarshal(patch, &patchOps); err != nil {
+		return nil, fmt.Errorf("failed to decode admission JSON patch: %w", err)
+	}
+
+	for _, op := range patchOps {
+		if op["path"] == "/metadata/annotations/"+strings.ReplaceAll(annotationNeedFieldManagement, "/", "~1") {
+			return patch, nil
+		}
+	}
+
+	patchOps = append(patchOps, map[string]any{
+		"op":    "add",
+		"path":  "/metadata/annotations/" + strings.ReplaceAll(annotationNeedFieldManagement, "/", "~1"),
+		"value": "true",
+	})
+
+	updatedPatch, err := json.Marshal(patchOps)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal field-management annotation patch: %w", err)
+	}
+
+	return updatedPatch, nil
 }

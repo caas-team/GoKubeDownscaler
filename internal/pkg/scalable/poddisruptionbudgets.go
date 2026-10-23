@@ -157,6 +157,8 @@ func (p *podDisruptionBudget) ScaleUp(logger *slog.Logger) (scalingSummary, erro
 }
 
 // ScaleDown scales the resource down.
+//
+
 func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas, logger *slog.Logger) (scalingSummary, error) {
 	if logger == nil {
 		logger = slog.Default()
@@ -164,65 +166,119 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas, logge
 
 	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0)}
 
+	needFieldManagement, err := getNeedFieldManagement(p)
+	if err != nil {
+		return summary, err
+	}
+
+	var updated bool
+
+	if summary, updated, err = p.scaleDownByMaxUnavailable(downscaleReplicas, needFieldManagement, logger); updated || err != nil {
+		return summary, err
+	}
+
+	if summary, updated, err = p.scaleDownByMinAvailable(downscaleReplicas, needFieldManagement, logger); updated || err != nil {
+		return summary, err
+	}
+
+	return summary, nil
+}
+
+func (p *podDisruptionBudget) scaleDownByMaxUnavailable(
+	downscaleReplicas values.Replicas,
+	needFieldManagement bool,
+	logger *slog.Logger,
+) (scalingSummary, bool, error) {
+	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0)}
+
 	maxUnavailable := p.getMaxUnavailable()
-	if maxUnavailable != nil {
-		if maxUnavailable.String() == downscaleReplicas.String() {
+	if maxUnavailable == nil {
+		return summary, false, nil
+	}
+
+	if maxUnavailable.String() == downscaleReplicas.String() {
+		if !needFieldManagement {
 			logger.Debug("workload is already scaled down, skipping")
 
 			return scalingSummary{
 				SavedResources: summary.SavedResources, From: maxUnavailable, To: downscaleReplicas, Attribute: maxUnavailableAttribute,
-			}, nil
+			}, false, nil
 		}
 
-		workloadCopy, err := p.Copy()
-		if err != nil {
-			return summary, fmt.Errorf("failed to copy workload before scaling down: %w", err)
-		}
-
-		p.setMaxUnavailable(downscaleReplicas)
-		setOriginalReplicas(maxUnavailable, p)
-
-		patchData, err := createPatchData(workloadCopy, p)
-		if err != nil {
-			return summary, err
-		}
-
-		return scalingSummary{
-			SavedResources: summary.SavedResources, IsUpdateNeeded: true, From: maxUnavailable, To: downscaleReplicas,
-			Attribute: maxUnavailableAttribute, PatchData: patchData,
-		}, nil
+		logger.Debug("workload requires field management, continuing with downscale update")
 	}
 
+	workloadCopy, err := p.Copy()
+	if err != nil {
+		return summary, false, fmt.Errorf("failed to copy workload before scaling down: %w", err)
+	}
+
+	if needFieldManagement {
+		setNeedFieldManagement(p)
+	}
+
+	p.setMaxUnavailable(downscaleReplicas)
+	setOriginalReplicas(maxUnavailable, p)
+
+	patchData, err := createPatchData(workloadCopy, p)
+	if err != nil {
+		return summary, false, err
+	}
+
+	return scalingSummary{
+		SavedResources: summary.SavedResources,
+		IsUpdateNeeded: true,
+		From:           maxUnavailable,
+		To:             downscaleReplicas,
+		Attribute:      maxUnavailableAttribute, PatchData: patchData,
+	}, true, nil
+}
+
+func (p *podDisruptionBudget) scaleDownByMinAvailable(
+	downscaleReplicas values.Replicas,
+	needFieldManagement bool,
+	logger *slog.Logger,
+) (scalingSummary, bool, error) {
+	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0)}
+
 	minAvailable := p.getMinAvailable()
-	if minAvailable != nil {
-		if minAvailable.String() == downscaleReplicas.String() {
+	if minAvailable == nil {
+		return summary, false, nil
+	}
+
+	if minAvailable.String() == downscaleReplicas.String() {
+		if !needFieldManagement {
 			logger.Debug("workload is already scaled down, skipping")
 
 			return scalingSummary{
 				SavedResources: summary.SavedResources, From: minAvailable, To: downscaleReplicas, Attribute: minAvailableAttribute,
-			}, nil
+			}, false, nil
 		}
 
-		workloadCopy, err := p.Copy()
-		if err != nil {
-			return summary, fmt.Errorf("failed to copy workload before scaling down: %w", err)
-		}
-
-		p.setMinAvailable(downscaleReplicas)
-		setOriginalReplicas(minAvailable, p)
-
-		patchData, err := createPatchData(workloadCopy, p)
-		if err != nil {
-			return summary, err
-		}
-
-		return scalingSummary{
-			SavedResources: summary.SavedResources, IsUpdateNeeded: true, From: minAvailable, To: downscaleReplicas,
-			Attribute: minAvailableAttribute, PatchData: patchData,
-		}, nil
+		logger.Debug("workload requires field management, continuing with downscale update")
 	}
 
-	return summary, nil
+	workloadCopy, err := p.Copy()
+	if err != nil {
+		return summary, false, fmt.Errorf("failed to copy workload before scaling down: %w", err)
+	}
+
+	if needFieldManagement {
+		setNeedFieldManagement(p)
+	}
+
+	p.setMinAvailable(downscaleReplicas)
+	setOriginalReplicas(minAvailable, p)
+
+	patchData, err := createPatchData(workloadCopy, p)
+	if err != nil {
+		return summary, false, err
+	}
+
+	return scalingSummary{
+		SavedResources: summary.SavedResources, IsUpdateNeeded: true, From: minAvailable, To: downscaleReplicas,
+		Attribute: minAvailableAttribute, PatchData: patchData,
+	}, true, nil
 }
 
 // Reget regets the resource from the Kubernetes API.
