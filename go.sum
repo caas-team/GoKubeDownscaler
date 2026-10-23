@@ -152,8 +152,8 @@ github.com/open-policy-agent/cert-controller v0.16.0 h1:/w+wAM9dylWGwhPnvfCgepyB
 github.com/open-policy-agent/cert-controller v0.16.0/go.mod h1:w5qBWYbc8HwyHI9VYAZ6YjWOcZtQ39A30I9W4X7pVVk=
 github.com/open-policy-agent/frameworks/constraint v0.0.0-20241101234656-e78c8abd754a h1:gQtOJ50XFyL2Xh3lDD9zP4KQ2PY4mZKQ9hDcWc81Sp8=
 github.com/open-policy-agent/frameworks/constraint v0.0.0-20241101234656-e78c8abd754a/go.mod h1:tI7nc6H6os2UYZRvSm9Y7bq4oMoXqhwA0WfnqKpoAgc=
-github.com/openkruise/kruise v1.9.1 h1:KsI/9SNGzTlEClnLj6imxh6rynxA0UFvY2/3gbsWghk=
-github.com/openkruise/kruise v1.9.1/go.mod h1:4ayXEs/W6sPTKPOeKsOB9B6FA5WVHHrK3UKKXgO0QTM=
+github.com/openkruise/kruise v1.9.2 h1:W4NCCBiNkYHpcOHKPNI1DWJABq9rXxDAzS32pW6n8iE=
+github.com/openkruise/kruise v1.9.2/go.mod h1:4ayXEs/W6sPTKPOeKsOB9B6FA5WVHHrK3UKKXgO0QTM=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
@@ -187,8 +187,8 @@ github.com/stretchr/objx v0.5.3/go.mod h1:rDQraq+vQZU7Fde9LOZLr8Tax6zZvy4kuNKF+Q
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
-github.com/szuecs/routegroup-client v0.36.4 h1:IDkrUeGH9XBLJye+AvRlqBPDkYqqoBEDD3EtSx44HAc=
-github.com/szuecs/routegroup-client v0.36.4/go.mod h1:oelTa5TjT79Uj898mJe96uYiDuyeFUToI4QKELXWrnA=
+github.com/szuecs/routegroup-client v0.37.1 h1:fUkEoMGJIGno9UIzFhphIIBrDI4MX6Rm6A0T9Ffr3hU=
+github.com/szuecs/routegroup-client v0.37.1/go.mod h1:FFxWo+z7v5ATPp07EoHWlKDlTG9bBew7SjRgufOIy10=
 github.com/tidwall/gjson v1.14.2/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/gjson v1.19.0 h1:xwxm7n691Uf3u5OFjzngavjGTh55KX5q/9w9xHW88JU=
 github.com/tidwall/gjson v1.19.0/go.mod h1:V37/opeE/JbLUOfH0QTXiNez2l0RUjYUhpT4szFQAfc=
@@ -210,8 +210,8 @@ github.com/xiang90/probing v0.0.0-20221125231312-a49e3df8f510 h1:S2dVYn90KE98chq
 github.com/xiang90/probing v0.0.0-20221125231312-a49e3df8f510/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
-github.com/zalando-incubator/stackset-controller v1.4.145 h1:oO6JrO1r5sGIGpoJ0Sj8lpl0sutTo7CpqtPJP8HYtnI=
-github.com/zalando-incubator/stackset-controller v1.4.145/go.mod h1:uZrMyLjcmV6R2y8Lu0FQk8KJenZbqKwPnYfZ/cZoeaM=
+github.com/zalando-incubator/stackset-controller v1.4.146 h1:fI8nXlk12MOlwtHa+h84vMqy3P61aCOSCFDlkjQ1zPU=
+github.com/zalando-incubator/stackset-controller v1.4.146/go.mod h1:tcbd6xh5Rn772W5q34KywABvhQmDfa10MRCNHkk/kFA=
 github.com/zalando/postgres-operator v1.15.1 h1:WjZA6KySmDw4bpY77lk/5P+vYCAf2xMCmVl/EOyu7Ww=
 github.com/zalando/postgres-operator v1.15.1/go.mod h1:pXM8YFzLgrFdsmhypHsWGJcA2zQkhFA+B9fwqnj7tYw=
 go.etcd.io/bbolt v1.5.0 h1:S7GAl7Fxv12yohbwFfIbQCGDWbQbtDGPET4P/bD4lxU=
@@ -284,8 +284,8 @@ golang.org/x/oauth2 v0.37.0/go.mod h1:IxwZNxUULJmpBFf9K/9NTMSIfZZuvuTy1gGxhigP/5
 golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
-golang.org/x/sync v0.23.0 h1:KameEIfc1IkluZyXWLn39Wd4tURc6GbCiISGiZm2bQk=
-golang.org/x/sync v0.23.0/go.mod h1:sUUOizhqBxiL6pEWpqNLUiaJn1ShEbZ6BBqskPbjZm0=
+golang.org/x/sync v0.24.0 h1:iqiDrGoDgyuvAKrhLQthUEzU/R378N78gXbBjxed7oA=
+golang.org/x/sync v0.24.0/go.mod h1:sUUOizhqBxiL6pEWpqNLUiaJn1ShEbZ6BBqskPbjZm0=
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190412213103-97732733099d/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=

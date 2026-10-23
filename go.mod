@@ -7,13 +7,13 @@ require (
 	github.com/argoproj/argo-rollouts v1.10.0
 	github.com/kedacore/keda/v2 v2.21.0
 	github.com/open-policy-agent/cert-controller v0.16.0
-	github.com/openkruise/kruise v1.9.1
+	github.com/openkruise/kruise v1.9.2
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.94.1
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.94.1
 	github.com/prometheus/client_golang v1.25.0
 	github.com/stretchr/testify v1.12.1
 	github.com/wI2L/jsondiff v0.7.1
-	github.com/zalando-incubator/stackset-controller v1.4.145
+	github.com/zalando-incubator/stackset-controller v1.4.146
 	github.com/zalando/postgres-operator v1.15.1
 	go.uber.org/zap v1.28.0
 	k8s.io/api v0.37.1
@@ -81,7 +81,7 @@ require (
 	github.com/sirupsen/logrus v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
-	github.com/szuecs/routegroup-client v0.36.4 // indirect
+	github.com/szuecs/routegroup-client v0.37.1 // indirect
 	github.com/tidwall/gjson v1.19.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
@@ -108,7 +108,7 @@ require (
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
 	golang.org/x/net v0.59.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
-	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/term v0.46.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
