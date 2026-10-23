@@ -143,33 +143,60 @@ func (r *nodeSelectorScaledWorkload) scaleUp(logger *slog.Logger) (bool, error) 
 	return true, nil
 }
 
+func (r *nodeSelectorScaledWorkload) shouldSkipScaleDown(
+	logger *slog.Logger,
+	needFieldManagement bool,
+) (bool, *metrics.SavedResources, error) {
+	if needFieldManagement {
+		return false, nil, nil
+	}
+
+	_, err := getOriginalReplicas(r)
+	if err == nil {
+		logger.Debug("workload is already scaled down, skipping")
+		return true, r.getResourcesRequests(0), nil
+	}
+
+	var originalReplicasUnsetErr *OriginalReplicasUnsetError
+	if !errors.As(err, &originalReplicasUnsetErr) {
+		return false, nil, fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+
+	logger.Debug("workload is already at target scale down state, skipping")
+
+	return true, metrics.NewSavedResources(0, 0), nil
+}
+
 func (r *nodeSelectorScaledWorkload) scaleDown(_ values.Replicas, logger *slog.Logger) (*metrics.SavedResources, bool, error) {
 	if logger == nil {
 		logger = slog.Default()
 	}
 
+	needFieldManagement, err := getNeedFieldManagement(r)
+	if err != nil {
+		return metrics.NewSavedResources(0, 0), false, err
+	}
+
 	if _, hasLabel := r.getNodeSelector()[labelMatchNone]; hasLabel {
-		_, err := getOriginalReplicas(r)
-
-		var originalReplicasUnsetErr *OriginalReplicasUnsetError
+		skip, savedResources, err := r.shouldSkipScaleDown(logger, needFieldManagement)
 		if err != nil {
-			if !errors.As(err, &originalReplicasUnsetErr) {
-				return metrics.NewSavedResources(0, 0), false, fmt.Errorf("failed to get original replicas for workload: %w", err)
-			}
-
-			logger.Debug("workload is already at target scale down state, skipping")
-
-			return metrics.NewSavedResources(0, 0), false, nil
+			return metrics.NewSavedResources(0, 0), false, err
 		}
 
-		logger.Debug("workload is already scaled down, skipping")
+		if skip {
+			return savedResources, false, nil
+		}
 
-		return r.getResourcesRequests(0), false, nil
+		logger.Debug("workload requires field management, continuing with downscale update")
 	}
 
 	nodeSelector := r.getNodeSelector()
 	if nodeSelector == nil {
 		nodeSelector = map[string]string{}
+	}
+
+	if needFieldManagement {
+		setNeedFieldManagement(r)
 	}
 
 	nodeSelector[labelMatchNone] = labelMatchNoneValue

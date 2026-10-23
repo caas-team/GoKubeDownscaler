@@ -99,6 +99,8 @@ func (v *valueScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, erro
 }
 
 // ScaleDown scales down the underlying valueScaledResource.
+//
+//nolint:cyclop // refactoring this function would make it less readable and more fragmented
 func (v *valueScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger) (scalingSummary, error) {
 	if logger == nil {
 		logger = slog.Default()
@@ -111,23 +113,22 @@ func (v *valueScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger) 
 		return summary, err
 	}
 
-	if currentState == targetScaleDownState {
-		_, err = getOriginalReplicas(v)
+	needFieldManagement, err := getNeedFieldManagement(v)
+	if err != nil {
+		return summary, err
+	}
 
-		var originalReplicasUnsetErr *OriginalReplicasUnsetError
-		if err != nil {
-			if ok := errors.As(err, &originalReplicasUnsetErr); !ok {
-				return summary, err
-			}
+	skip, err := v.shouldSkipScaleDown(logger, currentState, targetScaleDownState, needFieldManagement)
+	if err != nil {
+		return summary, err
+	}
 
-			logger.Debug("workload is already at target scale down state, skipping")
-
-			return summary, nil
-		}
-
-		logger.Debug("workload is already scaled down, skipping")
-
+	if skip {
 		return summary, nil
+	}
+
+	if currentState == targetScaleDownState {
+		logger.Debug("workload requires field management, continuing with scale down")
 	}
 
 	savedResources := v.getSavedResourcesRequests()
@@ -135,6 +136,10 @@ func (v *valueScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger) 
 	workloadCopy, err := v.Copy()
 	if err != nil {
 		return summary, fmt.Errorf("failed to copy workload before scaling down: %w", err)
+	}
+
+	if needFieldManagement {
+		setNeedFieldManagement(v)
 	}
 
 	err = v.setValue(targetScaleDownState)
@@ -154,4 +159,29 @@ func (v *valueScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger) 
 	summary.PatchData = patchData
 
 	return summary, nil
+}
+
+func (v *valueScaledWorkload) shouldSkipScaleDown(
+	logger *slog.Logger,
+	currentState, targetScaleDownState values.Replicas,
+	needFieldManagement bool,
+) (bool, error) {
+	if currentState != targetScaleDownState || needFieldManagement {
+		return false, nil
+	}
+
+	_, err := getOriginalReplicas(v)
+	if err == nil {
+		logger.Debug("workload is already scaled down, skipping")
+		return true, nil
+	}
+
+	var originalReplicasUnsetErr *OriginalReplicasUnsetError
+	if !errors.As(err, &originalReplicasUnsetErr) {
+		return false, err
+	}
+
+	logger.Debug("workload is already at target scale down state, skipping")
+
+	return true, nil
 }

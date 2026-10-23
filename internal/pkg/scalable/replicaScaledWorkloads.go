@@ -100,7 +100,7 @@ func (r *replicaScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, er
 
 // ScaleDown scales down the underlying replicaScaledResource.
 //
-// nolint:cyclop // refactoring this function would make it less readable and more fragmented
+//nolint:cyclop // refactoring this function would make it less readable and more fragmented
 func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas, logger *slog.Logger) (scalingSummary, error) {
 	if logger == nil {
 		logger = slog.Default()
@@ -123,13 +123,26 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas, log
 		return summary, fmt.Errorf("failed to convert current replicas to int32: %w", err)
 	}
 
+	needFieldManagement, err := getNeedFieldManagement(r)
+	if err != nil {
+		return summary, err
+	}
+
 	skip, summary, err := r.shouldSkipScaleDown(currentReplicas, currentReplicasInt32, downscaleReplicas, downscaleReplicasInt32, logger)
 	if err != nil {
 		return summary, err
 	}
 
 	if skip {
-		return summary, nil
+		if !needFieldManagement {
+			return summary, nil
+		}
+
+		logger.Debug("workload requires field management, continuing with downscale update")
+	}
+
+	if needFieldManagement {
+		setNeedFieldManagement(r)
 	}
 
 	workloadCopy, err := r.Copy()

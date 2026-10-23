@@ -105,6 +105,32 @@ func (r *suspendScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, er
 	return scalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState, PatchData: patchData}, nil
 }
 
+// shouldSkipScaleDown checks if the workload is already at the target scale down state or if field management is needed.
+func (r *suspendScaledWorkload) shouldSkipScaleDown(
+	logger *slog.Logger,
+	currentState, targetScaleDownState values.Replicas,
+	needFieldManagement bool,
+) (bool, *metrics.SavedResources, error) {
+	if currentState != targetScaleDownState || needFieldManagement {
+		return false, nil, nil
+	}
+
+	_, err := getOriginalReplicas(r)
+	if err == nil {
+		logger.Debug("workload is already scaled down, skipping")
+		return true, r.getSavedResourcesRequests(), nil
+	}
+
+	var originalReplicasUnsetErr *OriginalReplicasUnsetError
+	if !errors.As(err, &originalReplicasUnsetErr) {
+		return false, nil, err
+	}
+
+	logger.Debug("workload is already at target scale down state, skipping")
+
+	return true, metrics.NewSavedResources(0, 0), nil
+}
+
 // ScaleDown scales down the underlying suspendScaledResource.
 //
 
@@ -120,27 +146,23 @@ func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger
 		To:             targetScaleDownState,
 	}
 
-	if currentState == targetScaleDownState {
-		_, err := getOriginalReplicas(r)
+	needFieldManagement, err := getNeedFieldManagement(r)
+	if err != nil {
+		return summary, err
+	}
 
-		var originalReplicasUnsetErr *OriginalReplicasUnsetError
-		if err != nil {
-			if ok := errors.As(err, &originalReplicasUnsetErr); !ok {
-				return summary, err
-			}
+	skip, savedResources, err := r.shouldSkipScaleDown(logger, currentState, targetScaleDownState, needFieldManagement)
+	if err != nil {
+		return summary, err
+	}
 
-			logger.Debug("workload is already at target scale down state, skipping")
-
-			return summary, nil
-		}
-
-		logger.Debug("workload is already scaled down, skipping")
-
-		savedResources := r.getSavedResourcesRequests()
-
+	if skip {
 		summary.SavedResources = savedResources
-
 		return summary, nil
+	}
+
+	if currentState == targetScaleDownState {
+		logger.Debug("workload requires field management, continuing with downscale update")
 	}
 
 	workloadCopy, err := r.Copy()
@@ -148,9 +170,13 @@ func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger
 		return summary, fmt.Errorf("failed to copy workload before scaling down: %w", err)
 	}
 
+	if needFieldManagement {
+		setNeedFieldManagement(r)
+	}
+
 	r.setSuspend(true)
 
-	savedResources := r.getSavedResourcesRequests()
+	savedResources = r.getSavedResourcesRequests()
 
 	setOriginalReplicas(currentState, r)
 

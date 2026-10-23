@@ -53,6 +53,18 @@ func (o *OriginalReplicasUnsetError) Error() string {
 	return o.reason
 }
 
+type NeedFieldManagementValueConversionError struct {
+	reason string
+}
+
+func newNeedFieldManagementValueConversionError(reason string) error {
+	return &NeedFieldManagementValueConversionError{reason: reason}
+}
+
+func (o *NeedFieldManagementValueConversionError) Error() string {
+	return o.reason
+}
+
 type UnexpectedOriginalReplicasError struct {
 	allowedValues string
 	actual        any
