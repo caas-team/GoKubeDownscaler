@@ -37,8 +37,9 @@ const (
 )
 
 var (
-	ErrInvalidBurst = stdErrors.New("burst argument must greater than zero")
-	ErrInvalidQPS   = stdErrors.New("qps argument can't be zero, it can either be a positive value " +
+	ErrInvalidBurst           = stdErrors.New("burst argument must greater than zero")
+	ErrServerSidePatchPending = stdErrors.New("workload has a pending server-side patch to apply")
+	ErrInvalidQPS             = stdErrors.New("qps argument can't be zero, it can either be a positive value " +
 		"or a negative value to disable rate limiting")
 	ErrInvalidTimeout = stdErrors.New("timeout argument must greater than or equal to zero")
 )
@@ -61,6 +62,8 @@ type Client interface {
 	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, patch bool, ctx context.Context, logger *slog.Logger) (*metrics.SavedResources, error)
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, patch bool, ctx context.Context, logger *slog.Logger) error
+	// ApplyPendingServerSidePatch applies the server-side patch stored in the workload's annotation by the admission controller
+	ApplyPendingServerSidePatch(workload scalable.Workload, ctx context.Context) error
 	// ensureSecret ensures that the secret used for storing TLS certificates exists
 	ensureSecret(namespace, secretName string, ctx context.Context) (bool, error)
 	// GetScaledObjects gets all scaledobjects in the specified namespace
@@ -277,6 +280,10 @@ func (c client) DownscaleWorkload(
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
 	}
 
+	if scalingSummary.PendingServerSidePatch != nil {
+		return metrics.NewSavedResources(0, 0), ErrServerSidePatchPending
+	}
+
 	if !scalingSummary.IsUpdateNeeded {
 		slog.Debug(
 			"workload is already in a scaled down state, no update needed",
@@ -302,6 +309,33 @@ func (c client) DownscaleWorkload(
 	workload.LogDownscaleSuccessful(&scalingSummary, false, logger)
 
 	return scalingSummary.SavedResources, nil
+}
+
+// ApplyPendingServerSidePatch applies the server-side patch stored by the admission controller
+// in the workload's annotation. The annotation is kept: it stops being pending once gokubedownscaler owns fields
+// on the workload, and it is removed when the workload is upscaled.
+func (c client) ApplyPendingServerSidePatch(workload scalable.Workload, ctx context.Context) error {
+	patch, pending := scalable.GetPendingServerSidePatch(workload)
+	if !pending {
+		return nil
+	}
+
+	if c.dryRun {
+		slog.Info(
+			"running in dry run mode, would have applied pending server-side patch",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+		)
+
+		return nil
+	}
+
+	err := workload.Patch(c.clientsets, types.ApplyPatchType, patch, true, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to apply pending server-side patch: %w", err)
+	}
+
+	return nil
 }
 
 // UpscaleWorkload upscales the workload to the original replicas.

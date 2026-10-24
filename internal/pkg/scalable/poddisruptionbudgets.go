@@ -164,20 +164,21 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas, logge
 		logger = slog.Default()
 	}
 
-	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0)}
+	if pending, ok := pendingServerSidePatchSummary(p); ok {
+		return pending, nil
+	}
 
-	needFieldManagement, err := getNeedFieldManagement(p)
-	if err != nil {
+	var (
+		summary scalingSummary
+		updated bool
+		err     error
+	)
+
+	if summary, updated, err = p.scaleDownByMaxUnavailable(downscaleReplicas, logger); updated || err != nil {
 		return summary, err
 	}
 
-	var updated bool
-
-	if summary, updated, err = p.scaleDownByMaxUnavailable(downscaleReplicas, needFieldManagement, logger); updated || err != nil {
-		return summary, err
-	}
-
-	if summary, updated, err = p.scaleDownByMinAvailable(downscaleReplicas, needFieldManagement, logger); updated || err != nil {
+	if summary, updated, err = p.scaleDownByMinAvailable(downscaleReplicas, logger); updated || err != nil {
 		return summary, err
 	}
 
@@ -186,7 +187,6 @@ func (p *podDisruptionBudget) ScaleDown(downscaleReplicas values.Replicas, logge
 
 func (p *podDisruptionBudget) scaleDownByMaxUnavailable(
 	downscaleReplicas values.Replicas,
-	needFieldManagement bool,
 	logger *slog.Logger,
 ) (scalingSummary, bool, error) {
 	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0)}
@@ -197,24 +197,16 @@ func (p *podDisruptionBudget) scaleDownByMaxUnavailable(
 	}
 
 	if maxUnavailable.String() == downscaleReplicas.String() {
-		if !needFieldManagement {
-			logger.Debug("workload is already scaled down, skipping")
+		logger.Debug("workload is already scaled down, skipping")
 
-			return scalingSummary{
-				SavedResources: summary.SavedResources, From: maxUnavailable, To: downscaleReplicas, Attribute: maxUnavailableAttribute,
-			}, false, nil
-		}
-
-		logger.Debug("workload requires field management, continuing with downscale update")
+		return scalingSummary{
+			SavedResources: summary.SavedResources, From: maxUnavailable, To: downscaleReplicas, Attribute: maxUnavailableAttribute,
+		}, false, nil
 	}
 
 	workloadCopy, err := p.Copy()
 	if err != nil {
 		return summary, false, fmt.Errorf("failed to copy workload before scaling down: %w", err)
-	}
-
-	if needFieldManagement {
-		setNeedFieldManagement(p)
 	}
 
 	p.setMaxUnavailable(downscaleReplicas)
@@ -236,7 +228,6 @@ func (p *podDisruptionBudget) scaleDownByMaxUnavailable(
 
 func (p *podDisruptionBudget) scaleDownByMinAvailable(
 	downscaleReplicas values.Replicas,
-	needFieldManagement bool,
 	logger *slog.Logger,
 ) (scalingSummary, bool, error) {
 	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0)}
@@ -247,24 +238,16 @@ func (p *podDisruptionBudget) scaleDownByMinAvailable(
 	}
 
 	if minAvailable.String() == downscaleReplicas.String() {
-		if !needFieldManagement {
-			logger.Debug("workload is already scaled down, skipping")
+		logger.Debug("workload is already scaled down, skipping")
 
-			return scalingSummary{
-				SavedResources: summary.SavedResources, From: minAvailable, To: downscaleReplicas, Attribute: minAvailableAttribute,
-			}, false, nil
-		}
-
-		logger.Debug("workload requires field management, continuing with downscale update")
+		return scalingSummary{
+			SavedResources: summary.SavedResources, From: minAvailable, To: downscaleReplicas, Attribute: minAvailableAttribute,
+		}, false, nil
 	}
 
 	workloadCopy, err := p.Copy()
 	if err != nil {
 		return summary, false, fmt.Errorf("failed to copy workload before scaling down: %w", err)
-	}
-
-	if needFieldManagement {
-		setNeedFieldManagement(p)
 	}
 
 	p.setMinAvailable(downscaleReplicas)
