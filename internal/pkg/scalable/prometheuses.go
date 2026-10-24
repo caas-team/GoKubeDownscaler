@@ -11,6 +11,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getPrometheuses is the getResourceFunc for Prometheuses.
@@ -119,10 +120,10 @@ func (p *prometheus) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two prometheus resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two prometheus resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (p *prometheus) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (p *prometheus) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -143,4 +144,70 @@ func (p *prometheus) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (p *prometheus) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	promCopy, ok := rswCopy.replicaScaledResource.(*prometheus)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*prometheus)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if p.Prometheus == nil || promCopy.Prometheus == nil {
+		return nil, newNilUnderlyingObjectError(p.Kind)
+	}
+
+	return generateServerSideApplyPatch(p.Prometheus, promCopy.Prometheus)
+}
+
+func (p *prometheus) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if p.Prometheus == nil {
+		return newNilUnderlyingObjectError(p.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedPrometheus, err := clientsets.Monitoring.MonitoringV1().Prometheuses(p.Namespace).Patch(
+		ctx,
+		p.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch prometheus: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedPrometheus.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create prometheus managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Monitoring.MonitoringV1().Prometheuses(p.Namespace).Patch(
+			ctx,
+			p.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear prometheus managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

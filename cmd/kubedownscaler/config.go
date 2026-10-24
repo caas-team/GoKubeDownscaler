@@ -141,6 +141,7 @@ func (c *runtimeConfiguration) String() string {
 	fmt.Fprintf(&builder, "leaderElection:%t ", c.LeaderElection)
 	fmt.Fprintf(&builder, "interval:%s ", c.Interval)
 	fmt.Fprintf(&builder, "maxRetriesOnConflict:%d", c.MaxRetriesOnConflict)
+	fmt.Fprintf(&builder, "serverSidePatching:%t", c.ServerSidePatching)
 
 	builder.WriteString("]")
 

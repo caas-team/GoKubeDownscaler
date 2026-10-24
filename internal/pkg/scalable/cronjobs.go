@@ -14,6 +14,7 @@ import (
 	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getCronJobs is the getResourceFunc for CronJobs.
@@ -173,10 +174,10 @@ func (c *cronJob) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two cronJob resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two cronJob resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (c *cronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (c *cronJob) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
@@ -197,4 +198,52 @@ func (c *cronJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (c *cronJob) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
+	}
+
+	cjCopy, ok := sswCopy.suspendScaledResource.(*cronJob)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*cronJob)(nil), sswCopy.suspendScaledResource)
+	}
+
+	if c.CronJob == nil || cjCopy.CronJob == nil {
+		return nil, newNilUnderlyingObjectError(c.Kind)
+	}
+
+	return generateServerSideApplyPatch(c.CronJob, cjCopy.CronJob)
+}
+
+func (c *cronJob) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if c.CronJob == nil {
+		return newNilUnderlyingObjectError(c.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Kubernetes.BatchV1().CronJobs(c.Namespace).Patch(
+		ctx,
+		c.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch cronjob: %w", err)
+	}
+
+	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // suspendScaledResource provides all the functions needed to scale a resource which is scaled by setting a suspend field.
@@ -16,6 +17,8 @@ type suspendScaledResource interface {
 	scalableResource
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
 	Update(clientsets *Clientsets, ctx context.Context) error
+	// Patch applies a patch to the resource.
+	Patch(clientsets *Clientsets, patchType types.PatchType, patchData []byte, manageFields bool, ctx context.Context) error
 	// getSuspend gets the value of the suspend field on the workload
 	getSuspend() (values.Replicas, values.Replicas)
 	// setSuspend sets the value of the suspend field on the workload
@@ -24,8 +27,10 @@ type suspendScaledResource interface {
 	getSavedResourcesRequests() *metrics.SavedResources
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
-	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
-	Compare(workloadCopy Workload) (jsondiff.Patch, error)
+	// GenerateJSONDiff compares the workload with another workload and returns the differences as a jsondiff.Patch
+	GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error)
+	// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+	GeneratePatchDiff(workloadCopy Workload) ([]byte, error)
 }
 
 // suspendScaledWorkload is a wrapper for all resources which are scaled by setting a suspend field.
@@ -83,11 +88,46 @@ func (r *suspendScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, er
 		return summary, fmt.Errorf("failed to convert original state to bool: %w", err)
 	}
 
+	workloadCopy, err := r.Copy()
+	if err != nil {
+		return summary, fmt.Errorf("failed to copy workload before scaling up: %w", err)
+	}
+
 	r.setSuspend(originalStateBool)
 
 	removeOriginalReplicas(r)
 
-	return scalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState}, nil
+	patchData, err := createPatchData(workloadCopy, r)
+	if err != nil {
+		return summary, err
+	}
+
+	return scalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState, PatchData: patchData}, nil
+}
+
+// shouldSkipScaleDown checks if the workload is already at the target scale down state.
+func (r *suspendScaledWorkload) shouldSkipScaleDown(
+	logger *slog.Logger,
+	currentState, targetScaleDownState values.Replicas,
+) (bool, *metrics.SavedResources, error) {
+	if currentState != targetScaleDownState {
+		return false, nil, nil
+	}
+
+	_, err := getOriginalReplicas(r)
+	if err == nil {
+		logger.Debug("workload is already scaled down, skipping")
+		return true, r.getSavedResourcesRequests(), nil
+	}
+
+	var originalReplicasUnsetErr *OriginalReplicasUnsetError
+	if !errors.As(err, &originalReplicasUnsetErr) {
+		return false, nil, err
+	}
+
+	logger.Debug("workload is already at target scale down state, skipping")
+
+	return true, metrics.NewSavedResources(0, 0), nil
 }
 
 // ScaleDown scales down the underlying suspendScaledResource.
@@ -98,6 +138,10 @@ func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger
 		logger = slog.Default()
 	}
 
+	if pending, ok := pendingServerSidePatchSummary(r); ok {
+		return pending, nil
+	}
+
 	currentState, targetScaleDownState := r.getSuspend()
 	summary := scalingSummary{
 		SavedResources: metrics.NewSavedResources(0, 0),
@@ -105,37 +149,35 @@ func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger
 		To:             targetScaleDownState,
 	}
 
-	if currentState == targetScaleDownState {
-		_, err := getOriginalReplicas(r)
+	skip, savedResources, err := r.shouldSkipScaleDown(logger, currentState, targetScaleDownState)
+	if err != nil {
+		return summary, err
+	}
 
-		var originalReplicasUnsetErr *OriginalReplicasUnsetError
-		if err != nil {
-			if ok := errors.As(err, &originalReplicasUnsetErr); !ok {
-				return summary, err
-			}
-
-			logger.Debug("workload is already at target scale down state, skipping")
-
-			return summary, nil
-		}
-
-		logger.Debug("workload is already scaled down, skipping")
-
-		savedResources := r.getSavedResourcesRequests()
-
+	if skip {
 		summary.SavedResources = savedResources
-
 		return summary, nil
+	}
+
+	workloadCopy, err := r.Copy()
+	if err != nil {
+		return summary, fmt.Errorf("failed to copy workload before scaling down: %w", err)
 	}
 
 	r.setSuspend(true)
 
-	savedResources := r.getSavedResourcesRequests()
+	savedResources = r.getSavedResourcesRequests()
 
 	setOriginalReplicas(currentState, r)
 
+	patchData, err := createPatchData(workloadCopy, r)
+	if err != nil {
+		return summary, err
+	}
+
 	summary.SavedResources = savedResources
 	summary.IsUpdateNeeded = true
+	summary.PatchData = patchData
 
 	return summary, nil
 }

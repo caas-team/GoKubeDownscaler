@@ -13,6 +13,7 @@ import (
 	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -129,10 +130,10 @@ func (s *scaledObject) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two scaledObject resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two scaledObject resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen, dupl //required for interface-based workflow
-func (s *scaledObject) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (s *scaledObject) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -153,4 +154,48 @@ func (s *scaledObject) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+//
+
+func (s *scaledObject) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	patch, err := s.GenerateJSONDiff(workloadCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate scaledObject patch diff: %w", err)
+	}
+
+	patchedDiff, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal patch: %w", err)
+	}
+
+	return patchedDiff, nil
+}
+
+func (s *scaledObject) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if s.ScaledObject == nil {
+		return newNilUnderlyingObjectError(s.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Keda.KedaV1alpha1().ScaledObjects(s.Namespace).Patch(
+		ctx,
+		s.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch scaledobject: %w", err)
+	}
+
+	return nil
 }

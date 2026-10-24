@@ -13,6 +13,7 @@ import (
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -114,10 +115,10 @@ func (k *kafkaConnect) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares the workload with another workload and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen // short names are ok for the workflow of this function
-func (k *kafkaConnect) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (k *kafkaConnect) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -138,6 +139,27 @@ func (k *kafkaConnect) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (k *kafkaConnect) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	kCopy, ok := rswCopy.replicaScaledResource.(*kafkaConnect)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*kafkaConnect)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if k.Unstructured == nil || kCopy.Unstructured == nil {
+		return nil, newNilUnderlyingObjectError(k.GetKind())
+	}
+
+	return generateServerSideApplyPatch(k.Unstructured, kCopy.Unstructured)
 }
 
 // Reget regets the workload to ensure the latest state.
@@ -163,4 +185,14 @@ func (k *kafkaConnect) Update(clientsets *Clientsets, ctx context.Context) error
 	}
 
 	return nil
+}
+
+func (k *kafkaConnect) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	return patchControllerRuntimeObject(clientsets.Client, k.Unstructured, patchType, patchData, manageFields, ctx)
 }

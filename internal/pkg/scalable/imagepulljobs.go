@@ -11,6 +11,7 @@ import (
 	kruisev1beta1 "github.com/openkruise/kruise/apis/apps/v1beta1"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -103,10 +104,10 @@ func (i *imagePullJob) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two ImagePullJob resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two ImagePullJob resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (i *imagePullJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (i *imagePullJob) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -127,4 +128,52 @@ func (i *imagePullJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (i *imagePullJob) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	ijCopy, ok := rswCopy.replicaScaledResource.(*imagePullJob)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*imagePullJob)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if i.ImagePullJob == nil || ijCopy.ImagePullJob == nil {
+		return nil, newNilUnderlyingObjectError(i.Kind)
+	}
+
+	return generateServerSideApplyPatch(i.ImagePullJob, ijCopy.ImagePullJob)
+}
+
+func (i *imagePullJob) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if i.ImagePullJob == nil {
+		return newNilUnderlyingObjectError(i.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Kruise.AppsV1beta1().ImagePullJobs(i.Namespace).Patch(
+		ctx,
+		i.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch imagepulljob: %w", err)
+	}
+
+	return nil
 }

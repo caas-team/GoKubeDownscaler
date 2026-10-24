@@ -13,6 +13,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -167,10 +168,10 @@ func (s *service) Copy() (Workload, error) {
 	return &valueScaledWorkload{&service{Service: copied}}, nil
 }
 
-// Compare compares two service resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two service resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (s *service) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (s *service) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	vsw, ok := workloadCopy.(*valueScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
@@ -191,4 +192,70 @@ func (s *service) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (s *service) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	vswCopy, ok := workloadCopy.(*valueScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
+	}
+
+	svcCopy, ok := vswCopy.valueScaledResource.(*service)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*service)(nil), vswCopy.valueScaledResource)
+	}
+
+	if s.Service == nil || svcCopy.Service == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	return generateServerSideApplyPatch(s.Service, svcCopy.Service)
+}
+
+func (s *service) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if s.Service == nil {
+		return newNilUnderlyingObjectError(s.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedService, err := clientsets.Kubernetes.CoreV1().Services(s.Namespace).Patch(
+		ctx,
+		s.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch service: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedService.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create service managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Kubernetes.CoreV1().Services(s.Namespace).Patch(
+			ctx,
+			s.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear service managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

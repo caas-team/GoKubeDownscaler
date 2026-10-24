@@ -1,6 +1,8 @@
 package scalable
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"math"
@@ -11,40 +13,107 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
+	jsonpatch "github.com/evanphx/json-patch/v5"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	annotationOriginalReplicas  = "downscaler/original-replicas"
-	deploymentGroupVersion      = "apps/v1"
-	deploymentKind              = "Deployment"
-	autoscalingRunnerSetKind    = "AutoscalingRunnerSet"
-	advancedCronJobKind         = "AdvancedCronJob"
-	advancedDaemonSetKind       = "AdvancedDaemonSet"
-	broadcastJobKind            = "BroadcastJob"
-	cloneSetKind                = "CloneSet"
-	cronJobKind                 = "CronJob"
-	daemonSetKind               = "DaemonSet"
-	gatewayKind                 = "Gateway"
-	horizontalPodAutoscalerKind = "HorizontalPodAutoscaler"
-	ingressKind                 = "Ingress"
-	jobKind                     = "Job"
-	kafkaStrimziGroup           = "kafka.strimzi.io"
-	kafkaStrimziVersion         = "v1"
-	kafkaBridgeKind             = "KafkaBridge"
-	kafkaConnectKind            = "KafkaConnect"
-	kafkaMirrorMaker2Kind       = "KafkaMirrorMaker2"
-	podDisruptionBudgetKind     = "PodDisruptionBudget"
-	postgresqlKind              = "postgresql" // lowercase for postgresqlKind is intentional
-	prometheusKind              = "Prometheus"
-	rolloutKind                 = "Rollout"
-	scaledObjectKind            = "ScaledObject"
-	serviceKind                 = "Service"
-	stackKind                   = "Stack"
-	statefulSetKind             = "StatefulSet"
+	goKubeDownscalerFieldManager  = "gokubedownscaler"
+	annotationNeedFieldManagement = "downscaler/need-field-management"
+	annotationOriginalReplicas    = "downscaler/original-replicas"
+	deploymentGroupVersion        = "apps/v1"
+	deploymentKind                = "Deployment"
+	autoscalingRunnerSetKind      = "AutoscalingRunnerSet"
+	advancedCronJobKind           = "AdvancedCronJob"
+	advancedDaemonSetKind         = "AdvancedDaemonSet"
+	broadcastJobKind              = "BroadcastJob"
+	cloneSetKind                  = "CloneSet"
+	cronJobKind                   = "CronJob"
+	daemonSetKind                 = "DaemonSet"
+	gatewayKind                   = "Gateway"
+	horizontalPodAutoscalerKind   = "HorizontalPodAutoscaler"
+	ingressKind                   = "Ingress"
+	jobKind                       = "Job"
+	kafkaStrimziGroup             = "kafka.strimzi.io"
+	kafkaStrimziVersion           = "v1"
+	kafkaBridgeKind               = "KafkaBridge"
+	kafkaConnectKind              = "KafkaConnect"
+	kafkaMirrorMaker2Kind         = "KafkaMirrorMaker2"
+	podDisruptionBudgetKind       = "PodDisruptionBudget"
+	postgresqlKind                = "postgresql" // lowercase for postgresqlKind is intentional
+	prometheusKind                = "Prometheus"
+	rolloutKind                   = "Rollout"
+	scaledObjectKind              = "ScaledObject"
+	serviceKind                   = "Service"
+	stackKind                     = "Stack"
+	statefulSetKind               = "StatefulSet"
 )
+
+// clearManagedFieldsPatch creates a merge patch that retains every manager except this controller.
+func clearManagedFieldsPatch(managedFields []metav1.ManagedFieldsEntry) ([]byte, error) {
+	remainingManagedFields := excludeFieldsManagedByManager(managedFields, goKubeDownscalerFieldManager)
+
+	patch := struct {
+		Metadata struct {
+			ManagedFields []metav1.ManagedFieldsEntry `json:"managedFields"`
+		} `json:"metadata"`
+	}{}
+	patch.Metadata.ManagedFields = remainingManagedFields
+
+	marshal, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal clear managed fields patch: %w", err)
+	}
+
+	return marshal, nil
+}
+
+func excludeFieldsManagedByManager(managedFields []metav1.ManagedFieldsEntry, excludedManager string) []metav1.ManagedFieldsEntry {
+	remainingManagedFields := make([]metav1.ManagedFieldsEntry, 0, len(managedFields))
+	for _, managedField := range managedFields {
+		if managedField.Manager != excludedManager {
+			remainingManagedFields = append(remainingManagedFields, managedField)
+		}
+	}
+
+	return remainingManagedFields
+}
+
+func patchOptions(manageFields bool) metav1.PatchOptions {
+	options := metav1.PatchOptions{}
+	if manageFields {
+		options.FieldManager = goKubeDownscalerFieldManager
+		force := true
+		options.Force = &force
+	}
+
+	return options
+}
+
+func patchControllerRuntimeObject(
+	client ctrlclient.Client,
+	object ctrlclient.Object,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	options := []ctrlclient.PatchOption{}
+	if manageFields {
+		options = append(options, ctrlclient.FieldOwner(goKubeDownscalerFieldManager))
+	}
+
+	if err := client.Patch(ctx, object, ctrlclient.RawPatch(patchType, patchData), options...); err != nil {
+		return fmt.Errorf("failed to patch object: %w", err)
+	}
+
+	return nil
+}
 
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads.
 func FilterExcluded(
@@ -381,11 +450,35 @@ func getOriginalReplicas(workload Workload) (values.Replicas, error) {
 	return replica, nil
 }
 
-// removeOriginalReplicas removes the annotationOriginalReplicas from the workload.
+// removeOriginalReplicas removes the annotationOriginalReplicas and the pending server-side patch
+// annotation from the workload.
 func removeOriginalReplicas(workload Workload) {
 	annotations := workload.GetAnnotations()
 	delete(annotations, annotationOriginalReplicas)
+	delete(annotations, annotationNeedFieldManagement)
 	workload.SetAnnotations(annotations)
+}
+
+// GetPendingServerSidePatch returns the server-side apply patch stored by the admission controller
+// in the need-field-management annotation, and whether it still has to be applied.
+// A patch is no longer pending once gokubedownscaler already owns fields on the workload through an apply operation.
+func GetPendingServerSidePatch(workload Workload) ([]byte, bool) {
+	value, ok := workload.GetAnnotations()[annotationNeedFieldManagement]
+	if !ok {
+		return nil, false
+	}
+
+	if managedFieldsObject, ok := workload.(interface {
+		GetManagedFields() []metav1.ManagedFieldsEntry
+	}); ok {
+		for _, entry := range managedFieldsObject.GetManagedFields() {
+			if entry.Manager == goKubeDownscalerFieldManager && entry.Operation == metav1.ManagedFieldsOperationApply {
+				return nil, false
+			}
+		}
+	}
+
+	return []byte(value), true
 }
 
 // derefInt32 safely dereference int32, if not present a default value is set instead.
@@ -478,10 +571,27 @@ func imagePullJobParallelism(parallelism *intstr.IntOrString) int32 {
 // scalingSummary contains the result of a scaling operation.
 type scalingSummary struct {
 	SavedResources *metrics.SavedResources
+	PatchData      PatchData
 	IsUpdateNeeded bool
-	From           values.Replicas
-	To             values.Replicas
-	Attribute      string
+	// PendingServerSidePatch is the server-side apply patch stored by the admission controller
+	// in the workload's annotation. When set, it must be applied instead of scaling down.
+	PendingServerSidePatch []byte
+	From                   values.Replicas
+	To                     values.Replicas
+	Attribute              string
+}
+
+// pendingServerSidePatchSummary returns a summary carrying the pending server-side patch, if the workload has one.
+func pendingServerSidePatchSummary(workload Workload) (scalingSummary, bool) {
+	patch, pending := GetPendingServerSidePatch(workload)
+	if !pending {
+		return scalingSummary{}, false
+	}
+
+	return scalingSummary{
+		SavedResources:         metrics.NewSavedResources(0, 0),
+		PendingServerSidePatch: patch,
+	}, true
 }
 
 func logWorkloadScalingMessage(
@@ -529,4 +639,192 @@ func logWorkloadMessage(
 	}
 
 	logger.Info(message, args...)
+}
+
+// PatchData contains both a JSON patch and a Kubernetes server-side apply patch for a workload update.
+type PatchData struct {
+	JSONPatch     []byte                      `json:"jsonPatch"`
+	ApplyPatch    []byte                      `json:"applyPatch"`
+	ManagedFields []metav1.ManagedFieldsEntry `json:"managedFields,omitempty"`
+}
+
+// createPatchData serializes a JSON Patch that transforms original into modified,
+// and also creates a full-object apply patch for server-side apply.
+func createPatchData(original, modified Workload) (PatchData, error) {
+	result := PatchData{}
+
+	if managedFieldsObject, ok := original.(interface {
+		GetManagedFields() []metav1.ManagedFieldsEntry
+	}); ok {
+		result.ManagedFields = managedFieldsObject.GetManagedFields()
+	}
+
+	jsonPatch, err := original.GenerateJSONDiff(modified)
+	if err != nil {
+		return result, fmt.Errorf("failed to compare scaled workload with its original state: %w", err)
+	}
+
+	result.JSONPatch, err = json.Marshal(jsonPatch)
+	if err != nil {
+		return result, fmt.Errorf("failed to marshal workload patch: %w", err)
+	}
+
+	diffPatch, err := original.GeneratePatchDiff(modified)
+	if err != nil {
+		return result, fmt.Errorf("failed to generate workload patch diff: %w", err)
+	}
+
+	result.ApplyPatch = diffPatch
+
+	return result, nil
+}
+
+// generateServerSideApplyPatch creates a server-side apply patch containing the object identity
+// and only the fields of spec that differ between original and modified.
+func generateServerSideApplyPatch(original, modified runtime.Object) ([]byte, error) {
+	meta, ok := modified.(metav1.Object)
+	if !ok {
+		return nil, newMetaV1DecodingError("modified object doesn't implement metav1.Object")
+	}
+
+	origJSON, err := json.Marshal(original)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal original object: %w", err)
+	}
+
+	modJSON, err := json.Marshal(modified)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal modified object: %w", err)
+	}
+
+	diff, err := jsonpatch.CreateMergePatch(origJSON, modJSON)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create merge patch: %w", err)
+	}
+
+	var patch map[string]any
+	if err = json.Unmarshal(diff, &patch); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal merge patch: %w", err)
+	}
+
+	// server-side apply only expresses fields to own; deletions (null) and server-owned fields are dropped.
+	patch, _ = stripNulls(patch).(map[string]any)
+	if patch == nil {
+		patch = map[string]any{}
+	}
+
+	delete(patch, "status")
+
+	gvk := modified.GetObjectKind().GroupVersionKind()
+	patch["apiVersion"] = gvk.GroupVersion().String()
+	patch["kind"] = gvk.Kind
+	patch["metadata"] = mergeMetadata(patch["metadata"], meta.GetName(), meta.GetNamespace())
+
+	result, err := json.Marshal(patch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal server-side apply patch: %w", err)
+	}
+
+	return result, nil
+}
+
+// stripNulls recursively removes null values (merge patch deletions) from the given JSON value.
+func stripNulls(value any) any {
+	object, ok := value.(map[string]any)
+	if !ok {
+		return value
+	}
+
+	for key, child := range object {
+		if child == nil {
+			delete(object, key)
+
+			continue
+		}
+
+		object[key] = stripNulls(child)
+	}
+
+	return object
+}
+
+// mergeMetadata keeps only the changed annotations and labels and adds the name and namespace
+// that server-side apply requires to identify the object.
+func mergeMetadata(diffMetadata any, name, namespace string) map[string]any {
+	metadata := map[string]any{"name": name, "namespace": namespace}
+
+	if diff, ok := diffMetadata.(map[string]any); ok {
+		for _, key := range []string{"annotations", "labels"} {
+			if value, exists := diff[key]; exists {
+				metadata[key] = value
+			}
+		}
+	}
+
+	return metadata
+}
+
+// PrependManagedFieldsResetJSONPatch prepends a JSON Patch operation that removes only the entries
+// owned by gokubedownscaler while preserving all other field managers.
+func PrependManagedFieldsResetJSONPatch(patch []byte, managedFields []metav1.ManagedFieldsEntry) ([]byte, error) {
+	resetOp := map[string]any{
+		"op":    "replace",
+		"path":  "/metadata/managedFields",
+		"value": excludeFieldsManagedByManager(managedFields, goKubeDownscalerFieldManager),
+	}
+
+	if len(patch) == 0 {
+		resetPatch, err := json.Marshal([]map[string]any{resetOp})
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal managed fields reset patch: %w", err)
+		}
+
+		return resetPatch, nil
+	}
+
+	var patchOps []map[string]any
+	if err := json.Unmarshal(patch, &patchOps); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON patch: %w", err)
+	}
+
+	patchOps = append([]map[string]any{resetOp}, patchOps...)
+
+	patchedOps, err := json.Marshal(patchOps)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal managed fields reset patch: %w", err)
+	}
+
+	return patchedOps, nil
+}
+
+// AddNeedFieldManagementAnnotationToPatch adds the need-field-management annotation to the JSON patch returned by the admission webhook.
+// The annotation value is the server-side apply patch itself, to be applied later by the downscaler.
+func AddNeedFieldManagementAnnotationToPatch(patch, serverSidePatch []byte) ([]byte, error) {
+	if len(patch) == 0 {
+		return patch, nil
+	}
+
+	patchOps := make([]map[string]any, 0, 1)
+	if err := json.Unmarshal(patch, &patchOps); err != nil {
+		return nil, fmt.Errorf("failed to decode admission JSON patch: %w", err)
+	}
+
+	for _, op := range patchOps {
+		if op["path"] == "/metadata/annotations/"+strings.ReplaceAll(annotationNeedFieldManagement, "/", "~1") {
+			return patch, nil
+		}
+	}
+
+	patchOps = append(patchOps, map[string]any{
+		"op":    "add",
+		"path":  "/metadata/annotations/" + strings.ReplaceAll(annotationNeedFieldManagement, "/", "~1"),
+		"value": string(serverSidePatch),
+	})
+
+	updatedPatch, err := json.Marshal(patchOps)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal field-management annotation patch: %w", err)
+	}
+
+	return updatedPatch, nil
 }

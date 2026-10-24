@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,8 +37,9 @@ const (
 )
 
 var (
-	ErrInvalidBurst = stdErrors.New("burst argument must greater than zero")
-	ErrInvalidQPS   = stdErrors.New("qps argument can't be zero, it can either be a positive value " +
+	ErrInvalidBurst           = stdErrors.New("burst argument must greater than zero")
+	ErrServerSidePatchPending = stdErrors.New("workload has a pending server-side patch to apply")
+	ErrInvalidQPS             = stdErrors.New("qps argument can't be zero, it can either be a positive value " +
 		"or a negative value to disable rate limiting")
 	ErrInvalidTimeout = stdErrors.New("timeout argument must greater than or equal to zero")
 )
@@ -57,9 +59,11 @@ type Client interface {
 	RegetWorkload(workload scalable.Workload, ctx context.Context) error
 	// DownscaleWorkload downscales the workload to the specified replicas
 	//nolint: lll //it fits better in a single line.
-	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, ctx context.Context, logger *slog.Logger) (*metrics.SavedResources, error)
+	DownscaleWorkload(replicas values.Replicas, workload scalable.Workload, patch bool, ctx context.Context, logger *slog.Logger) (*metrics.SavedResources, error)
 	// UpscaleWorkload upscales the workload to the original replicas
-	UpscaleWorkload(workload scalable.Workload, ctx context.Context, logger *slog.Logger) error
+	UpscaleWorkload(workload scalable.Workload, patch bool, ctx context.Context, logger *slog.Logger) error
+	// ApplyPendingServerSidePatch applies the server-side patch stored in the workload's annotation by the admission controller
+	ApplyPendingServerSidePatch(workload scalable.Workload, ctx context.Context) error
 	// ensureSecret ensures that the secret used for storing TLS certificates exists
 	ensureSecret(namespace, secretName string, ctx context.Context) (bool, error)
 	// GetScaledObjects gets all scaledobjects in the specified namespace
@@ -267,12 +271,17 @@ func (c client) RegetWorkload(workload scalable.Workload, ctx context.Context) e
 func (c client) DownscaleWorkload(
 	replicas values.Replicas,
 	workload scalable.Workload,
+	patch bool,
 	ctx context.Context,
 	logger *slog.Logger,
 ) (*metrics.SavedResources, error) {
 	scalingSummary, err := workload.ScaleDown(replicas, logger)
 	if err != nil {
 		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to set the workload into a scaled down state: %w", err)
+	}
+
+	if scalingSummary.PendingServerSidePatch != nil {
+		return metrics.NewSavedResources(0, 0), ErrServerSidePatchPending
 	}
 
 	if !scalingSummary.IsUpdateNeeded {
@@ -292,9 +301,9 @@ func (c client) DownscaleWorkload(
 		return metrics.NewSavedResources(0, 0), nil
 	}
 
-	err = workload.Update(c.clientsets, ctx)
+	err = c.persistWorkload(workload, scalingSummary.PatchData, patch, true, ctx)
 	if err != nil {
-		return metrics.NewSavedResources(0, 0), fmt.Errorf("failed to update the workload: %w", err)
+		return metrics.NewSavedResources(0, 0), err
 	}
 
 	workload.LogDownscaleSuccessful(&scalingSummary, false, logger)
@@ -302,8 +311,35 @@ func (c client) DownscaleWorkload(
 	return scalingSummary.SavedResources, nil
 }
 
+// ApplyPendingServerSidePatch applies the server-side patch stored by the admission controller
+// in the workload's annotation. The annotation is kept: it stops being pending once gokubedownscaler owns fields
+// on the workload, and it is removed when the workload is upscaled.
+func (c client) ApplyPendingServerSidePatch(workload scalable.Workload, ctx context.Context) error {
+	patch, pending := scalable.GetPendingServerSidePatch(workload)
+	if !pending {
+		return nil
+	}
+
+	if c.dryRun {
+		slog.Info(
+			"running in dry run mode, would have applied pending server-side patch",
+			"workload", workload.GetName(),
+			"namespace", workload.GetNamespace(),
+		)
+
+		return nil
+	}
+
+	err := workload.Patch(c.clientsets, types.ApplyPatchType, patch, true, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to apply pending server-side patch: %w", err)
+	}
+
+	return nil
+}
+
 // UpscaleWorkload upscales the workload to the original replicas.
-func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context, logger *slog.Logger) error {
+func (c client) UpscaleWorkload(workload scalable.Workload, patch bool, ctx context.Context, logger *slog.Logger) error {
 	scalingSummary, err := workload.ScaleUp(logger)
 	if err != nil {
 		return fmt.Errorf("failed to set the workload into a scaled up state: %w", err)
@@ -326,12 +362,55 @@ func (c client) UpscaleWorkload(workload scalable.Workload, ctx context.Context,
 		return nil
 	}
 
-	err = workload.Update(c.clientsets, ctx)
+	err = c.persistWorkload(workload, scalingSummary.PatchData, patch, false, ctx)
 	if err != nil {
-		return fmt.Errorf("failed to update the workload: %w", err)
+		return err
 	}
 
 	workload.LogUpscaleSuccessful(&scalingSummary, false, logger)
+
+	return nil
+}
+
+// persistWorkload applies a generated patch when requested and supported; otherwise it updates the full workload.
+func (c client) persistWorkload(
+	workload scalable.Workload,
+	patchData scalable.PatchData,
+	patch, manageFields bool,
+	ctx context.Context,
+) error {
+	if !patch {
+		err := workload.Update(c.clientsets, ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update the workload: %w", err)
+		}
+
+		return nil
+	}
+
+	var patchType types.PatchType
+	var patchContent []byte
+
+	if manageFields {
+		// Scale down: use apply patch to set field manager
+		patchType = types.ApplyPatchType
+		patchContent = patchData.ApplyPatch
+	} else {
+		// Scale up: use JSON patch to clean gokubedownscaler manager
+		patchType = types.JSONPatchType
+
+		jsonPatch, err := scalable.PrependManagedFieldsResetJSONPatch(patchData.JSONPatch, patchData.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to prepend managedFields reset to JSON patch: %w", err)
+		}
+
+		patchContent = jsonPatch
+	}
+
+	err := workload.Patch(c.clientsets, patchType, patchContent, manageFields, ctx)
+	if err != nil {
+		return fmt.Errorf("failed to apply patch to the workload: %w", err)
+	}
 
 	return nil
 }
