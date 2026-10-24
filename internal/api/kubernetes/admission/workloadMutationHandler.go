@@ -550,7 +550,13 @@ func mutateWorkload(
 	}
 
 	if serverSidePatching {
-		jsonPatch, err = scalable.AddNeedFieldManagementAnnotationToPatch(jsonPatch)
+		var workloadServerSidePatch []byte
+
+		workloadServerSidePatch, err = workload.GeneratePatchDiff(workloadCopy)
+		if err == nil {
+			jsonPatch, err = scalable.AddNeedFieldManagementAnnotationToPatch(jsonPatch, workloadServerSidePatch)
+		}
+
 		if err != nil {
 			admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
 

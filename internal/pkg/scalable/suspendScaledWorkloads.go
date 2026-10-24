@@ -105,13 +105,12 @@ func (r *suspendScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, er
 	return scalingSummary{IsUpdateNeeded: true, From: currentState, To: originalState, PatchData: patchData}, nil
 }
 
-// shouldSkipScaleDown checks if the workload is already at the target scale down state or if field management is needed.
+// shouldSkipScaleDown checks if the workload is already at the target scale down state.
 func (r *suspendScaledWorkload) shouldSkipScaleDown(
 	logger *slog.Logger,
 	currentState, targetScaleDownState values.Replicas,
-	needFieldManagement bool,
 ) (bool, *metrics.SavedResources, error) {
-	if currentState != targetScaleDownState || needFieldManagement {
+	if currentState != targetScaleDownState {
 		return false, nil, nil
 	}
 
@@ -139,6 +138,10 @@ func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger
 		logger = slog.Default()
 	}
 
+	if pending, ok := pendingServerSidePatchSummary(r); ok {
+		return pending, nil
+	}
+
 	currentState, targetScaleDownState := r.getSuspend()
 	summary := scalingSummary{
 		SavedResources: metrics.NewSavedResources(0, 0),
@@ -146,12 +149,7 @@ func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger
 		To:             targetScaleDownState,
 	}
 
-	needFieldManagement, err := getNeedFieldManagement(r)
-	if err != nil {
-		return summary, err
-	}
-
-	skip, savedResources, err := r.shouldSkipScaleDown(logger, currentState, targetScaleDownState, needFieldManagement)
+	skip, savedResources, err := r.shouldSkipScaleDown(logger, currentState, targetScaleDownState)
 	if err != nil {
 		return summary, err
 	}
@@ -161,17 +159,9 @@ func (r *suspendScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger
 		return summary, nil
 	}
 
-	if currentState == targetScaleDownState {
-		logger.Debug("workload requires field management, continuing with downscale update")
-	}
-
 	workloadCopy, err := r.Copy()
 	if err != nil {
 		return summary, fmt.Errorf("failed to copy workload before scaling down: %w", err)
-	}
-
-	if needFieldManagement {
-		setNeedFieldManagement(r)
 	}
 
 	r.setSuspend(true)

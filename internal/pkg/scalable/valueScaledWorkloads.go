@@ -100,10 +100,14 @@ func (v *valueScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummary, erro
 
 // ScaleDown scales down the underlying valueScaledResource.
 //
-//nolint:cyclop // refactoring this function would make it less readable and more fragmented
+
 func (v *valueScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger) (scalingSummary, error) {
 	if logger == nil {
 		logger = slog.Default()
+	}
+
+	if pending, ok := pendingServerSidePatchSummary(v); ok {
+		return pending, nil
 	}
 
 	currentState, targetScaleDownState, err := v.getValue()
@@ -113,12 +117,7 @@ func (v *valueScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger) 
 		return summary, err
 	}
 
-	needFieldManagement, err := getNeedFieldManagement(v)
-	if err != nil {
-		return summary, err
-	}
-
-	skip, err := v.shouldSkipScaleDown(logger, currentState, targetScaleDownState, needFieldManagement)
+	skip, err := v.shouldSkipScaleDown(logger, currentState, targetScaleDownState)
 	if err != nil {
 		return summary, err
 	}
@@ -127,19 +126,11 @@ func (v *valueScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger) 
 		return summary, nil
 	}
 
-	if currentState == targetScaleDownState {
-		logger.Debug("workload requires field management, continuing with scale down")
-	}
-
 	savedResources := v.getSavedResourcesRequests()
 
 	workloadCopy, err := v.Copy()
 	if err != nil {
 		return summary, fmt.Errorf("failed to copy workload before scaling down: %w", err)
-	}
-
-	if needFieldManagement {
-		setNeedFieldManagement(v)
 	}
 
 	err = v.setValue(targetScaleDownState)
@@ -164,9 +155,8 @@ func (v *valueScaledWorkload) ScaleDown(_ values.Replicas, logger *slog.Logger) 
 func (v *valueScaledWorkload) shouldSkipScaleDown(
 	logger *slog.Logger,
 	currentState, targetScaleDownState values.Replicas,
-	needFieldManagement bool,
 ) (bool, error) {
-	if currentState != targetScaleDownState || needFieldManagement {
+	if currentState != targetScaleDownState {
 		return false, nil
 	}
 

@@ -450,36 +450,35 @@ func getOriginalReplicas(workload Workload) (values.Replicas, error) {
 	return replica, nil
 }
 
-// removeOriginalReplicas removes the annotationOriginalReplicas from the workload.
+// removeOriginalReplicas removes the annotationOriginalReplicas and the pending server-side patch
+// annotation from the workload.
 func removeOriginalReplicas(workload Workload) {
 	annotations := workload.GetAnnotations()
 	delete(annotations, annotationOriginalReplicas)
-	workload.SetAnnotations(annotations)
-}
-
-// getNeedFieldManagement returns true if the workload has the need-field-management annotation set to true,
-// false if set to false or not set at all.
-func getNeedFieldManagement(workload Workload) (bool, error) {
-	annotations := workload.GetAnnotations()
-
-	needFieldManagement, ok := annotations[annotationNeedFieldManagement]
-	if !ok {
-		return false, nil
-	}
-
-	needFieldManagementBool, err := strconv.ParseBool(needFieldManagement)
-	if err != nil {
-		return false, newNeedFieldManagementValueConversionError("error: need-field-management annotation value is not a valid boolean")
-	}
-
-	return needFieldManagementBool, nil
-}
-
-// setNeedFieldManagement sets the need-field-management annotation on the workload to the specified value.
-func setNeedFieldManagement(workload Workload) {
-	annotations := workload.GetAnnotations()
 	delete(annotations, annotationNeedFieldManagement)
 	workload.SetAnnotations(annotations)
+}
+
+// GetPendingServerSidePatch returns the server-side apply patch stored by the admission controller
+// in the need-field-management annotation, and whether it still has to be applied.
+// A patch is no longer pending once gokubedownscaler already owns fields on the workload through an apply operation.
+func GetPendingServerSidePatch(workload Workload) ([]byte, bool) {
+	value, ok := workload.GetAnnotations()[annotationNeedFieldManagement]
+	if !ok {
+		return nil, false
+	}
+
+	if managedFieldsObject, ok := workload.(interface {
+		GetManagedFields() []metav1.ManagedFieldsEntry
+	}); ok {
+		for _, entry := range managedFieldsObject.GetManagedFields() {
+			if entry.Manager == goKubeDownscalerFieldManager && entry.Operation == metav1.ManagedFieldsOperationApply {
+				return nil, false
+			}
+		}
+	}
+
+	return []byte(value), true
 }
 
 // derefInt32 safely dereference int32, if not present a default value is set instead.
@@ -574,9 +573,25 @@ type scalingSummary struct {
 	SavedResources *metrics.SavedResources
 	PatchData      PatchData
 	IsUpdateNeeded bool
-	From           values.Replicas
-	To             values.Replicas
-	Attribute      string
+	// PendingServerSidePatch is the server-side apply patch stored by the admission controller
+	// in the workload's annotation. When set, it must be applied instead of scaling down.
+	PendingServerSidePatch []byte
+	From                   values.Replicas
+	To                     values.Replicas
+	Attribute              string
+}
+
+// pendingServerSidePatchSummary returns a summary carrying the pending server-side patch, if the workload has one.
+func pendingServerSidePatchSummary(workload Workload) (scalingSummary, bool) {
+	patch, pending := GetPendingServerSidePatch(workload)
+	if !pending {
+		return scalingSummary{}, false
+	}
+
+	return scalingSummary{
+		SavedResources:         metrics.NewSavedResources(0, 0),
+		PendingServerSidePatch: patch,
+	}, true
 }
 
 func logWorkloadScalingMessage(
@@ -782,8 +797,9 @@ func PrependManagedFieldsResetJSONPatch(patch []byte, managedFields []metav1.Man
 	return patchedOps, nil
 }
 
-// AddNeedFieldManagementAnnotationToPatch adds the field-management trigger annotation to the JSON patch returned by the admission webhook.
-func AddNeedFieldManagementAnnotationToPatch(patch []byte) ([]byte, error) {
+// AddNeedFieldManagementAnnotationToPatch adds the need-field-management annotation to the JSON patch returned by the admission webhook.
+// The annotation value is the server-side apply patch itself, to be applied later by the downscaler.
+func AddNeedFieldManagementAnnotationToPatch(patch, serverSidePatch []byte) ([]byte, error) {
 	if len(patch) == 0 {
 		return patch, nil
 	}
@@ -802,7 +818,7 @@ func AddNeedFieldManagementAnnotationToPatch(patch []byte) ([]byte, error) {
 	patchOps = append(patchOps, map[string]any{
 		"op":    "add",
 		"path":  "/metadata/annotations/" + strings.ReplaceAll(annotationNeedFieldManagement, "/", "~1"),
-		"value": "true",
+		"value": string(serverSidePatch),
 	})
 
 	updatedPatch, err := json.Marshal(patchOps)

@@ -106,6 +106,10 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas, log
 		logger = slog.Default()
 	}
 
+	if pending, ok := pendingServerSidePatchSummary(r); ok {
+		return pending, nil
+	}
+
 	downscaleReplicasInt32, err := downscaleReplicas.AsInt32()
 
 	summary := scalingSummary{SavedResources: metrics.NewSavedResources(0, 0)}
@@ -123,26 +127,13 @@ func (r *replicaScaledWorkload) ScaleDown(downscaleReplicas values.Replicas, log
 		return summary, fmt.Errorf("failed to convert current replicas to int32: %w", err)
 	}
 
-	needFieldManagement, err := getNeedFieldManagement(r)
-	if err != nil {
-		return summary, err
-	}
-
 	skip, summary, err := r.shouldSkipScaleDown(currentReplicas, currentReplicasInt32, downscaleReplicas, downscaleReplicasInt32, logger)
 	if err != nil {
 		return summary, err
 	}
 
 	if skip {
-		if !needFieldManagement {
-			return summary, nil
-		}
-
-		logger.Debug("workload requires field management, continuing with downscale update")
-	}
-
-	if needFieldManagement {
-		setNeedFieldManagement(r)
+		return summary, nil
 	}
 
 	workloadCopy, err := r.Copy()
