@@ -80,6 +80,10 @@ func (r *nodeSelectorScaledWorkload) ScaleDown(downscaleReplicas values.Replicas
 		logger = slog.Default()
 	}
 
+	if pending, ok := pendingServerSidePatchSummary(r); ok {
+		return pending, nil
+	}
+
 	workloadCopy, err := r.Copy()
 	if err != nil {
 		return scalingSummary{}, fmt.Errorf("failed to copy workload before scaling down: %w", err)
@@ -145,12 +149,7 @@ func (r *nodeSelectorScaledWorkload) scaleUp(logger *slog.Logger) (bool, error) 
 
 func (r *nodeSelectorScaledWorkload) shouldSkipScaleDown(
 	logger *slog.Logger,
-	needFieldManagement bool,
 ) (bool, *metrics.SavedResources, error) {
-	if needFieldManagement {
-		return false, nil, nil
-	}
-
 	_, err := getOriginalReplicas(r)
 	if err == nil {
 		logger.Debug("workload is already scaled down, skipping")
@@ -172,13 +171,8 @@ func (r *nodeSelectorScaledWorkload) scaleDown(_ values.Replicas, logger *slog.L
 		logger = slog.Default()
 	}
 
-	needFieldManagement, err := getNeedFieldManagement(r)
-	if err != nil {
-		return metrics.NewSavedResources(0, 0), false, err
-	}
-
 	if _, hasLabel := r.getNodeSelector()[labelMatchNone]; hasLabel {
-		skip, savedResources, err := r.shouldSkipScaleDown(logger, needFieldManagement)
+		skip, savedResources, err := r.shouldSkipScaleDown(logger)
 		if err != nil {
 			return metrics.NewSavedResources(0, 0), false, err
 		}
@@ -186,17 +180,11 @@ func (r *nodeSelectorScaledWorkload) scaleDown(_ values.Replicas, logger *slog.L
 		if skip {
 			return savedResources, false, nil
 		}
-
-		logger.Debug("workload requires field management, continuing with downscale update")
 	}
 
 	nodeSelector := r.getNodeSelector()
 	if nodeSelector == nil {
 		nodeSelector = map[string]string{}
-	}
-
-	if needFieldManagement {
-		setNeedFieldManagement(r)
 	}
 
 	nodeSelector[labelMatchNone] = labelMatchNoneValue

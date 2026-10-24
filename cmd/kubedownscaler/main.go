@@ -561,53 +561,14 @@ func scaleWorkload(
 	ctx context.Context,
 	logger *slog.Logger,
 ) error {
-	if scaling == values.ScalingNone {
-		logger.Debug("scaling is not set by any scope, skipping")
-		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
-
-		return nil
+	if skipped, err := handleNonScalingStates(scaling, workloadNamespaceMetrics, logger); skipped || err != nil {
+		return err
 	}
 
-	if scaling == values.ScalingIgnore {
-		logger.Debug("scaling is ignored, skipping")
-		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
-
-		return nil
-	}
-
-	if scaling == values.ScalingIncomplete {
-		logger.Warn("scaling times cannot be determined, skipping")
-		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
-
-		return nil
-	}
-
-	if scaling == values.ScalingMultiple {
-		return newScalingInvalidError(
-			`scaling values matched to multiple states.
-this is the result of a faulty configuration where on a scope there is multiple values with the same priority
-setting different scaling states at the same time (e.g. downtime-period and uptime-period or force-downtime and force-uptime)`,
-		)
-	}
-
-	if scaling == values.ScalingDown {
-		logger.Debug("downscaling workload")
-
-		downscaleReplicas, err := scopes.GetDownscaleReplicas()
-		if err != nil {
-			return fmt.Errorf("failed to get downscale replicas: %w", err)
-		}
-
-		savedResources, err := client.DownscaleWorkload(downscaleReplicas, workload, config.ServerSidePatching, ctx, logger)
-		if err != nil {
-			return fmt.Errorf("failed to downscale workload: %w", err)
-		}
-
-		workloadNamespaceMetrics.IncrementDownscaledWorkloadsCount()
-		workloadNamespaceMetrics.IncrementSavedResources(savedResources)
-	}
-
-	if scaling == values.ScalingUp {
+	switch scaling { //nolint:exhaustive // other states handled above
+	case values.ScalingDown:
+		return downscaleWorkload(scopes, workload, workloadNamespaceMetrics, config, client, ctx, logger)
+	case values.ScalingUp:
 		logger.Debug("upscaling workload")
 
 		err := client.UpscaleWorkload(workload, config.ServerSidePatching, ctx, logger)
@@ -617,6 +578,79 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 
 		workloadNamespaceMetrics.IncrementUpscaledWorkloadsCount()
 	}
+
+	return nil
+}
+
+// handleNonScalingStates handles scaling states which do not result in scaling. Returns true if the workload should be skipped.
+func handleNonScalingStates(
+	scaling values.Scaling,
+	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
+	logger *slog.Logger,
+) (bool, error) {
+	switch scaling { //nolint:exhaustive // only non-scaling states are handled
+	case values.ScalingNone:
+		logger.Debug("scaling is not set by any scope, skipping")
+		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
+
+		return true, nil
+	case values.ScalingIgnore:
+		logger.Debug("scaling is ignored, skipping")
+		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
+
+		return true, nil
+	case values.ScalingIncomplete:
+		logger.Warn("scaling times cannot be determined, skipping")
+		workloadNamespaceMetrics.IncrementExcludedWorkloadsCount()
+
+		return true, nil
+	case values.ScalingMultiple:
+		return true, newScalingInvalidError(
+			`scaling values matched to multiple states.
+this is the result of a faulty configuration where on a scope there is multiple values with the same priority
+setting different scaling states at the same time (e.g. downtime-period and uptime-period or force-downtime and force-uptime)`,
+		)
+	}
+
+	return false, nil
+}
+
+// downscaleWorkload downscales the given workload and updates the metrics.
+func downscaleWorkload(
+	scopes values.Scopes,
+	workload scalable.Workload,
+	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
+	config *runtimeConfiguration,
+	client kubernetes.Client,
+	ctx context.Context,
+	logger *slog.Logger,
+) error {
+	logger.Debug("downscaling workload")
+
+	downscaleReplicas, err := scopes.GetDownscaleReplicas()
+	if err != nil {
+		return fmt.Errorf("failed to get downscale replicas: %w", err)
+	}
+
+	savedResources, err := client.DownscaleWorkload(downscaleReplicas, workload, config.ServerSidePatching, ctx, logger)
+	if errors.Is(err, kubernetes.ErrServerSidePatchPending) {
+		logger.Debug("applying pending server-side patch from admission controller")
+
+		if err = client.ApplyPendingServerSidePatch(workload, ctx); err != nil {
+			return fmt.Errorf("failed to apply pending server-side patch: %w", err)
+		}
+
+		workloadNamespaceMetrics.IncrementDownscaledWorkloadsCount()
+
+		return nil
+	}
+
+	if err != nil {
+		return fmt.Errorf("failed to downscale workload: %w", err)
+	}
+
+	workloadNamespaceMetrics.IncrementDownscaledWorkloadsCount()
+	workloadNamespaceMetrics.IncrementSavedResources(savedResources)
 
 	return nil
 }
