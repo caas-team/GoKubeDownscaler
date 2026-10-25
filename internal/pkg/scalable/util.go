@@ -597,6 +597,15 @@ type scalingSummary struct {
 func pendingServerSidePatchSummary(workload Workload) (scalingSummary, bool) {
 	patch, pending := GetPendingServerSidePatch(workload)
 	if !pending {
+		if _, annotated := workload.GetAnnotations()[annotationNeedFieldManagement]; annotated {
+			slog.Debug(
+				"managed fields found, no pending server-side patch to apply",
+				"workload", workload.GetName(),
+				"namespace", workload.GetNamespace(),
+				"kind", workload.GroupVersionKind().Kind,
+			)
+		}
+
 		return scalingSummary{}, false
 	}
 

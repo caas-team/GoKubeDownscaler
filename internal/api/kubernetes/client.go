@@ -321,7 +321,6 @@ func (c client) ApplyPendingServerSidePatch(workload scalable.Workload, logger *
 
 	patch, pending := scalable.GetPendingServerSidePatch(workload)
 	if !pending {
-		logger.Debug("managed fields found, no pending server-side patch to apply")
 		return nil
 	}
 
