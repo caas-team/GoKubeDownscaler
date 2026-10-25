@@ -445,3 +445,42 @@ func TestImagePullJobParallelism(t *testing.T) {
 	assert.Equal(t, int32(1), imagePullJobParallelism(&negative))
 	assert.Equal(t, int32(1), imagePullJobParallelism(&invalidString))
 }
+
+func TestIsSupportedOwnerKind(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		kind string
+		want bool
+	}{
+		{
+			name: "cnpg cluster is supported",
+			kind: cnpgClusterKind,
+			want: true,
+		},
+		{
+			name: "mariadb is supported",
+			kind: mariaDBKind,
+			want: true,
+		},
+		{
+			name: "mongodb community is supported",
+			kind: mongoDBCommunityKind,
+			want: true,
+		},
+		{
+			name: "unknown kind is not supported",
+			kind: "SomeRandomKind",
+			want: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, test.want, isSupportedOwnerKind(test.kind))
+		})
+	}
+}
