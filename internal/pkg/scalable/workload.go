@@ -149,6 +149,7 @@ func MustScaleChildren(workload Workload) bool {
 }
 
 // scalableResource provides all functions needed to scale any type of resource.
+// nolint:interfacebloat // this interface is used to define functions needed by scalable resources.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource
 	GetAnnotations() map[string]string
@@ -162,6 +163,8 @@ type scalableResource interface {
 	GetLabels() map[string]string
 	// GetCreationTimestamp gets the creation timestamp of the workload
 	GetCreationTimestamp() metav1.Time
+	// GetManagedFields gets the managed fields (field ownership) of the workload
+	GetManagedFields() []metav1.ManagedFieldsEntry
 	// SetAnnotations sets the annotations on the resource. Changes won't be made on Kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
 	// GroupVersionKind gets the group version kind of the workload
