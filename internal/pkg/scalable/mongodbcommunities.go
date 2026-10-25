@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -206,10 +207,10 @@ func (m *mongoDBCommunity) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares the workload with another workload and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen // short names are ok for the workflow of this function
-func (m *mongoDBCommunity) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (m *mongoDBCommunity) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -230,6 +231,27 @@ func (m *mongoDBCommunity) Compare(workloadCopy Workload) (jsondiff.Patch, error
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen // short names are ok for the workflow of this function
+func (m *mongoDBCommunity) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	mCopy, ok := rswCopy.replicaScaledResource.(*mongoDBCommunity)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*mongoDBCommunity)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if m.Unstructured == nil || mCopy.Unstructured == nil {
+		return nil, newNilUnderlyingObjectError(m.GetKind())
+	}
+
+	return generateServerSideApplyPatch(m.Unstructured, mCopy.Unstructured)
 }
 
 // Reget regets the workload to ensure the latest state.
@@ -255,4 +277,14 @@ func (m *mongoDBCommunity) Update(clientsets *Clientsets, ctx context.Context) e
 	}
 
 	return nil
+}
+
+func (m *mongoDBCommunity) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	return patchControllerRuntimeObject(clientsets.Client, m.Unstructured, patchType, patchData, manageFields, ctx)
 }
