@@ -32,6 +32,9 @@ includedResources:
 #  - ingresses
 #  - gateways
 #  - postgresqls
+#  - mongodbcommunities
+#  - cnpgclusters
+#  - mariadbs
 #  - kafkaconnects
 #  - kafkamirrormaker2s
 #  - kafkabridges

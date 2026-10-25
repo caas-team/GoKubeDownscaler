@@ -14,6 +14,20 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+// TestReplicaScaledWorkload_MustScaleChildren_DefaultsFalse verifies that a replicaScaledWorkload
+// wrapping a resource which doesn't support MustScaleChildrenWorkload (e.g. a plain StatefulSet)
+// never forces children scaling, so scale-children stays an opt-in for every kind except the ones
+// that explicitly need it (like MongoDBCommunity).
+func TestReplicaScaledWorkload_MustScaleChildren_DefaultsFalse(t *testing.T) {
+	t.Parallel()
+
+	sts := &statefulSet{StatefulSet: &appsv1.StatefulSet{}}
+	rsw := &replicaScaledWorkload{replicaScaledResource: sts}
+
+	assert.False(t, rsw.MustScaleChildren())
+	assert.False(t, MustScaleChildren(rsw))
+}
+
 func TestReplicaScaledWorkload_ScaleUp(t *testing.T) {
 	t.Parallel()
 

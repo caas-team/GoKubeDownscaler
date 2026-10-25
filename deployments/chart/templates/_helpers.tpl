@@ -368,6 +368,36 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "mongodbcommunities" }}
+- apiGroups:
+    - mongodbcommunity.mongodb.com
+  resources:
+    - mongodbcommunity
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "cnpgclusters" }}
+- apiGroups:
+    - postgresql.cnpg.io
+  resources:
+    - clusters
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if eq $resource "mariadbs" }}
+- apiGroups:
+    - k8s.mariadb.com
+  resources:
+    - mariadbs
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- if eq $resource "kafkaconnects" }}
 - apiGroups:
     - kafka.strimzi.io
@@ -464,6 +494,26 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- end }}
+{{- if and (or (has "mongodbcommunities" .Values.includedResources) (has "mariadbs" .Values.includedResources)) (not (has "statefulsets" .Values.includedResources)) }}
+- apiGroups:
+    - apps
+  resources:
+    - statefulsets
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
+{{- if and (has "mariadbs" .Values.includedResources) (not (has "deployments" .Values.includedResources)) }}
+- apiGroups:
+    - apps
+  resources:
+    - deployments
+  verbs:
+    - get
+    - list
+    - update
 {{- end }}
 {{- end }}
 
@@ -617,6 +667,39 @@ Create webhook resources
     - "UPDATE"
   resources:
     - postgresqls
+{{ end -}}
+{{ if eq $resource "mongodbcommunities" -}}
+- apiGroups:
+    - mongodbcommunity.mongodb.com
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - mongodbcommunity
+{{ end -}}
+{{ if eq $resource "cnpgclusters" -}}
+- apiGroups:
+    - postgresql.cnpg.io
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - clusters
+{{ end -}}
+{{ if eq $resource "mariadbs" -}}
+- apiGroups:
+    - k8s.mariadb.com
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - mariadbs
 {{ end -}}
 {{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
 - apiGroups:
@@ -943,6 +1026,45 @@ resources include in annotationsCompliance
     - "UPDATE"
   resources:
     - postgresqls
+{{ end -}}
+{{ if eq $resource "mongodbcommunities" -}}
+- apiGroups:
+    - mongodbcommunity.mongodb.com
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - mongodbcommunity
+{{ end -}}
+{{ if eq $resource "cnpgclusters" -}}
+- apiGroups:
+    - postgresql.cnpg.io
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - clusters
+{{ end -}}
+{{ if eq $resource "mariadbs" -}}
+- apiGroups:
+    - k8s.mariadb.com
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - mariadbs
 {{ end -}}
 {{ if eq $resource "kafkaconnects" -}}
 - apiGroups:
