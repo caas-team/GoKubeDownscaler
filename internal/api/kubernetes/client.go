@@ -315,6 +315,10 @@ func (c client) DownscaleWorkload(
 // in the workload's annotation. The annotation is kept: it stops being pending once gokubedownscaler owns fields
 // on the workload, and it is removed when the workload is upscaled.
 func (c client) ApplyPendingServerSidePatch(workload scalable.Workload, logger *slog.Logger, ctx context.Context) error {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	patch, pending := scalable.GetPendingServerSidePatch(workload)
 	if !pending {
 		return nil
