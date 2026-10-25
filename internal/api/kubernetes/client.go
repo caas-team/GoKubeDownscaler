@@ -63,7 +63,7 @@ type Client interface {
 	// UpscaleWorkload upscales the workload to the original replicas
 	UpscaleWorkload(workload scalable.Workload, patch bool, ctx context.Context, logger *slog.Logger) error
 	// ApplyPendingServerSidePatch applies the server-side patch stored in the workload's annotation by the admission controller
-	ApplyPendingServerSidePatch(workload scalable.Workload, ctx context.Context) error
+	ApplyPendingServerSidePatch(workload scalable.Workload, logger *slog.Logger, ctx context.Context) error
 	// ensureSecret ensures that the secret used for storing TLS certificates exists
 	ensureSecret(namespace, secretName string, ctx context.Context) (bool, error)
 	// GetScaledObjects gets all scaledobjects in the specified namespace
@@ -314,21 +314,19 @@ func (c client) DownscaleWorkload(
 // ApplyPendingServerSidePatch applies the server-side patch stored by the admission controller
 // in the workload's annotation. The annotation is kept: it stops being pending once gokubedownscaler owns fields
 // on the workload, and it is removed when the workload is upscaled.
-func (c client) ApplyPendingServerSidePatch(workload scalable.Workload, ctx context.Context) error {
+func (c client) ApplyPendingServerSidePatch(workload scalable.Workload, logger *slog.Logger, ctx context.Context) error {
 	patch, pending := scalable.GetPendingServerSidePatch(workload)
 	if !pending {
 		return nil
 	}
 
 	if c.dryRun {
-		slog.Info(
-			"running in dry run mode, would have applied pending server-side patch",
-			"workload", workload.GetName(),
-			"namespace", workload.GetNamespace(),
-		)
+		logger.Info("running in dry run mode, would have applied pending server-side patch")
 
 		return nil
 	}
+
+	logger.Debug("applying pending server-side patch from admission controller")
 
 	err := workload.Patch(c.clientsets, types.ApplyPatchType, patch, true, ctx)
 	if err != nil {

@@ -634,9 +634,7 @@ func downscaleWorkload(
 
 	savedResources, err := client.DownscaleWorkload(downscaleReplicas, workload, config.ServerSidePatching, ctx, logger)
 	if errors.Is(err, kubernetes.ErrServerSidePatchPending) {
-		logger.Debug("applying pending server-side patch from admission controller")
-
-		if err = client.ApplyPendingServerSidePatch(workload, ctx); err != nil {
+		if err = client.ApplyPendingServerSidePatch(workload, logger, ctx); err != nil {
 			return fmt.Errorf("failed to apply pending server-side patch: %w", err)
 		}
 
