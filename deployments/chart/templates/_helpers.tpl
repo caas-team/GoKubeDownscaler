@@ -244,6 +244,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "statefulsets" }}
 - apiGroups:
@@ -254,6 +255,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "daemonsets" }}
 - apiGroups:
@@ -264,6 +266,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "rollouts" }}
 - apiGroups:
@@ -274,6 +277,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "applications" }}
 - apiGroups:
@@ -294,6 +298,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "jobs" }}
 - apiGroups:
@@ -304,6 +309,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "cronjobs" }}
 - apiGroups:
@@ -317,6 +323,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "helmreleases" }}
 - apiGroups:
@@ -337,6 +344,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "stacks" }}
 - apiGroups:
@@ -347,6 +355,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "prometheuses" }}
 - apiGroups:
@@ -357,6 +366,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "poddisruptionbudgets" }}
 - apiGroups:
@@ -367,6 +377,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "autoscalingrunnersets" }}
 - apiGroups:
@@ -377,6 +388,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
 - apiGroups:
@@ -387,6 +399,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "ingresses"}}
 - apiGroups:
@@ -397,6 +410,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "gateways"}}
 - apiGroups:
@@ -407,6 +421,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "postgresqls" }}
 - apiGroups:
@@ -417,6 +432,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "mongodbcommunities" }}
 - apiGroups:
@@ -467,6 +483,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "kafkamirrormaker2s" }}
 - apiGroups:
@@ -477,6 +494,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "kafkabridges" }}
 - apiGroups:
@@ -487,6 +505,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "advancedstatefulsets" }}
 - apiGroups:
@@ -497,6 +516,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "clonesets" }}
 - apiGroups:
@@ -507,6 +527,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "advancedcronjobs" }}
 - apiGroups:
@@ -523,6 +544,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "broadcastjobs" }}
 - apiGroups:
@@ -533,6 +555,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "imagepulljobs" }}
 - apiGroups:
@@ -543,6 +566,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- if eq $resource "advanceddaemonsets" }}
 - apiGroups:
@@ -553,6 +577,7 @@ Create defined permissions for roles
     - get
     - list
     - update
+    - patch
 {{- end }}
 {{- end }}
 {{- if and (or (has "mongodbcommunities" .Values.includedResources) (has "mariadbs" .Values.includedResources)) (not (has "statefulsets" .Values.includedResources)) }}
