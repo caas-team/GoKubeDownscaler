@@ -278,6 +278,16 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "helmreleases" }}
+- apiGroups:
+    - helm.toolkit.fluxcd.io
+  resources:
+    - helmreleases
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- if eq $resource "scaledobjects" }}
 - apiGroups:
     - keda.sh
@@ -601,6 +611,17 @@ Create webhook resources
 {{- if and (not (has "jobs" $.Values.includedResources)) (or (has "--scale-children" $.Values.arguments) (has "--scale-children=true" $.Values.arguments) (has "--scale-children" $.Values.extraArguments) (has "--scale-children=true" $.Values.extraArguments)) }}
     - jobs
 {{- end }}
+{{ end -}}
+{{ if eq $resource "helmreleases" -}}
+- apiGroups:
+    - helm.toolkit.fluxcd.io
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - helmreleases
 {{ end -}}
 {{ if eq $resource "scaledobjects" -}}
 - apiGroups:
@@ -948,6 +969,19 @@ resources include in annotationsCompliance
 {{- if and (not (has "jobs" $.Values.includedResources)) (or (has "--scale-children" $.Values.arguments) (has "--scale-children=true" $.Values.arguments) (has "--scale-children" $.Values.extraArguments) (has "--scale-children=true" $.Values.extraArguments)) }}
     - jobs
 {{- end }}
+{{ end -}}
+{{ if eq $resource "helmreleases" -}}
+- apiGroups:
+    - helm.toolkit.fluxcd.io
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - helmreleases
 {{ end -}}
 {{ if eq $resource "scaledobjects" -}}
 - apiGroups:

@@ -10,6 +10,7 @@ import * as GithubDarkSVG from "@site/static/img/Github.svg";
 import * as GatewaySVG from "@site/static/img/Gateway.svg";
 import * as OpenKruiseSVG from "@site/static/img/OpenKruise.svg";
 import * as StrimziSVG from "@site/static/img/Strimzi.svg";
+import * as FluxSVG from "@site/static/img/Flux.svg";
 import { useColorMode } from "@docusaurus/theme-common";
 import Link from "@docusaurus/Link";
 import styles from "./styles.module.css";
@@ -24,6 +25,7 @@ const delayClasses = [
   "animate-delay-1500",
   "animate-delay-1750",
   "animate-delay-2000",
+  "animate-delay-2250"
 ];
 
 const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
@@ -100,6 +102,13 @@ const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
     href: "https://strimzi.io/",
     supportedResources: ["KafkaBridges", "KafkaConnects", "KafkaMirrorMakers"],
   },
+  {
+    title: "FluxCD",
+    SvgLight: FluxSVG.default,
+    SvgDark: FluxSVG.default,
+    href: "https://fluxcd.io/",
+    supportedResources: ["HelmReleases"],
+  }
 ];
 
 function SupportedResourceGroup({
