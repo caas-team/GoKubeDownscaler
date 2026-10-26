@@ -1,6 +1,6 @@
 module github.com/caas-team/gokubedownscaler
 
-go 1.26.9
+go 1.26.10
 
 require (
 	github.com/actions/actions-runner-controller v0.27.6
@@ -8,8 +8,8 @@ require (
 	github.com/kedacore/keda/v2 v2.21.0
 	github.com/open-policy-agent/cert-controller v0.16.0
 	github.com/openkruise/kruise v1.9.2
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.94.1
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.94.1
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.94.2
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.94.2
 	github.com/prometheus/client_golang v1.25.0
 	github.com/stretchr/testify v1.12.1
 	github.com/wI2L/jsondiff v0.7.1
@@ -21,6 +21,10 @@ require (
 	k8s.io/apiserver v0.37.1
 	k8s.io/client-go v0.37.1
 	k8s.io/component-base v0.37.1
+<<<<<<< HEAD
+=======
+	k8s.io/utils v0.0.0-20261023123148-ca04ba58ecab
+>>>>>>> 1af71f1 (Chore: Update Go 1.26.10 (#589))
 	sigs.k8s.io/controller-runtime v0.25.2
 	sigs.k8s.io/gateway-api v1.6.3
 )
@@ -106,7 +110,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
-	golang.org/x/net v0.59.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
