@@ -34,13 +34,14 @@ By default the GoKubeDownscaler will always have the following permissions if it
     - get
     - create
     - update
+    - patch
 ```
 
 These are necessary for the GoKubeDownscaler to work properly.
 
 ## Workload Permissions
 
-The Helm Chart assigns `get`, `list` and `update` permissions for the workloads defined in [`includedResources`](ref:docs-helm-included-resources).
+The Helm Chart assigns `get`, `list`, `update` and `patch` permissions for the workloads defined in [`includedResources`](ref:docs-helm-included-resources).
 
 These resources can be:
 

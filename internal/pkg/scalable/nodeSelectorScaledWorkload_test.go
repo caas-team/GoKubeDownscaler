@@ -170,3 +170,78 @@ func TestNodeSelectorScaledWorkload_ScaleDown(t *testing.T) {
 		})
 	}
 }
+
+func TestNodeSelectorScaledWorkload_ScalingGeneratesPatchData(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		labelSet      bool
+		current       int32
+		requests      map[string]string
+		wantDownPatch any
+		wantUpPatch   any
+	}{
+		{
+			name:     "scale down adds label",
+			labelSet: false,
+			current:  3,
+			requests: map[string]string{"cpu": "100m", "memory": "200Mi"},
+			wantDownPatch: []any{
+				map[string]any{"op": "add", "path": "/metadata/annotations", "value": map[string]any{"downscaler/original-replicas": "false"}},
+				map[string]any{"op": "add", "path": "/spec/template/spec/nodeSelector", "value": map[string]any{"downscaler/match-none": "true"}},
+			},
+			wantUpPatch: []any{
+				map[string]any{"op": "remove", "path": "/metadata/annotations"},
+				map[string]any{"op": "remove", "path": "/spec/template/spec/nodeSelector"},
+			},
+		},
+		{
+			name:          "already downscaled keeps label",
+			labelSet:      true,
+			current:       2,
+			requests:      map[string]string{"cpu": "50m", "memory": "100Mi"},
+			wantDownPatch: nil,
+			wantUpPatch:   nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			daemonset := &daemonSet{&appsv1.DaemonSet{}}
+
+			daemonset.Status.CurrentNumberScheduled = test.current
+			if test.requests != nil {
+				reqs := corev1.ResourceList{}
+				if cpu, ok := test.requests["cpu"]; ok && cpu != "" {
+					reqs[corev1.ResourceCPU] = resource.MustParse(cpu)
+				}
+
+				if memory, ok := test.requests["memory"]; ok && memory != "" {
+					reqs[corev1.ResourceMemory] = resource.MustParse(memory)
+				}
+
+				daemonset.Spec.Template.Spec.Containers = []corev1.Container{{Resources: corev1.ResourceRequirements{Requests: reqs}}}
+			}
+
+			workload := &nodeSelectorScaledWorkload{nodeSelectorScaledResource: daemonset}
+			if test.labelSet {
+				workload.setNodeSelector(map[string]string{labelMatchNone: labelMatchNoneValue})
+			}
+
+			beforeDownscale := daemonset.DeepCopy()
+			summary, err := workload.ScaleDown(values.AbsoluteReplicas(0), nil)
+			require.NoError(t, err)
+			t.Logf("downscale patchData: %s", summary.PatchData)
+			assertJSONPatchTransforms(t, beforeDownscale, summary.PatchData, daemonset.DaemonSet)
+
+			beforeUpscale := daemonset.DeepCopy()
+			upscaleSummary, err := workload.ScaleUp(nil)
+			require.NoError(t, err)
+			t.Logf("upscale patchData: %s", upscaleSummary.PatchData)
+			assertJSONPatchTransforms(t, beforeUpscale, upscaleSummary.PatchData, daemonset.DaemonSet)
+		})
+	}
+}
