@@ -21,6 +21,7 @@ includedResources:
 #  - horizontalpodautoscalers
 #  - jobs
 #  - cronjobs
+#  - helmreleases
 #  - scaledobjects
 #  - services
 #  - stacks
