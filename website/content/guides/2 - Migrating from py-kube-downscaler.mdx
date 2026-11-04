@@ -87,7 +87,7 @@ See the [breaking changes entry](#from-features) for more information.
 
 #### Periods and Times Across Scopes
 
-In the py-kube-downscaler, period values and time values were not resolved per scope.
+In py-kube-downscaler, period values and time values were not resolved per scope.
 If an `upscale-period` or a `downscale-period` was set anywhere (workload, namespace, CLI or environment),
 every `uptime` and `downtime` value was ignored, including the ones set on the workload itself.
 The up- and downscale periods were then resolved independently, so they could come from different scopes.
