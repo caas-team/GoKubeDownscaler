@@ -83,6 +83,35 @@ This makes it easier to understand where the values are taken from.
 
 See the [breaking changes entry](#from-features) for more information.
 
+#### Periods and Times Across Scopes
+
+In py-kube-downscaler, period values and time values were not resolved per scope.
+If an `upscale-period` or a `downscale-period` was set anywhere (workload, namespace, CLI or environment),
+every `uptime` and `downtime` value was ignored, including the ones set on the workload itself.
+The upscale and downscale periods were then resolved independently, so they could come from different scopes.
+
+GoKubeDownscaler uses the most specific scope that sets any of [Downscale Period](ref:docs-values#downscale-period),
+[Downtime](ref:docs-values#downtime), [Upscale Period](ref:docs-values#upscale-period) or [Uptime](ref:docs-values#uptime),
+as described in the [scaling algorithm](ref:docs-scopes-and-scaling#scaling-algorithm).
+The values of less specific scopes are not used, even when the selected scope only sets an upscale or only a downscale period.
+
+This changes the behavior of configurations that mix these values across scopes, for example:
+
+- Namespace with `downscaler/downscale-period: Fri-Fri 20:00-20:30 Europe/Berlin`
+  and workload with `downscaler/uptime: Mon-Fri 08:00-20:00 Europe/Berlin`:
+  - py-kube-downscaler: the workload's uptime is ignored.
+    The workload is scaled down on Friday evening and is never scaled up again.
+  - GoKubeDownscaler: the namespace's downscale period is ignored.
+    The workload is scaled up during its uptime and scaled down outside of it.
+- Namespace with `downscaler/downscale-period: Fri-Fri 20:00-20:30 Europe/Berlin`
+  and workload with `downscaler/upscale-period: Mon-Mon 08:00-08:30 Europe/Berlin`:
+  - py-kube-downscaler: both periods are used.
+    The workload is scaled down on Friday evening and scaled up on Monday morning.
+  - GoKubeDownscaler: only the workload's upscale period is used.
+    The workload is scaled up on Monday morning but is never scaled down.
+
+If you combined periods from different scopes, set both the `upscale-period` and the `downscale-period` in the same scope.
+
 ### Explicit Include
 
 Added the [`--explicit-include` cli argument](ref:docs-cli-scope#values).
