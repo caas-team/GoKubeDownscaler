@@ -1,10 +1,10 @@
 module github.com/caas-team/gokubedownscaler
 
-go 1.27.0
+go 1.26.10
 
 require (
 	github.com/actions/actions-runner-controller v0.27.6
-	github.com/argoproj/argo-rollouts v1.10.1
+	github.com/argoproj/argo-rollouts v1.10.2
 	github.com/kedacore/keda/v2 v2.21.0
 	github.com/open-policy-agent/cert-controller v0.16.0
 	github.com/openkruise/kruise v1.9.2
@@ -23,7 +23,7 @@ require (
 	k8s.io/component-base v0.37.2
 	k8s.io/utils v0.0.0-20261023123148-ca04ba58ecab
 	sigs.k8s.io/controller-runtime v0.25.2
-	sigs.k8s.io/gateway-api v1.7.0
+	sigs.k8s.io/gateway-api v1.6.3
 )
 
 require (
