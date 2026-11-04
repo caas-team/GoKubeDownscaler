@@ -90,7 +90,7 @@ See the [breaking changes entry](#from-features) for more information.
 In py-kube-downscaler, period values and time values were not resolved per scope.
 If an `upscale-period` or a `downscale-period` was set anywhere (workload, namespace, CLI or environment),
 every `uptime` and `downtime` value was ignored, including the ones set on the workload itself.
-The up- and downscale periods were then resolved independently, so they could come from different scopes.
+The upscale and downscale periods were then resolved independently, so they could come from different scopes.
 
 GoKubeDownscaler uses the most specific scope that sets any of [Downscale Period](ref:docs-values#downscale-period),
 [Downtime](ref:docs-values#downtime), [Upscale Period](ref:docs-values#upscale-period) or [Uptime](ref:docs-values#uptime),
