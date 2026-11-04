@@ -149,6 +149,7 @@ func MustScaleChildren(workload Workload) bool {
 }
 
 // scalableResource provides all functions needed to scale any type of resource.
+// nolint:interfacebloat // this interface is used to define functions needed by scalable resources.
 type scalableResource interface {
 	// GetAnnotations gets the annotations of the resource
 	GetAnnotations() map[string]string
@@ -162,6 +163,8 @@ type scalableResource interface {
 	GetLabels() map[string]string
 	// GetCreationTimestamp gets the creation timestamp of the workload
 	GetCreationTimestamp() metav1.Time
+	// GetManagedFields gets the managed fields (field ownership) of the workload
+	GetManagedFields() []metav1.ManagedFieldsEntry
 	// SetAnnotations sets the annotations on the resource. Changes won't be made on Kubernetes until update() is called
 	SetAnnotations(annotations map[string]string)
 	// GroupVersionKind gets the group version kind of the workload
@@ -173,10 +176,13 @@ type scalableResource interface {
 }
 
 // Workload provides all functions needed to scale the workload.
+// nolint:interfacebloat // this interface is used to define functions needed by scalable workloads.
 type Workload interface {
 	scalableResource
 	// Update updates the resource with all changes made to it. It should only be called once on a resource
 	Update(clientsets *Clientsets, ctx context.Context) error
+	// Patch applies a patch to the resource. It should only be called once on a resource.
+	Patch(clientsets *Clientsets, patchType types.PatchType, patchData []byte, manageFields bool, ctx context.Context) error
 	// ScaleUp scales up the workload.
 	ScaleUp(logger *slog.Logger) (scalingSummary, error)
 	// ScaleDown scales down the workload
@@ -187,8 +193,10 @@ type Workload interface {
 	LogDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
-	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
-	Compare(workloadCopy Workload) (jsondiff.Patch, error)
+	// GenerateJSONDiff compares the workload with another workload and returns the differences as a jsondiff.Patch
+	GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error)
+	// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+	GeneratePatchDiff(workloadCopy Workload) ([]byte, error)
 }
 
 type Clientsets struct {

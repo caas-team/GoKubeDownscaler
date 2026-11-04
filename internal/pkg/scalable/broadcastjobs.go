@@ -11,6 +11,7 @@ import (
 	kruisev1beta1 "github.com/openkruise/kruise/apis/apps/v1beta1"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getBroadcastJobs is the getResourceFunc for BroadcastJobs.
@@ -111,10 +112,10 @@ func (b *broadcastJob) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two broadcastJob resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two broadcastJob resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (b *broadcastJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (b *broadcastJob) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
@@ -135,4 +136,52 @@ func (b *broadcastJob) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (b *broadcastJob) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
+	}
+
+	bjCopy, ok := sswCopy.suspendScaledResource.(*broadcastJob)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*broadcastJob)(nil), sswCopy.suspendScaledResource)
+	}
+
+	if b.BroadcastJob == nil || bjCopy.BroadcastJob == nil {
+		return nil, newNilUnderlyingObjectError(b.Kind)
+	}
+
+	return generateServerSideApplyPatch(b.BroadcastJob, bjCopy.BroadcastJob)
+}
+
+func (b *broadcastJob) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if b.BroadcastJob == nil {
+		return newNilUnderlyingObjectError(b.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Kruise.AppsV1beta1().BroadcastJobs(b.Namespace).Patch(
+		ctx,
+		b.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch broadcastjob: %w", err)
+	}
+
+	return nil
 }

@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -279,10 +280,10 @@ func (m *mariaDB) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares the workload with another workload and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen // short names are ok for the workflow of this function
-func (m *mariaDB) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (m *mariaDB) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -303,6 +304,27 @@ func (m *mariaDB) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen // short names are ok for the workflow of this function
+func (m *mariaDB) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	mCopy, ok := rswCopy.replicaScaledResource.(*mariaDB)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*mariaDB)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if m.Unstructured == nil || mCopy.Unstructured == nil {
+		return nil, newNilUnderlyingObjectError(m.GetKind())
+	}
+
+	return generateServerSideApplyPatch(m.Unstructured, mCopy.Unstructured)
 }
 
 // Reget regets the workload to ensure the latest state.
@@ -328,4 +350,14 @@ func (m *mariaDB) Update(clientsets *Clientsets, ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (m *mariaDB) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	return patchControllerRuntimeObject(clientsets.Client, m.Unstructured, patchType, patchData, manageFields, ctx)
 }

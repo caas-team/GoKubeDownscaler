@@ -11,6 +11,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	zalandov1 "github.com/zalando-incubator/stackset-controller/pkg/apis/zalando.org/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getStacks is the getResourceFunc for Zalando Stacks.
@@ -119,10 +120,10 @@ func (s *stack) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two stack resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two stack resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (s *stack) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (s *stack) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -143,4 +144,52 @@ func (s *stack) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (s *stack) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	stCopy, ok := rswCopy.replicaScaledResource.(*stack)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*stack)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if s.Stack == nil || stCopy.Stack == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	return generateServerSideApplyPatch(s.Stack, stCopy.Stack)
+}
+
+func (s *stack) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if s.Stack == nil {
+		return newNilUnderlyingObjectError(s.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Zalando.ZalandoV1().Stacks(s.Namespace).Patch(
+		ctx,
+		s.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch stack: %w", err)
+	}
+
+	return nil
 }

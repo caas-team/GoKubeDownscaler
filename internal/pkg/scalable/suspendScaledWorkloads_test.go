@@ -182,6 +182,83 @@ func TestSuspendScaledWorkload_ScaleDown(t *testing.T) {
 	}
 }
 
+func TestSuspendScaledWorkload_ScalingGeneratesPatchData(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		suspend       *bool
+		parallel      int32
+		cpu           string
+		mem           string
+		wantDownPatch any
+		wantUpPatch   any
+	}{
+		{
+			name:     "suspend false to true",
+			suspend:  boolAsPointer(false),
+			parallel: 2,
+			cpu:      "250m",
+			mem:      "128Mi",
+			wantDownPatch: []any{
+				map[string]any{"op": "add", "path": "/metadata/annotations", "value": map[string]any{"downscaler/original-replicas": "false"}},
+				map[string]any{"op": "replace", "path": "/spec/suspend", "value": true},
+			},
+			wantUpPatch: []any{
+				map[string]any{"op": "remove", "path": "/metadata/annotations"},
+				map[string]any{"op": "replace", "path": "/spec/suspend", "value": false},
+			},
+		},
+		{
+			name:     "suspend nil to true",
+			suspend:  nil,
+			parallel: 2,
+			cpu:      "250m",
+			mem:      "128Mi",
+			wantDownPatch: []any{
+				map[string]any{"op": "add", "path": "/metadata/annotations", "value": map[string]any{"downscaler/original-replicas": "false"}},
+				map[string]any{"op": "add", "path": "/spec/suspend", "value": true},
+			},
+			wantUpPatch: []any{
+				map[string]any{"op": "remove", "path": "/metadata/annotations"},
+				map[string]any{"op": "replace", "path": "/spec/suspend", "value": false},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			cronjob := cronJob{&batch.CronJob{}}
+			cronjob.Spec.Suspend = test.suspend
+			cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{{
+				Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse(test.cpu),
+					corev1.ResourceMemory: resource.MustParse(test.mem),
+				}},
+			}}
+			cronjob.Spec.JobTemplate.Spec.Parallelism = &test.parallel
+
+			suspendedWorkload := suspendScaledWorkload{&cronjob}
+
+			beforeDownscale := cronjob.DeepCopy()
+			downscaleSummary, err := suspendedWorkload.ScaleDown(nil, nil)
+			require.NoError(t, err)
+			t.Logf("downscale patchData: %s", downscaleSummary.PatchData)
+			assert.True(t, downscaleSummary.IsUpdateNeeded)
+			assertJSONPatchTransforms(t, beforeDownscale, downscaleSummary.PatchData, cronjob)
+
+			beforeUpscale := cronjob.DeepCopy()
+			upscaleSummary, err := suspendedWorkload.ScaleUp(nil)
+			require.NoError(t, err)
+			t.Logf("upscale patchData: %s", upscaleSummary.PatchData)
+			assert.True(t, upscaleSummary.IsUpdateNeeded)
+			assertJSONPatchTransforms(t, beforeUpscale, upscaleSummary.PatchData, cronjob)
+		})
+	}
+}
+
 // TestCronJobGetChildren verifies the GetChildren method.
 func TestCronJobGetChildren(t *testing.T) {
 	t.Parallel()

@@ -23,6 +23,7 @@ type WorkloadMutationHandler struct {
 	scopeCli            *values.Scope
 	scopeEnv            *values.Scope
 	scopeDefault        *values.Scope
+	serverSidePatching  bool
 	includeNamespaces   *[]string
 	dryRun              bool
 	includeLabels       *util.RegexList
@@ -50,6 +51,7 @@ func NewWorkloadMutationHandler(
 	includeLabels, excludeNamespaces, excludeWorkloads *util.RegexList,
 	includeResources map[string]struct{},
 	metricsEnabled bool,
+	serverSidePatching bool,
 	admissionMetrics *metrics.AdmissionMetrics,
 ) *WorkloadMutationHandler {
 	return &WorkloadMutationHandler{
@@ -64,6 +66,7 @@ func NewWorkloadMutationHandler(
 		excludeWorkloads:    excludeWorkloads,
 		includeResourcesSet: includeResources,
 		metricsEnabled:      metricsEnabled,
+		serverSidePatching:  serverSidePatching,
 		admissionMetrics:    admissionMetrics,
 	}
 }
@@ -248,6 +251,7 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 		review,
 		v.dryRun,
 		metricsEnabled,
+		v.serverSidePatching,
 		v.admissionMetrics,
 	)
 	if err != nil {
@@ -265,6 +269,7 @@ func evaluateWorkloadScalingConditions(
 	review *admissionv1.AdmissionReview,
 	dryRun bool,
 	metricsEnabled bool,
+	serverSidePatching bool,
 	admissionMetrics *metrics.AdmissionMetrics,
 ) (*admissionv1.AdmissionReview, error) {
 	if scaling == values.ScalingNone {
@@ -386,7 +391,7 @@ setting different scaling states at the same time (e.g. downtime-period and upti
 			), err
 		}
 
-		response, err := mutateWorkload(workload, review, downscaleReplicas, dryRun, metricsEnabled, admissionMetrics)
+		response, err := mutateWorkload(workload, review, downscaleReplicas, dryRun, metricsEnabled, serverSidePatching, admissionMetrics)
 		if err != nil {
 			return response, err
 		}
@@ -480,6 +485,7 @@ func mutateWorkload(
 	downscaleReplicas values.Replicas,
 	dryRun bool,
 	metricsEnabled bool,
+	serverSidePatching bool,
 	admissionMetrics *metrics.AdmissionMetrics,
 ) (*admissionv1.AdmissionReview, error) {
 	// generate a deep copy of the workload to be able to generate a comparison patch
@@ -518,7 +524,7 @@ func mutateWorkload(
 		), err
 	}
 
-	patch, err := workload.Compare(workloadCopy)
+	patch, err := workload.GenerateJSONDiff(workloadCopy)
 	if err != nil {
 		admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
 
@@ -547,6 +553,28 @@ func mutateWorkload(
 			true,
 			dryRun,
 		), err
+	}
+
+	if serverSidePatching {
+		var workloadServerSidePatch []byte
+
+		workloadServerSidePatch, err = workload.GeneratePatchDiff(workloadCopy)
+		if err == nil {
+			jsonPatch, err = scalable.AddNeedFieldManagementAnnotationToPatch(jsonPatch, workloadServerSidePatch)
+		}
+
+		if err != nil {
+			admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
+
+			return newReviewResponse(
+				review.Request.UID,
+				true,
+				http.StatusAccepted,
+				"failed to add field-management annotation to patch",
+				true,
+				dryRun,
+			), err
+		}
 	}
 
 	if !dryRun {

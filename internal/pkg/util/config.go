@@ -34,6 +34,8 @@ type CommonRuntimeConfiguration struct {
 	Burst int
 	// Timeout sets the timeout for Kubernetes API requests.
 	Timeout int
+	// ServerSidePatching sets if the downscaler should use patching for workloads updates.
+	ServerSidePatching bool
 	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
 	Kubeconfig string
 }
@@ -127,6 +129,12 @@ func (c *CommonRuntimeConfiguration) ParseCommonFlags() {
 		"json-logs",
 		false,
 		"sets logs in json format (default: false)",
+	)
+	flag.BoolVar(
+		&c.ServerSidePatching,
+		"server-side-patching",
+		false,
+		"enables server side patching for workloads updates (default: false)",
 	)
 	flag.StringVar(
 		&c.Kubeconfig,

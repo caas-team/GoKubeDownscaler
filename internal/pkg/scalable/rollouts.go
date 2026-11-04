@@ -11,6 +11,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getRollouts is the getResourceFunc for Argo Rollouts.
@@ -119,10 +120,10 @@ func (r *rollout) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two rollout resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two rollout resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (r *rollout) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (r *rollout) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -143,4 +144,70 @@ func (r *rollout) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (r *rollout) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	rollCopy, ok := rswCopy.replicaScaledResource.(*rollout)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*rollout)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if r.Rollout == nil || rollCopy.Rollout == nil {
+		return nil, newNilUnderlyingObjectError(r.Kind)
+	}
+
+	return generateServerSideApplyPatch(r.Rollout, rollCopy.Rollout)
+}
+
+func (r *rollout) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if r.Rollout == nil {
+		return newNilUnderlyingObjectError(r.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	patchedRollout, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(r.Namespace).Patch(
+		ctx,
+		r.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch rollout: %w", err)
+	}
+
+	if !manageFields {
+		clearPatch, err := clearManagedFieldsPatch(patchedRollout.ManagedFields)
+		if err != nil {
+			return fmt.Errorf("failed to create rollout managed fields clear patch: %w", err)
+		}
+
+		_, err = clientsets.Argo.ArgoprojV1alpha1().Rollouts(r.Namespace).Patch(
+			ctx,
+			r.Name,
+			types.MergePatchType,
+			clearPatch,
+			metav1.PatchOptions{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to clear rollout managed fields: %w", err)
+		}
+	}
+
+	return nil
 }

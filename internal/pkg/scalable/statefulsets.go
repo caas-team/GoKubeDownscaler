@@ -11,6 +11,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getStatefulSets is the getResourceFunc for StatefulSets.
@@ -119,10 +120,10 @@ func (s *statefulSet) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two statefulSet resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two statefulSet resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (s *statefulSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (s *statefulSet) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -143,4 +144,52 @@ func (s *statefulSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (s *statefulSet) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	stsCopy, ok := rswCopy.replicaScaledResource.(*statefulSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*statefulSet)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if s.StatefulSet == nil || stsCopy.StatefulSet == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	return generateServerSideApplyPatch(s.StatefulSet, stsCopy.StatefulSet)
+}
+
+func (s *statefulSet) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if s.StatefulSet == nil {
+		return newNilUnderlyingObjectError(s.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Kubernetes.AppsV1().StatefulSets(s.Namespace).Patch(
+		ctx,
+		s.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch statefulset: %w", err)
+	}
+
+	return nil
 }
