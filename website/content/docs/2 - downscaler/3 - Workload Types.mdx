@@ -117,8 +117,9 @@ Scales by setting the replica count to the [downscale replicas](ref:docs-values#
 - resource: rollout.v1alpha1.argoproj.io
 
 Scales by setting the replica count to the [downscale replicas](ref:docs-values#downscale-replicas).
-When `.spec.workloadRef` is present the downscaler also ensures that `.spec.templateResolvedFromRef` is set to `true`
-as specified in the [Argo Rollouts documentation](https://argoproj.github.io/argo-rollouts/features/specification/).
+When `.spec.workloadRef` is present the downscaler ensures the template is resolved from the referenced workload
+as specified in the [Argo Rollouts documentation](https://argoproj.github.io/argo-rollouts/features/specification/) (see
+the comments above `.spec.workloadRef` and `.spec.template`)
 
 ### Stacks
 
