@@ -17,6 +17,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	helmv2 "github.com/fluxcd/helm-controller/api/v2"
+	kustomize "github.com/fluxcd/kustomize-controller/api/v1"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
 	kruise "github.com/openkruise/kruise/pkg/client/clientset/versioned"
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
@@ -180,6 +181,12 @@ func NewScheme() (*runtime.Scheme, error) {
 	err = helmv2.AddToScheme(scheme)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add helmv2 scheme to generic client: %w", err)
+	}
+
+	// Kustomize Controller CRDs
+	err = kustomize.AddToScheme(scheme)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add kustomizev1 scheme to generic client: %w", err)
 	}
 
 	return scheme, nil
