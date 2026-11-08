@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -44,6 +45,16 @@ func parseKustomizationFromBytes(rawObject []byte) (Workload, error) {
 // kustomization is a wrapper for kustomize.v1 to implement the suspendScaledResource interface.
 type kustomization struct {
 	*kustomize.Kustomization
+}
+
+// logUpscaleSuccessful logs a successful resume operation or dry-run resume operation.
+func (k *kustomization) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("unsuspended", "suspend", k, summary, dryRun, logger)
+}
+
+// logDownscaleSuccessful logs a successful suspend operation or dry-run suspend operation.
+func (k *kustomization) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("suspended", "suspend", k, summary, dryRun, logger)
 }
 
 func (k *kustomization) Reget(clientsets *Clientsets, ctx context.Context) error {
