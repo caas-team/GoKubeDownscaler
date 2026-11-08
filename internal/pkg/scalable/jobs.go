@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -42,6 +43,16 @@ func parseJobFromBytes(rawObject []byte) (Workload, error) {
 // job is a wrapper for job.v1.batch to implement the suspendScaledResource interface.
 type job struct {
 	*batch.Job
+}
+
+// logUpscaleSuccessful logs a successful unsuspend operation or dry-run unsuspend operation.
+func (j *job) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("unsuspended", "suspend", j, summary, dryRun, logger)
+}
+
+// logDownscaleSuccessful logs a successful suspend operation or dry-run suspend operation.
+func (j *job) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("suspended", "suspend", j, summary, dryRun, logger)
 }
 
 // nolint: nonamedreturns // getSuspend gets the current value of the suspend field on the job and the target downscale state for it.

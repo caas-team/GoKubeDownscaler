@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -44,6 +45,16 @@ func parseHelmReleaseFromBytes(rawObject []byte) (Workload, error) {
 // helmRelease is a wrapper for helmv2.HelmRelease to implement the suspendScaledResource interface.
 type helmRelease struct {
 	*helmv2.HelmRelease
+}
+
+// logUpscaleSuccessful logs a successful unsuspend operation or dry-run unsuspend operation.
+func (h *helmRelease) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("unsuspended", "suspend", h, summary, dryRun, logger)
+}
+
+// logDownscaleSuccessful logs a successful suspend operation or dry-run suspend operation.
+func (h *helmRelease) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("suspended", "suspend", h, summary, dryRun, logger)
 }
 
 func (h *helmRelease) Reget(clientsets *Clientsets, ctx context.Context) error {
