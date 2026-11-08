@@ -202,6 +202,16 @@ func (c *advancedCronJob) getSuspend() (currentValue, targetDownscaleState value
 	return currentValue, targetDownscaleState
 }
 
+// logUpscaleSuccessful logs the paused transition for an upscale.
+func (c *advancedCronJob) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("suspended", "paused", c, summary, dryRun, logger)
+}
+
+// logDownscaleSuccessful logs the paused transition for a downscale.
+func (c *advancedCronJob) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("unsuspended", "paused", c, summary, dryRun, logger)
+}
+
 // setSuspend sets the value of the paused field on the advancedCronJob.
 func (c *advancedCronJob) setSuspend(suspend bool) {
 	c.Spec.Paused = &suspend

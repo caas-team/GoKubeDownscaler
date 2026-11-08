@@ -63,6 +63,16 @@ func (b *broadcastJob) getSuspend() (currentValue, targetDownscaleState values.R
 	return currentValue, targetDownscaleState
 }
 
+// logUpscaleSuccessful logs the paused transition for an upscale.
+func (b *broadcastJob) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("suspended", "paused", b, summary, dryRun, logger)
+}
+
+// logDownscaleSuccessful logs the paused transition for a downscale.
+func (b *broadcastJob) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("unsuspended", "paused", b, summary, dryRun, logger)
+}
+
 // setSuspend sets the value of the paused field on the BroadcastJob.
 func (b *broadcastJob) setSuspend(suspend bool) {
 	b.Spec.Paused = suspend

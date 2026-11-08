@@ -68,6 +68,16 @@ func (j *job) getSuspend() (currentValue, targetDownscaleState values.Replicas) 
 	return currentValue, targetDownscaleState
 }
 
+// logUpscaleSuccessful logs the suspend transition for an upscale.
+func (j *job) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("suspended", "suspend", j, summary, dryRun, logger)
+}
+
+// logDownscaleSuccessful logs the suspend transition for a downscale.
+func (j *job) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("unsuspended", "suspend", j, summary, dryRun, logger)
+}
+
 // setSuspend sets the value of the suspend field on the job.
 func (j *job) setSuspend(suspend bool) {
 	j.Spec.Suspend = &suspend

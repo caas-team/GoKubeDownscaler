@@ -154,6 +154,16 @@ func (c *cronJob) getSuspend() (currentValue, targetDownscaleState values.Replic
 	return currentValue, targetDownscaleState
 }
 
+// logUpscaleSuccessful logs the suspend transition for an upscale.
+func (c *cronJob) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("suspended", "suspend", c, summary, dryRun, logger)
+}
+
+// logDownscaleSuccessful logs the suspend transition for a downscale.
+func (c *cronJob) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("unsuspended", "suspend", c, summary, dryRun, logger)
+}
+
 // setSuspend sets the value of the suspend field on the cronJob.
 func (c *cronJob) setSuspend(suspend bool) {
 	c.Spec.Suspend = &suspend
