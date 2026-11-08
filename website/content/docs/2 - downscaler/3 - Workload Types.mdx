@@ -129,6 +129,14 @@ the comments above `.spec.workloadRef` and `.spec.template`)
 Scales by suspending auto-sync self-heal on the Argo CD Application (`spec.syncPolicy.automated.selfHeal` is set to `false`)
 and restores the original value when the workload is upscaled.
 
+### Applications
+
+- id: applications
+- resource: application.v1alpha1.argoproj.io
+
+Scales by suspending auto-sync self-heal on the Argo CD Application (`spec.syncPolicy.automated.selfHeal` is set to `false`)
+and restores the original value when the workload is upscaled.
+
 ### Stacks
 
 - id: stacks
