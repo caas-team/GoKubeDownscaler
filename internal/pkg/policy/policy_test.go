@@ -97,14 +97,6 @@ func TestPolicy_Matches(t *testing.T) {
 			want:   true,
 		},
 		{
-			name: "empty selector matches everything",
-			spec: v1alpha1.DownscalePolicySpec{
-				Selector: &v1alpha1.DownscalePolicySelector{},
-			},
-			target: service,
-			want:   true,
-		},
-		{
 			name: "selector by kind",
 			spec: v1alpha1.DownscalePolicySpec{
 				Selector: &v1alpha1.DownscalePolicySelector{Kinds: []v1alpha1.DownscalePolicyKind{{Group: "apps", Kind: "Deployment"}}},
@@ -186,6 +178,18 @@ func TestNew_InvalidSelector(t *testing.T) {
 		},
 	}), nil, nil)
 
+	require.False(t, policy.Valid())
+}
+
+func TestNew_EmptySelector(t *testing.T) {
+	t.Parallel()
+
+	policy := New(newObject("policy", time.Now(), &v1alpha1.DownscalePolicySpec{
+		TargetRefs: []gatewayv1.LocalPolicyTargetReference{{Group: "apps", Kind: "Deployment", Name: "api"}},
+		Selector:   &v1alpha1.DownscalePolicySelector{},
+	}), nil, nil)
+
+	require.ErrorIs(t, policy.Err, ErrEmptySelector)
 	require.False(t, policy.Valid())
 }
 

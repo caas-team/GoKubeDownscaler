@@ -2,6 +2,7 @@
 package policy
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -11,6 +12,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+)
+
+// ErrEmptySelector is returned for a policy whose selector sets neither kinds nor labels.
+var ErrEmptySelector = errors.New(
+	"selector must set at least one of kinds, matchLabels or matchExpressions; " +
+		"omit the selector and targetRefs to match all workloads in the namespace",
 )
 
 // Target is a workload a policy can be applied to.
@@ -40,6 +47,14 @@ func New(object *v1alpha1.DownscalePolicy, scope *values.Scope, parseErr error) 
 		return policy
 	}
 
+	if isEmptySelector(object.Spec.Selector) {
+		if policy.Err == nil {
+			policy.Err = ErrEmptySelector
+		}
+
+		return policy
+	}
+
 	selector, err := metav1.LabelSelectorAsSelector(&object.Spec.Selector.LabelSelector)
 	if err != nil {
 		if policy.Err == nil {
@@ -52,6 +67,11 @@ func New(object *v1alpha1.DownscalePolicy, scope *values.Scope, parseErr error) 
 	policy.selector = selector
 
 	return policy
+}
+
+// isEmptySelector reports whether the selector sets neither kinds nor labels.
+func isEmptySelector(selector *v1alpha1.DownscalePolicySelector) bool {
+	return len(selector.Kinds) == 0 && len(selector.MatchLabels) == 0 && len(selector.MatchExpressions) == 0
 }
 
 // Key returns the "namespace/name" identifier of the policy.

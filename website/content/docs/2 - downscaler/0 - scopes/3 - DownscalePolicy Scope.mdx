@@ -125,6 +125,8 @@ If both `targetRefs` and `selector` are omitted, the policy matches every worklo
   Use an empty `group` for the core API group (e.g. `Service`).
 - `selector` matches workloads of the listed `kinds` (all kinds if omitted) whose labels match `matchLabels` and `matchExpressions`.
   When both are set, a workload has to match both the kind and the labels.
+  A selector has to set at least one of `kinds`, `matchLabels` or `matchExpressions`:
+  to match every workload in the namespace, omit both `targetRefs` and `selector`.
 
 Only workloads the downscaler is configured to handle with [`--include-resources`](ref:docs-runtime-configuration#include-resources)
 can be matched.

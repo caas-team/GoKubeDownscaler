@@ -42,6 +42,12 @@ type DownscalePolicyKind struct {
 }
 
 // DownscalePolicySelector selects current and future workloads by kind and labels.
+// At least one of kinds, matchLabels or matchExpressions has to be set.
+// To match all workloads in the namespace, omit both the selector and targetRefs.
+//
+// +kubebuilder:validation:XValidation:rule="(has(self.kinds) && size(self.kinds) > 0) || (has(self.matchLabels) && size(self.matchLabels) > 0) || (has(self.matchExpressions) && size(self.matchExpressions) > 0)",message="selector must set at least one of kinds, matchLabels or matchExpressions; omit the selector and targetRefs to match all workloads in the namespace"
+//
+//nolint:lll // kubebuilder markers can't be split
 type DownscalePolicySelector struct {
 	// Kinds restricts the selector to the given workload kinds.
 	// When omitted, all kinds handled by the downscaler are selected.
