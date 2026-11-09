@@ -1,7 +1,9 @@
 package policy
 
 import (
+	"cmp"
 	"fmt"
+	"math"
 	"slices"
 	"strings"
 	"sync"
@@ -10,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // maxListedConflicts is the maximum amount of conflicted workloads listed in the Accepted condition message.
@@ -24,7 +27,7 @@ type Tracker struct {
 
 type trackerEntry struct {
 	policy     *Policy
-	matched    int32
+	workloads  []v1alpha1.DownscalePolicyWorkload
 	conflicted []string
 }
 
@@ -39,8 +42,19 @@ func NewTracker(policies []*Policy) *Tracker {
 	return tracker
 }
 
+// WorkloadFromTarget returns the reference of the target as listed in the status of a policy.
+func WorkloadFromTarget(target Target) v1alpha1.DownscalePolicyWorkload {
+	gvk := target.GroupVersionKind()
+
+	return v1alpha1.DownscalePolicyWorkload{
+		Group: gatewayv1.Group(gvk.Group),
+		Kind:  gatewayv1.Kind(gvk.Kind),
+		Name:  gatewayv1.ObjectName(target.GetName()),
+	}
+}
+
 // Record records that winner was applied to the workload and that losers also matched it but were not applied.
-func (t *Tracker) Record(winner *Policy, losers []*Policy, workload string) {
+func (t *Tracker) Record(winner *Policy, losers []*Policy, workload v1alpha1.DownscalePolicyWorkload) {
 	if t == nil || winner == nil {
 		return
 	}
@@ -49,7 +63,7 @@ func (t *Tracker) Record(winner *Policy, losers []*Policy, workload string) {
 	defer t.mutex.Unlock()
 
 	if entry, ok := t.entries[winner.Key()]; ok {
-		entry.matched++
+		entry.workloads = append(entry.workloads, workload)
 	}
 
 	for _, loser := range losers {
@@ -58,7 +72,7 @@ func (t *Tracker) Record(winner *Policy, losers []*Policy, workload string) {
 			continue
 		}
 
-		entry.conflicted = append(entry.conflicted, fmt.Sprintf("%s (applied: %s)", workload, winner.Object.Name))
+		entry.conflicted = append(entry.conflicted, fmt.Sprintf("%s/%s (applied: %s)", workload.Kind, workload.Name, winner.Object.Name))
 	}
 }
 
@@ -108,6 +122,7 @@ func (e *trackerEntry) desiredStatus() v1alpha1.DownscalePolicyStatus {
 
 	if !e.policy.Valid() {
 		status.MatchedWorkloads = 0
+		status.Workloads = nil
 		meta.SetStatusCondition(&status.Conditions, metav1.Condition{
 			Type:               v1alpha1.ConditionTypeValid,
 			Status:             metav1.ConditionFalse,
@@ -126,7 +141,14 @@ func (e *trackerEntry) desiredStatus() v1alpha1.DownscalePolicyStatus {
 		return status
 	}
 
-	status.MatchedWorkloads = e.matched
+	workloads := uniqueSortedWorkloads(e.workloads)
+	status.MatchedWorkloads = int32(min(len(workloads), math.MaxInt32))
+	status.Workloads = nil
+
+	if len(workloads) > 0 {
+		status.Workloads = workloads[:min(len(workloads), v1alpha1.MaxListedWorkloads)]
+	}
+
 	meta.SetStatusCondition(&status.Conditions, metav1.Condition{
 		Type:               v1alpha1.ConditionTypeValid,
 		Status:             metav1.ConditionTrue,
@@ -156,6 +178,24 @@ func (e *trackerEntry) desiredStatus() v1alpha1.DownscalePolicyStatus {
 	})
 
 	return status
+}
+
+// uniqueSortedWorkloads returns the workloads sorted by group, kind and name, without duplicates.
+func uniqueSortedWorkloads(workloads []v1alpha1.DownscalePolicyWorkload) []v1alpha1.DownscalePolicyWorkload {
+	sorted := slices.Clone(workloads)
+	slices.SortFunc(sorted, compareWorkloads)
+
+	return slices.CompactFunc(sorted, func(left, right v1alpha1.DownscalePolicyWorkload) bool {
+		return compareWorkloads(left, right) == 0
+	})
+}
+
+func compareWorkloads(left, right v1alpha1.DownscalePolicyWorkload) int {
+	return cmp.Or(
+		strings.Compare(string(left.Group), string(right.Group)),
+		strings.Compare(string(left.Kind), string(right.Kind)),
+		strings.Compare(string(left.Name), string(right.Name)),
+	)
 }
 
 func conflictMessage(conflicted []string) string {

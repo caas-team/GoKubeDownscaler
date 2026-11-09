@@ -291,6 +291,38 @@ spec:
                   was last evaluated.
                 format: int64
                 type: integer
+              workloads:
+                description: |-
+                  Workloads lists the workloads the policy is applied to, sorted by group, kind and name.
+                  At most 50 workloads are listed; matchedWorkloads always holds the total amount.
+                items:
+                  description: DownscalePolicyWorkload identifies a workload in the
+                    namespace of the policy.
+                  properties:
+                    group:
+                      description: Group is the API group of the workload. It is empty
+                        for the core API group.
+                      maxLength: 253
+                      pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                      type: string
+                    kind:
+                      description: Kind is the kind of the workload.
+                      maxLength: 63
+                      minLength: 1
+                      pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                      type: string
+                    name:
+                      description: Name is the name of the workload.
+                      maxLength: 253
+                      minLength: 1
+                      type: string
+                  required:
+                  - kind
+                  - name
+                  type: object
+                maxItems: 50
+                type: array
+                x-kubernetes-list-type: atomic
             type: object
         type: object
     served: true

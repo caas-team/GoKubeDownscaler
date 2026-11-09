@@ -2,6 +2,7 @@ package policy
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -229,9 +230,12 @@ func TestTracker_PendingUpdates(t *testing.T) {
 	newer := New(newObject("newer", now, &v1alpha1.DownscalePolicySpec{}), nil, nil)
 	invalid := New(newObject("invalid", now, &v1alpha1.DownscalePolicySpec{}), nil, errTest)
 
+	apiWorkload := v1alpha1.DownscalePolicyWorkload{Group: "apps", Kind: "Deployment", Name: "api"}
+	webWorkload := v1alpha1.DownscalePolicyWorkload{Group: "apps", Kind: "Deployment", Name: "web"}
+
 	tracker := NewTracker([]*Policy{older, newer, invalid})
-	tracker.Record(older, []*Policy{newer}, "Deployment/api")
-	tracker.Record(older, nil, "Deployment/web")
+	tracker.Record(older, []*Policy{newer}, apiWorkload)
+	tracker.Record(older, nil, webWorkload)
 
 	updates := tracker.PendingUpdates()
 	require.Len(t, updates, 3)
@@ -242,10 +246,12 @@ func TestTracker_PendingUpdates(t *testing.T) {
 	}
 
 	assert.Equal(t, int32(2), statuses["older"].MatchedWorkloads)
+	assert.Equal(t, []v1alpha1.DownscalePolicyWorkload{apiWorkload, webWorkload}, statuses["older"].Workloads)
 	assert.True(t, meta.IsStatusConditionTrue(statuses["older"].Conditions, v1alpha1.ConditionTypeAccepted))
 	assert.Equal(t, int64(1), statuses["older"].ObservedGeneration)
 
 	assert.Equal(t, int32(0), statuses["newer"].MatchedWorkloads)
+	assert.Empty(t, statuses["newer"].Workloads)
 	accepted := meta.FindStatusCondition(statuses["newer"].Conditions, v1alpha1.ConditionTypeAccepted)
 	require.NotNil(t, accepted)
 	assert.Equal(t, v1alpha1.ReasonConflicted, accepted.Reason)
@@ -260,8 +266,37 @@ func TestTracker_PendingUpdates(t *testing.T) {
 	invalid.Object.Status = statuses["invalid"]
 
 	tracker = NewTracker([]*Policy{older, newer, invalid})
-	tracker.Record(older, []*Policy{newer}, "Deployment/api")
-	tracker.Record(older, nil, "Deployment/web")
+	tracker.Record(older, []*Policy{newer}, apiWorkload)
+	tracker.Record(older, nil, webWorkload)
 
 	assert.Empty(t, tracker.PendingUpdates())
+}
+
+func TestTracker_WorkloadsAreCapped(t *testing.T) {
+	t.Parallel()
+
+	policy := New(newObject("policy", time.Now(), &v1alpha1.DownscalePolicySpec{}), nil, nil)
+	tracker := NewTracker([]*Policy{policy})
+
+	deployment := func(index int) v1alpha1.DownscalePolicyWorkload {
+		return v1alpha1.DownscalePolicyWorkload{Group: "apps", Kind: "Deployment", Name: gatewayv1.ObjectName(fmt.Sprintf("app-%03d", index))}
+	}
+
+	total := v1alpha1.MaxListedWorkloads + 10
+	for i := range total {
+		// recorded in reverse order to check the sorting
+		tracker.Record(policy, nil, deployment(total-i))
+	}
+
+	// duplicates must not be counted twice
+	tracker.Record(policy, nil, deployment(1))
+
+	updates := tracker.PendingUpdates()
+	require.Len(t, updates, 1)
+
+	status := updates[0].Status
+	assert.Equal(t, int32(total), status.MatchedWorkloads)
+	require.Len(t, status.Workloads, v1alpha1.MaxListedWorkloads)
+	assert.Equal(t, deployment(1), status.Workloads[0])
+	assert.Equal(t, deployment(v1alpha1.MaxListedWorkloads), status.Workloads[v1alpha1.MaxListedWorkloads-1])
 }

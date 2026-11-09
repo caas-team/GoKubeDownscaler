@@ -8,6 +8,9 @@ import (
 // DownscalePolicyKindName is the kind of the DownscalePolicy resource.
 const DownscalePolicyKindName = "DownscalePolicy"
 
+// MaxListedWorkloads is the maximum amount of workloads listed in the status of a DownscalePolicy.
+const MaxListedWorkloads = 50
+
 // Condition types and reasons used in the DownscalePolicy status.
 const (
 	// ConditionTypeValid indicates whether the scaling values of the policy could be parsed.
@@ -122,6 +125,21 @@ type DownscalePolicySpec struct {
 	DownscalePolicyValues `json:",inline"`
 }
 
+// DownscalePolicyWorkload identifies a workload in the namespace of the policy.
+type DownscalePolicyWorkload struct {
+	// Group is the API group of the workload. It is empty for the core API group.
+	// +optional
+	Group gatewayv1.Group `json:"group"`
+
+	// Kind is the kind of the workload.
+	// +required
+	Kind gatewayv1.Kind `json:"kind"`
+
+	// Name is the name of the workload.
+	// +required
+	Name gatewayv1.ObjectName `json:"name"`
+}
+
 // DownscalePolicyStatus reports how the policy was evaluated by the downscaler.
 type DownscalePolicyStatus struct {
 	// Conditions describe the current state of the policy.
@@ -133,6 +151,13 @@ type DownscalePolicyStatus struct {
 	// MatchedWorkloads is the amount of workloads the policy is applied to.
 	// +optional
 	MatchedWorkloads int32 `json:"matchedWorkloads"`
+
+	// Workloads lists the workloads the policy is applied to, sorted by group, kind and name.
+	// At most 50 workloads are listed; matchedWorkloads always holds the total amount.
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:MaxItems=50
+	Workloads []DownscalePolicyWorkload `json:"workloads,omitempty"`
 
 	// ObservedGeneration is the generation of the policy that was last evaluated.
 	// +optional

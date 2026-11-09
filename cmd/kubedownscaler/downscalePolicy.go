@@ -79,7 +79,7 @@ func (d *downscalePolicies) scopeFor(workload scalable.Workload, logger *slog.Lo
 		return values.NewScope(), logger, nil
 	}
 
-	d.tracker.Record(winner, losers, workloadResourceKind(workload)+"/"+workload.GetName())
+	d.tracker.Record(winner, losers, policy.WorkloadFromTarget(workload))
 
 	logger = logger.With("downscalePolicy", winner.Object.Name)
 
