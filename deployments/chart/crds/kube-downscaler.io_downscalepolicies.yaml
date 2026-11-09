@@ -169,6 +169,13 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-map-type: atomic
+                x-kubernetes-validations:
+                - message: selector must set at least one of kinds, matchLabels or
+                    matchExpressions; omit the selector and targetRefs to match all
+                    workloads in the namespace
+                  rule: (has(self.kinds) && size(self.kinds) > 0) || (has(self.matchLabels)
+                    && size(self.matchLabels) > 0) || (has(self.matchExpressions)
+                    && size(self.matchExpressions) > 0)
               targetRefs:
                 description: TargetRefs explicitly lists workloads in the namespace
                   of the policy.
