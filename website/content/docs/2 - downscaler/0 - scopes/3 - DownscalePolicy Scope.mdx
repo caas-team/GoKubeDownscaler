@@ -148,7 +148,11 @@ The status is only written when it changes.
 | `Valid` condition    | `True` if all values were parsed successfully, `False` with reason `InvalidValue` otherwise |
 | `Accepted` condition | `False` with reason `Conflicted` if another policy wins on some matched workloads           |
 | `matchedWorkloads`   | The amount of workloads the policy is applied to                                            |
+| `workloads`          | The workloads the policy is applied to, sorted by group, kind and name (at most 50)         |
 | `observedGeneration` | The generation of the policy that was last evaluated                                        |
+
+If a policy is applied to more than 50 workloads, only the first 50 are listed in `workloads`,
+while `matchedWorkloads` always holds the total amount.
 
 Invalid values also create an event on the policy, and invalid policies are not applied.
 

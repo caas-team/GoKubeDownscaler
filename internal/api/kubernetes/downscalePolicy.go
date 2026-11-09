@@ -67,13 +67,13 @@ func (c client) UpdateDownscalePolicyStatus(update policy.StatusUpdate, ctx cont
 		return nil
 	}
 
-	original := object.DeepCopy()
+	// replace the whole status, so zero values and emptied lists are written as well
 	updated := object.DeepCopy()
 	updated.Status = update.Status
 
-	err := c.clientsets.Client.Status().Patch(ctx, updated, ctrlclient.MergeFrom(original))
+	err := c.clientsets.Client.Status().Update(ctx, updated)
 	if err != nil {
-		return fmt.Errorf("failed to patch status of downscale policy %s/%s: %w", object.Namespace, object.Name, err)
+		return fmt.Errorf("failed to update status of downscale policy %s/%s: %w", object.Namespace, object.Name, err)
 	}
 
 	return nil
