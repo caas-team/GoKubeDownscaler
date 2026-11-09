@@ -1,0 +1,46 @@
+---
+title: downscalePolicy
+id: downscalePolicy
+globalReference: docs-helm-downscale-policy
+description: >
+  Learn how to enable the DownscalePolicy custom resource with the downscalePolicy Helm value, so teams can
+  define scaling values for the workloads in their namespace using standard Kubernetes RBAC.
+keywords: [downscalePolicy, downscalepolicy, crd, rbac]
+---
+
+# downscalePolicy
+
+The `downscalePolicy` value of the chart
+
+- `enabled` is a boolean value indicating if the [DownscalePolicy Scope](ref:docs-downscale-policy-scope) should be enabled or not
+- `aggregateToDefaultRoles` is a boolean value indicating if the permissions to manage `DownscalePolicy` resources
+  should be aggregated into the default `admin`, `edit` and `view` ClusterRoles
+
+:::info
+
+The default values for `downscalePolicy` are:
+
+```yaml
+downscalePolicy:
+  enabled: false
+  aggregateToDefaultRoles: false
+```
+
+:::
+
+When `downscalePolicy.enabled` is set to `true`, the Helm Chart sets the
+[`--downscale-policy`](ref:docs-runtime-configuration#downscale-policy) runtime configuration on the GoKubeDownscaler
+and on the webhook controller, and adds the [permissions](ref:docs-helm-permissions#downscalepolicy-permissions)
+needed to read the policies and update their status.
+
+The `DownscalePolicy` CRD is always installed from the `crds/` directory of the chart.
+As for every CRD installed by Helm, it is not upgraded or deleted by `helm upgrade` or `helm uninstall`.
+To upgrade it, apply it manually:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/caas-team/GoKubeDownscaler/refs/heads/main/deployments/chart/crds/kube-downscaler.io_downscalepolicies.yaml
+```
+
+When `downscalePolicy.aggregateToDefaultRoles` is set to `true`, every user bound to the default `admin` or `edit` ClusterRole
+in a namespace can manage the `DownscalePolicy` resources of that namespace, and every user bound to `view` can read them.
+Leave it disabled if you want to grant these permissions to selected teams only.

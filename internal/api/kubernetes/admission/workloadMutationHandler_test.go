@@ -10,7 +10,9 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/caas-team/gokubedownscaler/api/v1alpha1"
 	client "github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/policy"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -34,6 +36,33 @@ func (m *MockClient) GetNamespaceScope(
 	args := m.Called(namespace, ctx)
 	return args.Get(0).(*values.Scope), args.Error(1)
 }
+
+func (m *MockClient) GetDownscalePolicies(namespaces []string, ctx context.Context) ([]*policy.Policy, error) {
+	args := m.Called(namespaces, ctx)
+	return args.Get(0).([]*policy.Policy), args.Error(1)
+}
+
+// newDownscalePolicy returns a parsed DownscalePolicy that applies to the whole namespace.
+func newDownscalePolicy(t *testing.T, namespace string, policyValues *v1alpha1.DownscalePolicyValues) *policy.Policy {
+	t.Helper()
+
+	object := &v1alpha1.DownscalePolicy{
+		ObjectMeta: metav1.ObjectMeta{Name: "policy", Namespace: namespace},
+		Spec:       v1alpha1.DownscalePolicySpec{DownscalePolicyValues: *policyValues},
+	}
+
+	scope := values.NewScope()
+	err := scope.GetScopeFromAnnotations(values.PolicyValuesToAnnotations(policyValues), noopResourceLogger{}, nil, t.Context())
+	require.NoError(t, err)
+
+	return policy.New(object, scope, nil)
+}
+
+type noopResourceLogger struct{}
+
+func (noopResourceLogger) ErrorInvalidAnnotation(string, string, context.Context) {}
+
+func (noopResourceLogger) ErrorIncompatibleFields(string, context.Context) {}
 
 func (m *MockClient) GetScaledObjects(namespace string, ctx context.Context) ([]scalable.Workload, error) {
 	args := m.Called(namespace, ctx)
@@ -165,7 +194,7 @@ func newHandlerWithMocks(mockClient *MockClient) *WorkloadMutationHandler {
 		values.NewScope(), values.NewScope(), values.GetDefaultScope(),
 		false, nil, &util.RegexList{regexp.MustCompile(".*")}, &util.RegexList{}, &util.RegexList{},
 		map[string]struct{}{"deployments": {}, "scaledobjects": {}}, false,
-		nil,
+		nil, false,
 	)
 }
 
@@ -219,6 +248,51 @@ func TestEvaluateMutation(t *testing.T) {
 				return newDeploymentRequestWithLabels(t, "default")
 			},
 			expectedMessage: "would have patched",
+			expectedCode:    http.StatusAccepted,
+		},
+		{
+			name: "Workload mutated because of downscale policy",
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
+				t.Helper()
+
+				downscalePolicy := newDownscalePolicy(t, "default", &v1alpha1.DownscalePolicyValues{ForceDowntime: "true"})
+
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(values.NewScope(), nil)
+				mockClient.On("GetDownscalePolicies", []string{"default"}, mock.Anything).Return([]*policy.Policy{downscalePolicy}, nil)
+			},
+			setupHandler: func(h *WorkloadMutationHandler) {
+				h.includeNamespaces = &[]string{"default"}
+				h.dryRun = true
+				h.downscalePolicy = true
+			},
+			request: func(t *testing.T) *http.Request {
+				t.Helper()
+				return newDeploymentRequestWithLabels(t, "default")
+			},
+			expectedMessage: "would have patched",
+			expectedCode:    http.StatusAccepted,
+		},
+		{
+			name: "Workload excluded by downscale policy",
+			setupMocks: func(t *testing.T, mockClient *MockClient) {
+				t.Helper()
+
+				downscalePolicy := newDownscalePolicy(t, "default", &v1alpha1.DownscalePolicyValues{Exclude: "true"})
+
+				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(values.NewScope(), nil)
+				mockClient.On("GetDownscalePolicies", []string{"default"}, mock.Anything).Return([]*policy.Policy{downscalePolicy}, nil)
+			},
+			setupHandler: func(h *WorkloadMutationHandler) {
+				h.includeNamespaces = &[]string{"default"}
+				h.downscalePolicy = true
+			},
+			request: func(t *testing.T) *http.Request {
+				t.Helper()
+				return newDeploymentRequestWithLabels(t, "default")
+			},
+			expectedMessage: "workload is excluded from downscaling",
 			expectedCode:    http.StatusAccepted,
 		},
 		{
