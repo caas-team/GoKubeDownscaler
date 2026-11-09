@@ -14,7 +14,9 @@ import (
 	actionsv1alpha1 "github.com/actions/actions-runner-controller/apis/actions.github.com/v1alpha1"
 	argocd "github.com/argoproj/argo-cd/v3/pkg/client/clientset/versioned"
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
+	"github.com/caas-team/gokubedownscaler/api/v1alpha1"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/policy"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	helmv2 "github.com/fluxcd/helm-controller/api/v2"
@@ -75,6 +77,10 @@ type Client interface {
 	addEvent(eventType, reason, identifier, message string, object *corev1.ObjectReference, ctx context.Context) error
 	// GetChildrenWorkloads gets the children workloads of the specified workload
 	GetChildrenWorkloads(workload scalable.Workload, ctx context.Context) ([]scalable.Workload, error)
+	// GetDownscalePolicies gets and parses all DownscalePolicies in the specified namespaces
+	GetDownscalePolicies(namespaces []string, ctx context.Context) ([]*policy.Policy, error)
+	// UpdateDownscalePolicyStatus writes the status of a DownscalePolicy
+	UpdateDownscalePolicyStatus(update policy.StatusUpdate, ctx context.Context) error
 }
 
 // NewClient makes a new Client.
@@ -193,6 +199,12 @@ func NewScheme() (*runtime.Scheme, error) {
 	err = kustomize.AddToScheme(scheme)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add kustomizev1 scheme to generic client: %w", err)
+	}
+
+	// kube-downscaler CRDs
+	err = v1alpha1.AddToScheme(scheme)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add kube-downscaler scheme to generic client: %w", err)
 	}
 
 	return scheme, nil

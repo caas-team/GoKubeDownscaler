@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"slices"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/policy"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
@@ -31,6 +33,7 @@ type WorkloadMutationHandler struct {
 	includeResourcesSet map[string]struct{}
 	metricsEnabled      bool
 	admissionMetrics    *metrics.AdmissionMetrics
+	downscalePolicy     bool
 }
 
 func workloadLogger(workload scalable.Workload) *slog.Logger {
@@ -51,6 +54,7 @@ func NewWorkloadMutationHandler(
 	includeResources map[string]struct{},
 	metricsEnabled bool,
 	admissionMetrics *metrics.AdmissionMetrics,
+	downscalePolicy bool,
 ) *WorkloadMutationHandler {
 	return &WorkloadMutationHandler{
 		client:              client,
@@ -65,7 +69,58 @@ func NewWorkloadMutationHandler(
 		includeResourcesSet: includeResources,
 		metricsEnabled:      metricsEnabled,
 		admissionMetrics:    admissionMetrics,
+		downscalePolicy:     downscalePolicy,
 	}
+}
+
+// getNamespaceAndPolicyScopes gets the namespace scope and the DownscalePolicy scope of the workload.
+// On failure, it also returns a message describing which scope could not be retrieved.
+//
+//nolint:nonamedreturns // required for function clarity
+func (v *WorkloadMutationHandler) getNamespaceAndPolicyScopes(
+	workload scalable.Workload,
+	ctx context.Context,
+	logger *slog.Logger,
+) (scopeNamespace, scopePolicy *values.Scope, failureMessage string, err error) {
+	logger.Debug("parsing namespace scope from workload")
+
+	scopeNamespace, err = v.client.GetNamespaceScope(workload.GetNamespace(), ctx)
+	if err != nil {
+		return nil, nil, "failed to get namespace scope from annotations", fmt.Errorf("failed to get namespace scope: %w", err)
+	}
+
+	scopePolicy, err = v.getDownscalePolicyScope(workload, ctx, logger)
+	if err != nil {
+		return nil, nil, "failed to get downscale policy scope", err
+	}
+
+	return scopeNamespace, scopePolicy, "", nil
+}
+
+// getDownscalePolicyScope gets the scope of the DownscalePolicy applying to the workload.
+// An empty scope is returned if the feature is disabled or no policy applies.
+func (v *WorkloadMutationHandler) getDownscalePolicyScope(
+	workload scalable.Workload,
+	ctx context.Context,
+	logger *slog.Logger,
+) (*values.Scope, error) {
+	if !v.downscalePolicy {
+		return values.NewScope(), nil
+	}
+
+	policies, err := v.client.GetDownscalePolicies([]string{workload.GetNamespace()}, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get downscale policies: %w", err)
+	}
+
+	winner, _ := policy.FindApplicable(policies, workload)
+	if winner == nil {
+		return values.NewScope(), nil
+	}
+
+	logger.Debug("applying downscale policy", "downscalePolicy", winner.Object.Name)
+
+	return winner.Scope, nil
 }
 
 // HandleWorkloadMutation handles the validation of a workload.
@@ -201,11 +256,9 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 		), err
 	}
 
-	logger.Debug("parsing namespace scope from workload")
-
-	scopeNamespace, err := v.client.GetNamespaceScope(workload.GetNamespace(), ctx)
+	scopeNamespace, scopePolicy, failureMessage, err := v.getNamespaceAndPolicyScopes(workload, ctx, logger)
 	if err != nil {
-		logger.Debug("failed to parse namespace scope from annotations", "error", err, "dryRun", v.dryRun)
+		logger.Debug(failureMessage, "error", err, "dryRun", v.dryRun)
 
 		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
 
@@ -213,13 +266,13 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 			review.Request.UID,
 			true,
 			http.StatusAccepted,
-			"failed to get namespace scope from annotations",
+			failureMessage,
 			true,
 			v.dryRun,
 		), err
 	}
 
-	scopes := values.Scopes{scopeWorkload, scopeNamespace, v.scopeCli, v.scopeEnv, v.scopeDefault}
+	scopes := values.Scopes{scopeWorkload, scopeNamespace, scopePolicy, v.scopeCli, v.scopeEnv, v.scopeDefault}
 
 	logger.Debug("finished parsing all scopes", "scopes", scopes)
 

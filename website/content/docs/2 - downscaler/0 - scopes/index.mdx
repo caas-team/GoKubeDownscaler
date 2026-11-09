@@ -54,6 +54,8 @@ The available scopes are:
 - [Default Scope](ref:docs-default-scope): contains only the default values.
 - [Env Scope](ref:docs-env-scope): contains the values and runtime configurations set by the environment variables.
 - [CLI Scope](ref:docs-cli-scope): contains the values and runtime configurations set by the CLI arguments.
+- [DownscalePolicy Scope](ref:docs-downscale-policy-scope): contains only the values set by the optional
+  DownscalePolicy resource that applies to the workload.
 - [Namespace Scope](ref:docs-namespace-scope): contains only the values set by the annotations on the namespace.
 - [Workload Scope](ref:docs-workload-scope): contains only the values set by the annotations on the workload.
 
@@ -70,7 +72,8 @@ The scaling algorithm uses the values set in the scopes to determine how and whe
 The resulting value is always the one set by the most specific scope that has set that value.
 
 This means, as specified before, that [Workload Scope](ref:docs-workload-scope) > [Namespace Scope](ref:docs-namespace-scope) >
-[CLI Scope](ref:docs-cli-scope) > [ENV Scope](ref:docs-env-scope) > [Default Scope](ref:docs-default-scope).
+[DownscalePolicy Scope](ref:docs-downscale-policy-scope) > [CLI Scope](ref:docs-cli-scope) > [ENV Scope](ref:docs-env-scope) >
+[Default Scope](ref:docs-default-scope).
 
 When computing scopes, exclusion values always take precedence, meaning that: no matter what the scaling values are
 across any other scope, if a scope contains an exclusion the result will be an exclusion.
@@ -83,14 +86,15 @@ Cells ending with:
 - « are the cell the value was taken from
 - ↑ are empty and are not taken into account
 
-|             | Exclude | Downtime       | Replicas |
-| ----------- | ------- | -------------- | -------- |
-| Default     | false × | - ×            | 0 «      |
-| Environment | - ×     | Mon-Fri 8-20 × | - ↑      |
-| CLI         | - ×     | - ×            | - ↑      |
-| Namespace   | true «  | - ×            | - ↑      |
-| Workload    | - ↑     | Sat-Sun 0-24 « | - ↑      |
-| Result      | true    | Sat-Sun 0-24   | 0        |
+|                 | Exclude | Downtime       | Replicas |
+| --------------- | ------- | -------------- | -------- |
+| Default         | false × | - ×            | 0 ×      |
+| Environment     | - ×     | Mon-Fri 8-20 × | - ↑      |
+| CLI             | - ×     | - ×            | - ↑      |
+| DownscalePolicy | - ↑     | - ×            | 1 «      |
+| Namespace       | true «  | - ×            | - ↑      |
+| Workload        | - ↑     | Sat-Sun 0-24 « | - ↑      |
+| Result          | true    | Sat-Sun 0-24   | 1        |
 
 :::note[Reading the Diagram]
 
