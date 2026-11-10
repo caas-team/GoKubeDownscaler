@@ -1,6 +1,6 @@
 module github.com/caas-team/gokubedownscaler
 
-go 1.26.10
+go 1.26.11
 
 require (
 	github.com/actions/actions-runner-controller v0.27.6
@@ -8,8 +8,8 @@ require (
 	github.com/kedacore/keda/v2 v2.21.0
 	github.com/open-policy-agent/cert-controller v0.16.0
 	github.com/openkruise/kruise v1.9.3
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.95.1
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.95.1
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.95.2
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.95.2
 	github.com/prometheus/client_golang v1.25.0
 	github.com/stretchr/testify v1.12.1
 	github.com/wI2L/jsondiff v0.7.1
