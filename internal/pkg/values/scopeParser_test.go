@@ -1,9 +1,12 @@
 package values
 
 import (
+	"context"
 	"os"
 	"testing"
 
+	"github.com/caas-team/gokubedownscaler/api/v1alpha1"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -129,6 +132,7 @@ func TestScopeGetScopeFromEnv_DefaultTimezoneAppliesToDowntimeWithoutTimezone(t 
 				NewScope(),
 				NewScope(),
 				NewScope(),
+				NewScope(),
 				scopeEnv,
 				GetDefaultScope(),
 			}
@@ -186,6 +190,7 @@ func TestScopeGetScopeFromEnv_DefaultWeekFrameAppliesToDowntimeWithoutWeekdays(t
 			require.NoError(t, err)
 
 			scopes := Scopes{
+				NewScope(),
 				NewScope(),
 				NewScope(),
 				NewScope(),
@@ -320,11 +325,65 @@ func TestScopeGetScopeFromEnv_DowntimeReplicasPrecedence(t *testing.T) {
 			scopeNamespace.DownscaleReplicas = test.namespace
 			scopeCli.DownscaleReplicas = test.cli
 
-			scopes := Scopes{scopeWorkload, scopeNamespace, scopeCli, scopeEnv, GetDefaultScope()}
+			scopes := Scopes{scopeWorkload, scopeNamespace, NewScope(), scopeCli, scopeEnv, GetDefaultScope()}
 
 			got, err := scopes.GetDownscaleReplicas()
 			require.NoError(t, err)
 			require.Equal(t, test.want, got)
 		})
 	}
+}
+
+type mockLogger struct{}
+
+func (mockLogger) ErrorInvalidAnnotation(string, string, context.Context) {}
+
+func (mockLogger) ErrorIncompatibleFields(string, context.Context) {}
+
+func TestPolicyValuesToAnnotations(t *testing.T) {
+	t.Parallel()
+
+	annotations := PolicyValuesToAnnotations(&v1alpha1.DownscalePolicyValues{
+		Uptime:            "Mon-Fri 08:00-19:00 Europe/Paris",
+		DownscaleReplicas: "1",
+		GracePeriod:       "15m",
+	})
+
+	assert.Equal(t, map[string]string{
+		annotationUptime:            "Mon-Fri 08:00-19:00 Europe/Paris",
+		annotationDownscaleReplicas: "1",
+		annotationGracePeriod:       "15m",
+	}, annotations)
+}
+
+func TestScopes_DownscalePolicyPrecedence(t *testing.T) {
+	t.Parallel()
+
+	scopePolicy := NewScope()
+	err := scopePolicy.GetScopeFromAnnotations(
+		PolicyValuesToAnnotations(&v1alpha1.DownscalePolicyValues{ForceDowntime: "true", DownscaleReplicas: "2"}),
+		mockLogger{}, nil, t.Context(),
+	)
+	require.NoError(t, err)
+
+	scopeCli := NewScope()
+	scopeCli.DownscaleReplicas = AbsoluteReplicas(3)
+
+	scopeNamespace := NewScope()
+
+	scopes := Scopes{NewScope(), scopeNamespace, scopePolicy, scopeCli, NewScope(), GetDefaultScope()}
+
+	decision := scopes.GetCurrentScaling()
+	assert.Equal(t, ScalingDown, decision.Scaling)
+	assert.Equal(t, ScopeDownscalePolicy, decision.Scope)
+
+	replicas, err := scopes.GetDownscaleReplicas()
+	require.NoError(t, err)
+	assert.Equal(t, AbsoluteReplicas(2), replicas)
+
+	scopeNamespace.DownscaleReplicas = AbsoluteReplicas(1)
+
+	replicas, err = scopes.GetDownscaleReplicas()
+	require.NoError(t, err)
+	assert.Equal(t, AbsoluteReplicas(1), replicas)
 }

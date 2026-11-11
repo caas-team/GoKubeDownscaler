@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/caas-team/gokubedownscaler/api/v1alpha1"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
 	v1 "k8s.io/api/core/v1"
 )
@@ -31,6 +32,16 @@ func NewEventLoggerForNamespace(client Client, namespace string) EventLogger {
 		logger: &namespaceLogger{
 			client:    client,
 			namespace: namespace,
+		},
+	}
+}
+
+// NewEventLoggerForDownscalePolicy creates a logger for DownscalePolicy resources.
+func NewEventLoggerForDownscalePolicy(client Client, policy *v1alpha1.DownscalePolicy) EventLogger {
+	return EventLogger{
+		logger: &downscalePolicyLogger{
+			client: client,
+			policy: policy,
 		},
 	}
 }
@@ -92,4 +103,22 @@ func (w *workloadLogger) log(eventType, reason, identifier, message string, ctx 
 
 	// Call the client to add the event
 	return w.client.addEvent(eventType, reason, identifier, message, &involvedObject, ctx)
+}
+
+// downscalePolicyLogger is a concrete implementation of eventLogger for DownscalePolicy resources.
+type downscalePolicyLogger struct {
+	client Client
+	policy *v1alpha1.DownscalePolicy
+}
+
+func (d *downscalePolicyLogger) log(eventType, reason, identifier, message string, ctx context.Context) error {
+	involvedObject := v1.ObjectReference{
+		Kind:       v1alpha1.DownscalePolicyKindName,
+		Namespace:  d.policy.Namespace,
+		Name:       d.policy.Name,
+		UID:        d.policy.UID,
+		APIVersion: v1alpha1.GroupVersion.String(),
+	}
+
+	return d.client.addEvent(eventType, reason, identifier, message, &involvedObject, ctx)
 }

@@ -40,22 +40,24 @@ type ScopeID int
 const ScopeNone ScopeID = -1
 
 const (
-	ScopeWorkload    ScopeID = iota // identifies the scope present in the workload
-	ScopeNamespace                  // identifies the scope present in the namespace
-	ScopeCli                        // identifies the scope defined in the CLI
-	ScopeEnvironment                // identifies the scope defined in the environment variables
-	ScopeDefault                    // identifier for the scope which holds all default values
+	ScopeWorkload        ScopeID = iota // identifies the scope present in the workload
+	ScopeNamespace                      // identifies the scope present in the namespace
+	ScopeDownscalePolicy                // identifies the scope defined by a matching DownscalePolicy resource
+	ScopeCli                            // identifies the scope defined in the CLI
+	ScopeEnvironment                    // identifies the scope defined in the environment variables
+	ScopeDefault                        // identifier for the scope which holds all default values
 )
 
 // String gets the string representation of the ScopeID.
 func (s ScopeID) String() string {
 	return map[ScopeID]string{
-		ScopeNone:        "ScopeNone",
-		ScopeWorkload:    "ScopeWorkload",
-		ScopeNamespace:   "ScopeNamespace",
-		ScopeCli:         "ScopeCli",
-		ScopeEnvironment: "ScopeEnvironment",
-		ScopeDefault:     "ScopeDefault",
+		ScopeNone:            "ScopeNone",
+		ScopeWorkload:        "ScopeWorkload",
+		ScopeNamespace:       "ScopeNamespace",
+		ScopeDownscalePolicy: "ScopeDownscalePolicy",
+		ScopeCli:             "ScopeCli",
+		ScopeEnvironment:     "ScopeEnvironment",
+		ScopeDefault:         "ScopeDefault",
 	}[s]
 }
 
@@ -223,7 +225,7 @@ func (s *Scope) getForceScaling(scopes Scopes) Scaling {
 	return ScalingNone
 }
 
-type Scopes [5]*Scope
+type Scopes [6]*Scope
 
 // ScopeEvaluation describes whether a scope-based condition matched and the scope that caused it.
 type ScopeEvaluation struct {

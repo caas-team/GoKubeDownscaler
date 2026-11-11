@@ -50,6 +50,14 @@ nameOverride: ""
 
 constrainedNamespaces: []
 
+# DownscalePolicy is a namespaced custom resource that lets teams define scaling values for the workloads in their namespace
+# without permissions on the Namespace object. The CRD is installed from the chart's crds/ directory.
+downscalePolicy:
+  # Enables DownscalePolicy resources as a scope between the namespace and the cli scope
+  enabled: false
+  # Aggregates permissions to manage DownscalePolicies into the default admin, edit and view ClusterRoles
+  aggregateToDefaultRoles: false
+
 serviceAccount:
   create: true
   annotations: {}

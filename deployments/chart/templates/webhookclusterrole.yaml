@@ -9,6 +9,9 @@ rules:
 {{- else }}
 {{ include "go-kube-downscaler.webhookController.clusterwide.permissions" . }}
 {{- end }}
+{{- if .Values.downscalePolicy.enabled }}
+{{ include "go-kube-downscaler.webhookController.downscalePolicy.permissions" . }}
+{{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

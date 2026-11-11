@@ -36,21 +36,24 @@ type CommonRuntimeConfiguration struct {
 	Timeout int
 	// Kubeconfig sets an optional kubeconfig to use for testing purposes instead of the in-cluster config.
 	Kubeconfig string
+	// DownscalePolicyEnabled sets if DownscalePolicy resources should be used as a scope.
+	DownscalePolicyEnabled bool
 }
 
 func GetDefaultConfig() *CommonRuntimeConfiguration {
 	return &CommonRuntimeConfiguration{
-		DryRun:            false,
-		Debug:             false,
-		IncludeNamespaces: nil,
-		IncludeResources:  []string{"deployments"},
-		ExcludeNamespaces: RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
-		ExcludeWorkloads:  nil,
-		IncludeLabels:     nil,
-		TimeAnnotation:    "",
-		Kubeconfig:        "",
-		MetricsEnabled:    false,
-		JsonLogs:          false,
+		DryRun:                 false,
+		Debug:                  false,
+		IncludeNamespaces:      nil,
+		IncludeResources:       []string{"deployments"},
+		ExcludeNamespaces:      RegexList{regexp.MustCompile("kube-system"), regexp.MustCompile("kube-downscaler")},
+		ExcludeWorkloads:       nil,
+		IncludeLabels:          nil,
+		TimeAnnotation:         "",
+		Kubeconfig:             "",
+		MetricsEnabled:         false,
+		JsonLogs:               false,
+		DownscalePolicyEnabled: false,
 	}
 }
 
@@ -127,6 +130,12 @@ func (c *CommonRuntimeConfiguration) ParseCommonFlags() {
 		"json-logs",
 		false,
 		"sets logs in json format (default: false)",
+	)
+	flag.BoolVar(
+		&c.DownscalePolicyEnabled,
+		"downscale-policy",
+		false,
+		"use DownscalePolicy resources as a scope between the namespace and the cli scope; requires the CRD (default: false)",
 	)
 	flag.StringVar(
 		&c.Kubeconfig,

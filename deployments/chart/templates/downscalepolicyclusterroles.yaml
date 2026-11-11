@@ -1,0 +1,40 @@
+{{- if and .Values.downscalePolicy.enabled .Values.downscalePolicy.aggregateToDefaultRoles }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "go-kube-downscaler.fullname" . }}-downscalepolicy-edit
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+rules:
+- apiGroups:
+    - kube-downscaler.io
+  resources:
+    - downscalepolicies
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+    - deletecollection
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "go-kube-downscaler.fullname" . }}-downscalepolicy-view
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+rules:
+- apiGroups:
+    - kube-downscaler.io
+  resources:
+    - downscalepolicies
+    - downscalepolicies/status
+  verbs:
+    - get
+    - list
+    - watch
+{{- end }}

@@ -168,6 +168,19 @@ Create defined permissions for the webhook clusterrole
     - patch
     - update
 {{- end }}
+{{/*
+Create defined permissions for the webhook to read DownscalePolicies
+*/}}
+{{- define "go-kube-downscaler.webhookController.downscalePolicy.permissions" -}}
+- apiGroups:
+    - kube-downscaler.io
+  resources:
+    - downscalepolicies
+  verbs:
+    - get
+    - list
+    - watch
+{{- end }}
 {{- define "go-kube-downscaler.webhookController.clusterwide.permissions" -}}
 - apiGroups:
     - ""
@@ -204,6 +217,23 @@ Create defined permissions for roles
     - get
     - create
     - update
+{{- if .Values.downscalePolicy.enabled }}
+- apiGroups:
+    - kube-downscaler.io
+  resources:
+    - downscalepolicies
+  verbs:
+    - get
+    - list
+    - watch
+- apiGroups:
+    - kube-downscaler.io
+  resources:
+    - downscalepolicies/status
+  verbs:
+    - patch
+    - update
+{{- end }}
 {{- range $resource := .Values.includedResources }}
 {{- if eq $resource "deployments" }}
 - apiGroups:

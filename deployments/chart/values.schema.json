@@ -563,6 +563,15 @@
 		"enabled": { "type": "boolean" }
 	  },
 	  "required": ["enabled"]
+	},
+	"downscalePolicy": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"enabled": { "type": "boolean" },
+		"aggregateToDefaultRoles": { "type": "boolean" }
+	  },
+	  "required": ["enabled", "aggregateToDefaultRoles"]
 	}
   },
   "required": []

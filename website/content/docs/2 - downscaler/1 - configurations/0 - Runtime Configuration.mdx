@@ -202,6 +202,15 @@ Since, in that case, the downscaler will only run once, you might want to perfor
 - Default: false
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
 
+### Downscale Policy
+
+- Type: boolean
+- Description: Enables the [DownscalePolicy Scope](ref:docs-downscale-policy-scope).
+  When enabled, `DownscalePolicy` resources are used to set values for the workloads they match.
+  It requires the `DownscalePolicy` CRD to be installed and permissions to read the policies and update their status.
+- Default: false
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
 ### Internal Cert Rotation
 
 - Type: boolean

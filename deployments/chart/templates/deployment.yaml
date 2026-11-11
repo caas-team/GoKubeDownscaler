@@ -51,6 +51,9 @@ spec:
           {{- if .Values.constrainedNamespaces }}
           - --namespace={{ join "," .Values.constrainedNamespaces }}
           {{- end }}
+          {{- if .Values.downscalePolicy.enabled }}
+          - --downscale-policy
+          {{- end }}
           {{- if .Values.metrics.enabled }}
           ports:
             - name: metrics

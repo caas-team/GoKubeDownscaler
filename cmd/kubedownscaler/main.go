@@ -218,6 +218,8 @@ func startScanning(
 			handleNamespaceScopeParsingErrors(errs, config, currentNamespaceToMetrics)
 		}
 
+		policies := loadDownscalePolicies(client, config, ctx)
+
 		var waitGroup sync.WaitGroup
 		for _, workload := range workloads {
 			waitGroup.Add(1)
@@ -236,7 +238,9 @@ func startScanning(
 					return
 				}
 
-				err = scanWorkload(workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceScopes, workloadNamespaceMetrics, config, logger)
+				err = scanWorkload(
+					workload, client, ctx, scopeDefault, scopeCli, scopeEnv, namespaceScopes, policies, workloadNamespaceMetrics, config, logger,
+				)
 				if err != nil {
 					var scalingRefusedErr *scalable.ScalingRefusedError
 					if errors.As(err, &scalingRefusedErr) {
@@ -254,6 +258,8 @@ func startScanning(
 
 		waitGroup.Wait()
 		slog.Debug("successfully scanned all workloads in target")
+
+		policies.updateStatuses(client, ctx)
 
 		downscalerMetrics.UpdateMetrics(
 			config.MetricsEnabled,
@@ -359,6 +365,7 @@ func scanWorkload(
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
 	namespaceScopes map[string]*values.Scope,
+	policies *downscalePolicies,
 	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
 	config *runtimeConfiguration,
 	logger *slog.Logger,
@@ -383,7 +390,12 @@ func scanWorkload(
 		return newNamespaceScopeRetrieveError(workload.GetNamespace())
 	}
 
-	scopes := values.Scopes{scopeWorkload, scopeNamespace, scopeCli, scopeEnv, scopeDefault}
+	scopePolicy, logger, err := policies.scopeFor(workload, logger)
+	if err != nil {
+		return err
+	}
+
+	scopes := values.Scopes{scopeWorkload, scopeNamespace, scopePolicy, scopeCli, scopeEnv, scopeDefault}
 
 	logger.Debug("finished parsing all scopes", "scopes", scopes)
 
