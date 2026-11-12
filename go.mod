@@ -1,6 +1,6 @@
 module github.com/caas-team/gokubedownscaler
 
-go 1.26.11
+go 1.27.0
 
 require (
 	github.com/actions/actions-runner-controller v0.27.6
@@ -23,7 +23,7 @@ require (
 	k8s.io/component-base v0.37.2
 	k8s.io/utils v0.0.0-20261023123148-ca04ba58ecab
 	sigs.k8s.io/controller-runtime v0.25.2
-	sigs.k8s.io/gateway-api v1.6.3
+	sigs.k8s.io/gateway-api v1.7.0
 )
 
 require (
