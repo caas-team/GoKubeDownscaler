@@ -30,10 +30,6 @@ type suspendScaledResource interface {
 	Copy() (Workload, error)
 	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
 	Compare(workloadCopy Workload) (jsondiff.Patch, error)
-	// logUpscaleSuccessful logs a successful unsuspend operation or dry-run unsuspend operation.
-	logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
-	// logDownscaleSuccessful logs a successful suspend operation or dry-run suspend operation.
-	logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
 }
 
 // suspendScaledWorkload is a wrapper for all resources which are scaled by setting a suspend field.

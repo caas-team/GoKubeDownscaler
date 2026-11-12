@@ -45,16 +45,6 @@ type broadcastJob struct {
 	*kruisev1beta1.BroadcastJob
 }
 
-// logUpscaleSuccessful logs a successful unpause operation or dry-run unpause operation.
-func (b *broadcastJob) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
-	logWorkloadScalingMessage("unsuspended", "paused", b, summary, dryRun, logger)
-}
-
-// logDownscaleSuccessful logs a successful pause operation or dry-run pause operation.
-func (b *broadcastJob) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
-	logWorkloadScalingMessage("suspended", "paused", b, summary, dryRun, logger)
-}
-
 // nolint: nonamedreturns // getSuspend gets the current value of the paused field and the target downscale state.
 func (b *broadcastJob) getSuspend() (currentValue, targetDownscaleState values.Replicas) {
 	currentValue = values.BooleanReplicas(b.Spec.Paused)
