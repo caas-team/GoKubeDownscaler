@@ -119,15 +119,15 @@ Common metrics are listed at the end, as they are always present.
   - type: gauge
   - dimensions: namespace
   - description: Number of bytes of memory saved by KubeDownscaler downscaling actions.
-    Workloads managed by
-    Keda ScaledObjects are not included in this metric.
+    Workloads managed by Keda ScaledObjects are not included in this metric.
+    Argo Rollouts using `spec.workloadRef` without `spec.template` are not included in this metric.
 
 - **metric_name**: `kubedownscaler_current_saved_cpu_cores`
   - type: gauge
   - dimensions: namespace
   - description: Number of cores of cpu saved by KubeDownscaler downscaling actions.
-    Workloads managed by
-    Keda ScaledObjects are not included in this metric.
+    Workloads managed by Keda ScaledObjects are not included in this metric.
+    Argo Rollouts using `spec.workloadRef` without `spec.template` are not included in this metric.
 
 ### GoKubeDownscaler Common Metrics
 

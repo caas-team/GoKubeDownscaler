@@ -96,6 +96,13 @@ func (r *rollout) getSavedResourcesRequests(diffReplicas int32) *metrics.SavedRe
 
 // Update updates the resource with all changes made to it. It should only be called once on a resource.
 func (r *rollout) Update(clientsets *Clientsets, ctx context.Context) error {
+	// when .spec.workloadRef is set, the rollout controller will overwrite the template with the referenced workload's template,
+	// so we need to set .spec.templateResolvedFromRef to true to prevent that.
+	// see https://argoproj.github.io/argo-rollouts/features/specification/
+	if r.Spec.WorkloadRef != nil {
+		r.Spec.TemplateResolvedFromRef = true
+	}
+
 	_, err := clientsets.Argo.ArgoprojV1alpha1().Rollouts(r.Namespace).Update(ctx, r.Rollout, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update rollout: %w", err)
