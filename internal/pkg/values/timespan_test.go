@@ -516,7 +516,7 @@ func TestRelativeTimeSpan_isTimeInSpan(t *testing.T) {
 			scopes: Scopes{
 				GetDefaultScope(),
 				GetDefaultScope(),
-				NewScope(),
+				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
@@ -535,7 +535,7 @@ func TestRelativeTimeSpan_isTimeInSpan(t *testing.T) {
 			scopes: Scopes{
 				GetDefaultScope(),
 				GetDefaultScope(),
-				NewScope(),
+				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),

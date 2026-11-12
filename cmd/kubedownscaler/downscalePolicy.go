@@ -33,7 +33,7 @@ func loadDownscalePolicies(client kubernetes.Client, config *runtimeConfiguratio
 		return &downscalePolicies{enabled: true, err: err}
 	}
 
-	byNamespace := make(map[string][]*policy.Policy)
+	policiesByNamespace := make(map[string][]*policy.Policy)
 	included := make([]*policy.Policy, 0, len(policies))
 
 	for _, downscalePolicy := range policies {
@@ -50,7 +50,7 @@ func loadDownscalePolicies(client kubernetes.Client, config *runtimeConfiguratio
 			)
 		}
 
-		byNamespace[downscalePolicy.Object.Namespace] = append(byNamespace[downscalePolicy.Object.Namespace], downscalePolicy)
+		policiesByNamespace[downscalePolicy.Object.Namespace] = append(policiesByNamespace[downscalePolicy.Object.Namespace], downscalePolicy)
 		included = append(included, downscalePolicy)
 	}
 
@@ -58,14 +58,17 @@ func loadDownscalePolicies(client kubernetes.Client, config *runtimeConfiguratio
 
 	return &downscalePolicies{
 		enabled:     true,
-		byNamespace: byNamespace,
+		byNamespace: policiesByNamespace,
 		tracker:     policy.NewTracker(included),
 	}
 }
 
-// scopeFor gets the DownscalePolicy scope of the workload and records which policy was applied to it.
+// getPolicyScopeForWorkload gets the DownscalePolicy scope of the workload and records which policy was applied to it.
 // If no policy applies, an empty scope is returned.
-func (d *downscalePolicies) scopeFor(workload scalable.Workload, logger *slog.Logger) (*values.Scope, *slog.Logger, error) {
+func (d *downscalePolicies) getPolicyScopeForWorkload(
+	workload scalable.Workload,
+	logger *slog.Logger,
+) (*values.Scope, *slog.Logger, error) {
 	if d == nil || !d.enabled {
 		return values.NewScope(), logger, nil
 	}
