@@ -390,7 +390,7 @@ func scanWorkload(
 		return newNamespaceScopeRetrieveError(workload.GetNamespace())
 	}
 
-	scopePolicy, logger, err := policies.scopeFor(workload, logger)
+	scopePolicy, logger, err := policies.getPolicyScopeForWorkload(workload, logger)
 	if err != nil {
 		return err
 	}

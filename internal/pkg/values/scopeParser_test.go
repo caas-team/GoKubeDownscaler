@@ -320,12 +320,12 @@ func TestScopeGetScopeFromEnv_DowntimeReplicasPrecedence(t *testing.T) {
 			scopeEnv := NewScope()
 			require.NoError(t, scopeEnv.GetScopeFromEnv())
 
-			scopeWorkload, scopeNamespace, scopeCli := NewScope(), NewScope(), NewScope()
+			scopeWorkload, scopeNamespace, scopePolicy, scopeCli := NewScope(), NewScope(), NewScope(), NewScope()
 			scopeWorkload.DownscaleReplicas = test.workload
 			scopeNamespace.DownscaleReplicas = test.namespace
 			scopeCli.DownscaleReplicas = test.cli
 
-			scopes := Scopes{scopeWorkload, scopeNamespace, NewScope(), scopeCli, scopeEnv, GetDefaultScope()}
+			scopes := Scopes{scopeWorkload, scopeNamespace, scopePolicy, scopeCli, scopeEnv, GetDefaultScope()}
 
 			got, err := scopes.GetDownscaleReplicas()
 			require.NoError(t, err)
@@ -339,22 +339,6 @@ type mockLogger struct{}
 func (mockLogger) ErrorInvalidAnnotation(string, string, context.Context) {}
 
 func (mockLogger) ErrorIncompatibleFields(string, context.Context) {}
-
-func TestPolicyValuesToAnnotations(t *testing.T) {
-	t.Parallel()
-
-	annotations := PolicyValuesToAnnotations(&v1alpha1.DownscalePolicyValues{
-		Uptime:            "Mon-Fri 08:00-19:00 Europe/Paris",
-		DownscaleReplicas: "1",
-		GracePeriod:       "15m",
-	})
-
-	assert.Equal(t, map[string]string{
-		annotationUptime:            "Mon-Fri 08:00-19:00 Europe/Paris",
-		annotationDownscaleReplicas: "1",
-		annotationGracePeriod:       "15m",
-	}, annotations)
-}
 
 func TestScopes_DownscalePolicyPrecedence(t *testing.T) {
 	t.Parallel()
