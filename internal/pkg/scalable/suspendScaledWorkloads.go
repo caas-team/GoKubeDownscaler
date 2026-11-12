@@ -26,6 +26,10 @@ type suspendScaledResource interface {
 	Copy() (Workload, error)
 	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
 	Compare(workloadCopy Workload) (jsondiff.Patch, error)
+	// logUpscaleSuccessful logs a successful unsuspend operation or dry-run unsuspend operation.
+	logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
+	// logDownscaleSuccessful logs a successful suspend operation or dry-run suspend operation.
+	logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
 }
 
 // suspendScaledWorkload is a wrapper for all resources which are scaled by setting a suspend field.
@@ -35,12 +39,12 @@ type suspendScaledWorkload struct {
 
 // LogUpscaleSuccessful logs a successful upscale using the original workload message style.
 func (r *suspendScaledWorkload) LogUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
-	logWorkloadScalingMessage("unsuspended", "suspend", r, summary, dryRun, logger)
+	r.logUpscaleSuccessful(summary, dryRun, logger)
 }
 
 // LogDownscaleSuccessful logs a successful downscale using the original workload message style.
 func (r *suspendScaledWorkload) LogDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
-	logWorkloadScalingMessage("suspended", "suspend", r, summary, dryRun, logger)
+	r.logDownscaleSuccessful(summary, dryRun, logger)
 }
 
 // GetChildren delegates child discovery to the wrapped resource when it supports ParentWorkload.
