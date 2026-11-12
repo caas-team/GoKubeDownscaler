@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
@@ -45,6 +46,16 @@ func parseAdvancedCronJobFromBytes(rawObject []byte) (Workload, error) {
 // advancedCronJob is a wrapper for advancedcronjob.v1alpha1.apps.kruise.io to implement the suspendScaledResource interface.
 type advancedCronJob struct {
 	*kruisev1beta1.AdvancedCronJob
+}
+
+// logUpscaleSuccessful logs a successful unpause operation or dry-run unpause operation.
+func (c *advancedCronJob) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("unsuspended", "paused", c, summary, dryRun, logger)
+}
+
+// logDownscaleSuccessful logs a successful pause operation or dry-run pause operation.
+func (c *advancedCronJob) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("suspended", "paused", c, summary, dryRun, logger)
 }
 
 func (c *advancedCronJob) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error) {
