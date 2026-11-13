@@ -12,6 +12,7 @@ import (
 	"time"
 
 	actionsv1alpha1 "github.com/actions/actions-runner-controller/apis/actions.github.com/v1alpha1"
+	argocd "github.com/argoproj/argo-cd/v3/pkg/client/clientset/versioned"
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
@@ -142,6 +143,11 @@ func NewClient(kubeconfig string, dryRun bool, qps float64, burst, timeout int) 
 	clientsets.Kruise, err = kruise.NewForConfig(config)
 	if err != nil {
 		return kubeclient, fmt.Errorf("failed to get clientset for kruise resources: %w", err)
+	}
+
+	clientsets.ArgoCD, err = argocd.NewForConfig(config)
+	if err != nil {
+		return kubeclient, fmt.Errorf("failed to get clientset for argocd resources: %w", err)
 	}
 
 	scheme, err = NewScheme()

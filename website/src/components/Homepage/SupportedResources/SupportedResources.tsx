@@ -41,7 +41,7 @@ const SupportedResourceGroupList: SupportedResourceGroupProps[] = [
     SvgLight: ArgoSVG.default,
     SvgDark: ArgoSVG.default,
     href: "https://argoproj.github.io/",
-    supportedResources: ["Rollouts"],
+    supportedResources: ["Rollouts", "Applications"],
   },
   {
     title: "Kubernetes",

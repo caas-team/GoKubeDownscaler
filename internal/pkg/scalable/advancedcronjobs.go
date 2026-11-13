@@ -48,16 +48,6 @@ type advancedCronJob struct {
 	*kruisev1beta1.AdvancedCronJob
 }
 
-// logUpscaleSuccessful logs a successful unpause operation or dry-run unpause operation.
-func (c *advancedCronJob) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
-	logWorkloadScalingMessage("unsuspended", "paused", c, summary, dryRun, logger)
-}
-
-// logDownscaleSuccessful logs a successful pause operation or dry-run pause operation.
-func (c *advancedCronJob) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
-	logWorkloadScalingMessage("suspended", "paused", c, summary, dryRun, logger)
-}
-
 func (c *advancedCronJob) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error) {
 	activeJobs := c.Status.Active
 
@@ -200,6 +190,16 @@ func (c *advancedCronJob) getSuspend() (currentValue, targetDownscaleState value
 	targetDownscaleState = values.BooleanReplicas(true)
 
 	return currentValue, targetDownscaleState
+}
+
+// logUpscaleSuccessful logs the paused transition for an upscale.
+func (c *advancedCronJob) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("suspended", "paused", c, summary, dryRun, logger)
+}
+
+// logDownscaleSuccessful logs the paused transition for a downscale.
+func (c *advancedCronJob) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("unsuspended", "paused", c, summary, dryRun, logger)
 }
 
 // setSuspend sets the value of the paused field on the advancedCronJob.

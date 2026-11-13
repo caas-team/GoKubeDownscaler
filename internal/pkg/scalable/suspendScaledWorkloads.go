@@ -22,14 +22,14 @@ type suspendScaledResource interface {
 	setSuspend(suspend bool)
 	// getSavedResourcesRequests returns the saved CPU and memory requests for the workload based on the downscale replicas.
 	getSavedResourcesRequests() *metrics.SavedResources
+	// logUpscaleSuccessful logs a successful upscale operations or dry-run upscale operations.
+	logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
+	// logDownscaleSuccessful logs a successful downscale operations or dry-run downscale operations.
+	logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
 	// Copy creates a deep copy of the workload
 	Copy() (Workload, error)
 	// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch
 	Compare(workloadCopy Workload) (jsondiff.Patch, error)
-	// logUpscaleSuccessful logs a successful unsuspend operation or dry-run unsuspend operation.
-	logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
-	// logDownscaleSuccessful logs a successful suspend operation or dry-run suspend operation.
-	logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger)
 }
 
 // suspendScaledWorkload is a wrapper for all resources which are scaled by setting a suspend field.

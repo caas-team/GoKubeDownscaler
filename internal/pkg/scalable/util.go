@@ -55,6 +55,7 @@ const (
 	serviceKind                 = "Service"
 	stackKind                   = "Stack"
 	statefulSetKind             = "StatefulSet"
+	applicationKind             = "Application"
 )
 
 // FilterExcluded filters the workloads to match the includeLabels, excludedNamespaces and excludedWorkloads.
@@ -342,6 +343,7 @@ func isSupportedOwnerKind(kind string) bool {
 		stackKind:                   {},
 		statefulSetKind:             {},
 		helmReleaseKind:             {},
+		applicationKind:             {},
 	}
 
 	_, supported := supportedOwnerKinds[kind]

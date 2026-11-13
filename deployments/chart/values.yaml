@@ -18,6 +18,7 @@ includedResources:
 #  - statefulsets
 #  - daemonsets
 #  - rollouts
+#  - applications
 #  - horizontalpodautoscalers
 #  - jobs
 #  - cronjobs

@@ -48,16 +48,6 @@ type cronJob struct {
 	*batch.CronJob
 }
 
-// logUpscaleSuccessful logs a successful unsuspend operation or dry-run unsuspend operation.
-func (c *cronJob) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
-	logWorkloadScalingMessage("unsuspended", "suspend", c, summary, dryRun, logger)
-}
-
-// logDownscaleSuccessful logs a successful suspend operation or dry-run suspend operation.
-func (c *cronJob) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
-	logWorkloadScalingMessage("suspended", "suspend", c, summary, dryRun, logger)
-}
-
 func (c *cronJob) GetChildren(ctx context.Context, clientsets *Clientsets) ([]Workload, error) {
 	activeJobs := c.Status.Active
 
@@ -152,6 +142,16 @@ func (c *cronJob) getSuspend() (currentValue, targetDownscaleState values.Replic
 	targetDownscaleState = values.BooleanReplicas(true)
 
 	return currentValue, targetDownscaleState
+}
+
+// logUpscaleSuccessful logs the suspend transition for an upscale.
+func (c *cronJob) logUpscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("suspended", "suspend", c, summary, dryRun, logger)
+}
+
+// logDownscaleSuccessful logs the suspend transition for a downscale.
+func (c *cronJob) logDownscaleSuccessful(summary *scalingSummary, dryRun bool, logger *slog.Logger) {
+	logWorkloadScalingMessage("unsuspended", "suspend", c, summary, dryRun, logger)
 }
 
 // setSuspend sets the value of the suspend field on the cronJob.

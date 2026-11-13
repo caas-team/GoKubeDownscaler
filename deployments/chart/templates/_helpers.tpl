@@ -245,6 +245,16 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "applications" }}
+- apiGroups:
+    - argoproj.io
+  resources:
+    - applications
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- if eq $resource "horizontalpodautoscalers" }}
 - apiGroups:
     - autoscaling
@@ -585,6 +595,17 @@ Create webhook resources
     - "UPDATE"
   resources:
     - rollouts
+{{ end -}}
+{{ if eq $resource "applications" -}}
+- apiGroups:
+    - argoproj.io
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - applications
 {{ end -}}
 {{ if eq $resource "horizontalpodautoscalers" -}}
 - apiGroups:
@@ -948,6 +969,19 @@ resources include in annotationsCompliance
     - "UPDATE"
   resources:
     - rollouts
+{{ end -}}
+{{ if eq $resource "applications" -}}
+- apiGroups:
+    - argoproj.io
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - applications
 {{ end -}}
 {{ if eq $resource "horizontalpodautoscalers" -}}
 - apiGroups:

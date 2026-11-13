@@ -121,6 +121,14 @@ When `.spec.workloadRef` is present the downscaler ensures the template is resol
 as specified in the [Argo Rollouts documentation](https://argoproj.github.io/argo-rollouts/features/specification/) (see
 the comments above `.spec.workloadRef` and `.spec.template`)
 
+### Applications
+
+- id: applications
+- resource: application.v1alpha1.argoproj.io
+
+Scales by suspending auto-sync self-heal on the Argo CD Application (`spec.syncPolicy.automated.selfHeal` is set to `false`)
+and restores the original value when the workload is upscaled.
+
 ### Stacks
 
 - id: stacks

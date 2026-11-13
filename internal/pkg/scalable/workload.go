@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	argocd "github.com/argoproj/argo-cd/v3/pkg/client/clientset/versioned"
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	keda "github.com/kedacore/keda/v2/pkg/generated/clientset/versioned"
@@ -59,6 +60,7 @@ func GetWorkloads(resource, namespace string, clientsets *Clientsets, ctx contex
 		"imagepulljobs":            getImagePullJobs,
 		"clonesets":                getCloneSets,
 		"helmreleases":             getHelmReleases,
+		"applications":             getApplications,
 	}
 
 	resourceFunc, exists := resourceFuncMap[resource]
@@ -113,6 +115,7 @@ func ParseWorkloadFromRawObject(resource string, rawObject []byte) (Workload, er
 		"imagepulljob":            parseImagePullJobFromBytes,
 		"advancedstatefulsets":    parseKruiseStatefulSetFromBytes,
 		"clonesets":               parseCloneSetFromBytes,
+		"application":             parseApplicationFromBytes,
 		"helmreleases":            parseHelmReleaseFromBytes,
 	}
 
@@ -204,4 +207,5 @@ type Clientsets struct {
 	Gateway    *gatewayapi.Clientset
 	Client     ctrlclient.Client
 	Kruise     *kruise.Clientset
+	ArgoCD     *argocd.Clientset
 }
