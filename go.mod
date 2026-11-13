@@ -1,11 +1,11 @@
 module github.com/caas-team/gokubedownscaler
 
-go 1.26.11
+go 1.27.0
 
 require (
 	github.com/actions/actions-runner-controller v0.27.6
 	github.com/argoproj/argo-rollouts v1.10.2
-	github.com/fluxcd/helm-controller/api v1.6.5
+	github.com/fluxcd/helm-controller/api v1.7.1
 	github.com/kedacore/keda/v2 v2.21.0
 	github.com/open-policy-agent/cert-controller v0.16.0
 	github.com/openkruise/kruise v1.9.3
@@ -24,7 +24,7 @@ require (
 	k8s.io/component-base v0.37.2
 	k8s.io/utils v0.0.0-20261023123148-ca04ba58ecab
 	sigs.k8s.io/controller-runtime v0.25.2
-	sigs.k8s.io/gateway-api v1.6.3
+	sigs.k8s.io/gateway-api v1.7.0
 )
 
 require (
@@ -41,8 +41,10 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/expr-lang/expr v1.17.8 // indirect
 	github.com/felixge/httpsnoop v1.1.0 // indirect
-	github.com/fluxcd/pkg/apis/kustomize v1.19.2 // indirect
-	github.com/fluxcd/pkg/apis/meta v1.30.2 // indirect
+	github.com/fluxcd/pkg/apis/acl v0.12.0 // indirect
+	github.com/fluxcd/pkg/apis/kustomize v1.23.0 // indirect
+	github.com/fluxcd/pkg/apis/meta v1.38.0 // indirect
+	github.com/fluxcd/source-controller/api v1.10.0 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.3 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
