@@ -408,6 +408,16 @@ Create defined permissions for roles
     - list
     - update
 {{- end }}
+{{- if eq $resource "kustomizations" }}
+- apiGroups:
+    - kustomize.toolkit.fluxcd.io
+  resources:
+    - kustomizations
+  verbs:
+    - get
+    - list
+    - update
+{{- end }}
 {{- if eq $resource "kafkaconnects" }}
 - apiGroups:
     - kafka.strimzi.io
@@ -721,6 +731,17 @@ Create webhook resources
     - "UPDATE"
   resources:
     - mariadbs
+{{ end -}}
+{{ if eq $resource "kustomizations" -}}
+- apiGroups:
+    - kustomize.toolkit.fluxcd.io
+  apiVersions:
+    - "*"
+  operations:
+    - "CREATE"
+    - "UPDATE"
+  resources:
+    - kustomizations
 {{ end -}}
 {{- if or (eq $resource "services") (eq $resource "awselbservices") (eq $resource "awsnlbservices")}}
 - apiGroups:
@@ -1099,6 +1120,19 @@ resources include in annotationsCompliance
     - "UPDATE"
   resources:
     - mariadbs
+{{ end -}}
+{{ if eq $resource "kustomizations" -}}
+- apiGroups:
+    - kustomize.toolkit.fluxcd.io
+  apiVersions:
+    - "*"
+  operations:
+  {{- if $createUpdate }}
+    - "CREATE"
+  {{- end }}
+    - "UPDATE"
+  resources:
+    - kustomizations
 {{ end -}}
 {{ if eq $resource "kafkaconnects" -}}
 - apiGroups:

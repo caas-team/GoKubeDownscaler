@@ -36,6 +36,7 @@ includedResources:
 #  - mongodbcommunities
 #  - cnpgclusters
 #  - mariadbs
+#  - kustomizations
 #  - kafkaconnects
 #  - kafkamirrormaker2s
 #  - kafkabridges

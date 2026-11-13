@@ -243,6 +243,15 @@ Downscale replicas of 1 are refused for Galera as well.
 A MariaDB with replication enabled is never scaled below 2 replicas, for the same webhook reason; the downscaler refuses and logs instead.
 Scaling up is never refused.
 
+### Kustomizations
+
+- id: kustomizations
+- resource: kustomizations.v1.kustomize.toolkit.fluxcd.io
+
+Scales by setting `spec.suspend: true` to stop the [Flux](https://fluxcd.io/) kustomize-controller.
+The downscaler does not change the replicas of the workloads the Kustomization applies.
+Those workloads are only scaled when they are scaled by their own downscaler configuration.
+
 ### KafkaConnects
 
 - id: kafkaconnects
