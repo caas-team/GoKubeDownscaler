@@ -320,12 +320,12 @@ func TestScopeGetScopeFromEnv_DowntimeReplicasPrecedence(t *testing.T) {
 			scopeEnv := NewScope()
 			require.NoError(t, scopeEnv.GetScopeFromEnv())
 
-			scopeWorkload, scopeNamespace, scopePolicy, scopeCli := NewScope(), NewScope(), NewScope(), NewScope()
+			scopeWorkload, scopePolicy, scopeNamespace, scopeCli := NewScope(), NewScope(), NewScope(), NewScope()
 			scopeWorkload.DownscaleReplicas = test.workload
 			scopeNamespace.DownscaleReplicas = test.namespace
 			scopeCli.DownscaleReplicas = test.cli
 
-			scopes := Scopes{scopeWorkload, scopeNamespace, scopePolicy, scopeCli, scopeEnv, GetDefaultScope()}
+			scopes := Scopes{scopeWorkload, scopePolicy, scopeNamespace, scopeCli, scopeEnv, GetDefaultScope()}
 
 			got, err := scopes.GetDownscaleReplicas()
 			require.NoError(t, err)
@@ -353,9 +353,14 @@ func TestScopes_DownscalePolicyPrecedence(t *testing.T) {
 	scopeCli := NewScope()
 	scopeCli.DownscaleReplicas = AbsoluteReplicas(3)
 
+	// the namespace scope is below the DownscalePolicy scope, so none of its values apply
 	scopeNamespace := NewScope()
+	scopeNamespace.ForceUptime = timeSpans{booleanTimeSpan(true)}
+	scopeNamespace.DownscaleReplicas = AbsoluteReplicas(1)
 
-	scopes := Scopes{NewScope(), scopeNamespace, scopePolicy, scopeCli, NewScope(), GetDefaultScope()}
+	scopeWorkload := NewScope()
+
+	scopes := Scopes{scopeWorkload, scopePolicy, scopeNamespace, scopeCli, NewScope(), GetDefaultScope()}
 
 	decision := scopes.GetCurrentScaling()
 	assert.Equal(t, ScalingDown, decision.Scaling)
@@ -365,9 +370,10 @@ func TestScopes_DownscalePolicyPrecedence(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, AbsoluteReplicas(2), replicas)
 
-	scopeNamespace.DownscaleReplicas = AbsoluteReplicas(1)
+	// the workload scope is above the DownscalePolicy scope, so its values win
+	scopeWorkload.DownscaleReplicas = AbsoluteReplicas(4)
 
 	replicas, err = scopes.GetDownscaleReplicas()
 	require.NoError(t, err)
-	assert.Equal(t, AbsoluteReplicas(1), replicas)
+	assert.Equal(t, AbsoluteReplicas(4), replicas)
 }

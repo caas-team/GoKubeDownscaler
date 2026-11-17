@@ -41,8 +41,8 @@ const ScopeNone ScopeID = -1
 
 const (
 	ScopeWorkload        ScopeID = iota // identifies the scope present in the workload
-	ScopeNamespace                      // identifies the scope present in the namespace
 	ScopeDownscalePolicy                // identifies the scope defined by a matching DownscalePolicy resource
+	ScopeNamespace                      // identifies the scope present in the namespace
 	ScopeCli                            // identifies the scope defined in the CLI
 	ScopeEnvironment                    // identifies the scope defined in the environment variables
 	ScopeDefault                        // identifier for the scope which holds all default values
@@ -53,8 +53,8 @@ func (s ScopeID) String() string {
 	return map[ScopeID]string{
 		ScopeNone:            "ScopeNone",
 		ScopeWorkload:        "ScopeWorkload",
-		ScopeNamespace:       "ScopeNamespace",
 		ScopeDownscalePolicy: "ScopeDownscalePolicy",
+		ScopeNamespace:       "ScopeNamespace",
 		ScopeCli:             "ScopeCli",
 		ScopeEnvironment:     "ScopeEnvironment",
 		ScopeDefault:         "ScopeDefault",

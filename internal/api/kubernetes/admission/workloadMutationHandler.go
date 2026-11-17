@@ -272,7 +272,7 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 		), err
 	}
 
-	scopes := values.Scopes{scopeWorkload, scopeNamespace, scopePolicy, v.scopeCli, v.scopeEnv, v.scopeDefault}
+	scopes := values.Scopes{scopeWorkload, scopePolicy, scopeNamespace, v.scopeCli, v.scopeEnv, v.scopeDefault}
 
 	logger.Debug("finished parsing all scopes", "scopes", scopes)
 

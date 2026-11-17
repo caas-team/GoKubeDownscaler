@@ -395,7 +395,7 @@ func scanWorkload(
 		return err
 	}
 
-	scopes := values.Scopes{scopeWorkload, scopeNamespace, scopePolicy, scopeCli, scopeEnv, scopeDefault}
+	scopes := values.Scopes{scopeWorkload, scopePolicy, scopeNamespace, scopeCli, scopeEnv, scopeDefault}
 
 	logger.Debug("finished parsing all scopes", "scopes", scopes)
 

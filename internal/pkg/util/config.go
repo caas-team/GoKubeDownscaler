@@ -135,7 +135,7 @@ func (c *CommonRuntimeConfiguration) ParseCommonFlags() {
 		&c.DownscalePolicyEnabled,
 		"downscale-policy",
 		false,
-		"use DownscalePolicy resources as a scope between the namespace and the cli scope; requires the CRD (default: false)",
+		"use DownscalePolicy resources as a scope between the workload and the namespace scope; requires the CRD (default: false)",
 	)
 	flag.StringVar(
 		&c.Kubeconfig,
