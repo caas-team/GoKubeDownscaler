@@ -75,8 +75,10 @@ This means, as specified before, that [Workload Scope](ref:docs-workload-scope) 
 [Namespace Scope](ref:docs-namespace-scope) > [CLI Scope](ref:docs-cli-scope) > [ENV Scope](ref:docs-env-scope) >
 [Default Scope](ref:docs-default-scope).
 
-When computing scopes, exclusion values always take precedence, meaning that: no matter what the scaling values are
-across any other scope, if a scope contains an exclusion the result will be an exclusion.
+When computing scopes, exclusions take precedence over the scaling values:
+if the workload is excluded, the scaling values of every scope are not taken into account.
+Like other values, `exclude` is taken from the most specific scope that sets it,
+while an active `exclude-until` in any scope always excludes the workload.
 
 The diagram below illustrates how scaling is determined for a workload:
 

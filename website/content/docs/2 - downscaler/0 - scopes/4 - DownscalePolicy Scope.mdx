@@ -82,6 +82,18 @@ You can check their compatibility by viewing the dedicated documentation page fr
 
 :::
 
+:::note[Overriding the Namespace Scope]
+
+Since the DownscalePolicy Scope is above the [Namespace Scope](ref:docs-namespace-scope),
+a policy that sets `exclude`, `forceUptime` or `forceDowntime` decides that value for the workloads it matches,
+even outside of its timespans: the corresponding namespace annotation is then not taken into account.
+For example, a policy with `exclude: "Mon-Fri 18:00-20:00 UTC"` only excludes the workloads it matches from 18:00 to 20:00 on weekdays,
+even if the namespace has `downscaler/exclude: "true"`.
+To exclude a namespace regardless of its DownscalePolicies, use the [`downscaler/exclude-until`](ref:docs-values#exclude-until) annotation
+or the [`--exclude-namespaces`](ref:docs-runtime-configuration#exclude-namespaces) argument.
+
+:::
+
 ## Usage
 
 ```yaml title="office-hours.yaml"
