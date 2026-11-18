@@ -11,6 +11,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getDeployments is the getResourceFunc for Deployments.
@@ -104,6 +105,35 @@ func (d *deployment) Update(clientsets *Clientsets, ctx context.Context) error {
 	return nil
 }
 
+// Patch applies a patch to the Deployment. Downscaling uses ApplyPatchType to record
+// this controller as the field manager; upscaling uses JSONPatchType and clears managed fields.
+func (d *deployment) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if d.Deployment == nil {
+		return newNilUnderlyingObjectError(d.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Kubernetes.AppsV1().Deployments(d.Namespace).Patch(
+		ctx,
+		d.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch deployment: %w", err)
+	}
+
+	return nil
+}
+
 // Copy creates a deep copy of the given Workload, which is expected to be a replicaScaledWorkload wrapping a deployment.
 func (d *deployment) Copy() (Workload, error) {
 	if d.Deployment == nil {
@@ -119,10 +149,10 @@ func (d *deployment) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two deployment resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two deployment resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (d *deployment) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (d *deployment) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -143,4 +173,25 @@ func (d *deployment) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (d *deployment) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	depCopy, ok := rswCopy.replicaScaledResource.(*deployment)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*deployment)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if d.Deployment == nil || depCopy.Deployment == nil {
+		return nil, newNilUnderlyingObjectError(d.Kind)
+	}
+
+	return generateServerSideApplyPatch(d.Deployment, depCopy.Deployment)
 }

@@ -330,3 +330,82 @@ func TestPodDisruptionBudget_ScaleDown(t *testing.T) {
 		})
 	}
 }
+
+func TestPodDisruptionBudget_ScalingGeneratesPatchData(t *testing.T) {
+	t.Parallel()
+
+	replicasUpscaled := intstr.FromInt32(5)
+	percentileUpscaled := intstr.FromString("50%")
+
+	tests := []struct {
+		name           string
+		minAvailable   *intstr.IntOrString
+		maxUnavailable *intstr.IntOrString
+		wantDownPatch  any
+		wantUpPatch    any
+	}{
+		{
+			name:           "minAvailable patch",
+			minAvailable:   &replicasUpscaled,
+			maxUnavailable: nil,
+			wantDownPatch: []any{
+				map[string]any{"op": "add", "path": "/metadata/annotations", "value": map[string]any{"downscaler/original-replicas": "5"}},
+				map[string]any{"op": "replace", "path": "/spec/minAvailable", "value": float64(0)},
+			},
+			wantUpPatch: []any{
+				map[string]any{"op": "remove", "path": "/metadata/annotations"},
+				map[string]any{"op": "replace", "path": "/spec/minAvailable", "value": float64(5)},
+			},
+		},
+		{
+			name:           "maxUnavailable patch",
+			minAvailable:   nil,
+			maxUnavailable: &replicasUpscaled,
+			wantDownPatch: []any{
+				map[string]any{"op": "add", "path": "/metadata/annotations", "value": map[string]any{"downscaler/original-replicas": "5"}},
+				map[string]any{"op": "replace", "path": "/spec/maxUnavailable", "value": float64(0)},
+			},
+			wantUpPatch: []any{
+				map[string]any{"op": "remove", "path": "/metadata/annotations"},
+				map[string]any{"op": "replace", "path": "/spec/maxUnavailable", "value": float64(5)},
+			},
+		},
+		{
+			name:           "percentile patch",
+			minAvailable:   &percentileUpscaled,
+			maxUnavailable: nil,
+			wantDownPatch: []any{
+				map[string]any{"op": "add", "path": "/metadata/annotations", "value": map[string]any{"downscaler/original-replicas": "50%"}},
+				map[string]any{"op": "replace", "path": "/spec/minAvailable", "value": float64(0)},
+			},
+			wantUpPatch: []any{
+				map[string]any{"op": "remove", "path": "/metadata/annotations"},
+				map[string]any{"op": "replace", "path": "/spec/minAvailable", "value": "50%"},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			pdb := &podDisruptionBudget{&policy.PodDisruptionBudget{}}
+			pdb.Spec.MaxUnavailable = test.maxUnavailable
+			pdb.Spec.MinAvailable = test.minAvailable
+
+			beforeDownscale := pdb.DeepCopy()
+			downscaleSummary, err := pdb.ScaleDown(values.AbsoluteReplicas(0), nil)
+			require.NoError(t, err)
+			t.Logf("downscale patchData: %s", downscaleSummary.PatchData)
+			assert.True(t, downscaleSummary.IsUpdateNeeded)
+			assertJSONPatchTransforms(t, beforeDownscale, downscaleSummary.PatchData, pdb)
+
+			beforeUpscale := pdb.DeepCopy()
+			upscaleSummary, err := pdb.ScaleUp(nil)
+			require.NoError(t, err)
+			t.Logf("upscale patchData: %s", upscaleSummary.PatchData)
+			assert.True(t, upscaleSummary.IsUpdateNeeded)
+			assertJSONPatchTransforms(t, beforeUpscale, upscaleSummary.PatchData, pdb)
+		})
+	}
+}

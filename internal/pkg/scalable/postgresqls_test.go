@@ -185,13 +185,13 @@ func TestPostgresql_Compare(t *testing.T) {
 	err = copiedPg.setReplicas(0)
 	require.NoError(t, err)
 
-	patch, err := original.Compare(copied)
+	patch, err := original.GenerateJSONDiff(copied)
 	require.NoError(t, err)
 	assert.NotEmpty(t, patch, "expected a diff between differing instance counts")
 
 	// Comparing against a workload that is not a *postgresql must error.
 	wrongType := &replicaScaledWorkload{&deployment{&appsv1.Deployment{}}}
-	_, err = original.Compare(wrongType)
+	_, err = original.GenerateJSONDiff(wrongType)
 
 	var expectErr *ExpectTypeGotTypeError
 	assert.ErrorAs(t, err, &expectErr)

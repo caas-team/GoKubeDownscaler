@@ -11,6 +11,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	acidv1 "github.com/zalando/postgres-operator/pkg/apis/acid.zalan.do/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -134,10 +135,10 @@ func (p *postgresql) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two postgresql resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two postgresql resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (p *postgresql) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (p *postgresql) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -158,4 +159,35 @@ func (p *postgresql) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (p *postgresql) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	pgCopy, ok := rswCopy.replicaScaledResource.(*postgresql)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*postgresql)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if p.Postgresql == nil || pgCopy.Postgresql == nil {
+		return nil, newNilUnderlyingObjectError(p.Kind)
+	}
+
+	return generateServerSideApplyPatch(p.Postgresql, pgCopy.Postgresql)
+}
+
+func (p *postgresql) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	return patchControllerRuntimeObject(clientsets.Client, p.Postgresql, patchType, patchData, manageFields, ctx)
 }

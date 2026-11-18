@@ -164,7 +164,7 @@ func newHandlerWithMocks(mockClient *MockClient) *WorkloadMutationHandler {
 		mockClient,
 		values.NewScope(), values.NewScope(), values.GetDefaultScope(),
 		false, nil, &util.RegexList{regexp.MustCompile(".*")}, &util.RegexList{}, &util.RegexList{},
-		map[string]struct{}{"deployments": {}, "scaledobjects": {}}, false,
+		map[string]struct{}{"deployments": {}, "scaledobjects": {}}, false, false,
 		nil,
 	)
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -119,10 +120,10 @@ func (a *autoscalingRunnerSet) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares the workload with another workload and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //short names are ok for the workflow of this function
-func (a *autoscalingRunnerSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (a *autoscalingRunnerSet) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -143,4 +144,42 @@ func (a *autoscalingRunnerSet) Compare(workloadCopy Workload) (jsondiff.Patch, e
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (a *autoscalingRunnerSet) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	arsCopy, ok := rswCopy.replicaScaledResource.(*autoscalingRunnerSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*autoscalingRunnerSet)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if a.AutoscalingRunnerSet == nil || arsCopy.AutoscalingRunnerSet == nil {
+		return nil, newNilUnderlyingObjectError(a.Kind)
+	}
+
+	return generateServerSideApplyPatch(a.AutoscalingRunnerSet, arsCopy.AutoscalingRunnerSet)
+}
+
+func (a *autoscalingRunnerSet) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	return patchControllerRuntimeObject(
+		clientsets.Client,
+		a.AutoscalingRunnerSet,
+		patchType,
+		patchData,
+		manageFields,
+		ctx,
+	)
 }

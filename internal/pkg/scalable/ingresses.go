@@ -12,6 +12,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -119,10 +120,10 @@ func (i *ingress) Copy() (Workload, error) {
 	return &valueScaledWorkload{&ingress{Ingress: copied}}, nil
 }
 
-// Compare compares two ingress resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two ingress resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (i *ingress) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (i *ingress) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	vsw, ok := workloadCopy.(*valueScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
@@ -143,4 +144,52 @@ func (i *ingress) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff compares the workload with another workload and returns the JSON patch bytes.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (i *ingress) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	vswCopy, ok := workloadCopy.(*valueScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*valueScaledWorkload)(nil), workloadCopy)
+	}
+
+	ingCopy, ok := vswCopy.valueScaledResource.(*ingress)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*ingress)(nil), vswCopy.valueScaledResource)
+	}
+
+	if i.Ingress == nil || ingCopy.Ingress == nil {
+		return nil, newNilUnderlyingObjectError(i.Kind)
+	}
+
+	return generateServerSideApplyPatch(i.Ingress, ingCopy.Ingress)
+}
+
+func (i *ingress) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if i.Ingress == nil {
+		return newNilUnderlyingObjectError(i.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Kubernetes.NetworkingV1().Ingresses(i.Namespace).Patch(
+		ctx,
+		i.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch ingress: %w", err)
+	}
+
+	return nil
 }
