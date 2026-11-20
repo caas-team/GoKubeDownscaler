@@ -98,6 +98,7 @@ while arguments flagged with a hashtag (#) can only be set inside the Webhook.
 - [--burst](ref:docs-runtime-configuration#burst)
 - [--timeout](ref:docs-runtime-configuration#timeout)
 - [--json-logs](ref:docs-runtime-configuration#json-logs)
+- [--downscale-policy](ref:docs-runtime-configuration#downscale-policy)
 - [--leader-election](ref:docs-runtime-configuration#leader-election) (\*)
 - [--max-retries-on-conflict](ref:docs-runtime-configuration#max-retries-on-conflict) (\*)
 - [--internal-cert-rotation](ref:docs-runtime-configuration#internal-cert-rotation) (#)
@@ -133,6 +134,7 @@ Here is a list containing all the fields that configure their respective cli arg
 
 - [`includedResources`](ref:docs-helm-included-resources) directly sets `--include-resources`
 - [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces) directly sets `--namespace`
+- [`downscalePolicy.enabled`](ref:docs-helm-downscale-policy) directly sets `--downscale-policy`
 
 All other arguments can be used via the `arguments` field.
 

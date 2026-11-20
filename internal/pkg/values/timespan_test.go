@@ -519,6 +519,7 @@ func TestRelativeTimeSpan_isTimeInSpan(t *testing.T) {
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
+				GetDefaultScope(),
 			},
 			name: "outside weekday no timezone, nil defaults",
 			timespan: relativeTimeSpan{
@@ -532,6 +533,7 @@ func TestRelativeTimeSpan_isTimeInSpan(t *testing.T) {
 		},
 		{
 			scopes: Scopes{
+				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),

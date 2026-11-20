@@ -106,6 +106,7 @@ func TestScope_getCurrentScaling(t *testing.T) {
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
+				GetDefaultScope(),
 			},
 			scope: Scope{
 				DownTime: timeSpans{booleanTimeSpan(true)},
@@ -115,6 +116,7 @@ func TestScope_getCurrentScaling(t *testing.T) {
 		{
 			name: "out of downtime",
 			scopes: Scopes{
+				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
@@ -134,6 +136,7 @@ func TestScope_getCurrentScaling(t *testing.T) {
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
+				GetDefaultScope(),
 			},
 			scope: Scope{
 				UpTime: timeSpans{booleanTimeSpan(true)},
@@ -143,6 +146,7 @@ func TestScope_getCurrentScaling(t *testing.T) {
 		{
 			name: "out of uptime",
 			scopes: Scopes{
+				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
@@ -162,6 +166,7 @@ func TestScope_getCurrentScaling(t *testing.T) {
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
+				GetDefaultScope(),
 			},
 			scope: Scope{
 				DownscalePeriod: timeSpans{booleanTimeSpan(true)},
@@ -171,6 +176,7 @@ func TestScope_getCurrentScaling(t *testing.T) {
 		{
 			name: "out of downscaleperiod",
 			scopes: Scopes{
+				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
@@ -190,6 +196,7 @@ func TestScope_getCurrentScaling(t *testing.T) {
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
+				GetDefaultScope(),
 			},
 			scope: Scope{
 				UpscalePeriod: timeSpans{booleanTimeSpan(true)},
@@ -204,6 +211,7 @@ func TestScope_getCurrentScaling(t *testing.T) {
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
+				GetDefaultScope(),
 			},
 			scope: Scope{
 				UpscalePeriod: timeSpans{booleanTimeSpan(false)},
@@ -213,6 +221,7 @@ func TestScope_getCurrentScaling(t *testing.T) {
 		{
 			name: "none set",
 			scopes: Scopes{
+				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
@@ -251,6 +260,7 @@ func TestScope_getForceScaling(t *testing.T) {
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
+				GetDefaultScope(),
 			},
 			scope: Scope{
 				ForceDowntime: timeSpans{booleanTimeSpan(true)},
@@ -260,6 +270,7 @@ func TestScope_getForceScaling(t *testing.T) {
 		{
 			name: "forceUptime",
 			scopes: Scopes{
+				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
@@ -279,6 +290,7 @@ func TestScope_getForceScaling(t *testing.T) {
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
+				GetDefaultScope(),
 			},
 			scope: Scope{
 				ForceDowntime: timeSpans{booleanTimeSpan(false)},
@@ -293,6 +305,7 @@ func TestScope_getForceScaling(t *testing.T) {
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
+				GetDefaultScope(),
 			},
 			scope: Scope{
 				ForceUptime: timeSpans{booleanTimeSpan(false)},
@@ -302,6 +315,7 @@ func TestScope_getForceScaling(t *testing.T) {
 		{
 			name: "forceUptime and forceDowntime true",
 			scopes: Scopes{
+				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
@@ -322,6 +336,7 @@ func TestScope_getForceScaling(t *testing.T) {
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
+				GetDefaultScope(),
 			},
 			scope: Scope{
 				ForceUptime:   timeSpans{booleanTimeSpan(false)},
@@ -332,6 +347,7 @@ func TestScope_getForceScaling(t *testing.T) {
 		{
 			name: "forceUptime false and forceDowntime true",
 			scopes: Scopes{
+				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
@@ -352,6 +368,7 @@ func TestScope_getForceScaling(t *testing.T) {
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
+				GetDefaultScope(),
 			},
 			scope: Scope{
 				ForceUptime:   timeSpans{booleanTimeSpan(true)},
@@ -362,6 +379,7 @@ func TestScope_getForceScaling(t *testing.T) {
 		{
 			name: "none set",
 			scopes: Scopes{
+				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
@@ -396,6 +414,7 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 			name: "ignore false forcing *time",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{ForceDowntime: timeSpans{booleanTimeSpan(false)}, UpTime: timeSpans{booleanTimeSpan(true)}},
 				&Scope{},
 				&Scope{DownTime: timeSpans{booleanTimeSpan(true)}},
@@ -408,6 +427,7 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 			name: "never stops fallthrough",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{DownTime: timeSpans{booleanTimeSpan(false)}},
 				&Scope{},
 				&Scope{DownTime: timeSpans{booleanTimeSpan(true)}},
@@ -420,6 +440,7 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 			name: "force *time never doesn't stop fallthrough",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{ForceDowntime: timeSpans{booleanTimeSpan(false)}},
 				&Scope{},
 				&Scope{DownTime: timeSpans{booleanTimeSpan(true)}},
@@ -432,6 +453,7 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 			name: "none set",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},
@@ -444,6 +466,7 @@ func TestScopes_GetCurrentScaling(t *testing.T) {
 			name: "shorter timespan and no timezone and weekframes defined ",
 			scopes: Scopes{
 				&Scope{DownTime: timeSpans{relativeTimeSpan{timeFrom: ptr(7 * Hour), timeTo: ptr(16 * Hour)}}},
+				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
@@ -480,6 +503,7 @@ func TestScopes_GetUpscaleExcluded(t *testing.T) {
 			name: "none set",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},
@@ -491,6 +515,7 @@ func TestScopes_GetUpscaleExcluded(t *testing.T) {
 			name: "explicit include",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{Exclude: timeSpans{booleanTimeSpan(true)}},
 				&Scope{},
@@ -502,6 +527,7 @@ func TestScopes_GetUpscaleExcluded(t *testing.T) {
 			name: "explicit include",
 			scopes: Scopes{
 				&Scope{Exclude: timeSpans{booleanTimeSpan(false)}},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{Exclude: timeSpans{booleanTimeSpan(true)}},
 				&Scope{},
@@ -513,6 +539,7 @@ func TestScopes_GetUpscaleExcluded(t *testing.T) {
 			name: "exclude until true",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilTrue},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},
@@ -524,6 +551,7 @@ func TestScopes_GetUpscaleExcluded(t *testing.T) {
 			name: "exclude until false",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilFalse},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},
@@ -535,6 +563,7 @@ func TestScopes_GetUpscaleExcluded(t *testing.T) {
 			name: "exclude until and exclude same scope false",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilFalse, Exclude: timeSpans{booleanTimeSpan(false)}},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},
@@ -546,6 +575,7 @@ func TestScopes_GetUpscaleExcluded(t *testing.T) {
 			name: "exclude until and exclude true same scope",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilFalse, Exclude: timeSpans{booleanTimeSpan(true)}},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},
@@ -557,6 +587,7 @@ func TestScopes_GetUpscaleExcluded(t *testing.T) {
 			name: "exclude until true and exclude same scope",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilTrue, Exclude: timeSpans{booleanTimeSpan(false)}},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},
@@ -568,6 +599,7 @@ func TestScopes_GetUpscaleExcluded(t *testing.T) {
 			name: "exclude until and exclude true different scopes",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilFalse},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{Exclude: timeSpans{booleanTimeSpan(true)}},
 				&Scope{},
@@ -579,6 +611,7 @@ func TestScopes_GetUpscaleExcluded(t *testing.T) {
 			name: "exclude until true and exclude different scopes",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilTrue},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{Exclude: timeSpans{booleanTimeSpan(false)}},
 				&Scope{},
@@ -590,6 +623,7 @@ func TestScopes_GetUpscaleExcluded(t *testing.T) {
 			name: "exclude and exclude until different scopes",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{Exclude: timeSpans{booleanTimeSpan(true)}},
 				&Scope{ExcludeUntil: &timeUntilFalse},
@@ -601,6 +635,7 @@ func TestScopes_GetUpscaleExcluded(t *testing.T) {
 			name: "exclude and exclude until different scopes",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{Exclude: timeSpans{booleanTimeSpan(false)}},
 				&Scope{},
 				&Scope{ExcludeUntil: &timeUntilTrue},
@@ -635,6 +670,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "none set",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},
@@ -646,6 +682,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "explicit include",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{Exclude: timeSpans{booleanTimeSpan(true)}},
 				&Scope{},
@@ -657,6 +694,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "explicit include",
 			scopes: Scopes{
 				&Scope{Exclude: timeSpans{booleanTimeSpan(false)}},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{Exclude: timeSpans{booleanTimeSpan(true)}},
 				&Scope{},
@@ -668,6 +706,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "exclude until true",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilTrue},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},
@@ -679,6 +718,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "exclude until false",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilFalse},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},
@@ -690,6 +730,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "exclude until and exclude same scope false",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilFalse, Exclude: timeSpans{booleanTimeSpan(false)}},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},
@@ -701,6 +742,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "exclude until and exclude true same scope",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilFalse, Exclude: timeSpans{booleanTimeSpan(true)}},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},
@@ -712,6 +754,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "exclude until true and exclude same scope",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilTrue, Exclude: timeSpans{booleanTimeSpan(false)}},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},
@@ -723,6 +766,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "exclude until and exclude true different scopes",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilFalse},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{Exclude: timeSpans{booleanTimeSpan(true)}},
 				&Scope{},
@@ -734,6 +778,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "exclude until true and exclude different scopes",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilTrue},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{Exclude: timeSpans{booleanTimeSpan(false)}},
 				&Scope{},
@@ -745,6 +790,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "exclude and exclude until different scopes",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{Exclude: timeSpans{booleanTimeSpan(true)}},
 				&Scope{ExcludeUntil: &timeUntilFalse},
@@ -756,6 +802,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "exclude and exclude until different scopes",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{Exclude: timeSpans{booleanTimeSpan(false)}},
 				&Scope{},
 				&Scope{ExcludeUntil: &timeUntilTrue},
@@ -767,6 +814,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "excluded and upscaleOnExclusion set on previous layer",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{UpscaleExcluded: triStateBool{isSet: true, value: true}},
 				&Scope{ExcludeUntil: &timeUntilTrue},
@@ -778,6 +826,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "excluded and upscaleOnExclusion set on next layer",
 			scopes: Scopes{
 				&Scope{},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{ExcludeUntil: &timeUntilTrue},
@@ -793,6 +842,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 				GetDefaultScope(),
 				GetDefaultScope(),
 				GetDefaultScope(),
+				GetDefaultScope(),
 			},
 			wantExcluded: false,
 		},
@@ -800,6 +850,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "workload past exclude-until ignored, namespace future exclude-until applies",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilFalse},
+				GetDefaultScope(),
 				&Scope{ExcludeUntil: &timeUntilTrue},
 				&Scope{},
 				&Scope{},
@@ -811,6 +862,7 @@ func TestScopes_GetExcluded(t *testing.T) {
 			name: "exclude until past, not excluded",
 			scopes: Scopes{
 				&Scope{ExcludeUntil: &timeUntilFalse},
+				GetDefaultScope(),
 				&Scope{},
 				&Scope{},
 				&Scope{},

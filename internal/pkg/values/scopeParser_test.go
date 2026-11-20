@@ -1,9 +1,13 @@
 package values
 
 import (
+	"context"
+	"log/slog"
 	"os"
 	"testing"
 
+	"github.com/caas-team/gokubedownscaler/api/v1alpha1"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -129,6 +133,7 @@ func TestScopeGetScopeFromEnv_DefaultTimezoneAppliesToDowntimeWithoutTimezone(t 
 				NewScope(),
 				NewScope(),
 				NewScope(),
+				NewScope(),
 				scopeEnv,
 				GetDefaultScope(),
 			}
@@ -186,6 +191,7 @@ func TestScopeGetScopeFromEnv_DefaultWeekFrameAppliesToDowntimeWithoutWeekdays(t
 			require.NoError(t, err)
 
 			scopes := Scopes{
+				NewScope(),
 				NewScope(),
 				NewScope(),
 				NewScope(),
@@ -315,16 +321,176 @@ func TestScopeGetScopeFromEnv_DowntimeReplicasPrecedence(t *testing.T) {
 			scopeEnv := NewScope()
 			require.NoError(t, scopeEnv.GetScopeFromEnv())
 
-			scopeWorkload, scopeNamespace, scopeCli := NewScope(), NewScope(), NewScope()
+			scopeWorkload, scopePolicy, scopeNamespace, scopeCli := NewScope(), NewScope(), NewScope(), NewScope()
 			scopeWorkload.DownscaleReplicas = test.workload
 			scopeNamespace.DownscaleReplicas = test.namespace
 			scopeCli.DownscaleReplicas = test.cli
 
-			scopes := Scopes{scopeWorkload, scopeNamespace, scopeCli, scopeEnv, GetDefaultScope()}
+			scopes := Scopes{scopeWorkload, scopePolicy, scopeNamespace, scopeCli, scopeEnv, GetDefaultScope()}
 
 			got, err := scopes.GetDownscaleReplicas()
 			require.NoError(t, err)
 			require.Equal(t, test.want, got)
+		})
+	}
+}
+
+type mockLogger struct{}
+
+func (mockLogger) ErrorInvalidAnnotation(string, string, context.Context) {}
+
+func (mockLogger) ErrorIncompatibleFields(string, context.Context) {}
+
+func TestScopes_DownscalePolicyPrecedence(t *testing.T) {
+	t.Parallel()
+
+	scopePolicy := NewScope()
+	err := scopePolicy.GetScopeFromAnnotations(
+		PolicyValuesToAnnotations(&v1alpha1.DownscalePolicyValues{ForceDowntime: "true", DownscaleReplicas: "2"}),
+		mockLogger{}, nil, t.Context(),
+	)
+	require.NoError(t, err)
+
+	scopeCli := NewScope()
+	scopeCli.DownscaleReplicas = AbsoluteReplicas(3)
+
+	// the namespace scope is below the DownscalePolicy scope, so none of its values apply
+	scopeNamespace := NewScope()
+	scopeNamespace.ForceUptime = timeSpans{booleanTimeSpan(true)}
+	scopeNamespace.DownscaleReplicas = AbsoluteReplicas(1)
+
+	scopeWorkload := NewScope()
+
+	scopes := Scopes{scopeWorkload, scopePolicy, scopeNamespace, scopeCli, NewScope(), GetDefaultScope()}
+
+	decision := scopes.GetCurrentScaling()
+	assert.Equal(t, ScalingDown, decision.Scaling)
+	assert.Equal(t, ScopeDownscalePolicy, decision.Scope)
+
+	replicas, err := scopes.GetDownscaleReplicas()
+	require.NoError(t, err)
+	assert.Equal(t, AbsoluteReplicas(2), replicas)
+
+	// the workload scope is above the DownscalePolicy scope, so its values win
+	scopeWorkload.DownscaleReplicas = AbsoluteReplicas(4)
+
+	replicas, err = scopes.GetDownscaleReplicas()
+	require.NoError(t, err)
+	assert.Equal(t, AbsoluteReplicas(4), replicas)
+}
+
+// inactiveWindow is an absolute timespan in the past, so it is never active.
+const inactiveWindow = "2000-01-01T00:00:00Z - 2000-01-02T00:00:00Z"
+
+// newPolicyAndNamespaceScopes parses the DownscalePolicy and namespace scopes and returns them in their evaluation order.
+func newPolicyAndNamespaceScopes(
+	t *testing.T,
+	policyValues *v1alpha1.DownscalePolicyValues,
+	namespaceAnnotations map[string]string,
+) Scopes {
+	t.Helper()
+
+	logger := slog.New(slog.DiscardHandler)
+
+	scopePolicy := NewScope()
+	err := scopePolicy.GetScopeFromAnnotations(PolicyValuesToAnnotations(policyValues), mockLogger{}, logger, t.Context())
+	require.NoError(t, err)
+
+	scopeNamespace := NewScope()
+	err = scopeNamespace.GetScopeFromAnnotations(namespaceAnnotations, mockLogger{}, logger, t.Context())
+	require.NoError(t, err)
+
+	return Scopes{NewScope(), scopePolicy, scopeNamespace, NewScope(), NewScope(), GetDefaultScope()}
+}
+
+func TestScopes_DownscalePolicyExclusionOverNamespace(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name                 string
+		policyValues         *v1alpha1.DownscalePolicyValues
+		namespaceAnnotations map[string]string
+		wantExcluded         bool
+		wantScope            ScopeID
+	}{
+		{
+			name:                 "namespace exclude applies when the policy doesn't set exclude",
+			policyValues:         &v1alpha1.DownscalePolicyValues{DownscaleReplicas: "1"},
+			namespaceAnnotations: map[string]string{annotationExclude: "true"},
+			wantExcluded:         true,
+			wantScope:            ScopeNamespace,
+		},
+		{
+			name:                 "policy exclude set to false cancels namespace exclude",
+			policyValues:         &v1alpha1.DownscalePolicyValues{Exclude: "false"},
+			namespaceAnnotations: map[string]string{annotationExclude: "true"},
+			wantExcluded:         false,
+			wantScope:            ScopeNone,
+		},
+		{
+			name:                 "policy exclude with an inactive window cancels namespace exclude",
+			policyValues:         &v1alpha1.DownscalePolicyValues{Exclude: inactiveWindow},
+			namespaceAnnotations: map[string]string{annotationExclude: "true"},
+			wantExcluded:         false,
+			wantScope:            ScopeNone,
+		},
+		{
+			name:                 "namespace exclude-until wins over a policy exclude set to false",
+			policyValues:         &v1alpha1.DownscalePolicyValues{Exclude: "false"},
+			namespaceAnnotations: map[string]string{annotationExcludeUntil: "2999-01-01T00:00:00Z"},
+			wantExcluded:         true,
+			wantScope:            ScopeNamespace,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			scopes := newPolicyAndNamespaceScopes(t, test.policyValues, test.namespaceAnnotations)
+
+			got := scopes.GetExcludedWithScope(scopes)
+			assert.Equal(t, test.wantExcluded, got.Matched)
+			assert.Equal(t, test.wantScope, got.Scope)
+		})
+	}
+}
+
+func TestScopes_DownscalePolicyForcedScalingOverNamespace(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name                 string
+		policyValues         *v1alpha1.DownscalePolicyValues
+		namespaceAnnotations map[string]string
+		wantScaling          Scaling
+		wantScope            ScopeID
+	}{
+		{
+			name:                 "namespace force-uptime applies when the policy doesn't set forced scaling",
+			policyValues:         &v1alpha1.DownscalePolicyValues{DownscaleReplicas: "1"},
+			namespaceAnnotations: map[string]string{annotationForceUptime: "true"},
+			wantScaling:          ScalingUp,
+			wantScope:            ScopeNamespace,
+		},
+		{
+			name:                 "policy force-downtime with an inactive window cancels namespace force-uptime",
+			policyValues:         &v1alpha1.DownscalePolicyValues{ForceDowntime: inactiveWindow},
+			namespaceAnnotations: map[string]string{annotationForceUptime: "true"},
+			wantScaling:          ScalingIgnore,
+			wantScope:            ScopeDownscalePolicy,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			scopes := newPolicyAndNamespaceScopes(t, test.policyValues, test.namespaceAnnotations)
+
+			got := scopes.GetCurrentScaling()
+			assert.Equal(t, test.wantScaling, got.Scaling)
+			assert.Equal(t, test.wantScope, got.Scope)
 		})
 	}
 }
