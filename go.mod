@@ -4,7 +4,7 @@ go 1.27.4
 
 require (
 	github.com/actions/actions-runner-controller v0.27.6
-	github.com/argoproj/argo-cd/v3 v3.6.1
+	github.com/argoproj/argo-cd/v3 v3.6.2
 	github.com/argoproj/argo-rollouts v1.10.2
 	github.com/fluxcd/helm-controller/api v1.7.1
 	github.com/fluxcd/kustomize-controller/api v1.10.1
@@ -44,7 +44,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
-	github.com/argoproj/argo-cd/gitops-engine/v3 v3.6.1 // indirect
+	github.com/argoproj/argo-cd/gitops-engine/v3 v3.6.2 // indirect
 	github.com/argoproj/pkg/v2 v2.0.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
@@ -63,7 +63,7 @@ require (
 	github.com/cyphar/filepath-securejoin v0.7.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/dlclark/regexp2 v1.12.0 // indirect
+	github.com/dlclark/regexp2/v2 v2.13.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.14.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
