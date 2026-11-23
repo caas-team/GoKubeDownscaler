@@ -55,6 +55,8 @@ The available scopes are:
 - [Env Scope](ref:docs-env-scope): contains the values and runtime configurations set by the environment variables.
 - [CLI Scope](ref:docs-cli-scope): contains the values and runtime configurations set by the CLI arguments.
 - [Namespace Scope](ref:docs-namespace-scope): contains only the values set by the annotations on the namespace.
+- [DownscalePolicy Scope](ref:docs-downscale-policy-scope): contains only the values set by the optional
+  DownscalePolicy resource that applies to the workload.
 - [Workload Scope](ref:docs-workload-scope): contains only the values set by the annotations on the workload.
 
 The hierarchy of scopes is important because it determines which configurations take precedence
@@ -69,11 +71,14 @@ Each scope can override the configurations of the scopes below it in the hierarc
 The scaling algorithm uses the values set in the scopes to determine how and when to scale workloads.
 The resulting value is always the one set by the most specific scope that has set that value.
 
-This means, as specified before, that [Workload Scope](ref:docs-workload-scope) > [Namespace Scope](ref:docs-namespace-scope) >
-[CLI Scope](ref:docs-cli-scope) > [ENV Scope](ref:docs-env-scope) > [Default Scope](ref:docs-default-scope).
+This means, as specified before, that [Workload Scope](ref:docs-workload-scope) > [DownscalePolicy Scope](ref:docs-downscale-policy-scope) >
+[Namespace Scope](ref:docs-namespace-scope) > [CLI Scope](ref:docs-cli-scope) > [ENV Scope](ref:docs-env-scope) >
+[Default Scope](ref:docs-default-scope).
 
-When computing scopes, exclusion values always take precedence, meaning that: no matter what the scaling values are
-across any other scope, if a scope contains an exclusion the result will be an exclusion.
+When computing scopes, exclusions take precedence over the scaling values:
+if the workload is excluded, the scaling values of every scope are not taken into account.
+Like other values, `exclude` is taken from the most specific scope that sets it,
+while an active `exclude-until` in any scope always excludes the workload.
 
 The diagram below illustrates how scaling is determined for a workload:
 
@@ -83,14 +88,15 @@ Cells ending with:
 - « are the cell the value was taken from
 - ↑ are empty and are not taken into account
 
-|             | Exclude | Downtime       | Replicas |
-| ----------- | ------- | -------------- | -------- |
-| Default     | false × | - ×            | 0 «      |
-| Environment | - ×     | Mon-Fri 8-20 × | - ↑      |
-| CLI         | - ×     | - ×            | - ↑      |
-| Namespace   | true «  | - ×            | - ↑      |
-| Workload    | - ↑     | Sat-Sun 0-24 « | - ↑      |
-| Result      | true    | Sat-Sun 0-24   | 0        |
+|                 | Exclude | Downtime       | Replicas |
+| --------------- | ------- | -------------- | -------- |
+| Default         | false × | - ×            | 0 ×      |
+| Environment     | - ×     | Mon-Fri 8-20 × | - ↑      |
+| CLI             | - ×     | - ×            | - ↑      |
+| Namespace       | true «  | - ×            | - ↑      |
+| DownscalePolicy | - ↑     | - ×            | 1 «      |
+| Workload        | - ↑     | Sat-Sun 0-24 « | - ↑      |
+| Result          | true    | Sat-Sun 0-24   | 1        |
 
 :::note[Reading the Diagram]
 
