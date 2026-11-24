@@ -38,6 +38,8 @@ type CommonRuntimeConfiguration struct {
 	Kubeconfig string
 	// DownscalePolicyEnabled sets if DownscalePolicy resources should be used as a scope.
 	DownscalePolicyEnabled bool
+	// DisableWorkloadScope sets the namespaces in which the workload scope is ignored.
+	DisableWorkloadScope WorkloadScopeFilter
 }
 
 func GetDefaultConfig() *CommonRuntimeConfiguration {
@@ -136,6 +138,16 @@ func (c *CommonRuntimeConfiguration) ParseCommonFlags() {
 		"downscale-policy",
 		false,
 		"use DownscalePolicy resources as a scope between the workload and the namespace scope; requires the CRD (default: false)",
+	)
+	flag.Var(
+		&c.DisableWorkloadScope.Namespaces,
+		"disable-workload-scope-for-namespaces",
+		"ignore the workload scope (workload annotations) in namespaces matching any of these regexes (optional)",
+	)
+	flag.Var(
+		&c.DisableWorkloadScope.NamespaceSelector,
+		"disable-workload-scope-for-namespaces-selector",
+		"ignore the workload scope (workload annotations) in namespaces matching this label selector (optional)",
 	)
 	flag.StringVar(
 		&c.Kubeconfig,

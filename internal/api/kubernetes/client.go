@@ -53,9 +53,9 @@ type Client interface {
 	// GetNamespacesAsSet gets all namespaces or a specific list of namespace
 	GetNamespacesAsSet() (map[string]struct{}, error)
 	// GetNamespacesScopes gets the namespaces scopes from the namespaces annotations
-	GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, []error)
-	// GetNamespaceScope gets the namespace scope from its annotations
-	GetNamespaceScope(namespace string, ctx context.Context) (*values.Scope, error)
+	GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*NamespaceScope, []error)
+	// GetNamespaceScope gets the namespace scope from its annotations, along with the namespace labels
+	GetNamespaceScope(namespace string, ctx context.Context) (*NamespaceScope, error)
 	// GetWorkloads gets all workloads of the specified resources for the specified namespaces
 	GetWorkloads(namespaces []string, resourceTypes []string, ctx context.Context) ([]scalable.Workload, error)
 	// RegetWorkload gets the workload again to ensure the latest state
@@ -210,20 +210,38 @@ func NewScheme() (*runtime.Scheme, error) {
 	return scheme, nil
 }
 
+// NamespaceScope holds the scope parsed from a namespace's annotations and the namespace's labels.
+type NamespaceScope struct {
+	// Scope is the scope parsed from the namespace annotations.
+	Scope *values.Scope
+	// Labels are the labels of the namespace.
+	Labels map[string]string
+}
+
 // client is a Kubernetes client with downscaling specific functions.
 type client struct {
 	clientsets *scalable.Clientsets
 	dryRun     bool
 }
 
-// getNamespaceAnnotations gets the annotations of the workload's namespace.
+// GetNamespaceAnnotations gets the annotations of the workload's namespace.
 func (c client) GetNamespaceAnnotations(namespace string, ctx context.Context) (map[string]string, error) {
+	ns, err := c.getNamespace(namespace, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return ns.Annotations, nil
+}
+
+// getNamespace gets the namespace object.
+func (c client) getNamespace(namespace string, ctx context.Context) (*corev1.Namespace, error) {
 	ns, err := c.clientsets.Kubernetes.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace: %w", err)
 	}
 
-	return ns.Annotations, nil
+	return ns, nil
 }
 
 // GetWorkloads gets all workloads of the specified resources for the specified namespaces.
@@ -470,7 +488,7 @@ func (c client) GetNamespacesAsSet() (map[string]struct{}, error) {
 }
 
 // GetNamespacesScopes gets the namespaces scopes from the namespaces annotations.
-func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*values.Scope, []error) {
+func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.Context) (map[string]*NamespaceScope, []error) {
 	var waitGroup sync.WaitGroup
 
 	namespaceSet := make(map[string]struct{})
@@ -483,9 +501,9 @@ func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.C
 		}
 	}
 
-	namespaceScopes := make(map[string]*values.Scope, len(namespaceSet))
+	namespaceScopes := make(map[string]*NamespaceScope, len(namespaceSet))
 	errChan := make(chan error, len(namespaceSet))
-	resultChan := make(chan map[string]*values.Scope, len(namespaceSet))
+	resultChan := make(chan map[string]*NamespaceScope, len(namespaceSet))
 
 	for namespace := range namespaceSet {
 		waitGroup.Add(1)
@@ -501,7 +519,7 @@ func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.C
 				return
 			}
 
-			resultChan <- map[string]*values.Scope{namespace: namespaceScope}
+			resultChan <- map[string]*NamespaceScope{namespace: namespaceScope}
 
 			slog.Debug("correctly parsed annotations and created namespace scope", "namespace", namespace)
 		}(namespace, ctx)
@@ -528,17 +546,18 @@ func (c client) GetNamespacesScopes(workloads []scalable.Workload, ctx context.C
 	return namespaceScopes, errs
 }
 
-func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*values.Scope, error) {
+func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*NamespaceScope, error) {
 	nsLogger := NewEventLoggerForNamespace(c, namespace)
 
 	slog.Debug("fetching namespace annotations", "namespace", namespace)
 
-	annotations, err := c.GetNamespaceAnnotations(namespace, ctx)
+	namespaceObject, err := c.getNamespace(namespace, ctx)
 	if err != nil {
 		err = fmt.Errorf("failed to get namespace annotations for namespace %s: %w", namespace, err)
 		return nil, err
 	}
 
+	annotations := namespaceObject.Annotations
 	namespaceScope := values.NewScope()
 
 	slog.Debug("parsing namespace scope from annotations", "annotations", annotations, "namespace", namespace)
@@ -556,7 +575,7 @@ func (c client) GetNamespaceScope(namespace string, ctx context.Context) (*value
 
 	slog.Debug("correctly parsed namespace annotations", "namespace", namespace, "annotations", annotations)
 
-	return namespaceScope, nil
+	return &NamespaceScope{Scope: namespaceScope, Labels: namespaceObject.Labels}, nil
 }
 
 // GetScaledObjects gets all scaledobjects in the specified namespace.

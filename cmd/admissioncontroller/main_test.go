@@ -29,9 +29,9 @@ type MockClient struct {
 func (m *MockClient) GetNamespaceScope(
 	namespace string,
 	ctx context.Context,
-) (*values.Scope, error) {
+) (*client.NamespaceScope, error) {
 	args := m.Called(namespace, ctx)
-	return args.Get(0).(*values.Scope), args.Error(1)
+	return args.Get(0).(*client.NamespaceScope), args.Error(1)
 }
 
 func (m *MockClient) GetScaledObjects(namespace string, ctx context.Context) ([]scalable.Workload, error) {
@@ -204,7 +204,7 @@ func TestServeValidateWorkloads(t *testing.T) {
 			t.Parallel()
 
 			mockKubeClient := &MockClient{}
-			mockKubeClient.On("GetNamespaceScope", "default", mock.Anything).Return(values.NewScope(), nil)
+			mockKubeClient.On("GetNamespaceScope", "default", mock.Anything).Return(&client.NamespaceScope{Scope: values.NewScope()}, nil)
 			mockKubeClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 
 			serverConfiguration := &serverConfig{

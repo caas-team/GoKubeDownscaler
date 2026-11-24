@@ -32,9 +32,14 @@ type MockClient struct {
 func (m *MockClient) GetNamespaceScope(
 	namespace string,
 	ctx context.Context,
-) (*values.Scope, error) {
+) (*client.NamespaceScope, error) {
 	args := m.Called(namespace, ctx)
-	return args.Get(0).(*values.Scope), args.Error(1)
+	return args.Get(0).(*client.NamespaceScope), args.Error(1)
+}
+
+// namespaceScope wraps a scope into a namespace scope without labels.
+func namespaceScope(scope *values.Scope) *client.NamespaceScope {
+	return &client.NamespaceScope{Scope: scope}
 }
 
 func (m *MockClient) GetDownscalePolicies(namespaces []string, ctx context.Context) ([]*policy.Policy, error) {
@@ -194,7 +199,7 @@ func newHandlerWithMocks(mockClient *MockClient) *WorkloadMutationHandler {
 		values.NewScope(), values.NewScope(), values.GetDefaultScope(),
 		false, nil, &util.RegexList{regexp.MustCompile(".*")}, &util.RegexList{}, &util.RegexList{},
 		map[string]struct{}{"deployments": {}, "scaledobjects": {}}, false,
-		nil, false,
+		nil, false, nil,
 	)
 }
 
@@ -220,7 +225,7 @@ func TestEvaluateMutation(t *testing.T) {
 				_ = scope.ForceUptime.Set("always")
 
 				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
-				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(namespaceScope(scope), nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"}; h.dryRun = true },
 			request: func(t *testing.T) *http.Request {
@@ -240,7 +245,7 @@ func TestEvaluateMutation(t *testing.T) {
 				_ = scope.ForceDowntime.Set("always")
 
 				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
-				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(namespaceScope(scope), nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"}; h.dryRun = true },
 			request: func(t *testing.T) *http.Request {
@@ -258,7 +263,7 @@ func TestEvaluateMutation(t *testing.T) {
 				downscalePolicy := newDownscalePolicy(t, "default", &v1alpha1.DownscalePolicyValues{ForceDowntime: "true"})
 
 				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
-				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(values.NewScope(), nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(namespaceScope(values.NewScope()), nil)
 				mockClient.On("GetDownscalePolicies", []string{"default"}, mock.Anything).Return([]*policy.Policy{downscalePolicy}, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) {
@@ -281,7 +286,7 @@ func TestEvaluateMutation(t *testing.T) {
 				downscalePolicy := newDownscalePolicy(t, "default", &v1alpha1.DownscalePolicyValues{Exclude: "true"})
 
 				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
-				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(values.NewScope(), nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(namespaceScope(values.NewScope()), nil)
 				mockClient.On("GetDownscalePolicies", []string{"default"}, mock.Anything).Return([]*policy.Policy{downscalePolicy}, nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) {
@@ -302,7 +307,7 @@ func TestEvaluateMutation(t *testing.T) {
 				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 
 				scope := values.GetDefaultScope()
-				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(namespaceScope(scope), nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"} },
 			request: func(t *testing.T) *http.Request {
@@ -321,7 +326,7 @@ func TestEvaluateMutation(t *testing.T) {
 				_ = scope.Exclude.Set("true")
 
 				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
-				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(namespaceScope(scope), nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"} },
 			request: func(t *testing.T) *http.Request {
@@ -381,7 +386,7 @@ func TestEvaluateMutation(t *testing.T) {
 				mockClient.On("GetScaledObjects", "default", mock.Anything).Return([]scalable.Workload{}, nil)
 
 				scope := values.GetDefaultScope()
-				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(scope, nil)
+				mockClient.On("GetNamespaceScope", "default", mock.Anything).Return(namespaceScope(scope), nil)
 			},
 			setupHandler: func(h *WorkloadMutationHandler) { h.includeNamespaces = &[]string{"default"} },
 			request: func(t *testing.T) *http.Request {
@@ -436,6 +441,90 @@ func TestEvaluateMutation(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, currentTest.expectedCode, resp.Response.Result.Code)
 			require.Contains(t, resp.Response.Result.Message, currentTest.expectedMessage)
+		})
+	}
+}
+
+func TestEvaluateMutation_DisableWorkloadScope(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name            string
+		filter          func(t *testing.T) *util.WorkloadScopeFilter
+		namespaceLabels map[string]string
+		expectedMessage string
+	}{
+		{
+			name:            "workload annotation applies when the filter is unset",
+			filter:          func(*testing.T) *util.WorkloadScopeFilter { return nil },
+			namespaceLabels: map[string]string{},
+			expectedMessage: "workload is excluded from downscaling",
+		},
+		{
+			name: "workload annotation ignored when the namespace name matches",
+			filter: func(*testing.T) *util.WorkloadScopeFilter {
+				return &util.WorkloadScopeFilter{Namespaces: util.RegexList{regexp.MustCompile("^team-a$")}}
+			},
+			namespaceLabels: map[string]string{},
+			expectedMessage: "would have patched",
+		},
+		{
+			name: "workload annotation ignored when the namespace labels match",
+			filter: func(t *testing.T) *util.WorkloadScopeFilter {
+				t.Helper()
+
+				filter := &util.WorkloadScopeFilter{}
+				require.NoError(t, filter.NamespaceSelector.Set("downscaler/workload-scope!=enabled"))
+
+				return filter
+			},
+			namespaceLabels: map[string]string{"team": "a"},
+			expectedMessage: "would have patched",
+		},
+		{
+			name: "workload annotation applies when neither the name nor the labels match",
+			filter: func(t *testing.T) *util.WorkloadScopeFilter {
+				t.Helper()
+
+				filter := &util.WorkloadScopeFilter{Namespaces: util.RegexList{regexp.MustCompile("^other$")}}
+				require.NoError(t, filter.NamespaceSelector.Set("downscaler/workload-scope!=enabled"))
+
+				return filter
+			},
+			namespaceLabels: map[string]string{"downscaler/workload-scope": "enabled"},
+			expectedMessage: "workload is excluded from downscaling",
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			scope := values.NewScope()
+			scope.DownscaleReplicas = values.AbsoluteReplicas(0)
+			require.NoError(t, scope.ForceDowntime.Set("always"))
+
+			mockClient := &MockClient{}
+			mockClient.On("GetScaledObjects", "team-a", mock.Anything).Return([]scalable.Workload{}, nil)
+			mockClient.On("GetNamespaceScope", "team-a", mock.Anything).Return(
+				&client.NamespaceScope{Scope: scope, Labels: testCase.namespaceLabels}, nil,
+			)
+
+			handler := newHandlerWithMocks(mockClient)
+			handler.includeNamespaces = &[]string{"team-a"}
+			handler.dryRun = true
+			handler.disableWorkloadScope = testCase.filter(t)
+
+			input, err := parseAdmissionReviewFromRequest(newDeploymentRequestWithExcludeAnnotationTrue(t, "team-a"))
+			require.NoError(t, err)
+
+			workload, err := scalable.ParseWorkloadFromRawObject("deployment", input.Request.Object.Raw)
+			require.NoError(t, err)
+
+			resp, err := handler.evaluateWorkloadMutation(t.Context(), workload, input, false, slog.Default())
+			require.NoError(t, err)
+			require.Equal(t, int32(http.StatusAccepted), resp.Response.Result.Code)
+			require.Contains(t, resp.Response.Result.Message, testCase.expectedMessage)
 		})
 	}
 }

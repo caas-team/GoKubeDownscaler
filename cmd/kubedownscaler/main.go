@@ -17,6 +17,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/api/kubernetes"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/server/mux"
@@ -358,13 +359,46 @@ func recordScalingError(err error, workloadNamespaceMetrics *metrics.NamespaceMe
 	workloadNamespaceMetrics.IncrementGenericErrorsCount()
 }
 
+// getWorkloadScope parses the workload scope from the workload annotations.
+// An empty scope is returned if the workload scope is disabled for the workload's namespace.
+func getWorkloadScope(
+	workload scalable.Workload,
+	namespaceLabels map[string]string,
+	eventLogger util.ResourceLogger,
+	config *runtimeConfiguration,
+	ctx context.Context,
+	logger *slog.Logger,
+) (*values.Scope, error) {
+	scopeWorkload := values.NewScope()
+
+	if config.DisableWorkloadScope.IsDisabled(workload.GetNamespace(), namespaceLabels) {
+		logger.Debug(
+			"workload scope is disabled for the namespace, ignoring workload annotations",
+			"annotations", workload.GetAnnotations(),
+		)
+
+		return scopeWorkload, nil
+	}
+
+	logger.Debug(
+		"parsing workload scope from annotations",
+		"annotations", workload.GetAnnotations(),
+	)
+
+	if err := scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), eventLogger, logger, ctx); err != nil {
+		return nil, fmt.Errorf("failed to parse workload scope from annotations: %w", err)
+	}
+
+	return scopeWorkload, nil
+}
+
 // scanWorkload runs a scan on the workload, determining the scaling and scaling the workload.
 func scanWorkload(
 	workload scalable.Workload,
 	client kubernetes.Client,
 	ctx context.Context,
 	scopeDefault, scopeCli, scopeEnv *values.Scope,
-	namespaceScopes map[string]*values.Scope,
+	namespaceScopes map[string]*kubernetes.NamespaceScope,
 	policies *downscalePolicies,
 	workloadNamespaceMetrics *metrics.NamespaceMetricsHolder,
 	config *runtimeConfiguration,
@@ -374,20 +408,17 @@ func scanWorkload(
 
 	var err error
 
-	logger.Debug(
-		"parsing workload scope from annotations",
-		"annotations", workload.GetAnnotations(),
-	)
-
-	scopeWorkload := values.NewScope()
-	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), eventLogger, logger, ctx); err != nil {
-		workloadNamespaceMetrics.IncrementParsingWorkloadScopeErrorsCount()
-		return fmt.Errorf("failed to parse workload scope from annotations: %w", err)
-	}
-
-	scopeNamespace, exists := namespaceScopes[workload.GetNamespace()]
+	namespaceScope, exists := namespaceScopes[workload.GetNamespace()]
 	if !exists {
 		return newNamespaceScopeRetrieveError(workload.GetNamespace())
+	}
+
+	scopeNamespace := namespaceScope.Scope
+
+	scopeWorkload, err := getWorkloadScope(workload, namespaceScope.Labels, eventLogger, config, ctx, logger)
+	if err != nil {
+		workloadNamespaceMetrics.IncrementParsingWorkloadScopeErrorsCount()
+		return err
 	}
 
 	scopePolicy, logger, err := policies.getPolicyScopeForWorkload(workload, logger)

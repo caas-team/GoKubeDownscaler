@@ -211,6 +211,42 @@ Since, in that case, the downscaler will only run once, you might want to perfor
 - Default: false
 - Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
 
+### Disable Workload Scope For Namespaces
+
+- Type: [Regex List](ref:docs-regex-list) (list of regex patterns matching namespace names)
+- Description: Disables the [Workload Scope](ref:docs-workload-scope) for workloads within matching namespaces.
+  The `downscaler/*` annotations on these workloads (including `downscaler/exclude`) are ignored,
+  so only cluster admins and teams allowed by RBAC can decide how they are scaled.
+  Can be combined with [Disable Workload Scope For Namespaces Selector](#disable-workload-scope-for-namespaces-selector):
+  the Workload Scope is disabled if either one matches.
+  See [Disabling the Workload Scope](ref:docs-workload-scope#disabling-the-workload-scope).
+- Default: none (the Workload Scope applies in all namespaces)
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
+:::warning
+
+Regex patterns are not anchored: `kube-system` also matches `kube-system-tools`.
+Use `^kube-system$` to match a single namespace.
+
+A new namespace is only covered if its name matches one of the patterns.
+Go regexes do not support negative lookahead, so you can't write "every namespace except X" with a regex.
+Use the [selector](#disable-workload-scope-for-namespaces-selector) (e.g. `downscaler/workload-scope!=enabled`)
+to also cover namespaces created later.
+
+:::
+
+### Disable Workload Scope For Namespaces Selector
+
+- Type: string ([label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors)
+  matching namespace labels)
+- Description: Disables the [Workload Scope](ref:docs-workload-scope) for workloads within namespaces whose labels match the selector.
+  It works the same way as [Disable Workload Scope For Namespaces](#disable-workload-scope-for-namespaces).
+  If you set both, the Workload Scope is disabled when either one matches.
+  An invalid selector makes the component fail at startup.
+- Examples: `downscaler/workload-scope!=enabled`, `kubernetes.io/metadata.name notin (kube-system,monitoring)`
+- Default: none (the Workload Scope applies in all namespaces)
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+
 ### Internal Cert Rotation
 
 - Type: boolean

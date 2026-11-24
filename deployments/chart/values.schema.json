@@ -575,6 +575,18 @@
 		"aggregateToDefaultRoles": { "type": "boolean" }
 	  },
 	  "required": ["enabled", "aggregateToDefaultRoles"]
+	},
+	"workloadScope": {
+	  "type": "object",
+	  "additionalProperties": false,
+	  "properties": {
+		"disabledNamespaces": {
+		  "type": "array",
+		  "items": { "type": "string" }
+		},
+		"disabledNamespacesSelector": { "type": "string" }
+	  },
+	  "required": ["disabledNamespaces", "disabledNamespacesSelector"]
 	}
   },
   "required": []

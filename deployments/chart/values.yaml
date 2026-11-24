@@ -61,6 +61,15 @@ downscalePolicy:
   # Aggregates permissions to manage DownscalePolicies into the default admin, edit and view ClusterRoles
   aggregateToDefaultRoles: false
 
+# Disables the workload scope (downscaler/* annotations on workloads) in the matching namespaces,
+# so teams can't override the configuration set by cluster admins. A namespace matches if its name matches
+# any of the disabledNamespaces regexes OR its labels match the disabledNamespacesSelector.
+workloadScope:
+  # Regexes matched against the namespace name, e.g. ["^team-.*$"]. Regexes aren't anchored by default
+  disabledNamespaces: []
+  # Label selector matched against the namespace labels, e.g. "downscaler/workload-scope!=enabled"
+  disabledNamespacesSelector: ""
+
 serviceAccount:
   create: true
   annotations: {}

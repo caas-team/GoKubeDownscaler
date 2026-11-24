@@ -102,3 +102,39 @@ or by using the `kubectl annotate` command
 ```bash
 kubectl annotate deployment example-deployment downscaler/uptime="Mon-Fri 08:00-20:00 UTC"
 ```
+
+## Disabling the Workload Scope
+
+Anyone who can edit a workload can set its annotations, and the Workload Scope overrides every other scope.
+Cluster admins can disable the Workload Scope in selected namespaces with the
+[`--disable-workload-scope-for-namespaces`](ref:docs-runtime-configuration#disable-workload-scope-for-namespaces) and
+[`--disable-workload-scope-for-namespaces-selector`](ref:docs-runtime-configuration#disable-workload-scope-for-namespaces-selector)
+runtime configurations.
+If you set both, a namespace is matched when either one matches it.
+In the Helm Chart, they are set by the [`workloadScope`](ref:docs-helm-workload-scope) value.
+
+For workloads in a matching namespace:
+
+- All `downscaler/*` values listed above are ignored, including `downscaler/exclude`
+- The scaling is decided by the remaining scopes: DownscalePolicy > Namespace > CLI > Environment > Default
+- Internal annotations set by the Downscaler (e.g. `downscaler/original-replicas`) and the
+  [Time Annotation](ref:docs-runtime-configuration#time-annotation) keep working
+
+Both components (the Downscaler and the Webhook) apply the same rules.
+
+The selector is the safer option, because namespace labels can usually only be edited by cluster admins,
+and it also covers namespaces created later.
+For example, to keep the Workload Scope only in namespaces that you labeled yourself:
+
+```bash
+--disable-workload-scope-for-namespaces-selector='downscaler/workload-scope!=enabled'
+```
+
+```bash
+kubectl label namespace kube-system downscaler/workload-scope=enabled
+```
+
+This lets you scale `kube-system` (once it is removed from [`--exclude-namespaces`](ref:docs-runtime-configuration#exclude-namespaces))
+while still excluding single workloads (e.g. `coredns`) with `downscaler/exclude`.
+Teams in all other namespaces can still manage their scaling through a
+[DownscalePolicy](ref:docs-downscale-policy-scope), governed by RBAC.
