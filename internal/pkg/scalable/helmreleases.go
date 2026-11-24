@@ -11,6 +11,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	helmv2 "github.com/fluxcd/helm-controller/api/v2"
 	"github.com/wI2L/jsondiff"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -114,28 +115,64 @@ func (h *helmRelease) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares the workload with another workload and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //short names are ok for the workflow of this function
-func (h *helmRelease) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (h *helmRelease) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
 	}
 
-	depCopy, ok := sswCopy.suspendScaledResource.(*helmRelease)
+	hCopy, ok := sswCopy.suspendScaledResource.(*helmRelease)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*helmRelease)(nil), sswCopy.suspendScaledResource)
 	}
 
-	if h.HelmRelease == nil || depCopy.HelmRelease == nil {
+	if h.HelmRelease == nil || hCopy.HelmRelease == nil {
 		return nil, newNilUnderlyingObjectError(h.Kind)
 	}
 
-	diff, err := jsondiff.Compare(h.HelmRelease, depCopy.HelmRelease)
+	diff, err := jsondiff.Compare(h.HelmRelease, hCopy.HelmRelease)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compare helmRelease: %w", err)
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //short names are ok for the workflow of this function
+func (h *helmRelease) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
+	}
+
+	hCopy, ok := sswCopy.suspendScaledResource.(*helmRelease)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*helmRelease)(nil), sswCopy.suspendScaledResource)
+	}
+
+	if h.HelmRelease == nil || hCopy.HelmRelease == nil {
+		return nil, newNilUnderlyingObjectError(h.Kind)
+	}
+
+	return generateServerSideApplyPatch(h.HelmRelease, hCopy.HelmRelease)
+}
+
+// Patch applies a patch to the helmRelease.
+func (h *helmRelease) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if h.HelmRelease == nil {
+		return newNilUnderlyingObjectError(h.Kind)
+	}
+
+	return patchControllerRuntimeObject(clientsets.Client, h.HelmRelease, patchType, patchData, manageFields, ctx)
 }

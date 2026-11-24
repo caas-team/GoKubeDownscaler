@@ -42,13 +42,13 @@ const (
 	horizontalPodAutoscalerKind   = "HorizontalPodAutoscaler"
 	ingressKind                   = "Ingress"
 	jobKind                       = "Job"
-	helmReleaseKind             = "HelmRelease"
+	helmReleaseKind               = "HelmRelease"
 	kafkaStrimziGroup             = "kafka.strimzi.io"
 	kafkaStrimziVersion           = "v1"
 	kafkaBridgeKind               = "KafkaBridge"
 	kafkaConnectKind              = "KafkaConnect"
 	kafkaMirrorMaker2Kind         = "KafkaMirrorMaker2"
-	kustomizationKind           = "Kustomization"
+	kustomizationKind             = "Kustomization"
 	mariaDBGroup                  = "k8s.mariadb.com"
 	mariaDBVersion                = "v1alpha1"
 	mariaDBKind                   = "MariaDB"
@@ -63,7 +63,7 @@ const (
 	serviceKind                   = "Service"
 	stackKind                     = "Stack"
 	statefulSetKind               = "StatefulSet"
-	applicationKind             = "Application"
+	applicationKind               = "Application"
 )
 
 // clearManagedFieldsPatch creates a merge patch that retains every manager except this controller.

@@ -6,9 +6,9 @@ require (
 	github.com/actions/actions-runner-controller v0.27.6
 	github.com/argoproj/argo-cd/v3 v3.6.2
 	github.com/argoproj/argo-rollouts v1.10.2
+	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/fluxcd/helm-controller/api v1.7.2
 	github.com/fluxcd/kustomize-controller/api v1.10.2
-	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/kedacore/keda/v2 v2.21.1
 	github.com/open-policy-agent/cert-controller v0.16.0
 	github.com/openkruise/kruise v1.9.3
@@ -67,7 +67,6 @@ require (
 	github.com/dlclark/regexp2/v2 v2.13.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.14.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
-	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/expr-lang/expr v1.17.8 // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect

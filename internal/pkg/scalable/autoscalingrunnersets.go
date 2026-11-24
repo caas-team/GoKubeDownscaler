@@ -174,6 +174,10 @@ func (a *autoscalingRunnerSet) Patch(
 	manageFields bool,
 	ctx context.Context,
 ) error {
+	if a.AutoscalingRunnerSet == nil {
+		return newNilUnderlyingObjectError(a.Kind)
+	}
+
 	return patchControllerRuntimeObject(
 		clientsets.Client,
 		a.AutoscalingRunnerSet,

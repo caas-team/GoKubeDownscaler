@@ -12,6 +12,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getApplications is the getResourceFunc for Argo Applications.
@@ -127,10 +128,10 @@ func (a *application) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two application resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two application resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (a *application) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (a *application) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
@@ -151,4 +152,53 @@ func (a *application) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (a *application) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
+	}
+
+	aCopy, ok := sswCopy.suspendScaledResource.(*application)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*application)(nil), sswCopy.suspendScaledResource)
+	}
+
+	if a.Application == nil || aCopy.Application == nil {
+		return nil, newNilUnderlyingObjectError(a.Kind)
+	}
+
+	return generateServerSideApplyPatch(a.Application, aCopy.Application)
+}
+
+// Patch applies a patch to the application.
+func (a *application) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if a.Application == nil {
+		return newNilUnderlyingObjectError(a.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.ArgoCD.ArgoprojV1alpha1().Applications(a.Namespace).Patch(
+		ctx,
+		a.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch application: %w", err)
+	}
+
+	return nil
 }

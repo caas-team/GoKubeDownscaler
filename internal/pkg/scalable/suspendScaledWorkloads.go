@@ -13,6 +13,8 @@ import (
 )
 
 // suspendScaledResource provides all the functions needed to scale a resource which is scaled by setting a suspend field.
+//
+// nolint: interfacebloat // This interface is intentionally large to provide all the functions needed to suspend and resume a resource.
 type suspendScaledResource interface {
 	scalableResource
 	// Update updates the resource with all changes made to it. It should only be called once on a resource

@@ -134,6 +134,7 @@ func TestScanWorkload_DownscalePolicy(t *testing.T) {
 		"DownscaleWorkload",
 		values.AbsoluteReplicas(1),
 		mockWorkload,
+		false,
 		ctx,
 		mock.AnythingOfType("*slog.Logger"),
 	).Return(metrics.NewSavedResources(0, 0), nil)
