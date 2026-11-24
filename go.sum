@@ -121,10 +121,10 @@ github.com/fatih/camelcase v1.0.0 h1:hxNvNX/xYBp0ovncs8WyWZrOrpBNub/JfaMvbURyft8
 github.com/fatih/camelcase v1.0.0/go.mod h1:yN2Sb0lFhZJUdVvtELVWefmrXpuZESvPmqwoZc+/fpc=
 github.com/felixge/httpsnoop v1.1.0 h1:3YtUj32ZZkqZtt3sZZsClsymw/QDuVfpNhoA31zeORc=
 github.com/felixge/httpsnoop v1.1.0/go.mod h1:Zqxgdd+1Rkcz8euOqdr7lqgCRJztwr5hp9vDSi5UZCE=
-github.com/fluxcd/helm-controller/api v1.7.1 h1:kARTcSBiS05mQsY7nVdL+XGaIGPZd/oC5owFTN6NIyk=
-github.com/fluxcd/helm-controller/api v1.7.1/go.mod h1:cCTRZcz/hjvI+3AxRGgsGe/AeEjZHHKUYxV/+6uidNM=
-github.com/fluxcd/kustomize-controller/api v1.10.1 h1:/7h464untM4nSwJCnoja1UkJC7G7NM3BWhAi1N3P8ME=
-github.com/fluxcd/kustomize-controller/api v1.10.1/go.mod h1:hSq1/80SS0106LhfGr2fe/+P8MgCfBQ82EocC6Su/Ms=
+github.com/fluxcd/helm-controller/api v1.7.2 h1:nQfiNCBWRjGI5q020On7kHQh77WCl54+sBA9FY6TBug=
+github.com/fluxcd/helm-controller/api v1.7.2/go.mod h1:cCTRZcz/hjvI+3AxRGgsGe/AeEjZHHKUYxV/+6uidNM=
+github.com/fluxcd/kustomize-controller/api v1.10.2 h1:tj4mU/3uUBzVxxx4zi95fxs8x2BhEUQkFNOKNRrxn08=
+github.com/fluxcd/kustomize-controller/api v1.10.2/go.mod h1:hSq1/80SS0106LhfGr2fe/+P8MgCfBQ82EocC6Su/Ms=
 github.com/fluxcd/pkg/apis/acl v0.12.0 h1:UWpZDqKxpKDW38wdXIMHV8Uv3POPu2vUrra0JH1frH0=
 github.com/fluxcd/pkg/apis/acl v0.12.0/go.mod h1:PJrGIu5Bw/6/siO95uhS+pi5oKSU+gVJqHqsPHb8Kok=
 github.com/fluxcd/pkg/apis/kustomize v1.23.0 h1:tT/sUURyh6ixQG4+Y/ZoUu+hh5/DQLRraWBgy42ubqQ=
