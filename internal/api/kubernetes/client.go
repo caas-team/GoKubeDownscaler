@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	actionsv1alpha1 "github.com/actions/actions-runner-controller/apis/actions.github.com/v1alpha1"
 	argocd "github.com/argoproj/argo-cd/v3/pkg/client/clientset/versioned"
 	argo "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	"github.com/caas-team/gokubedownscaler/api/v1alpha1"
@@ -177,14 +176,8 @@ func NewClient(kubeconfig string, dryRun bool, qps float64, burst, timeout int) 
 func NewScheme() (*runtime.Scheme, error) {
 	scheme := runtime.NewScheme()
 
-	// GitHub Actions Runner Controller CRDs
-	err := actionsv1alpha1.AddToScheme(scheme)
-	if err != nil {
-		return nil, fmt.Errorf("failed to add a scheme to generic client: %w", err)
-	}
-
 	// Zalando postgres-operator CRDs
-	err = acidv1.AddToScheme(scheme)
+	err := acidv1.AddToScheme(scheme)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add acidv1 scheme to generic client: %w", err)
 	}

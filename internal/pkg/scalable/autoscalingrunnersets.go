@@ -6,26 +6,39 @@ import (
 	"encoding/json"
 	"fmt"
 
-	actionsv1alpha1 "github.com/actions/actions-runner-controller/apis/actions.github.com/v1alpha1"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+//nolint:gochecknoglobals // package-level GVK required for unstructured client
+var autoscalingRunnerSetGVK = schema.GroupVersionKind{
+	Group: "actions.github.com", Version: "v1alpha1", Kind: autoscalingRunnerSetKind,
+}
+
 // getAutoscalingRunnerSets is the getResourceFunc for AutoscalingRunnerSets.
 func getAutoscalingRunnerSets(namespace string, clientsets *Clientsets, ctx context.Context) ([]Workload, error) {
-	var runnerSets actionsv1alpha1.AutoscalingRunnerSetList
+	list := &unstructured.UnstructuredList{}
+	list.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   autoscalingRunnerSetGVK.Group,
+		Version: autoscalingRunnerSetGVK.Version,
+		Kind:    autoscalingRunnerSetGVK.Kind + "List",
+	})
 
-	err := clientsets.Client.List(ctx, &runnerSets, ctrlclient.InNamespace(namespace))
-	if err != nil {
+	if err := clientsets.Client.List(ctx, list, ctrlclient.InNamespace(namespace)); err != nil {
 		return nil, fmt.Errorf("failed to get autoscalingrunnersets: %w", err)
 	}
 
-	results := make([]Workload, 0, len(runnerSets.Items))
-	for i := range runnerSets.Items {
-		setGroupVersionKindIfEmpty(&runnerSets.Items[i], actionsv1alpha1.GroupVersion.WithKind(autoscalingRunnerSetKind))
-		results = append(results, &replicaScaledWorkload{&autoscalingRunnerSet{&runnerSets.Items[i]}})
+	results := make([]Workload, 0, len(list.Items))
+	for i := range list.Items {
+		item := list.Items[i]
+		setGroupVersionKindIfEmpty(&item, autoscalingRunnerSetGVK)
+		results = append(results, &replicaScaledWorkload{&autoscalingRunnerSet{&item}})
 	}
 
 	return results, nil
@@ -33,32 +46,36 @@ func getAutoscalingRunnerSets(namespace string, clientsets *Clientsets, ctx cont
 
 // parseAutoscalingRunnerSetFromBytes parses the admission review and returns the autoscalingrunnerset wrapped in a Workload.
 func parseAutoscalingRunnerSetFromBytes(rawObject []byte) (Workload, error) {
-	var ars actionsv1alpha1.AutoscalingRunnerSet
-	if err := json.Unmarshal(rawObject, &ars); err != nil {
+	var u unstructured.Unstructured
+	if err := json.Unmarshal(rawObject, &u); err != nil {
 		return nil, fmt.Errorf("failed to decode autoscalingrunnerset: %w", err)
 	}
 
-	return &replicaScaledWorkload{&autoscalingRunnerSet{&ars}}, nil
+	return &replicaScaledWorkload{&autoscalingRunnerSet{&u}}, nil
 }
 
-// autoscalingRunnerSet is a wrapper for cronjob.v1.batch to implement the suspendScaledResource interface.
+// autoscalingRunnerSet wraps an unstructured AutoscalingRunnerSet. The unstructured approach
+// preserves fields unknown to the typed ARC API (e.g. spec.listenerMetrics) when updating.
 type autoscalingRunnerSet struct {
-	*actionsv1alpha1.AutoscalingRunnerSet
+	*unstructured.Unstructured
 }
 
 func (a *autoscalingRunnerSet) Reget(clientsets *Clientsets, ctx context.Context) error {
-	err := clientsets.Client.Get(ctx, ctrlclient.ObjectKey{Namespace: a.Namespace, Name: a.Name}, a.AutoscalingRunnerSet)
+	fresh := &unstructured.Unstructured{}
+	setGroupVersionKindIfEmpty(fresh, autoscalingRunnerSetGVK)
+
+	err := clientsets.Client.Get(ctx, ctrlclient.ObjectKey{Namespace: a.GetNamespace(), Name: a.GetName()}, fresh)
 	if err != nil {
 		return fmt.Errorf("failed to get autoscalingrunnerset: %w", err)
 	}
 
-	setGroupVersionKindIfEmpty(a.AutoscalingRunnerSet, actionsv1alpha1.GroupVersion.WithKind(autoscalingRunnerSetKind))
+	a.Unstructured = fresh
 
 	return nil
 }
 
 func (a *autoscalingRunnerSet) Update(clientsets *Clientsets, ctx context.Context) error {
-	err := clientsets.Client.Update(ctx, a.AutoscalingRunnerSet)
+	err := clientsets.Client.Update(ctx, a.Unstructured)
 	if err != nil {
 		return fmt.Errorf("failed to update autoscalingrunnerset: %w", err)
 	}
@@ -68,30 +85,48 @@ func (a *autoscalingRunnerSet) Update(clientsets *Clientsets, ctx context.Contex
 
 // setReplicas sets the amount of replicas on the resource.
 func (a *autoscalingRunnerSet) setReplicas(replicas int32) error {
-	intReplicas := int(replicas)
-	a.Spec.MinRunners = &intReplicas
+	if err := unstructured.SetNestedField(a.Object, int64(replicas), "spec", "minRunners"); err != nil {
+		return fmt.Errorf("failed to set spec.minRunners for %s %s/%s: %w", a.GetKind(), a.GetNamespace(), a.GetName(), err)
+	}
 
 	return nil
 }
 
 // getReplicas gets the current amount of replicas of the resource.
-//
-//nolint:gosec //temporary in-place conversion
 func (a *autoscalingRunnerSet) getReplicas() (values.Replicas, error) {
-	replicas := a.Spec.MinRunners
-	if replicas == nil {
-		return nil, newNoReplicasError(a.Kind, a.Name)
+	val, found, err := unstructured.NestedFieldNoCopy(a.Object, "spec", "minRunners")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get spec.minRunners for %s %s/%s: %w", a.GetKind(), a.GetNamespace(), a.GetName(), err)
 	}
 
-	return values.AbsoluteReplicas(int32(*replicas)), nil
+	if !found {
+		return nil, newNoReplicasError(a.GetKind(), a.GetName())
+	}
+
+	replicas, ok := unstructuredReplicasToInt32(val)
+	if !ok {
+		return nil, newUnexpectedReplicasTypeError(val, a.GetKind(), a.GetNamespace(), a.GetName())
+	}
+
+	return values.AbsoluteReplicas(replicas), nil
 }
 
 // getSavedResourcesRequests calculates the saved resource requests based on the difference in replicas.
 func (a *autoscalingRunnerSet) getSavedResourcesRequests(diffReplicas int32) *metrics.SavedResources {
 	var totalSavedCPU, totalSavedMemory float64
 
-	for i := range a.Spec.Template.Spec.Containers {
-		container := &a.Spec.Template.Spec.Containers[i]
+	templateSpec, found, err := unstructured.NestedMap(a.Object, "spec", "template", "spec")
+	if err != nil || !found {
+		return metrics.NewSavedResources(0, 0)
+	}
+
+	var podSpec corev1.PodSpec
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(templateSpec, &podSpec); err != nil {
+		return metrics.NewSavedResources(0, 0)
+	}
+
+	for i := range podSpec.Containers {
+		container := &podSpec.Containers[i]
 		if container.Resources.Requests != nil {
 			totalSavedCPU += container.Resources.Requests.Cpu().AsApproximateFloat64()
 			totalSavedMemory += container.Resources.Requests.Memory().AsApproximateFloat64()
@@ -105,23 +140,22 @@ func (a *autoscalingRunnerSet) getSavedResourcesRequests(diffReplicas int32) *me
 }
 
 // Copy creates a deep copy of the workload.
+// Must use DeepCopy() because Unstructured wraps a map, so a struct copy would be shallow.
 func (a *autoscalingRunnerSet) Copy() (Workload, error) {
-	if a.AutoscalingRunnerSet == nil {
-		return nil, newNilUnderlyingObjectError(a.Kind)
+	if a.Unstructured == nil || a.Object == nil {
+		return nil, newNilUnderlyingObjectError(a.GetKind())
 	}
-
-	copied := a.DeepCopy()
 
 	return &replicaScaledWorkload{
 		replicaScaledResource: &autoscalingRunnerSet{
-			AutoscalingRunnerSet: copied,
+			Unstructured: a.DeepCopy(),
 		},
 	}, nil
 }
 
 // Compare compares the workload with another workload and returns the differences as a jsondiff.Patch.
 //
-//nolint:varnamelen //short names are ok for the workflow of this function
+//nolint:varnamelen // short names are ok for the workflow of this function
 func (a *autoscalingRunnerSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
@@ -133,11 +167,11 @@ func (a *autoscalingRunnerSet) Compare(workloadCopy Workload) (jsondiff.Patch, e
 		return nil, newExpectTypeGotTypeError((*autoscalingRunnerSet)(nil), rswCopy.replicaScaledResource)
 	}
 
-	if a.AutoscalingRunnerSet == nil || depCopy.AutoscalingRunnerSet == nil {
-		return nil, newNilUnderlyingObjectError(a.Kind)
+	if a.Unstructured == nil || depCopy.Unstructured == nil {
+		return nil, newNilUnderlyingObjectError(a.GetKind())
 	}
 
-	diff, err := jsondiff.Compare(a.AutoscalingRunnerSet, depCopy.AutoscalingRunnerSet)
+	diff, err := jsondiff.Compare(a.Object, depCopy.Object)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compare autoscalingrunnerset: %w", err)
 	}
