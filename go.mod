@@ -3,7 +3,6 @@ module github.com/caas-team/gokubedownscaler
 go 1.27.4
 
 require (
-	github.com/actions/actions-runner-controller v0.27.6
 	github.com/argoproj/argo-cd/v3 v3.6.2
 	github.com/argoproj/argo-rollouts v1.10.2
 	github.com/fluxcd/helm-controller/api v1.7.2
