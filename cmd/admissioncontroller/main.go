@@ -181,6 +181,7 @@ func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, reques
 		&s.config.ExcludeWorkloads,
 		s.includedResourcesSet,
 		s.config.MetricsEnabled,
+		s.config.ServerSidePatching,
 		s.admissionMetrics,
 		s.config.DownscalePolicyEnabled,
 	)

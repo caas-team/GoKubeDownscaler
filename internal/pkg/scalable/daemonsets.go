@@ -10,6 +10,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getDaemonSets is the getResourceFunc for DaemonSets.
@@ -112,10 +113,10 @@ func (d *daemonSet) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two daemonSet resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two daemonSet resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (d *daemonSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (d *daemonSet) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	nswCopy, ok := workloadCopy.(*nodeSelectorScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*nodeSelectorScaledWorkload)(nil), workloadCopy)
@@ -136,4 +137,52 @@ func (d *daemonSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (d *daemonSet) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	nswCopy, ok := workloadCopy.(*nodeSelectorScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*nodeSelectorScaledWorkload)(nil), workloadCopy)
+	}
+
+	dsCopy, ok := nswCopy.nodeSelectorScaledResource.(*daemonSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*daemonSet)(nil), nswCopy.nodeSelectorScaledResource)
+	}
+
+	if d.DaemonSet == nil || dsCopy.DaemonSet == nil {
+		return nil, newNilUnderlyingObjectError(d.Kind)
+	}
+
+	return generateServerSideApplyPatch(d.DaemonSet, dsCopy.DaemonSet)
+}
+
+func (d *daemonSet) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if d.DaemonSet == nil {
+		return newNilUnderlyingObjectError(d.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Kubernetes.AppsV1().DaemonSets(d.Namespace).Patch(
+		ctx,
+		d.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch daemonset: %w", err)
+	}
+
+	return nil
 }

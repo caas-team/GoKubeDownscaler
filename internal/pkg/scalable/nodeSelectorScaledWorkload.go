@@ -9,6 +9,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/wI2L/jsondiff"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -21,6 +22,8 @@ type nodeSelectorScaledResource interface {
 	scalableResource
 	// Update updates the resource with all changes made to it. It should only be called once on a resource.
 	Update(clientsets *Clientsets, ctx context.Context) error
+	// Patch applies a patch to the resource.
+	Patch(clientsets *Clientsets, patchType types.PatchType, patchData []byte, manageFields bool, ctx context.Context) error
 	// getNodeSelector gets the node selector of the resource.
 	getNodeSelector() map[string]string
 	// setNodeSelector sets the node selector of the resource.
@@ -29,8 +32,10 @@ type nodeSelectorScaledResource interface {
 	getResourcesRequests(_ int32) *metrics.SavedResources
 	// Copy creates a deep copy of the resource.
 	Copy() (Workload, error)
-	// Compare compares the resource with another resource and returns the differences as a jsondiff.Patch.
-	Compare(workloadCopy Workload) (jsondiff.Patch, error)
+	// GenerateJSONDiff compares the resource with another resource and returns the differences as a jsondiff.Patch.
+	GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error)
+	// GeneratePatchDiff compares the resource with another resource and returns the JSON patch bytes.
+	GeneratePatchDiff(workloadCopy Workload) ([]byte, error)
 }
 
 // nodeSelectorScaledWorkload is a wrapper for all resources which are scaled by mutating their node selector.
@@ -46,12 +51,25 @@ func (r *nodeSelectorScaledWorkload) ScaleUp(logger *slog.Logger) (scalingSummar
 
 	summary := scalingSummary{From: values.BooleanReplicas(true), To: values.BooleanReplicas(false)}
 
+	workloadCopy, err := r.Copy()
+	if err != nil {
+		return summary, fmt.Errorf("failed to copy workload before scaling up: %w", err)
+	}
+
 	updateNeeded, err := r.scaleUp(logger)
 	if err != nil {
 		return summary, err
 	}
 
 	summary.IsUpdateNeeded = updateNeeded
+	if !updateNeeded {
+		return summary, nil
+	}
+
+	summary.PatchData, err = createPatchData(workloadCopy, r)
+	if err != nil {
+		return summary, err
+	}
 
 	return summary, nil
 }
@@ -62,17 +80,36 @@ func (r *nodeSelectorScaledWorkload) ScaleDown(downscaleReplicas values.Replicas
 		logger = slog.Default()
 	}
 
+	if pending, ok := pendingServerSidePatchSummary(r); ok {
+		return pending, nil
+	}
+
+	workloadCopy, err := r.Copy()
+	if err != nil {
+		return scalingSummary{}, fmt.Errorf("failed to copy workload before scaling down: %w", err)
+	}
+
 	savedResources, updateNeeded, err := r.scaleDown(downscaleReplicas, logger)
 	if err != nil {
 		return scalingSummary{}, err
 	}
 
-	return scalingSummary{
+	summary := scalingSummary{
 		SavedResources: savedResources,
 		IsUpdateNeeded: updateNeeded,
 		From:           values.BooleanReplicas(false),
 		To:             values.BooleanReplicas(true),
-	}, nil
+	}
+	if !updateNeeded {
+		return summary, nil
+	}
+
+	summary.PatchData, err = createPatchData(workloadCopy, r)
+	if err != nil {
+		return summary, err
+	}
+
+	return summary, nil
 }
 
 // LogUpscaleSuccessful logs a successful upscale using the node selector message style.
@@ -110,28 +147,39 @@ func (r *nodeSelectorScaledWorkload) scaleUp(logger *slog.Logger) (bool, error) 
 	return true, nil
 }
 
+func (r *nodeSelectorScaledWorkload) shouldSkipScaleDown(
+	logger *slog.Logger,
+) (bool, *metrics.SavedResources, error) {
+	_, err := getOriginalReplicas(r)
+	if err == nil {
+		logger.Debug("workload is already scaled down, skipping")
+		return true, r.getResourcesRequests(0), nil
+	}
+
+	var originalReplicasUnsetErr *OriginalReplicasUnsetError
+	if !errors.As(err, &originalReplicasUnsetErr) {
+		return false, nil, fmt.Errorf("failed to get original replicas for workload: %w", err)
+	}
+
+	logger.Debug("workload is already at target scale down state, skipping")
+
+	return true, metrics.NewSavedResources(0, 0), nil
+}
+
 func (r *nodeSelectorScaledWorkload) scaleDown(_ values.Replicas, logger *slog.Logger) (*metrics.SavedResources, bool, error) {
 	if logger == nil {
 		logger = slog.Default()
 	}
 
 	if _, hasLabel := r.getNodeSelector()[labelMatchNone]; hasLabel {
-		_, err := getOriginalReplicas(r)
-
-		var originalReplicasUnsetErr *OriginalReplicasUnsetError
+		skip, savedResources, err := r.shouldSkipScaleDown(logger)
 		if err != nil {
-			if !errors.As(err, &originalReplicasUnsetErr) {
-				return metrics.NewSavedResources(0, 0), false, fmt.Errorf("failed to get original replicas for workload: %w", err)
-			}
-
-			logger.Debug("workload is already at target scale down state, skipping")
-
-			return metrics.NewSavedResources(0, 0), false, nil
+			return metrics.NewSavedResources(0, 0), false, err
 		}
 
-		logger.Debug("workload is already scaled down, skipping")
-
-		return r.getResourcesRequests(0), false, nil
+		if skip {
+			return savedResources, false, nil
+		}
 	}
 
 	nodeSelector := r.getNodeSelector()

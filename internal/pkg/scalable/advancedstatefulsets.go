@@ -13,6 +13,7 @@ import (
 	"github.com/wI2L/jsondiff"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getStatefulSets is the getResourceFunc for KruiseStatefulSets.
@@ -123,10 +124,10 @@ func (s *advancedStatefulSet) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two statefulSet resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two statefulSet resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (s *advancedStatefulSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (s *advancedStatefulSet) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -147,6 +148,27 @@ func (s *advancedStatefulSet) Compare(workloadCopy Workload) (jsondiff.Patch, er
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (s *advancedStatefulSet) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	stsCopy, ok := rswCopy.replicaScaledResource.(*advancedStatefulSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*advancedStatefulSet)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if s.StatefulSet == nil || stsCopy.StatefulSet == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	return generateServerSideApplyPatch(s.StatefulSet, stsCopy.StatefulSet)
 }
 
 // advancedStatefulSetV1alpha1 is a wrapper for StatefulSet.v1alpha1.apps.kruise.io to implement the replicaScaledResource interface.
@@ -210,10 +232,10 @@ func (s *advancedStatefulSetV1alpha1) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two statefulSet resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two statefulSet resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (s *advancedStatefulSetV1alpha1) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (s *advancedStatefulSetV1alpha1) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
@@ -236,6 +258,27 @@ func (s *advancedStatefulSetV1alpha1) Compare(workloadCopy Workload) (jsondiff.P
 	return diff, nil
 }
 
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (s *advancedStatefulSetV1alpha1) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	rswCopy, ok := workloadCopy.(*replicaScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+	}
+
+	stsCopy, ok := rswCopy.replicaScaledResource.(*advancedStatefulSetV1alpha1)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*advancedStatefulSetV1alpha1)(nil), rswCopy.replicaScaledResource)
+	}
+
+	if s.StatefulSet == nil || stsCopy.StatefulSet == nil {
+		return nil, newNilUnderlyingObjectError(s.Kind)
+	}
+
+	return generateServerSideApplyPatch(s.StatefulSet, stsCopy.StatefulSet)
+}
+
 // savedResourcesFromContainers is a helper function to calculate the total saved resources requests when downscaling based
 // on the given containers and diffReplicas.
 func savedResourcesFromContainers(containers []corev1.Container, diffReplicas int32) *metrics.SavedResources {
@@ -250,4 +293,58 @@ func savedResourcesFromContainers(containers []corev1.Container, diffReplicas in
 	}
 
 	return metrics.NewSavedResources(totalCPU*float64(diffReplicas), totalMemory*float64(diffReplicas))
+}
+
+func (s *advancedStatefulSet) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if s.StatefulSet == nil {
+		return newNilUnderlyingObjectError(s.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Kruise.AppsV1beta1().StatefulSets(s.Namespace).Patch(
+		ctx,
+		s.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch advancedstatefulset: %w", err)
+	}
+
+	return nil
+}
+
+func (s *advancedStatefulSetV1alpha1) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if s.StatefulSet == nil {
+		return newNilUnderlyingObjectError(s.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Kruise.AppsV1alpha1().StatefulSets(s.Namespace).Patch(
+		ctx,
+		s.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch advancedstatefulsetv1alpha1: %w", err)
+	}
+
+	return nil
 }

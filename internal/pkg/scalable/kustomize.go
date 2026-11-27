@@ -11,6 +11,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	kustomize "github.com/fluxcd/kustomize-controller/api/v1"
 	"github.com/wI2L/jsondiff"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -114,28 +115,64 @@ func (k *kustomization) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares the workload with another workload and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares the workload with another workload and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //short names are ok for the workflow of this function
-func (k *kustomization) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (k *kustomization) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
 	if !ok {
-		return nil, newExpectTypeGotTypeError((*replicaScaledWorkload)(nil), workloadCopy)
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
 	}
 
-	depCopy, ok := sswCopy.suspendScaledResource.(*kustomization)
+	kCopy, ok := sswCopy.suspendScaledResource.(*kustomization)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*kustomization)(nil), sswCopy.suspendScaledResource)
 	}
 
-	if k.Kustomization == nil || depCopy.Kustomization == nil {
+	if k.Kustomization == nil || kCopy.Kustomization == nil {
 		return nil, newNilUnderlyingObjectError(k.Kind)
 	}
 
-	diff, err := jsondiff.Compare(k.Kustomization, depCopy.Kustomization)
+	diff, err := jsondiff.Compare(k.Kustomization, kCopy.Kustomization)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compare kustomization: %w", err)
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //short names are ok for the workflow of this function
+func (k *kustomization) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	sswCopy, ok := workloadCopy.(*suspendScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*suspendScaledWorkload)(nil), workloadCopy)
+	}
+
+	kCopy, ok := sswCopy.suspendScaledResource.(*kustomization)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*kustomization)(nil), sswCopy.suspendScaledResource)
+	}
+
+	if k.Kustomization == nil || kCopy.Kustomization == nil {
+		return nil, newNilUnderlyingObjectError(k.Kind)
+	}
+
+	return generateServerSideApplyPatch(k.Kustomization, kCopy.Kustomization)
+}
+
+// Patch applies a patch to the kustomization.
+func (k *kustomization) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if k.Kustomization == nil {
+		return newNilUnderlyingObjectError(k.Kind)
+	}
+
+	return patchControllerRuntimeObject(clientsets.Client, k.Kustomization, patchType, patchData, manageFields, ctx)
 }

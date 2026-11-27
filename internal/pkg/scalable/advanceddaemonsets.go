@@ -10,6 +10,7 @@ import (
 	kruisev1beta1 "github.com/openkruise/kruise/apis/apps/v1beta1"
 	"github.com/wI2L/jsondiff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // getAdvancedDaemonSets is the getResourceFunc for advanced daemonsets.
@@ -108,10 +109,10 @@ func (d *advancedDaemonSet) Copy() (Workload, error) {
 	}, nil
 }
 
-// Compare compares two advancedDaemonSet resources and returns the differences as a jsondiff.Patch.
+// GenerateJSONDiff compares two advancedDaemonSet resources and returns the differences as a jsondiff.Patch.
 //
 //nolint:varnamelen //required for interface-based workflow
-func (d *advancedDaemonSet) Compare(workloadCopy Workload) (jsondiff.Patch, error) {
+func (d *advancedDaemonSet) GenerateJSONDiff(workloadCopy Workload) (jsondiff.Patch, error) {
 	nswCopy, ok := workloadCopy.(*nodeSelectorScaledWorkload)
 	if !ok {
 		return nil, newExpectTypeGotTypeError((*nodeSelectorScaledWorkload)(nil), workloadCopy)
@@ -132,4 +133,52 @@ func (d *advancedDaemonSet) Compare(workloadCopy Workload) (jsondiff.Patch, erro
 	}
 
 	return diff, nil
+}
+
+// GeneratePatchDiff generates a server-side apply patch containing basic metadata and modified fields.
+//
+//nolint:varnamelen //required for interface-based workflow
+func (d *advancedDaemonSet) GeneratePatchDiff(workloadCopy Workload) ([]byte, error) {
+	nswCopy, ok := workloadCopy.(*nodeSelectorScaledWorkload)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*nodeSelectorScaledWorkload)(nil), workloadCopy)
+	}
+
+	dsCopy, ok := nswCopy.nodeSelectorScaledResource.(*advancedDaemonSet)
+	if !ok {
+		return nil, newExpectTypeGotTypeError((*advancedDaemonSet)(nil), nswCopy.nodeSelectorScaledResource)
+	}
+
+	if d.DaemonSet == nil || dsCopy.DaemonSet == nil {
+		return nil, newNilUnderlyingObjectError(d.Kind)
+	}
+
+	return generateServerSideApplyPatch(d.DaemonSet, dsCopy.DaemonSet)
+}
+
+func (d *advancedDaemonSet) Patch(
+	clientsets *Clientsets,
+	patchType types.PatchType,
+	patchData []byte,
+	manageFields bool,
+	ctx context.Context,
+) error {
+	if d.DaemonSet == nil {
+		return newNilUnderlyingObjectError(d.Kind)
+	}
+
+	options := patchOptions(manageFields)
+
+	_, err := clientsets.Kruise.AppsV1beta1().DaemonSets(d.Namespace).Patch(
+		ctx,
+		d.Name,
+		patchType,
+		patchData,
+		options,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to patch advanceddaemonset: %w", err)
+	}
+
+	return nil
 }
