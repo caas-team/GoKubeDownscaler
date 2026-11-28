@@ -21,19 +21,20 @@ import (
 
 // WorkloadMutationHandler is a struct that implements the admissionHandler interface.
 type WorkloadMutationHandler struct {
-	client              kubernetes.Client
-	scopeCli            *values.Scope
-	scopeEnv            *values.Scope
-	scopeDefault        *values.Scope
-	includeNamespaces   *[]string
-	dryRun              bool
-	includeLabels       *util.RegexList
-	excludeNamespaces   *util.RegexList
-	excludeWorkloads    *util.RegexList
-	includeResourcesSet map[string]struct{}
-	metricsEnabled      bool
-	admissionMetrics    *metrics.AdmissionMetrics
-	downscalePolicy     bool
+	client               kubernetes.Client
+	scopeCli             *values.Scope
+	scopeEnv             *values.Scope
+	scopeDefault         *values.Scope
+	includeNamespaces    *[]string
+	dryRun               bool
+	includeLabels        *util.RegexList
+	excludeNamespaces    *util.RegexList
+	excludeWorkloads     *util.RegexList
+	includeResourcesSet  map[string]struct{}
+	metricsEnabled       bool
+	admissionMetrics     *metrics.AdmissionMetrics
+	downscalePolicy      bool
+	disableWorkloadScope *util.WorkloadScopeFilter
 }
 
 func workloadLogger(workload scalable.Workload) *slog.Logger {
@@ -55,21 +56,23 @@ func NewWorkloadMutationHandler(
 	metricsEnabled bool,
 	admissionMetrics *metrics.AdmissionMetrics,
 	downscalePolicy bool,
+	disableWorkloadScope *util.WorkloadScopeFilter,
 ) *WorkloadMutationHandler {
 	return &WorkloadMutationHandler{
-		client:              client,
-		scopeCli:            scopeCli,
-		scopeEnv:            scopeEnv,
-		scopeDefault:        scopeDefault,
-		dryRun:              dryRun,
-		includeNamespaces:   includeNamespaces,
-		includeLabels:       includeLabels,
-		excludeNamespaces:   excludeNamespaces,
-		excludeWorkloads:    excludeWorkloads,
-		includeResourcesSet: includeResources,
-		metricsEnabled:      metricsEnabled,
-		admissionMetrics:    admissionMetrics,
-		downscalePolicy:     downscalePolicy,
+		client:               client,
+		scopeCli:             scopeCli,
+		scopeEnv:             scopeEnv,
+		scopeDefault:         scopeDefault,
+		dryRun:               dryRun,
+		includeNamespaces:    includeNamespaces,
+		includeLabels:        includeLabels,
+		excludeNamespaces:    excludeNamespaces,
+		excludeWorkloads:     excludeWorkloads,
+		includeResourcesSet:  includeResources,
+		metricsEnabled:       metricsEnabled,
+		admissionMetrics:     admissionMetrics,
+		downscalePolicy:      downscalePolicy,
+		disableWorkloadScope: disableWorkloadScope,
 	}
 }
 
@@ -81,10 +84,10 @@ func (v *WorkloadMutationHandler) getNamespaceAndPolicyScopes(
 	workload scalable.Workload,
 	ctx context.Context,
 	logger *slog.Logger,
-) (scopeNamespace, scopePolicy *values.Scope, failureMessage string, err error) {
+) (namespaceScope *kubernetes.NamespaceScope, scopePolicy *values.Scope, failureMessage string, err error) {
 	logger.Debug("parsing namespace scope from workload")
 
-	scopeNamespace, err = v.client.GetNamespaceScope(workload.GetNamespace(), ctx)
+	namespaceScope, err = v.client.GetNamespaceScope(workload.GetNamespace(), ctx)
 	if err != nil {
 		return nil, nil, "failed to get namespace scope from annotations", fmt.Errorf("failed to get namespace scope: %w", err)
 	}
@@ -94,7 +97,36 @@ func (v *WorkloadMutationHandler) getNamespaceAndPolicyScopes(
 		return nil, nil, "failed to get downscale policy scope", err
 	}
 
-	return scopeNamespace, scopePolicy, "", nil
+	return namespaceScope, scopePolicy, "", nil
+}
+
+// getWorkloadScope parses the workload scope from the workload annotations.
+// An empty scope is returned if the workload scope is disabled for the workload's namespace.
+func (v *WorkloadMutationHandler) getWorkloadScope(
+	workload scalable.Workload,
+	namespaceLabels map[string]string,
+	eventLogger util.ResourceLogger,
+	ctx context.Context,
+	logger *slog.Logger,
+) (*values.Scope, error) {
+	scopeWorkload := values.NewScope()
+
+	if v.disableWorkloadScope.IsDisabled(workload.GetNamespace(), namespaceLabels) {
+		logger.Debug(
+			"workload scope is disabled for the namespace, ignoring workload annotations",
+			"workload annotations", workload.GetAnnotations(),
+		)
+
+		return scopeWorkload, nil
+	}
+
+	logger.Debug("parsing workload scope from annotations", "workload annotations", workload.GetAnnotations())
+
+	if err := scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), eventLogger, logger, ctx); err != nil {
+		return nil, fmt.Errorf("failed to parse workload scope from annotations: %w", err)
+	}
+
+	return scopeWorkload, nil
 }
 
 // getDownscalePolicyScope gets the scope of the DownscalePolicy applying to the workload.
@@ -238,25 +270,7 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 
 	slog.Debug("scanning over workloads matching filters", "amount", len(workloads))
 
-	logger.Debug("parsing workload scope from annotations", "workload annotations", workload.GetAnnotations())
-
-	scopeWorkload := values.NewScope()
-	if err = scopeWorkload.GetScopeFromAnnotations(workload.GetAnnotations(), eventLogger, logger, ctx); err != nil {
-		logger.Debug("failed to parse workload scope from annotations", "error", err, "dryRun", v.dryRun)
-
-		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
-
-		return newReviewResponse(
-			review.Request.UID,
-			true,
-			http.StatusAccepted,
-			"failed to parse workload scope from annotations",
-			true,
-			v.dryRun,
-		), err
-	}
-
-	scopeNamespace, scopePolicy, failureMessage, err := v.getNamespaceAndPolicyScopes(workload, ctx, logger)
+	namespaceScope, scopePolicy, failureMessage, err := v.getNamespaceAndPolicyScopes(workload, ctx, logger)
 	if err != nil {
 		logger.Debug(failureMessage, "error", err, "dryRun", v.dryRun)
 
@@ -272,7 +286,24 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 		), err
 	}
 
-	scopes := values.Scopes{scopeWorkload, scopePolicy, scopeNamespace, v.scopeCli, v.scopeEnv, v.scopeDefault}
+	scopeWorkload, err := v.getWorkloadScope(workload, namespaceScope.Labels, eventLogger, ctx, logger)
+	if err != nil {
+		failureMessage = "failed to parse workload scope from annotations"
+		logger.Debug(failureMessage, "error", err, "dryRun", v.dryRun)
+
+		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
+
+		return newReviewResponse(
+			review.Request.UID,
+			true,
+			http.StatusAccepted,
+			failureMessage,
+			true,
+			v.dryRun,
+		), err
+	}
+
+	scopes := values.Scopes{scopeWorkload, scopePolicy, namespaceScope.Scope, v.scopeCli, v.scopeEnv, v.scopeDefault}
 
 	logger.Debug("finished parsing all scopes", "scopes", scopes)
 

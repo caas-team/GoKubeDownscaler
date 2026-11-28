@@ -99,6 +99,8 @@ while arguments flagged with a hashtag (#) can only be set inside the Webhook.
 - [--timeout](ref:docs-runtime-configuration#timeout)
 - [--json-logs](ref:docs-runtime-configuration#json-logs)
 - [--downscale-policy](ref:docs-runtime-configuration#downscale-policy)
+- [--disable-workload-scope-for-namespaces](ref:docs-runtime-configuration#disable-workload-scope-for-namespaces)
+- [--disable-workload-scope-for-namespaces-selector](ref:docs-runtime-configuration#disable-workload-scope-for-namespaces-selector)
 - [--leader-election](ref:docs-runtime-configuration#leader-election) (\*)
 - [--max-retries-on-conflict](ref:docs-runtime-configuration#max-retries-on-conflict) (\*)
 - [--internal-cert-rotation](ref:docs-runtime-configuration#internal-cert-rotation) (#)
@@ -135,6 +137,8 @@ Here is a list containing all the fields that configure their respective cli arg
 - [`includedResources`](ref:docs-helm-included-resources) directly sets `--include-resources`
 - [`constrainedNamespaces`](ref:docs-helm-constrained-namespaces) directly sets `--namespace`
 - [`downscalePolicy.enabled`](ref:docs-helm-downscale-policy) directly sets `--downscale-policy`
+- [`workloadScope.disabledNamespaces`](ref:docs-helm-workload-scope) directly sets `--disable-workload-scope-for-namespaces`
+- [`workloadScope.disabledNamespacesSelector`](ref:docs-helm-workload-scope) directly sets `--disable-workload-scope-for-namespaces-selector`
 
 All other arguments can be used via the `arguments` field.
 

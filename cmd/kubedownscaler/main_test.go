@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log/slog"
+	"regexp"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/caas-team/gokubedownscaler/internal/pkg/metrics"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/policy"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/scalable"
+	"github.com/caas-team/gokubedownscaler/internal/pkg/util"
 	"github.com/caas-team/gokubedownscaler/internal/pkg/values"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -144,7 +146,7 @@ func TestScanWorkload_DownscalePolicy(t *testing.T) {
 		values.GetDefaultScope(),
 		values.NewScope(),
 		values.NewScope(),
-		map[string]*values.Scope{"test-namespace": values.NewScope()},
+		map[string]*client.NamespaceScope{"test-namespace": {Scope: values.NewScope()}},
 		policies,
 		&metrics.NamespaceMetricsHolder{},
 		&runtimeConfiguration{},
@@ -184,11 +186,11 @@ func TestScanWorkload(t *testing.T) {
 	scopeCli.DownscaleReplicas = values.AbsoluteReplicas(0)
 	scopeCli.GracePeriod = 15 * time.Minute
 
-	namespaceScopes := map[string]*values.Scope{
-		"test-namespace": {
+	namespaceScopes := map[string]*client.NamespaceScope{
+		"test-namespace": {Scope: &values.Scope{
 			DownscaleReplicas: values.AbsoluteReplicas(0),
 			GracePeriod:       15 * time.Minute,
-		},
+		}},
 	}
 
 	namespaceMetrics := &metrics.NamespaceMetricsHolder{}
@@ -228,4 +230,113 @@ func TestScanWorkload(t *testing.T) {
 
 	mockClient.AssertExpectations(t)
 	mockWorkload.AssertExpectations(t)
+}
+
+func TestScanWorkload_DisableWorkloadScope(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name            string
+		filter          func(t *testing.T) util.WorkloadScopeFilter
+		namespaceLabels map[string]string
+		annotations     map[string]string
+		wantDownscale   bool
+	}{
+		{
+			name:            "workload scope applies when the filter is unset",
+			filter:          func(*testing.T) util.WorkloadScopeFilter { return util.WorkloadScopeFilter{} },
+			namespaceLabels: map[string]string{},
+			annotations:     map[string]string{"downscaler/exclude": "true"},
+			wantDownscale:   false,
+		},
+		{
+			name: "workload scope applies when the namespace does not match",
+			filter: func(*testing.T) util.WorkloadScopeFilter {
+				return util.WorkloadScopeFilter{Namespaces: util.RegexList{regexp.MustCompile("^other-namespace$")}}
+			},
+			namespaceLabels: map[string]string{},
+			annotations:     map[string]string{"downscaler/exclude": "true"},
+			wantDownscale:   false,
+		},
+		{
+			name: "workload scope is ignored when the namespace name matches",
+			filter: func(*testing.T) util.WorkloadScopeFilter {
+				return util.WorkloadScopeFilter{Namespaces: util.RegexList{regexp.MustCompile("^test-namespace$")}}
+			},
+			namespaceLabels: map[string]string{},
+			annotations:     map[string]string{"downscaler/exclude": "true", "downscaler/downscale-replicas": "invalid"},
+			wantDownscale:   true,
+		},
+		{
+			name: "workload scope is ignored when the namespace labels match",
+			filter: func(t *testing.T) util.WorkloadScopeFilter {
+				t.Helper()
+
+				filter := util.WorkloadScopeFilter{}
+				require.NoError(t, filter.NamespaceSelector.Set("downscaler/workload-scope!=enabled"))
+
+				return filter
+			},
+			namespaceLabels: map[string]string{},
+			annotations:     map[string]string{"downscaler/exclude": "true"},
+			wantDownscale:   true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := t.Context()
+
+			config := &runtimeConfiguration{}
+			config.DisableWorkloadScope = test.filter(t)
+
+			scopeNamespace := values.NewScope()
+			err := scopeNamespace.GetScopeFromAnnotations(map[string]string{
+				"downscaler/force-downtime":     "true",
+				"downscaler/downscale-replicas": "0",
+			}, noopResourceLogger{}, nil, ctx)
+			require.NoError(t, err)
+
+			namespaceScopes := map[string]*client.NamespaceScope{
+				"test-namespace": {Scope: scopeNamespace, Labels: test.namespaceLabels},
+			}
+
+			mockClient := new(MockClient)
+			mockWorkload := new(MockWorkload)
+
+			mockWorkload.On("GetNamespace").Return("test-namespace")
+			mockWorkload.On("GetName").Return("test-workload")
+			mockWorkload.On("GetCreationTimestamp").Return(time.Now().Add(-time.Hour))
+			mockWorkload.On("GetAnnotations").Return(test.annotations)
+
+			if test.wantDownscale {
+				mockClient.On(
+					"DownscaleWorkload",
+					values.AbsoluteReplicas(0),
+					mockWorkload,
+					ctx,
+					mock.AnythingOfType("*slog.Logger"),
+				).Return(metrics.NewSavedResources(0, 0), nil)
+			}
+
+			err = scanWorkload(
+				mockWorkload,
+				mockClient,
+				ctx,
+				values.GetDefaultScope(),
+				values.NewScope(),
+				values.NewScope(),
+				namespaceScopes,
+				&downscalePolicies{},
+				&metrics.NamespaceMetricsHolder{},
+				config,
+				workloadLogger(mockWorkload),
+			)
+			require.NoError(t, err)
+
+			mockClient.AssertExpectations(t)
+		})
+	}
 }

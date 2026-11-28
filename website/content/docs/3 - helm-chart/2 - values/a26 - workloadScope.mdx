@@ -1,0 +1,49 @@
+---
+title: workloadScope
+id: workloadScope
+globalReference: docs-helm-workload-scope
+description: >
+  Learn how to disable the Workload Scope in selected namespaces with the workloadScope Helm value,
+  so workload annotations can't override the configuration set by cluster admins.
+keywords: [workloadScope, workload scope, annotations, namespace selector]
+---
+
+# workloadScope
+
+The `workloadScope` value of the chart
+
+- `disabledNamespaces` is a list of regex patterns matched against namespace names.
+  It sets [`--disable-workload-scope-for-namespaces`](ref:docs-runtime-configuration#disable-workload-scope-for-namespaces)
+- `disabledNamespacesSelector` is a label selector matched against namespace labels.
+  It sets [`--disable-workload-scope-for-namespaces-selector`](ref:docs-runtime-configuration#disable-workload-scope-for-namespaces-selector)
+
+The [Workload Scope](ref:docs-workload-scope#disabling-the-workload-scope) is disabled in a namespace if either one of them matches.
+Both values are set on the GoKubeDownscaler and on the webhook controller.
+
+:::info
+
+The default values for `workloadScope` are:
+
+```yaml
+workloadScope:
+  disabledNamespaces: []
+  disabledNamespacesSelector: ""
+```
+
+:::
+
+Example:
+
+```yaml
+workloadScope:
+  disabledNamespaces:
+    - "^team-.*$"
+  disabledNamespacesSelector: "downscaler/workload-scope!=enabled"
+```
+
+:::warning
+
+Regex patterns are not anchored, and new namespaces are only covered if their name matches one of them.
+See the [runtime configuration](ref:docs-runtime-configuration#disable-workload-scope-for-namespaces) for details.
+
+:::

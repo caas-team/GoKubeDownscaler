@@ -3,7 +3,9 @@ package util
 import (
 	"flag"
 	"fmt"
+	"os"
 	"regexp"
+	"strings"
 )
 
 // CommonRuntimeConfiguration contains fields shared among different runtime configurations.
@@ -38,6 +40,8 @@ type CommonRuntimeConfiguration struct {
 	Kubeconfig string
 	// DownscalePolicyEnabled sets if DownscalePolicy resources should be used as a scope.
 	DownscalePolicyEnabled bool
+	// DisableWorkloadScope sets the namespaces in which the workload scope is ignored.
+	DisableWorkloadScope WorkloadScopeFilter
 }
 
 func GetDefaultConfig() *CommonRuntimeConfiguration {
@@ -137,6 +141,16 @@ func (c *CommonRuntimeConfiguration) ParseCommonFlags() {
 		false,
 		"use DownscalePolicy resources as a scope between the workload and the namespace scope; requires the CRD (default: false)",
 	)
+	flag.Var(
+		&c.DisableWorkloadScope.Namespaces,
+		"disable-workload-scope-for-namespaces",
+		"ignore the workload scope (workload annotations) in namespaces matching any of these regexes (optional)",
+	)
+	flag.Var(
+		&c.DisableWorkloadScope.NamespaceSelector,
+		"disable-workload-scope-for-namespaces-selector",
+		"ignore the workload scope (workload annotations) in namespaces matching this label selector (optional)",
+	)
 	flag.StringVar(
 		&c.Kubeconfig,
 		"k",
@@ -152,6 +166,17 @@ func (c *CommonRuntimeConfiguration) ParseConfigEnvVars() error {
 
 	if err := GetEnvValue("EXCLUDE_DEPLOYMENTS", &c.ExcludeWorkloads); err != nil {
 		return fmt.Errorf("error while getting EXCLUDE_DEPLOYMENTS environment variable: %w", err)
+	}
+
+	// an empty value is treated as unset, because an empty regex would match (and disable the workload scope in) every namespace
+	if strings.TrimSpace(os.Getenv("DISABLE_WORKLOAD_SCOPE_NAMESPACES")) != "" {
+		if err := GetEnvValue("DISABLE_WORKLOAD_SCOPE_NAMESPACES", &c.DisableWorkloadScope.Namespaces); err != nil {
+			return fmt.Errorf("error while getting DISABLE_WORKLOAD_SCOPE_NAMESPACES environment variable: %w", err)
+		}
+	}
+
+	if err := GetEnvValue("DISABLE_WORKLOAD_SCOPE_NAMESPACE_SELECTOR", &c.DisableWorkloadScope.NamespaceSelector); err != nil {
+		return fmt.Errorf("error while getting DISABLE_WORKLOAD_SCOPE_NAMESPACE_SELECTOR environment variable: %w", err)
 	}
 
 	return nil

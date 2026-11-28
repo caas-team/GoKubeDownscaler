@@ -183,6 +183,7 @@ func (s *serverConfig) serveValidateWorkloads(writer http.ResponseWriter, reques
 		s.config.MetricsEnabled,
 		s.admissionMetrics,
 		s.config.DownscalePolicyEnabled,
+		&s.config.DisableWorkloadScope,
 	)
 	admissionHandler.HandleWorkloadMutation(ctx, writer, request)
 

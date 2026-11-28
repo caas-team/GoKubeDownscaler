@@ -55,6 +55,12 @@ spec:
           {{- if .Values.downscalePolicy.enabled }}
           - --downscale-policy
           {{- end }}
+          {{- with .Values.workloadScope.disabledNamespaces }}
+          - --disable-workload-scope-for-namespaces={{ join "," . }}
+          {{- end }}
+          {{- with .Values.workloadScope.disabledNamespacesSelector }}
+          - {{ printf "--disable-workload-scope-for-namespaces-selector=%s" . | quote }}
+          {{- end }}
           {{- if .Values.metrics.enabled }}
           - --metrics
           {{- end }}

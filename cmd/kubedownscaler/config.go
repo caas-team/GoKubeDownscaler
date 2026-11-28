@@ -138,6 +138,8 @@ func (c *runtimeConfiguration) String() string {
 	fmt.Fprintf(&builder, "burst:%d ", c.Burst)
 	fmt.Fprintf(&builder, "kubeconfig:%q ", c.Kubeconfig)
 	fmt.Fprintf(&builder, "downscalePolicy:%t ", c.DownscalePolicyEnabled)
+	fmt.Fprintf(&builder, "disableWorkloadScopeForNamespaces:%v ", c.DisableWorkloadScope.Namespaces)
+	fmt.Fprintf(&builder, "disableWorkloadScopeForNamespacesSelector:%q ", c.DisableWorkloadScope.NamespaceSelector.String())
 	fmt.Fprintf(&builder, "once:%t ", c.Once)
 	fmt.Fprintf(&builder, "leaderElection:%t ", c.LeaderElection)
 	fmt.Fprintf(&builder, "interval:%s ", c.Interval)
