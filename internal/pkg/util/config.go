@@ -3,7 +3,9 @@ package util
 import (
 	"flag"
 	"fmt"
+	"os"
 	"regexp"
+	"strings"
 )
 
 // CommonRuntimeConfiguration contains fields shared among different runtime configurations.
@@ -164,6 +166,17 @@ func (c *CommonRuntimeConfiguration) ParseConfigEnvVars() error {
 
 	if err := GetEnvValue("EXCLUDE_DEPLOYMENTS", &c.ExcludeWorkloads); err != nil {
 		return fmt.Errorf("error while getting EXCLUDE_DEPLOYMENTS environment variable: %w", err)
+	}
+
+	// an empty value is treated as unset, because an empty regex would match (and disable the workload scope in) every namespace
+	if strings.TrimSpace(os.Getenv("DISABLE_WORKLOAD_SCOPE_NAMESPACES")) != "" {
+		if err := GetEnvValue("DISABLE_WORKLOAD_SCOPE_NAMESPACES", &c.DisableWorkloadScope.Namespaces); err != nil {
+			return fmt.Errorf("error while getting DISABLE_WORKLOAD_SCOPE_NAMESPACES environment variable: %w", err)
+		}
+	}
+
+	if err := GetEnvValue("DISABLE_WORKLOAD_SCOPE_NAMESPACE_SELECTOR", &c.DisableWorkloadScope.NamespaceSelector); err != nil {
+		return fmt.Errorf("error while getting DISABLE_WORKLOAD_SCOPE_NAMESPACE_SELECTOR environment variable: %w", err)
 	}
 
 	return nil

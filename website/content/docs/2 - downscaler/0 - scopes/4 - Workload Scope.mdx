@@ -110,6 +110,8 @@ Cluster admins can disable the Workload Scope in selected namespaces with the
 [`--disable-workload-scope-for-namespaces`](ref:docs-runtime-configuration#disable-workload-scope-for-namespaces) and
 [`--disable-workload-scope-for-namespaces-selector`](ref:docs-runtime-configuration#disable-workload-scope-for-namespaces-selector)
 runtime configurations.
+They can also be set with the `DISABLE_WORKLOAD_SCOPE_NAMESPACES` and `DISABLE_WORKLOAD_SCOPE_NAMESPACE_SELECTOR`
+environment variables of the [Env Scope](ref:docs-env-scope#runtime-configuration).
 If you set both, a namespace is matched when either one matches it.
 In the Helm Chart, they are set by the [`workloadScope`](ref:docs-helm-workload-scope) value.
 

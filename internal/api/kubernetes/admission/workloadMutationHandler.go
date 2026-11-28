@@ -288,7 +288,8 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 
 	scopeWorkload, err := v.getWorkloadScope(workload, namespaceScope.Labels, eventLogger, ctx, logger)
 	if err != nil {
-		logger.Debug("failed to parse workload scope from annotations", "error", err, "dryRun", v.dryRun)
+		failureMessage = "failed to parse workload scope from annotations"
+		logger.Debug(failureMessage, "error", err, "dryRun", v.dryRun)
 
 		v.admissionMetrics.UpdateValidateWorkloadAdmissionRequestsTotal(metricsEnabled, false, true, workload.GetNamespace())
 
@@ -296,7 +297,7 @@ func (v *WorkloadMutationHandler) evaluateWorkloadMutation(
 			review.Request.UID,
 			true,
 			http.StatusAccepted,
-			"failed to parse workload scope from annotations",
+			failureMessage,
 			true,
 			v.dryRun,
 		), err

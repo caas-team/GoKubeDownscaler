@@ -59,10 +59,13 @@ These global settings can be overridden by more specific scopes in the hierarchy
 ## Runtime Configuration
 
 At the environment scope, the following environment variable [runtime configurations](ref:docs-runtime-configuration) are used to
-control which namespaces or workloads should be excluded from scaling policies.
+control which namespaces or workloads should be excluded from scaling policies,
+and in which namespaces the [Workload Scope](ref:docs-workload-scope#disabling-the-workload-scope) is disabled.
 
 - [EXCLUDE_NAMESPACES](ref:docs-runtime-configuration#exclude-namespaces)
 - [EXCLUDE_DEPLOYMENTS](ref:docs-runtime-configuration#exclude-deployments)
+- [DISABLE_WORKLOAD_SCOPE_NAMESPACES](ref:docs-runtime-configuration#disable-workload-scope-for-namespaces)
+- [DISABLE_WORKLOAD_SCOPE_NAMESPACE_SELECTOR](ref:docs-runtime-configuration#disable-workload-scope-for-namespaces-selector)
 
 :::note
 

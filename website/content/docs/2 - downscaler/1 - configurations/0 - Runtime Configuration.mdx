@@ -221,7 +221,9 @@ Since, in that case, the downscaler will only run once, you might want to perfor
   the Workload Scope is disabled if either one matches.
   See [Disabling the Workload Scope](ref:docs-workload-scope#disabling-the-workload-scope).
 - Default: none (the Workload Scope applies in all namespaces)
-- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration) (`--disable-workload-scope-for-namespaces`),
+  [ENV Scope](ref:docs-env-scope#runtime-configuration) (`DISABLE_WORKLOAD_SCOPE_NAMESPACES`).
+  An empty `DISABLE_WORKLOAD_SCOPE_NAMESPACES` is ignored.
 
 :::warning
 
@@ -245,7 +247,8 @@ to also cover namespaces created later.
   An invalid selector makes the component fail at startup.
 - Examples: `downscaler/workload-scope!=enabled`, `kubernetes.io/metadata.name notin (kube-system,monitoring)`
 - Default: none (the Workload Scope applies in all namespaces)
-- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration)
+- Where to set: [CLI Scope](ref:docs-cli-scope#runtime-configuration) (`--disable-workload-scope-for-namespaces-selector`),
+  [ENV Scope](ref:docs-env-scope#runtime-configuration) (`DISABLE_WORKLOAD_SCOPE_NAMESPACE_SELECTOR`)
 
 ### Internal Cert Rotation
 

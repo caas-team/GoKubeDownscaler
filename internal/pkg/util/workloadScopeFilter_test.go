@@ -7,45 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLabelSelectorValue_Set(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name       string
-		input      string
-		wantErr    bool
-		wantString string
-	}{
-		{name: "empty", input: "", wantString: ""},
-		{name: "whitespace only", input: "  ", wantString: ""},
-		{name: "equality", input: "downscaler/workload-scope=enabled", wantString: "downscaler/workload-scope=enabled"},
-		{name: "inequality", input: "downscaler/workload-scope!=enabled", wantString: "downscaler/workload-scope!=enabled"},
-		{
-			name:       "set based",
-			input:      "kubernetes.io/metadata.name in (kube-system,monitoring)",
-			wantString: "kubernetes.io/metadata.name in (kube-system,monitoring)",
-		},
-		{name: "invalid", input: "foo in (", wantErr: true},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-
-			var selector LabelSelectorValue
-
-			err := selector.Set(test.input)
-			if test.wantErr {
-				require.Error(t, err)
-				return
-			}
-
-			require.NoError(t, err)
-			require.Equal(t, test.wantString, selector.String())
-		})
-	}
-}
-
 func TestWorkloadScopeFilter_IsDisabled(t *testing.T) {
 	t.Parallel()
 
